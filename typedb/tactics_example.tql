@@ -28,9 +28,9 @@ $tatic_rule_min (tactic:$ta_max_speed, antecedent:$or_expression, consequent:$t_
 $tatic_rule_max (tactic:$ta_max_speed, antecedent:$and_expression, consequent:$t_variant_high_speed ) isa tactic_rule, has rule_name "MAX";
 $tatic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15, consequent:$t_variant_med_speed ) isa tactic_rule, has rule_name "MED";
 
-$sp_max_speed_low isa SetParameter, has node_name "velocity_smoother", has parameter-value "[0.10, 0.0, 1.0]", has parameter-type "double_array";
-$sp_max_speed_med isa SetParameter, has node_name "velocity_smoother", has parameter-value "[0.18, 0.0, 1.0]", has parameter-type "double_array";
-$sp_max_speed_high isa SetParameter, has node_name "velocity_smoother", has parameter-value "[0.26, 0.0, 1.0]", has parameter-type "double_array";
+$sp_max_speed_low isa SetParameter, has node_name "velocity_smoother", has parameter_name "max_velocity", has parameter-value "[0.10, 0.0, 1.0]", has parameter-type "double_array";
+$sp_max_speed_med isa SetParameter, has node_name "velocity_smoother", has parameter_name "max_velocity", has parameter-value "[0.18, 0.0, 1.0]", has parameter-type "double_array";
+$sp_max_speed_high isa SetParameter, has node_name "velocity_smoother", has parameter_name "max_velocity", has parameter-value "[0.26, 0.0, 1.0]", has parameter-type "double_array";
 
 $low_speed_resolution (resolution_action: $sp_max_speed_low) isa variant_resolution, has variant_name "low_speed";
 $med_speed_resolution (resolution_action: $sp_max_speed_med) isa variant_resolution, has variant_name "med_speed";

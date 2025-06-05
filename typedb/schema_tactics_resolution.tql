@@ -13,6 +13,7 @@ rule_name sub name;
 term_name sub name;
 variant_name sub name;
 node_name sub name;
+parameter_name sub name;
 
 tactic_period sub attribute,
     value double;
@@ -113,6 +114,7 @@ ResolutionAction sub entity,
     plays variant_resolution:resolution_action;
 
 SetParameter sub ResolutionAction,
+    owns parameter_name,
     owns parameter-value,
     owns parameter-type;
     

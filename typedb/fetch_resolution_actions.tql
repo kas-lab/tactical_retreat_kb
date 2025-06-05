@@ -9,7 +9,7 @@ fetch
         match
             $res_action isa! SetParameter;
         fetch
-            $res_action: node_name, parameter-type, parameter-value;
+            $res_action: node_name, parameter_name, parameter-type, parameter-value;
     };
     set_lifecycle_action:{
         match
