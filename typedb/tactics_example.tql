@@ -1,0 +1,40 @@
+insert 
+    
+$ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal", has tactic_period 1.0;
+
+$t_nearest_object_close isa Term, has term_name "nearest_object_close", has term_value 10;
+$t_nearest_object_far isa Term, has term_name "nearest_object_far", has term_value 15;
+$t_measured_nearest_object isa Term, has term_name "t_measured_nearest_object";
+
+$t_movement_power_low isa Term, has term_name "t_movement_power_low", has term_value 39;
+$t_movement_power_high isa Term, has term_name "t_movement_power_high", has term_value 40;
+$t_measured_movement_power isa Term, has term_name "t_measured_movement_power";
+
+
+$t_variant_low_speed isa Term, has term_name "low_speed";
+$t_variant_med_speed isa Term, has term_name "med_speed";
+$t_variant_high_speed isa Term, has term_name "high_speed";
+
+$ineq_nearest_lower_than_10 (lhs_term:$t_measured_nearest_object, rhs_term: $t_nearest_object_close) isa inequality_expression, has operator "<";
+$ineq_nearest_greater_than_15 (lhs_term:$t_measured_nearest_object, rhs_term: $t_nearest_object_far) isa inequality_expression, has operator ">";
+
+$ineq_mv_pwer_greater_than_40  (lhs_term:$t_measured_movement_power, rhs_term: $t_movement_power_high) isa inequality_expression, has operator ">";
+$ineq_mv_pwer_lower_than_39  (lhs_term:$t_measured_movement_power, rhs_term: $t_movement_power_low) isa inequality_expression, has operator "<";
+
+$or_expression (expression:$ineq_nearest_lower_than_10, expression:$ineq_mv_pwer_greater_than_40) isa or_expression;
+$and_expression (expression:$ineq_nearest_greater_than_15, expression:$ineq_mv_pwer_lower_than_39) isa and_expression;
+
+$tatic_rule_min (tactic:$ta_max_speed, antecedent:$or_expression, consequent:$t_variant_low_speed ) isa tactic_rule, has rule_name "MIN";
+$tatic_rule_max (tactic:$ta_max_speed, antecedent:$and_expression, consequent:$t_variant_high_speed ) isa tactic_rule, has rule_name "MAX";
+$tatic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15, consequent:$t_variant_med_speed ) isa tactic_rule, has rule_name "MED";
+
+$sp_max_speed_low isa SetParameter, has node_name "velocity_smoother", has parameter-value "[0.10, 0.0, 1.0]", has parameter-type "double_array";
+$sp_max_speed_med isa SetParameter, has node_name "velocity_smoother", has parameter-value "[0.18, 0.0, 1.0]", has parameter-type "double_array";
+$sp_max_speed_high isa SetParameter, has node_name "velocity_smoother", has parameter-value "[0.26, 0.0, 1.0]", has parameter-type "double_array";
+
+$low_speed_resolution (resolution_action: $sp_max_speed_low) isa variant_resolution, has variant_name "low_speed";
+$med_speed_resolution (resolution_action: $sp_max_speed_med) isa variant_resolution, has variant_name "med_speed";
+$high_speed_resolution (resolution_action: $sp_max_speed_high) isa variant_resolution, has variant_name "high_speed";
+
+$res_rebetmc (tactic: $ta_max_speed, variant_resolution:$low_speed_resolution,  variant_resolution:$med_speed_resolution,  variant_resolution:$high_speed_resolution) isa resolution_model, 
+    has resolution_model_name "rebetmc", has ros_system "nav2";

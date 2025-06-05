@@ -1,0 +1,19 @@
+match
+    $r (tactic:$t, consequent:$c) isa tactic_rule, has rule_valid true;
+    $c has term_name $consequent_name;
+    (tactic:$t, variant_resolution:$vr) isa resolution_model;
+    $vr (resolution_action:$res_action) isa variant_resolution, has variant_name $variant_name;
+    $variant_name == $consequent_name;
+fetch
+    set_parameter_action:{
+        match
+            $res_action isa! SetParameter;
+        fetch
+            $res_action: node_name, parameter-type, parameter-value;
+    };
+    set_lifecycle_action:{
+        match
+            $res_action isa! SetLifecycle;
+        fetch
+            $res_action: node_name, lifecycle-state;
+    };

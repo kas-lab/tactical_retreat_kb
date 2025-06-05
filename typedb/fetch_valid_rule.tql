@@ -1,0 +1,10 @@
+match
+    $r (consequent: $c) isa tactic_rule, has rule_valid true;
+fetch
+    $r: rule_name;
+    $c: attribute;
+    
+#match 
+#    $t isa Term, has term_name $name, has term_value $value;
+#fetch
+#    $t: attribute;
