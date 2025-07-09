@@ -7,13 +7,21 @@ match
 fetch
     set_parameter_action:{
         match
-            $res_action isa! SetParameter;
+            $res_action (node: $node, parameter: $parameter) isa! set_nodes_parameters;
         fetch
-            $res_action: node_name, parameter_name, parameter-type, parameter-value;
+            $node: node_name;
+            $parameter: parameter_name;
+            param_values: {
+                match
+                    $parameter (parameter_value: $parameter_value) isa parameter;
+                fetch
+                  $parameter_value: attribute;
+            };
     };
     set_lifecycle_action:{
         match
-            $res_action isa! SetLifecycle;
+            $res_action (node: $node) isa! set_lifecycle_state;
         fetch
-            $res_action: node_name, lifecycle-state;
+            $node: node_name;
+            $res_action: lifecycle_state;
     };
