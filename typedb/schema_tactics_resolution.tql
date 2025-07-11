@@ -14,6 +14,7 @@ term_name sub name;
 variant_name sub name;
 node_name sub name;
 parameter_name sub name;
+node_name sub name;
 
 tactic_period sub attribute,
     value double;
@@ -32,10 +33,10 @@ rule_valid sub attribute,
 term sub attribute,
     value string;
 
-lhs-term sub attribute,
+lhs_term sub attribute,
     value string;
 
-rhs-term sub attribute,
+rhs_term sub attribute,
     value string;
 
 operator sub attribute,
@@ -45,14 +46,21 @@ operator sub attribute,
 term_value sub attribute,
     value double;
 
-parameter-value sub attribute,
-    value string;
-    
-parameter-type sub attribute,
-    value string,
-    regex "^(boolean|boolean_array|double|double_array|long|long_array|string|string_array)$";
+# parameter value index
+parameter_value_index sub attribute,
+    value long;
 
-lifecycle-state sub attribute,
+### Follows ROS2 ParameterValue name convention: https://docs.ros2.org/foxy/api/rcl_interfaces/msg/ParameterValue.html
+bool_value sub attribute,
+    value boolean;
+integer_value sub attribute,
+    value long;
+double_value sub attribute,
+    value double;
+string_value sub attribute,
+    value string;
+
+lifecycle_state sub attribute,
     value string,
     regex "^(unconfigured|inactive|active|finalized)$";
 
@@ -94,6 +102,22 @@ variant_resolution sub relation,
     relates resolution_action,
     plays resolution_model:variant_resolution;
 
+resolution_action sub relation,
+    abstract,
+    relates node,
+    plays variant_resolution:resolution_action;
+
+set_nodes_parameters sub resolution_action,
+    relates parameter;
+    
+set_lifecycle_state sub resolution_action,
+    owns lifecycle_state;
+
+parameter sub relation,
+    owns parameter_name,
+    relates parameter_value,
+    plays set_nodes_parameters:parameter;
+
 ### Entities
 Tactic sub entity,
     owns tactic_name @key,
@@ -108,18 +132,23 @@ Term sub entity,
     plays inequality_expression:lhs_term,
     plays inequality_expression:rhs_term;
 
-ResolutionAction sub entity,
-    abstract,
-    owns node_name,
-    plays variant_resolution:resolution_action;
+ROSNode sub entity,
+    owns node_name @key,
+    plays resolution_action:node;
 
-SetParameter sub ResolutionAction,
-    owns parameter_name,
-    owns parameter-value,
-    owns parameter-type;
-    
-SetLifecycle sub ResolutionAction,
-    owns lifecycle-state;
+ParameterValue sub entity,
+    abstract,
+    owns parameter_value_index,
+    plays parameter:parameter_value;
+
+ParameterBool sub ParameterValue,
+    owns bool_value;
+ParameterInteger sub ParameterValue,
+    owns integer_value;
+ParameterDouble sub ParameterValue,
+    owns double_value;
+ParameterString sub ParameterValue,
+    owns string_value;
 
 # rules
 rule tactic_rule_valid:

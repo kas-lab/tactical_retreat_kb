@@ -1,5 +1,6 @@
 insert 
-    
+
+# define MaxSpeedInternal Tactic    
 $ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal", has tactic_period 1.0;
 
 $t_nearest_object_close isa Term, has term_name "nearest_object_close", has term_value 10;
@@ -9,7 +10,6 @@ $t_measured_nearest_object isa Term, has term_name "t_measured_nearest_object";
 $t_movement_power_low isa Term, has term_name "t_movement_power_low", has term_value 39;
 $t_movement_power_high isa Term, has term_name "t_movement_power_high", has term_value 40;
 $t_measured_movement_power isa Term, has term_name "t_measured_movement_power";
-
 
 $t_variant_low_speed isa Term, has term_name "low_speed";
 $t_variant_med_speed isa Term, has term_name "med_speed";
@@ -28,10 +28,28 @@ $tatic_rule_min (tactic:$ta_max_speed, antecedent:$or_expression, consequent:$t_
 $tatic_rule_max (tactic:$ta_max_speed, antecedent:$and_expression, consequent:$t_variant_high_speed ) isa tactic_rule, has rule_name "MAX";
 $tatic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15, consequent:$t_variant_med_speed ) isa tactic_rule, has rule_name "MED";
 
-$sp_max_speed_low isa SetParameter, has node_name "velocity_smoother", has parameter_name "max_velocity", has parameter-value "[0.10, 0.0, 1.0]", has parameter-type "double_array";
-$sp_max_speed_med isa SetParameter, has node_name "velocity_smoother", has parameter_name "max_velocity", has parameter-value "[0.18, 0.0, 1.0]", has parameter-type "double_array";
-$sp_max_speed_high isa SetParameter, has node_name "velocity_smoother", has parameter_name "max_velocity", has parameter-value "[0.26, 0.0, 1.0]", has parameter-type "double_array";
+# define ROSNodes
+$velocity_smoother_node isa ROSNode, has node_name "velocity_smoother";
 
+# define parameter values
+$p_max_velocity_x_low isa ParameterDouble, has parameter_value_index 0, has double_value 0.10;
+$p_max_velocity_x_med isa ParameterDouble, has parameter_value_index 0, has double_value 0.18;
+$p_max_velocity_x_high isa ParameterDouble, has parameter_value_index 0, has double_value 0.26;
+
+$p_max_velocity_y isa ParameterDouble, has parameter_value_index 1, has double_value 0.0;
+$p_max_velocity_z isa ParameterDouble, has parameter_value_index 2, has double_value 1.0;
+
+# define parameter
+$p_max_speed_low (parameter_value: $p_max_velocity_x_low, parameter_value: $p_max_velocity_y, parameter_value: $p_max_velocity_z) isa parameter, has parameter_name "max_velocity";
+$p_max_speed_med (parameter_value: $p_max_velocity_x_med, parameter_value: $p_max_velocity_y, parameter_value: $p_max_velocity_z) isa parameter, has parameter_name "max_velocity";
+$p_max_speed_high (parameter_value: $p_max_velocity_x_high, parameter_value: $p_max_velocity_y, parameter_value: $p_max_velocity_z) isa parameter, has parameter_name "max_velocity";
+
+# define set nodes parameter actions
+$sp_max_speed_low (node: $velocity_smoother_node, parameter: $p_max_speed_low) isa set_nodes_parameters;
+$sp_max_speed_med (node: $velocity_smoother_node, parameter: $p_max_speed_med) isa set_nodes_parameters;
+$sp_max_speed_high (node: $velocity_smoother_node, parameter: $p_max_speed_high) isa set_nodes_parameters;
+
+# define variant resolutions
 $low_speed_resolution (resolution_action: $sp_max_speed_low) isa variant_resolution, has variant_name "low_speed";
 $med_speed_resolution (resolution_action: $sp_max_speed_med) isa variant_resolution, has variant_name "med_speed";
 $high_speed_resolution (resolution_action: $sp_max_speed_high) isa variant_resolution, has variant_name "high_speed";
