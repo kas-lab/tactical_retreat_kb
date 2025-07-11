@@ -98,8 +98,8 @@ resolution_model sub relation,
     relates variant_resolution;
 
 variant_resolution sub relation,
-    owns variant_name @key,
     relates resolution_action,
+    relates variant,
     plays resolution_model:variant_resolution;
 
 resolution_action sub relation,
@@ -117,6 +117,11 @@ parameter sub relation,
     owns parameter_name,
     relates parameter_value,
     plays set_nodes_parameters:parameter;
+
+at_index sub relation,
+    owns parameter_value_index,
+    relates parameter_array,
+    relates parameter_value;
 
 ### Entities
 Tactic sub entity,
@@ -137,8 +142,11 @@ ROSNode sub entity,
 
 ParameterValue sub entity,
     abstract,
-    owns parameter_value_index,
-    plays parameter:parameter_value;
+    plays parameter:parameter_value,
+    plays at_index:parameter_value;
+
+ParameterArray sub ParameterValue,
+    plays at_index:parameter_array;
 
 ParameterBool sub ParameterValue,
     owns bool_value;

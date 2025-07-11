@@ -33,6 +33,7 @@ Feature sub entity,
     owns feature_selected,
     owns leaf_feature,
     plays tactic_rule:consequent,
+    plays variant_resolution:variant,
     plays feature_hierarchy:parent,
     plays feature_hierarchy:child,
     plays cross_tree_constraint:feature;
