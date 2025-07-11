@@ -128,7 +128,6 @@ Tactic sub entity,
 Term sub entity,
     owns term_value,
     owns term_name,
-    plays tactic_rule:consequent,
     plays inequality_expression:lhs_term,
     plays inequality_expression:rhs_term;
 

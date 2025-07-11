@@ -21,7 +21,8 @@ alternative sub feature_hierarchy;
 or_group sub feature_hierarchy;
 
 cross_tree_constraint sub relation,
-    relates feature;
+    relates feature,
+    relates dependency;
 
 excludes_constraint sub cross_tree_constraint;
 requires_constraint sub cross_tree_constraint;
@@ -31,6 +32,7 @@ Feature sub entity,
     owns feature_name @key,
     owns feature_selected,
     owns leaf_feature,
+    plays tactic_rule:consequent,
     plays feature_hierarchy:parent,
     plays feature_hierarchy:child,
     plays cross_tree_constraint:feature;
