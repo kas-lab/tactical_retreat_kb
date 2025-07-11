@@ -1,3 +1,8 @@
+match
+    $f_low_speed isa Feature, has feature_name "LOW_SPEED";
+    $f_med_speed isa Feature, has feature_name "MED_SPEED";
+    $f_hi_speed isa Feature, has feature_name "HIGH_SPEED";
+
 insert 
 
 # define MaxSpeedInternal Tactic    
@@ -6,11 +11,14 @@ $ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal", has tactic_period 
 $t_measured_nearest_object isa Term, has term_name "t_measured_nearest_object";
 $t_measured_movement_power isa Term, has term_name "t_measured_movement_power";
 
+
 # define ROSNodes
 $velocity_smoother_node isa ROSNode, has node_name "velocity_smoother";
 
 $t_variant_low_speed isa Term, has term_name "LOW_SPEED";
 $t_nearest_object_close isa Term, has term_name "nearest_object_close", has term_value 0.1;
+
+
 $ineq_nearest_lower_than_10 (lhs_term:$t_measured_nearest_object, rhs_term: $t_nearest_object_close) isa inequality_expression, has operator "<";
 $t_movement_power_high isa Term, has term_name "t_movement_power_high", has term_value 40.0;
 $ineq_mv_pwer_greater_than_40  (lhs_term:$t_measured_movement_power, rhs_term: $t_movement_power_high) isa inequality_expression, has operator ">";
@@ -29,7 +37,9 @@ $tactic_rule_max (tactic:$ta_max_speed, antecedent:$and_expression, consequent:$
 $t_variant_med_speed isa Term, has term_name "MED_SPEED";
 $tactic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15, consequent:$t_variant_med_speed ) isa tactic_rule, has rule_name "MED";
 
-
+$tatic_rule_min (tactic:$ta_max_speed, antecedent:$or_expression, consequent:$f_low_speed ) isa tactic_rule, has rule_name "MIN";
+$tatic_rule_max (tactic:$ta_max_speed, antecedent:$and_expression, consequent:$f_hi_speed ) isa tactic_rule, has rule_name "MAX";
+$tatic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15, consequent:$f_med_speed ) isa tactic_rule, has rule_name "MED";
 
 # define parameter values
 $p_max_velocity_x_low isa ParameterDouble, has parameter_value_index 0, has double_value 0.10;
