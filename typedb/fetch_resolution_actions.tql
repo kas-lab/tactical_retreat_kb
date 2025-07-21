@@ -5,18 +5,17 @@ match
 fetch
     set_parameter_action:{
         match
-            $res_action (node: $node, parameter: $parameter) isa! set_nodes_parameters;
+            $res_action (node: $node, parameter: $parameter, parameter_value: $parameter_value) isa! set_nodes_parameters;
         fetch
             $node: node_name;
             $parameter: parameter_name;
             param_values: {
                 match
-                    $parameter (parameter_value: $parameter_value) isa parameter;                      
                     $parameter_value isa! ParameterArray;
                     $index (parameter_array: $parameter_value, parameter_value: $value) isa at_index;
                 fetch
-                  $index: parameter_value_index;
-                  $value: attribute;
+                    $index: parameter_value_index;
+                    $value: attribute;
             };
     };
     set_lifecycle_action:{
