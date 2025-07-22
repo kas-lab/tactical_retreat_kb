@@ -1,0 +1,88 @@
+define
+
+## Attributes
+
+package sub attribute,
+    value string;
+
+executable sub attribute,
+    value string;
+
+node_name sub attribute,
+    value string;
+
+topic_type sub attribute,
+    value string;
+
+service_type sub attribute,
+    value string;
+
+topic_name sub attribute,
+    value string;
+
+service_name sub attribute,
+    value string;
+
+namespace sub attribute,
+    value string;
+
+### QoS attributes
+
+reliabilty sub attribute,
+    value string;  # TODO: add regex with allowed values
+history sub attribute,
+    value string;
+depth sub attribute,
+    value long;
+durability sub attribute,
+    value string;
+deadline sub attribute,
+    value double;
+lifespan sub attribute,
+    value double;
+liveliness sub attribute,
+    value string; 
+lease_duration sub attribute,
+    value double;
+
+## Entities
+
+ROSNode sub entity,
+    owns node_name @key, 
+    owns package,
+    owns executable,
+    owns namespace,
+    plays ros_topic:publisher,
+    plays ros_topic:subscriber;
+
+LifeCycleNode sub ROSNode;
+
+QoSProfile sub entity,
+    owns reliabilty,
+    owns history,
+    owns depth,
+    owns durability,
+    owns deadline,
+    owns lifespan,
+    owns liveliness, 
+    owns lease_duration;
+
+## Relations
+ros_interface sub relation,
+    abstract;
+
+ros_topic sub ros_interface,
+    owns topic_type,
+    owns topic_name,
+    relates publisher,
+    relates subscriber;
+
+ros_service sub ros_interface,
+    owns service_name,
+    owns service_type,
+    relates server,
+    relates client;
+
+ros_action sub ros_interface,
+    relates server,
+    relates client;

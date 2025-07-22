@@ -1,0 +1,5 @@
+insert
+
+$velocity_smoother isa LifeCycleNode, has node_name "velocity_smoother", has package "nav2", has executable "velocity_smoother";
+
+$cmd_vel_topic (publisher: $velocity_smoother) isa ros_topic, has topic_type "geometry_msgs/msg/Twist", has topic_name "/cmd/vel";
