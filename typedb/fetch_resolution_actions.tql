@@ -1,9 +1,9 @@
 match
-    $r (tactic:$t, consequent:$c) isa tactic_rule, has rule_valid true;
-    $c has term_name $consequent_name;
+    $r (tactic:$t, consequent:$f) isa tactic_rule, has rule_valid true;
+    $f has feature_name $feature_name;
     (tactic:$t, variant_resolution:$vr) isa resolution_model;
     $vr (resolution_action:$res_action) isa variant_resolution, has variant_name $variant_name;
-    $variant_name == $consequent_name;
+    $variant_name == $feature_name;
 fetch
     set_parameter_action:{
         match

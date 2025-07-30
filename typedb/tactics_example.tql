@@ -15,27 +15,18 @@ $t_measured_movement_power isa Term, has term_name "t_measured_movement_power";
 # define ROSNodes
 $velocity_smoother_node isa ROSNode, has node_name "velocity_smoother";
 
-$t_variant_low_speed isa Term, has term_name "LOW_SPEED";
 $t_nearest_object_close isa Term, has term_name "nearest_object_close", has term_value 0.1;
-
 
 $ineq_nearest_lower_than_10 (lhs_term:$t_measured_nearest_object, rhs_term: $t_nearest_object_close) isa inequality_expression, has operator "<";
 $t_movement_power_high isa Term, has term_name "t_movement_power_high", has term_value 40.0;
 $ineq_mv_pwer_greater_than_40  (lhs_term:$t_measured_movement_power, rhs_term: $t_movement_power_high) isa inequality_expression, has operator ">";
 $or_expression (expression:$ineq_nearest_lower_than_10, expression:$ineq_mv_pwer_greater_than_40) isa or_expression;
-$tactic_rule_min (tactic:$ta_max_speed, antecedent:$or_expression, consequent:$t_variant_low_speed ) isa tactic_rule, has rule_name "MIN";
 
-$t_variant_high_speed isa Term, has term_name "HI_SPEED";
 $t_nearest_object_far isa Term, has term_name "nearest_object_far", has term_value 0.15;
 $ineq_nearest_greater_than_15 (lhs_term:$t_measured_nearest_object, rhs_term: $t_nearest_object_far) isa inequality_expression, has operator ">";
 $t_movement_power_low isa Term, has term_name "t_movement_power_low", has term_value 39.0;
 $ineq_mv_pwer_lower_than_39  (lhs_term:$t_measured_movement_power, rhs_term: $t_movement_power_low) isa inequality_expression, has operator "<";
 $and_expression (expression:$ineq_nearest_greater_than_15, expression:$ineq_mv_pwer_lower_than_39) isa and_expression;
-$tactic_rule_max (tactic:$ta_max_speed, antecedent:$and_expression, consequent:$t_variant_high_speed ) isa tactic_rule, has rule_name "MAX";
-
-
-$t_variant_med_speed isa Term, has term_name "MED_SPEED";
-$tactic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15, consequent:$t_variant_med_speed ) isa tactic_rule, has rule_name "MED";
 
 $tatic_rule_min (tactic:$ta_max_speed, antecedent:$or_expression, consequent:$f_low_speed ) isa tactic_rule, has rule_name "MIN";
 $tatic_rule_max (tactic:$ta_max_speed, antecedent:$and_expression, consequent:$f_hi_speed ) isa tactic_rule, has rule_name "MAX";
@@ -60,9 +51,9 @@ $sp_max_speed_med (node: $velocity_smoother_node, parameter: $p_max_speed_med) i
 $sp_max_speed_high (node: $velocity_smoother_node, parameter: $p_max_speed_high) isa set_nodes_parameters;
 
 # define variant resolutions
-$low_speed_resolution (resolution_action: $sp_max_speed_low) isa variant_resolution, has variant_name "low_speed";
-$med_speed_resolution (resolution_action: $sp_max_speed_med) isa variant_resolution, has variant_name "med_speed";
-$high_speed_resolution (resolution_action: $sp_max_speed_high) isa variant_resolution, has variant_name "high_speed";
+$low_speed_resolution (resolution_action: $sp_max_speed_low) isa variant_resolution, has variant_name "LOW_SPEED";
+$med_speed_resolution (resolution_action: $sp_max_speed_med) isa variant_resolution, has variant_name "MED_SPEED";
+$high_speed_resolution (resolution_action: $sp_max_speed_high) isa variant_resolution, has variant_name "HIGH_SPEED";
 
 $res_rebetmc (tactic: $ta_max_speed, variant_resolution:$low_speed_resolution,  variant_resolution:$med_speed_resolution,  variant_resolution:$high_speed_resolution) isa resolution_model, 
     has resolution_model_name "rebetmc", has ros_system "nav2";
