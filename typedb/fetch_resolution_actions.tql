@@ -1,21 +1,21 @@
 match
-    $r (tactic:$t, consequent:$f) isa tactic_rule, has rule_valid true;
-    $f has feature_name $feature_name;
+    $r (tactic:$t, consequent:$c) isa tactic_rule, has rule_valid true;
     (tactic:$t, variant_resolution:$vr) isa resolution_model;
-    $vr (resolution_action:$res_action) isa variant_resolution, has variant_name $variant_name;
-    $variant_name == $feature_name;
+    $vr (resolution_action:$res_action, variant: $c) isa variant_resolution;
 fetch
     set_parameter_action:{
         match
-            $res_action (node: $node, parameter: $parameter) isa! set_nodes_parameters;
+            $res_action (node: $node, parameter: $parameter, parameter_value: $parameter_value) isa! set_nodes_parameters;
         fetch
             $node: node_name;
             $parameter: parameter_name;
             param_values: {
                 match
-                    $parameter (parameter_value: $parameter_value) isa parameter;
+                    $parameter_value isa! ParameterArray;
+                    $index (parameter_array: $parameter_value, parameter_value: $value) isa at_index;
                 fetch
-                  $parameter_value: attribute;
+                    $index: parameter_value_index;
+                    $value: attribute;
             };
     };
     set_lifecycle_action:{
