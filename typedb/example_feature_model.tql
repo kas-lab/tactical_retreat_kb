@@ -1,0 +1,10 @@
+insert 
+
+$f_max_speed isa Feature, has feature_name "MAX_SPEED", has feature_mandatory true;
+
+$f_low_speed isa Feature, has feature_name "LOW_SPEED";
+$f_med_speed isa Feature, has feature_name "MED_SPEED";
+$f_hi_speed isa Feature, has feature_name "HIGH_SPEED";
+$alternative (parent: $f_max_speed, child: $f_low_speed, child: $f_med_speed, child: $f_hi_speed) isa alternative;
+
+
