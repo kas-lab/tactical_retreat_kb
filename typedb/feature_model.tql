@@ -10,13 +10,14 @@ feature_selected sub attribute,
 leaf_feature sub attribute,
     value boolean;
 
+feature_mandatory sub attribute,
+    value boolean;
+
 # Relations
 feature_hierarchy sub relation,
     relates parent,
     relates child;
     
-mandatory sub feature_hierarchy;
-optional sub feature_hierarchy;
 alternative sub feature_hierarchy;
 or_group sub feature_hierarchy;
 
@@ -31,6 +32,7 @@ requires_constraint sub cross_tree_constraint;
 Feature sub entity,
     owns feature_name @key,
     owns feature_selected,
+    owns feature_mandatory,
     owns leaf_feature,
     plays tactic_rule:consequent,
     plays variant_resolution:variant,

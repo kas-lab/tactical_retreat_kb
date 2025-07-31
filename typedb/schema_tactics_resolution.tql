@@ -166,17 +166,19 @@ rule tactic_rule_valid:
         $tr has rule_valid true;
     };
 
-rule and_epression_valid:
+rule and_expression_valid:
     when {
         $and_exp (expression: $e) isa and_expression;
+        $e has expression_valid true;
         not {
-            $e has expression_valid false;  
+            $and_exp (expression: $invalid_e) isa and_expression;
+            $invalid_e has expression_valid false;
         };
     } then {
-        $and_exp has expression_valid true; # will return true when there is no measured values
+        $and_exp has expression_valid true;
     };
 
-rule or_epression_valid:
+rule or_expression_valid:
     when {
         $or_exp (expression: $e) isa or_expression;
         $e has expression_valid true;
