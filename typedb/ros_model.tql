@@ -7,12 +7,18 @@ package sub attribute,
     value string;
 executable sub attribute,
     value string;
+lifecycle_state sub attribute,
+    value string;
+
+### Runtime node attributes
 node_name sub attribute,
     value string;
 namespace sub attribute,
     value string;
-lifecycle_state sub attribute,
-    value string;
+start_time sub attribute,
+    value datetime;
+end_time sub attribute,
+    value datetime;
 
 ### ROS interfaces attributes
 topic_type sub attribute,
@@ -76,17 +82,16 @@ string_array_value sub attribute,
 ## Entities
 
 ROSNode sub entity,
-    owns node_name @key, 
     owns package,
     owns executable,
-    owns namespace,
     plays ros_topic:publisher,
     plays ros_topic:subscriber,
     plays ros_service:server,
     plays ros_service:client,
     plays ros_action:server,
     plays ros_action:client,
-    plays has_parameter:node;
+    plays has_parameter:node,
+    plays runtime_node:node;
 
 LifeCycleNode sub ROSNode,
     owns lifecycle_state;
@@ -150,3 +155,10 @@ ros_action sub ros_interface,
 has_parameter sub relation,
     relates node,
     relates parameter;
+
+runtime_node sub relation,
+    owns node_name @key,
+    owns namespace,
+    owns start_time,
+    owns end_time,
+    relates node;
