@@ -12,9 +12,6 @@ tactic_name sub name;
 rule_name sub name;
 term_name sub name;
 variant_name sub name;
-node_name sub name;
-parameter_name sub name;
-node_name sub name;
 
 tactic_period sub attribute,
     value double;
@@ -45,24 +42,6 @@ operator sub attribute,
 
 term_value sub attribute,
     value double;
-
-# parameter value index
-parameter_value_index sub attribute,
-    value long;
-
-### Follows ROS2 ParameterValue name convention: https://docs.ros2.org/foxy/api/rcl_interfaces/msg/ParameterValue.html
-bool_value sub attribute,
-    value boolean;
-integer_value sub attribute,
-    value long;
-double_value sub attribute,
-    value double;
-string_value sub attribute,
-    value string;
-
-lifecycle_state sub attribute,
-    value string,
-    regex "^(unconfigured|inactive|active|finalized)$";
 
 ### Relations
 tactic_rule sub relation,
@@ -114,11 +93,6 @@ set_nodes_parameters sub resolution_action,
 set_lifecycle_state sub resolution_action,
     owns lifecycle_state;
 
-at_index sub relation,
-    owns parameter_value_index,
-    relates parameter_array,
-    relates parameter_value;
-
 ### Entities
 Tactic sub entity,
     owns tactic_name @key,
@@ -132,30 +106,11 @@ Term sub entity,
     plays inequality_expression:lhs_term,
     plays inequality_expression:rhs_term;
 
-ROSNode sub entity,
-    owns node_name @key,
-    plays resolution_action:node;
+ROSNode plays resolution_action:node;
 
-Parameter sub entity,
-    owns parameter_name,
-    plays set_nodes_parameters:parameter;
+Parameter plays set_nodes_parameters:parameter;
 
-ParameterValue sub entity,
-    abstract,
-    plays set_nodes_parameters:parameter_value,
-    plays at_index:parameter_value;
-
-ParameterArray sub ParameterValue,
-    plays at_index:parameter_array;
-
-ParameterBool sub ParameterValue,
-    owns bool_value;
-ParameterInteger sub ParameterValue,
-    owns integer_value;
-ParameterDouble sub ParameterValue,
-    owns double_value;
-ParameterString sub ParameterValue,
-    owns string_value;
+ParameterValue plays set_nodes_parameters:parameter_value;
 
 # rules
 rule tactic_rule_valid:

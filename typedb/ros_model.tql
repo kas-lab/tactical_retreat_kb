@@ -8,7 +8,8 @@ package sub attribute,
 executable sub attribute,
     value string;
 lifecycle_state sub attribute,
-    value string;
+    value string,
+    regex "^(unconfigured|inactive|active|finalized)$";
 
 ### Runtime node attributes
 node_name sub attribute,
@@ -61,6 +62,10 @@ lease_duration sub attribute,
 parameter_name sub attribute,
     value string;
 
+default_value sub attribute,
+    value boolean;
+
+### Follows ROS2 ParameterValue name convention: https://docs.ros2.org/foxy/api/rcl_interfaces/msg/ParameterValue.html
 bool_value sub attribute,
     value boolean;
 integer_value sub attribute,
@@ -70,14 +75,9 @@ double_value sub attribute,
 string_value sub attribute,
     value string;
 
-bool_array_value sub attribute,
-    value string;
-integer_array_value sub attribute,
-    value string;
-double_array_value sub attribute,
-    value string;
-string_array_value sub attribute,
-    value string;
+### parameter value index
+parameter_value_index sub attribute,
+    value long;
 
 ## Entities
 
@@ -91,6 +91,7 @@ ROSNode sub entity,
     plays ros_action:server,
     plays ros_action:client,
     plays has_parameter:node,
+    plays has_parameter_value:node,
     plays runtime_node:node;
 
 LifeCycleNode sub ROSNode,
@@ -109,25 +110,35 @@ QoSProfile sub entity,
 
 Parameter sub entity,
     owns parameter_name,
-    plays has_parameter:parameter;
+    plays has_parameter:parameter,
+    plays has_parameter_value:parameter;
 
-ParameterBool sub Parameter,
+ParameterBool sub Parameter;
+ParameterInteger sub Parameter;
+ParameterDouble sub Parameter;
+ParameterString sub Parameter;
+
+ParameterBoolArray sub Parameter;
+ParameterIntegerArray sub Parameter;
+ParameterStringArray sub Parameter;
+ParameterDoubleArray sub Parameter;
+
+ParameterValue sub entity,
+    abstract,
+    plays at_index:parameter_value,
+    plays has_parameter_value:parameter_value;
+
+ParameterValueBool sub ParameterValue,
     owns bool_value;
-ParameterInteger sub Parameter,
+ParameterValueInteger sub ParameterValue,
     owns integer_value;
-ParameterDouble sub Parameter,
+ParameterValueDouble sub ParameterValue,
     owns double_value;
-ParameterString sub Parameter,
+ParameterValueString sub ParameterValue,
     owns string_value;
 
-ParameterBoolArray sub Parameter,
-    owns bool_array_value;
-ParameterIntegerArray sub Parameter,
-    owns integer_array_value;
-ParameterDoubleArray sub Parameter,
-    owns double_array_value;
-ParameterStringArray sub Parameter,
-    owns string_array_value;
+ParameterValueArray sub ParameterValue,
+    plays at_index:parameter_array;
 
 ## Relations
 ros_interface sub relation,
@@ -155,6 +166,17 @@ ros_action sub ros_interface,
 has_parameter sub relation,
     relates node,
     relates parameter;
+
+has_parameter_value sub relation,
+    owns default_value,
+    relates node,
+    relates parameter,
+    relates parameter_value;
+
+at_index sub relation,
+    owns parameter_value_index,
+    relates parameter_array,
+    relates parameter_value;
 
 runtime_node sub relation,
     owns node_name @key,
