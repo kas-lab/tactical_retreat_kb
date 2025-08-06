@@ -1,5 +1,59 @@
 insert
 
+## Define ROS nodes
+
+### Mirte exemplar nodes
+$mirte_bt_node isa LifeCycleNode, 
+	has package "mirte_exemplar", 
+	has executable "mirte_bt";
+
+### Nav2 nodes
+$amcl_node isa LifeCycleNode, 
+	has package "nav2_amcl", 
+	has executable "amcl";
+
+$behavior_server_node isa LifeCycleNode, 
+	has package "nav2_behaviors", 
+	has executable "behavior_server";
+
+$bt_navigator_node isa LifeCycleNode, 
+	has package "nav2_bt_navigator", 
+	has executable "bt_navigator";
+
+$controller_server_node isa LifeCycleNode, 
+	has package "nav2_controller", 
+	has executable "controller_server";
+
+$map_server_node isa LifeCycleNode, 
+	has package "nav2_map_server", 
+	has executable "nav2_map_server";
+
+$planner_server_node isa LifeCycleNode, 
+	has package "nav2_planner", 
+	has executable "planner_server";
+
+$smoother_server_node isa LifeCycleNode, 
+	has package "nav2_smoother", 
+	has executable "smoother_server";
+
+$velocity_smoother_node isa LifeCycleNode, 
+	has package "nav2_velocity_smoother", 
+	has executable "velocity_smoother";
+
+$relay_node isa ROSNode,
+	has package "topic_tools",
+	has executable "relay";
+
+## How to model these nodes?
+# /bt_navigator_navigate_through_poses_rclcpp_node
+# /bt_navigator_navigate_to_pose_rclcpp_node
+# /controller_manager Where is this node launched from?
+# /global_costmap/global_costmap [LifeCycle] Where is this node launched from?
+# /local_costmap/local_costmap [LifeCycle] Where is this node launched from?
+
+## Define parameters
+
+### velocity_smoother_node parameters
 $max_velocity_param isa ParameterDoubleArray,
 	has parameter_name "parameter_name";
 
@@ -9,12 +63,8 @@ $odom_topic_param isa ParameterString,
 $odom_duration_param isa ParameterDouble,
 	has parameter_name "odom_duration";
 
-$velocity_smoother isa LifeCycleNode, 
-	has package "nav2_velocity_smoother", 
-	has executable "velocity_smoother";
-
 $velocity_smoother_parameters (
-	node: $velocity_smoother, 
+	node: $velocity_smoother_node, 
 	parameter:$max_velocity_param,
 	parameter:$odom_topic_param,
 	parameter:$odom_duration_param) isa has_parameter;
@@ -32,23 +82,22 @@ $default_max_velocity_array_y (parameter_array: $default_max_velocity_param_valu
 $default_max_velocity_array_z (parameter_array: $default_max_velocity_param_value, parameter_value: $default_max_velocity_z) 
 	isa at_index, has parameter_value_index 2;
 
-(node: $velocity_smoother, parameter: $max_velocity_param, parameter_value: $default_max_velocity_param_value) 
+(node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $default_max_velocity_param_value) 
 	isa has_parameter_value, has default_value true;
 
 # default param odom_topic
 $default_odom_topic isa ParameterValueString, has string_value "/odom";
-(node: $velocity_smoother, parameter: $odom_topic_param, parameter_value: $default_odom_topic) 
+(node: $velocity_smoother_node, parameter: $odom_topic_param, parameter_value: $default_odom_topic) 
 	isa has_parameter_value, has default_value true;
 
 # default odom duration
 $default_odom_duration isa ParameterValueDouble, has double_value 1.0;
-(node: $velocity_smoother, parameter: $odom_duration_param, parameter_value: $default_odom_duration) 
+(node: $velocity_smoother_node, parameter: $odom_duration_param, parameter_value: $default_odom_duration) 
 	isa has_parameter_value, has default_value true;
 
-$relay_node isa ROSNode,
-	has package "topic_tools",
-	has executable "relay";
+## Define ROS topics 
 
+### cmd_vel
 $cmd_vel_vs_qos isa QoSProfile, 
 	has reliabilty "RELIABLE",
 	has history "KEEP_LAST",
@@ -59,11 +108,29 @@ $cmd_vel_vs_qos isa QoSProfile,
 	has liveliness "AUTOMATIC",
 	has lease_duration 0.0;
 
-$cmd_vel_topic (publisher: $velocity_smoother, subscriber: $relay_node, qos: $cmd_vel_vs_qos) 
+# there are 5 behavior_server nodes subscribing to this topic
+$cmd_vel_topic (
+	publisher: $velocity_smoother_node,
+	subscriber: $behavior_server_node,
+	subscriber: $relay_node, 
+	qos: $cmd_vel_vs_qos) 
 	isa ros_topic, 
 	has topic_type "geometry_msgs/msg/Twist", 
-	has topic_name "/cmd/vel";
+	has topic_name "/cmd_vel";
+
+## Define ROS services
+
+## Define ROS actions
+
+# strangely, the bt_navigator_node is both the server and client.
+# I guess we need to add a node to represent mirte's task decision layer, which will be a client here as well
+# for now, I will add a mirte_bt_node for this 
+(server: $bt_navigator_node, 
+client: $bt_navigator_node,
+client: $mirte_bt_node) isa ros_action, 
+	has action_name "/navigate_to_pose", has action_type "nav2_msgs/action/NavigateToPose";
+
 
 ## runtime node examples
-(node: $velocity_smoother) isa runtime_node, has node_name "velocity_smoother", has namespace "", has start_time 2025-08-06T10:56:12.111;
+(node: $velocity_smoother_node) isa runtime_node, has node_name "velocity_smoother", has namespace "", has start_time 2025-08-06T10:56:12.111;
 (node: $relay_node) isa runtime_node, has node_name "relay_node_cmd_vel", has namespace "", has start_time 2025-08-06T10:57:56.666;
