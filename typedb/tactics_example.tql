@@ -1,58 +1,82 @@
 insert 
 
+# define Feature Model
+$f_max_speed isa Feature, has feature_name "MAX_SPEED";
+$f_low_speed isa Feature, has feature_name "LOW_SPEED";
+$f_hi_speed isa Feature, has feature_name "HIGH_SPEED";
+$f_med_speed isa Feature, has feature_name "MED_SPEED";
+$alternative (parent: $f_max_speed, child: $f_low_speed, child: $f_med_speed, child: $f_hi_speed) isa alternative;
+
 # define MaxSpeedInternal Tactic    
 $ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal", has tactic_period 1.0;
 
 $t_measured_nearest_object isa Term, has term_name "t_measured_nearest_object";
 $t_measured_movement_power isa Term, has term_name "t_measured_movement_power";
 
+
 # define ROSNodes
 $velocity_smoother_node isa ROSNode, has node_name "velocity_smoother";
 
-$t_variant_low_speed isa Term, has term_name "LOW_SPEED";
 $t_nearest_object_close isa Term, has term_name "nearest_object_close", has term_value 0.1;
+
 $ineq_nearest_lower_than_10 (lhs_term:$t_measured_nearest_object, rhs_term: $t_nearest_object_close) isa inequality_expression, has operator "<";
 $t_movement_power_high isa Term, has term_name "t_movement_power_high", has term_value 40.0;
 $ineq_mv_pwer_greater_than_40  (lhs_term:$t_measured_movement_power, rhs_term: $t_movement_power_high) isa inequality_expression, has operator ">";
 $or_expression (expression:$ineq_nearest_lower_than_10, expression:$ineq_mv_pwer_greater_than_40) isa or_expression;
-$tactic_rule_min (tactic:$ta_max_speed, antecedent:$or_expression, consequent:$t_variant_low_speed ) isa tactic_rule, has rule_name "MIN";
 
-$t_variant_high_speed isa Term, has term_name "HI_SPEED";
 $t_nearest_object_far isa Term, has term_name "nearest_object_far", has term_value 0.15;
 $ineq_nearest_greater_than_15 (lhs_term:$t_measured_nearest_object, rhs_term: $t_nearest_object_far) isa inequality_expression, has operator ">";
 $t_movement_power_low isa Term, has term_name "t_movement_power_low", has term_value 39.0;
 $ineq_mv_pwer_lower_than_39  (lhs_term:$t_measured_movement_power, rhs_term: $t_movement_power_low) isa inequality_expression, has operator "<";
 $and_expression (expression:$ineq_nearest_greater_than_15, expression:$ineq_mv_pwer_lower_than_39) isa and_expression;
-$tactic_rule_max (tactic:$ta_max_speed, antecedent:$and_expression, consequent:$t_variant_high_speed ) isa tactic_rule, has rule_name "MAX";
+
+$tatic_rule_min (tactic:$ta_max_speed, antecedent:$or_expression, consequent:$f_low_speed ) isa tactic_rule, has rule_name "MIN";
+$tatic_rule_max (tactic:$ta_max_speed, antecedent:$and_expression, consequent:$f_hi_speed ) isa tactic_rule, has rule_name "MAX";
+$tatic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15, consequent:$f_med_speed ) isa tactic_rule, has rule_name "MED";
+
+# define parameter max_speed
+$p_max_speed isa Parameter, has parameter_name "max_velocity";
+
+# define parameter values low
+$p_max_velocity_x_low isa ParameterDouble, has double_value 0.10;
+$p_max_velocity_y_low isa ParameterDouble, has double_value 0.0;
+$p_max_velocity_z_low isa ParameterDouble, has double_value 1.0;
+# define parameter array low
+$p_max_speed_low_array isa ParameterArray;
+$p_max_speed_low_array_0 (parameter_array: $p_max_speed_low_array, parameter_value: $p_max_velocity_x_low) isa at_index, has parameter_value_index 0;
+$p_max_speed_low_array_1 (parameter_array: $p_max_speed_low_array, parameter_value: $p_max_velocity_y_low) isa at_index, has parameter_value_index 1;
+$p_max_speed_low_array_2 (parameter_array: $p_max_speed_low_array, parameter_value: $p_max_velocity_z_low) isa at_index, has parameter_value_index 2;
 
 
-$t_variant_med_speed isa Term, has term_name "MED_SPEED";
-$tactic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15, consequent:$t_variant_med_speed ) isa tactic_rule, has rule_name "MED";
+# define parameter values med
+$p_max_velocity_x_med isa ParameterDouble, has double_value 0.18;
+$p_max_velocity_y_med isa ParameterDouble, has double_value 0.0;
+$p_max_velocity_z_med isa ParameterDouble, has double_value 1.0;
+# define parameter array med
+$p_max_speed_med_array isa ParameterArray;
+$p_max_speed_med_array_0 (parameter_array: $p_max_speed_med_array, parameter_value: $p_max_velocity_x_med) isa at_index, has parameter_value_index 0;
+$p_max_speed_med_array_1 (parameter_array: $p_max_speed_med_array, parameter_value: $p_max_velocity_y_med) isa at_index, has parameter_value_index 1;
+$p_max_speed_med_array_2 (parameter_array: $p_max_speed_med_array, parameter_value: $p_max_velocity_z_med) isa at_index, has parameter_value_index 2;
 
-
-
-# define parameter values
-$p_max_velocity_x_low isa ParameterDouble, has parameter_value_index 0, has double_value 0.10;
-$p_max_velocity_x_med isa ParameterDouble, has parameter_value_index 0, has double_value 0.18;
-$p_max_velocity_x_high isa ParameterDouble, has parameter_value_index 0, has double_value 0.26;
-
-$p_max_velocity_y isa ParameterDouble, has parameter_value_index 1, has double_value 0.0;
-$p_max_velocity_z isa ParameterDouble, has parameter_value_index 2, has double_value 1.0;
-
-# define parameter
-$p_max_speed_low (parameter_value: $p_max_velocity_x_low, parameter_value: $p_max_velocity_y, parameter_value: $p_max_velocity_z) isa parameter, has parameter_name "max_velocity";
-$p_max_speed_med (parameter_value: $p_max_velocity_x_med, parameter_value: $p_max_velocity_y, parameter_value: $p_max_velocity_z) isa parameter, has parameter_name "max_velocity";
-$p_max_speed_high (parameter_value: $p_max_velocity_x_high, parameter_value: $p_max_velocity_y, parameter_value: $p_max_velocity_z) isa parameter, has parameter_name "max_velocity";
+# define parameter values high
+$p_max_velocity_x_high isa ParameterDouble, has double_value 0.26;
+$p_max_velocity_y_high isa ParameterDouble, has double_value 0.0;
+$p_max_velocity_z_high isa ParameterDouble, has double_value 1.0;
+# define parameter array high
+$p_max_speed_high_array isa ParameterArray;
+$p_max_speed_high_array_0 (parameter_array: $p_max_speed_high_array, parameter_value: $p_max_velocity_x_high) isa at_index, has parameter_value_index 0;
+$p_max_speed_high_array_1 (parameter_array: $p_max_speed_high_array, parameter_value: $p_max_velocity_y_high) isa at_index, has parameter_value_index 1;
+$p_max_speed_high_array_2 (parameter_array: $p_max_speed_high_array, parameter_value: $p_max_velocity_z_high) isa at_index, has parameter_value_index 2;
 
 # define set nodes parameter actions
-$sp_max_speed_low (node: $velocity_smoother_node, parameter: $p_max_speed_low) isa set_nodes_parameters;
-$sp_max_speed_med (node: $velocity_smoother_node, parameter: $p_max_speed_med) isa set_nodes_parameters;
-$sp_max_speed_high (node: $velocity_smoother_node, parameter: $p_max_speed_high) isa set_nodes_parameters;
+$sp_max_speed_low (node: $velocity_smoother_node, parameter: $p_max_speed, parameter_value: $p_max_speed_low_array) isa set_nodes_parameters;
+$sp_max_speed_med (node: $velocity_smoother_node, parameter: $p_max_speed, parameter_value: $p_max_speed_med_array) isa set_nodes_parameters;
+$sp_max_speed_high (node: $velocity_smoother_node, parameter: $p_max_speed, parameter_value: $p_max_speed_high_array) isa set_nodes_parameters;
 
 # define variant resolutions
-$low_speed_resolution (resolution_action: $sp_max_speed_low) isa variant_resolution, has variant_name "low_speed";
-$med_speed_resolution (resolution_action: $sp_max_speed_med) isa variant_resolution, has variant_name "med_speed";
-$high_speed_resolution (resolution_action: $sp_max_speed_high) isa variant_resolution, has variant_name "high_speed";
+$low_speed_resolution (resolution_action: $sp_max_speed_low, variant: $f_low_speed) isa variant_resolution;
+$med_speed_resolution (resolution_action: $sp_max_speed_med, variant: $f_med_speed) isa variant_resolution;
+$high_speed_resolution (resolution_action: $sp_max_speed_high, variant: $f_hi_speed) isa variant_resolution;
 
 $res_rebetmc (tactic: $ta_max_speed, variant_resolution:$low_speed_resolution,  variant_resolution:$med_speed_resolution,  variant_resolution:$high_speed_resolution) isa resolution_model, 
     has resolution_model_name "rebetmc", has ros_system "nav2";
