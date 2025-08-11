@@ -1,7 +1,7 @@
 insert
 
 $max_velocity_param isa ParameterDoubleArray,
-	has parameter_name "parameter_name";
+	has parameter_name "max_velocity";
 
 $odom_topic_param isa ParameterString,
 	has parameter_name "odom_topic";
