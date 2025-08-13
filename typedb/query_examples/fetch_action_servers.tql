@@ -1,0 +1,4 @@
+match
+	(server: $server) isa ros_action, has action_name "/navigate_to_pose";
+fetch
+	$server: attribute;

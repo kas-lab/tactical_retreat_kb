@@ -29,3 +29,10 @@ Start new terminal in the container:
 ```Bash
 docker exec -it rebet bash
 ```
+
+### Test
+
+```Bash
+colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics
+```
+

@@ -1,0 +1,4 @@
+match
+	$node isa ROSNode, has is_active true;
+fetch
+	$node: attribute;
