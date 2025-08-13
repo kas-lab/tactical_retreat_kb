@@ -20,6 +20,12 @@ $bt_navigator_node isa LifeCycleNode,
 	has package "nav2_bt_navigator", 
 	has executable "bt_navigator";
 
+$bt_navigator_navigate_through_poses_rclcpp_node isa ROSNode;
+$bt_navigator_navigate_to_pose_rclcpp_node isa ROSNode;
+(node: $bt_navigator_node,
+subnode: $bt_navigator_navigate_through_poses_rclcpp_node,
+subnode: $bt_navigator_navigate_to_pose_rclcpp_node) isa subnode;
+
 $controller_server_node isa LifeCycleNode, 
 	has package "nav2_controller", 
 	has executable "controller_server";
@@ -45,8 +51,6 @@ $relay_node isa ROSNode,
 	has executable "relay";
 
 ## How to model these nodes?
-# /bt_navigator_navigate_through_poses_rclcpp_node
-# /bt_navigator_navigate_to_pose_rclcpp_node
 # /controller_manager Where is this node launched from?
 # /global_costmap/global_costmap [LifeCycle] Where is this node launched from?
 # /local_costmap/local_costmap [LifeCycle] Where is this node launched from?
@@ -112,11 +116,19 @@ $cmd_vel_vs_qos isa QoSProfile,
 $cmd_vel_topic (
 	publisher: $velocity_smoother_node,
 	subscriber: $behavior_server_node,
-	subscriber: $relay_node, 
-	qos: $cmd_vel_vs_qos) 
-	isa ros_topic, 
-	has topic_type "geometry_msgs/msg/Twist", 
+	subscriber: $relay_node,
+	qos: $cmd_vel_vs_qos)
+	isa ros_topic,
+	has topic_type "geometry_msgs/msg/Twist",
 	has topic_name "/cmd_vel";
+
+$cmd_vel_nav_topic (
+	publisher: $controller_server_node,
+	subscriber: $velocity_smoother_node,
+	qos: $cmd_vel_vs_qos)
+	isa ros_topic,
+	has topic_type "geometry_msgs/msg/Twist",
+	has topic_name "/cmd_vel_nav";
 
 ## Define ROS services
 
@@ -130,7 +142,20 @@ client: $bt_navigator_node,
 client: $mirte_bt_node) isa ros_action, 
 	has action_name "/navigate_to_pose", has action_type "nav2_msgs/action/NavigateToPose";
 
+(client: $bt_navigator_navigate_to_pose_rclcpp_node, server: $planner_server_node) isa ros_action, 
+	has action_name "/compute_path_to_pose", has action_type "nav2_msgs/action/ComputePathToPose";
+
+(client: $bt_navigator_navigate_to_pose_rclcpp_node, server: $controller_server_node) isa ros_action, 
+	has action_name "/follow_path", has action_type "nav2_msgs/action/FollowPath";
+
 
 ## runtime node examples
+(node: $bt_navigator_node) isa runtime_node, has node_name "bt_navigator", has namespace "", has start_time 2025-08-06T10:56:12.111;
+(node: $bt_navigator_navigate_to_pose_rclcpp_node) isa runtime_node, has node_name "bt_navigator_navigate_to_pose_rclcpp", has namespace "", has start_time 2025-08-06T10:56:12.111;
+(node: $bt_navigator_navigate_through_poses_rclcpp_node) isa runtime_node, has node_name "bt_navigator_navigate_through_poses_rclcpp", has namespace "", has start_time 2025-08-06T10:56:12.111;
+
+(node: $controller_server_node) isa runtime_node, has node_name "controller_server", has namespace "", has start_time 2025-08-06T10:56:12.111;
+(node: $planner_server_node) isa runtime_node, has node_name "planner_server", has namespace "", has start_time 2025-08-06T10:56:12.111;
+
 (node: $velocity_smoother_node) isa runtime_node, has node_name "velocity_smoother", has namespace "", has start_time 2025-08-06T10:56:12.111;
 (node: $relay_node) isa runtime_node, has node_name "relay_node_cmd_vel", has namespace "", has start_time 2025-08-06T10:57:56.666;
