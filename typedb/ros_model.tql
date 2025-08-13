@@ -11,6 +11,10 @@ lifecycle_state sub attribute,
     value string,
     regex "^(unconfigured|inactive|active|finalized)$";
 
+#### Should only be used by is_node_active rule
+is_active sub attribute,
+    value boolean;
+
 ### Runtime node attributes
 node_name sub attribute,
     value string;
@@ -84,6 +88,7 @@ parameter_value_index sub attribute,
 ROSNode sub entity,
     owns package,
     owns executable,
+    owns is_active,
     plays ros_topic:publisher,
     plays ros_topic:subscriber,
     plays ros_service:server,
@@ -92,7 +97,9 @@ ROSNode sub entity,
     plays ros_action:client,
     plays has_parameter:node,
     plays has_parameter_value:node,
-    plays runtime_node:node;
+    plays runtime_node:node,
+    plays process_group:node,
+    plays subnode:subnode;
 
 LifeCycleNode sub ROSNode,
     owns lifecycle_state;
@@ -184,3 +191,11 @@ runtime_node sub relation,
     owns start_time,
     owns end_time,
     relates node;
+
+rule node_is_active:
+    when {
+        $r_node (node: $node) isa runtime_node;
+        not {$r_node has end_time $time;};
+    } then {
+        $node has is_active true;
+    };
