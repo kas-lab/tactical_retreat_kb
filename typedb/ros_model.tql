@@ -192,6 +192,12 @@ runtime_node sub relation,
     owns end_time,
     relates node;
 
+process_group sub relation,
+    relates node;
+
+subnode sub process_group,
+    relates subnode;
+
 rule node_is_active:
     when {
         $r_node (node: $node) isa runtime_node;
