@@ -22,8 +22,8 @@ def kb_interface():
 	kb_interface = TacticalRetreatInterface(
 		"localhost:1729",
 		"test_model_interface",
-		["typedb/ros_model.tql"],
-		["typedb/ros_model_example.tql"],
+		["typedb/ros_model.tql", "typedb/schema_tactics_resolution.tql", "typedb/feature_model.tql"],
+		["typedb/ros_model_example.tql", "typedb/tactics_example.tql"],
 		force_database=True,
 		force_data=True,
 		infer=True
@@ -37,6 +37,12 @@ def test_get_subnodes(kb_interface):
     assert subnodes[0]['node_name'] == 'bt_navigator_navigate_through_poses_rclcpp'
     assert subnodes[1]['namespace'] == ''
     assert subnodes[1]['node_name'] == 'bt_navigator_navigate_to_pose_rclcpp'
+
+def test_get_action_server_nodes(kb_interface):
+    servers = kb_interface.get_action_server_nodes('/navigate_to_pose')
+    assert len(servers) == 1
+    assert servers[0]['namespace'] == ''
+    assert servers[0]['node_name'] == 'bt_navigator'
 
 def test_get_action_clients_names(kb_interface):
     action_clients = kb_interface.get_action_clients_names('bt_navigator_navigate_to_pose_rclcpp')
@@ -116,3 +122,8 @@ def test_connected_active_connected_nodes(kb_interface):
     assert connected_nodes[6]['namespace'] == ''
     assert connected_nodes[7]['node_name'] == 'velocity_smoother'
     assert connected_nodes[7]['namespace'] == ''
+
+def test_get_tactics(kb_interface):
+    tactics = kb_interface.get_tactics('rebetmc')
+    assert len(tactics) == 1
+    assert tactics[0] == 'MaxSpeedInternal'

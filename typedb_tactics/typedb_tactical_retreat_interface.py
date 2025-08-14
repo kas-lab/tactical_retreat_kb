@@ -107,30 +107,55 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return runtime_node_query_to_runtime_node_dict(self.fetch_subnodes(node_name, namespace))
 
-    # def fetch_action_clients_nodes(self, action_name: str) -> List[dict[str, MatchResultDict]]:
-    #     """
-    #     Fetch action clients and returns it as a typedb fetch query result.
+    def fetch_action_clients_nodes(self, action_name: str) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch action clients and returns it as a typedb fetch query result.
 
-    #     :param action: action name
-    #     :return: fetch query result
-    #     """
-    #     query = f"""
-    #         match
-    #             (client: $client) isa ros_action, has '{action_name}';
-    #             $runtime_node (node: $client) isa runtime_node;
-    #         fetch
-    #             $runtime_node: node_name, namespace;
-    #     """
-    #     return self.fetch_database(query)
+        :param action: action name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                (client: $client) isa ros_action, has action_name '{action_name}';
+                $runtime_node (node: $client) isa runtime_node;
+            fetch
+                $runtime_node: node_name, namespace;
+        """
+        return self.fetch_database(query)
 
-    # def get_action_clients_nodes(self, action_name: str) -> List[RuntimeNodeDict]:
-    #     """
-    #     Get action clients and returns it as a list of dicts.
+    def get_action_clients_nodes(self, action_name: str) -> List[RuntimeNodeDict]:
+        """
+        Get action clients and returns it as a list of dicts.
 
-    #     :param action: action name
-    #     :return: list of dictionaries with the node_name and namespace of the client nodes
-    #     """
-    #     return runtime_node_query_to_runtime_node_dict(self.fetch_action_clients())
+        :param action: action name
+        :return: list of dictionaries with the node_name and namespace of the client nodes
+        """
+        return runtime_node_query_to_runtime_node_dict(self.fetch_action_clients(action_name))
+
+    def fetch_action_server_nodes(self, action_name: str) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch action servers and returns it as a typedb fetch query result.
+
+        :param action: action name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                (server: $server) isa ros_action, has action_name '{action_name}';
+                $runtime_node (node: $server) isa runtime_node;
+            fetch
+                $runtime_node: node_name, namespace;
+        """
+        return self.fetch_database(query)
+
+    def get_action_server_nodes(self, action_name: str) -> List[RuntimeNodeDict]:
+        """
+        Get action clients and returns it as a list of dicts.
+
+        :param action: action name
+        :return: list of dictionaries with the node_name and namespace of the client nodes
+        """
+        return runtime_node_query_to_runtime_node_dict(self.fetch_action_server_nodes(action_name))
 
     def fetch_action_clients_names(self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
         """
@@ -282,3 +307,28 @@ class TacticalRetreatInterface(TypeDBInterface):
 
         ordered = sorted(visited)
         return [{'node_name': n, 'namespace': ns} for n, ns in ordered]
+
+    def fetch_tactics(self, resolution_model: str) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch all tactic names in the given resolution model.
+
+        :param resolution_model: name of the resolution model
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                (tactic: $tactic) isa resolution_model, has resolution_model_name '{resolution_model}';
+            fetch
+                $tactic: tactic_name;
+        """
+        return self.fetch_database(query)
+
+    def get_tactics(self, resolution_model: str) -> List[str]:
+        """
+        Get all tactic names in the given resolution model.
+
+        :param resolution_model: name of the resolution model
+        :return: list of tactic names
+        """
+        query_result = self.fetch_tactics(resolution_model)
+        return [result['tactic']['tactic_name'][0]['value'] for result in query_result]
