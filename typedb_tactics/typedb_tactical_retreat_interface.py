@@ -18,9 +18,6 @@ logger = logging.getLogger(__name__)
 from ros_typedb.typedb_interface import MatchResultDict
 from ros_typedb.typedb_interface import TypeDBInterface
 
-# from typing import Iterator
-# from typing import Literal
-# from typing import Tuple
 from typing import List
 from typing import TypedDict
 from typing import Optional
@@ -39,10 +36,10 @@ class RuntimeNodeDict(TypedDict):
     namespace: str  #: node namespace
     node_name: str  #: node name
 
-def runtime_node_query_to_runtime_node_dict(query_result: List[dict[str, MatchResultDict]]) -> List[RuntimeNodeDict]:
+def runtime_node_query_to_runtime_node_dict(query_result: List[dict[str, MatchResultDict]], runtime_node_variable: str = 'runtime_node') -> List[RuntimeNodeDict]:
     runtime_node_dict = list()
     for result in query_result:
-        runtime_node = result.get('runtime_node')
+        runtime_node = result.get(runtime_node_variable)
         if len(runtime_node['namespace']) > 1:
             logger.error('In runtime_node_query_to_runtime_node_dict: runtime node has more than 1 namespace')
             return runtime_node_dict
@@ -50,10 +47,12 @@ def runtime_node_query_to_runtime_node_dict(query_result: List[dict[str, MatchRe
             logger.error('In runtime_node_query_to_runtime_node_dict: runtime node has more than 1 node_name')
             return runtime_node_dict
         runtime_node_dict.append({
-            'namespace': runtime_node['namespace'][0]['value'],
             'node_name': runtime_node['node_name'][0]['value'],
+            'namespace': runtime_node['namespace'][0]['value'],
             }
         )
+    # Sort list to guarantee deterministic list order
+    runtime_node_dict.sort(key=lambda d: (d['node_name'], d['namespace']))
     return runtime_node_dict
 
 class TacticalRetreatInterface(TypeDBInterface):
@@ -202,6 +201,8 @@ class TacticalRetreatInterface(TypeDBInterface):
                 'action_type': action['action_type'][0]['value'],
                 }
             )
+        # Sort list to guarantee deterministic list order
+        ros_action_result_dict.sort(key=lambda d: (d['action_name'], d['action_type']))
         return ros_action_result_dict
 
     def fetch_connected_action_server_nodes(self, node_name: str, namespace: str ='') -> List[dict[str, MatchResultDict]]:
@@ -260,54 +261,6 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return runtime_node_query_to_runtime_node_dict(self.fetch_connected_subscriber_nodes(node_name, namespace))
 
-    def get_active_neighbours(self, node_name: str, namespace: str = '') -> List[RuntimeNodeDict]:
-        """
-        Get the active neighbours of a running node.
-
-        :param node_name: node name of the running node
-        :param namespace: namespace of the running node
-        :return: list of dictionaries with the node_name and namespace of the neighbour nodes
-        """
-        # Collect neighbors in a set of tuples
-        neighbours = set()
-
-        nodes = {(node_name, namespace)}
-        for n in self.get_subnodes(node_name, namespace):
-            nodes.add((n['node_name'], n.get('namespace', '')))
-            # consider subnodes as neighbours
-            neighbours.add((n['node_name'], n.get('namespace', '')))
-
-        for n, ns in nodes:
-            # Expect these to return lists of dicts: {'node_name':..., 'namespace':...}
-            for action_server in self.get_connected_action_server_nodes(n, ns):
-                neighbours.add((action_server['node_name'], action_server['namespace']))
-            for subscriber_node in self.get_connected_subscriber_nodes(n, ns):
-                neighbours.add((subscriber_node['node_name'], subscriber_node['namespace']))
-
-        # Remove the node and its subnodes. They might appear if they are both the efferent/afferent
-        # neighbours.difference_update(nodes)
-        neighbours.difference_update({(node_name, namespace)})
-
-        # make order deterministic
-        ordered = sorted(neighbours)
-        return [{'node_name': n, 'namespace': ns} for n, ns in ordered]
-
-    def get_active_connected_nodes(self, runtime_nodes: List[RuntimeNodeDict]) -> List[RuntimeNodeDict]:
-        stack = deque(runtime_nodes)
-        visited = set()
-
-        while len(stack) > 0:
-            node = stack.pop()
-            if (node['node_name'], node['namespace']) not in visited:
-                visited.add((node['node_name'], node['namespace']))
-                neighbours = self.get_active_neighbours(node['node_name'], node['namespace'])
-                for n in neighbours:
-                    if (n['node_name'], n['namespace']) not in visited and n not in stack:
-                        stack.append(n)
-
-        ordered = sorted(visited)
-        return [{'node_name': n, 'namespace': ns} for n, ns in ordered]
-
     def fetch_tactics(self, resolution_model: str) -> List[dict[str, MatchResultDict]]:
         """
         Fetch all tactic names in the given resolution model.
@@ -361,27 +314,87 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return (self.get_aggregate_database(query) > 0 )
 
-    def get_applicable_tactics(self, resolution_model: str, action_name: str) -> List[str]:
+    def fetch_active_neighbours(self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
         """
-        Get all tactics that are applicable given an ROS action name.
+        Fetch the active neighbours of a running node.
+
+        :param node_name: node name of the running node
+        :param namespace: namespace of the running node
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $runtime_node (node: $node) isa runtime_node, has node_name '{node_name}', has namespace '{namespace}';
+                $active_neighbours (node: $runtime_node, neighbour: $neighbour) isa active_neighbours;
+            fetch
+                $neighbour: node_name, namespace;
+        """
+        return self.fetch_database(query)
+
+    def get_active_neighbours(self, node_name: str, namespace: str = '') -> List[RuntimeNodeDict]:
+        """
+        Get the active neighbours of a running node.
+
+        :param node_name: node name of the running node
+        :param namespace: namespace of the running node
+        :return: list of dictionaries with the node_name and namespace of the neighbour nodes
+        """
+        return runtime_node_query_to_runtime_node_dict(self.fetch_active_neighbours(node_name, namespace), 'neighbour')
+
+    def fetch_active_connected_nodes(self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch the active connected nodes of a running node.
+
+        :param node_name: node name of the running node
+        :param namespace: namespace of the running node
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $runtime_node (node: $node) isa runtime_node, has node_name '{node_name}', has namespace '{namespace}';
+                $active_connected_nodes (node: $runtime_node, connected: $connected) isa active_connected_nodes;
+            fetch
+                $connected: node_name, namespace;
+        """
+        return self.fetch_database(query)
+    
+    def get_active_connected_nodes(self, node_name: str, namespace: str = '') -> List[RuntimeNodeDict]:
+        """
+        Get the active connected nodes of a running node.
+
+        :param node_name: node name of the running node
+        :param namespace: namespace of the running node
+        :return: list of dictionaries with the node_name and namespace of the neighbour nodes
+        """
+        return runtime_node_query_to_runtime_node_dict(self.fetch_active_connected_nodes(node_name, namespace), 'connected')
+
+    def fetch_applicable_tactics(self, resolution_model: str, action_name: str, action_type: str) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch all tactics that are applicable given an ROS action name and resolution model.
 
         :param resolution_model: name of the resolution model to check
         :param action_name: name of the ROS action
+        :param action_name: type of the ROS action
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $ros_action isa ros_action, has action_name '{action_name}', has action_type '{action_type}';
+                $resolution_model isa resolution_model, has resolution_model_name '{resolution_model}';
+                (ros_action: $ros_action, resolution_model: $resolution_model, tactic: $tactic) isa applicable_tactics;
+            fetch
+                $tactic: tactic_name;
+        """
+        return self.fetch_database(query)
+
+    def get_applicable_tactics(self, resolution_model: str, action_name: str, action_type: str) -> List[str]:
+        """
+        Get all tactics that are applicable given an ROS action name and resolution model.
+
+        :param resolution_model: name of the resolution model to check
+        :param action_name: name of the ROS action
+        :param action_name: type of the ROS action
         :return: list containing all tactic's names that are applicable
         """
-        servers = self.get_action_server_nodes(action_name)
-        if len(servers) == 0:
-            return []
-
-        connected_nodes = self.get_active_connected_nodes(servers)
-        if len(connected_nodes) == 0:
-            return []
-
-        tactics = self.get_tactics(resolution_model)
-        applicable_tactics = set()
-        for t in tactics:
-            for n in connected_nodes:
-                if self.does_tactic_affect_nodes(t, n['node_name'], n['namespace']):
-                    applicable_tactics.add(t)
-                    break
-        return sorted(applicable_tactics)
+        query_result = self.fetch_applicable_tactics(resolution_model, action_name, action_type)
+        return [result['tactic']['tactic_name'][0]['value'] for result in query_result]

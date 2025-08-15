@@ -1,0 +1,17 @@
+match
+    $runtime_node (node: $node) isa runtime_node, has node_name 'bt_navigator_navigate_to_pose_rclcpp';
+    $active_neighbours (node: $runtime_node, neighbour: $neighbour) isa active_neighbours;
+fetch
+    $neighbour: node_name;
+    
+match
+    $runtime_node (node: $node) isa runtime_node, has node_name 'controller_server';
+    $active_neighbours (node: $runtime_node, neighbour: $neighbour) isa active_neighbours;
+fetch
+    $neighbour: node_name;
+
+match
+    $runtime_node (node: $node) isa runtime_node, has node_name 'bt_navigator';
+    $active_neighbours (node: $runtime_node, neighbour: $neighbour) isa active_neighbours;
+fetch
+    $neighbour: node_name;

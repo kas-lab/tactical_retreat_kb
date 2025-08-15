@@ -1,0 +1,115 @@
+define
+
+### Discover applicable tactics things and rules
+active_neighbours sub relation,
+    relates node,
+    relates neighbour;
+
+runtime_node plays active_neighbours:node;
+runtime_node plays active_neighbours:neighbour;
+
+active_connected_nodes sub relation,
+    relates node,
+    relates connected;
+
+runtime_node plays active_connected_nodes:node;
+runtime_node plays active_connected_nodes:connected;
+
+applicable_tactics sub relation,
+    relates ros_action,
+    relates resolution_model,
+    relates tactic;
+
+ros_action plays applicable_tactics:ros_action;
+resolution_model plays applicable_tactics:resolution_model;
+Tactic plays applicable_tactics:tactic;
+
+rule active_neighbours_action_server:
+    when {
+        $runtime_node (node: $node) isa runtime_node, has node_name $node_name, has namespace $namespace;
+        (server: $action_server, client: $node) isa ros_action;
+        $action_server_runtime (node: $action_server) isa runtime_node;
+        not {
+            $action_server_runtime has node_name $node_name;
+            $action_server_runtime has namespace $namespace;
+        };
+    } then {
+        (node:$runtime_node, neighbour: $action_server_runtime) isa active_neighbours;
+    };
+
+rule active_neighbours_topic_subscriber:
+    when {
+        $runtime_node (node: $node) isa runtime_node, has node_name $node_name, has namespace $namespace;
+        (publisher: $node, subscriber: $subscriber_node) isa ros_topic;
+        $subscriber_runtime (node: $subscriber_node) isa runtime_node;
+        not {
+            $subscriber_runtime has node_name $node_name;
+            $subscriber_runtime has namespace $namespace;
+        };
+    } then {
+        (node:$runtime_node, neighbour: $subscriber_runtime) isa active_neighbours;
+    };
+
+rule node_subnode_neighbour:
+    when {
+        $runtime_node (node: $node) isa runtime_node;
+        (node: $node, subnode: $subnode) isa subnode;
+        $runtime_subnode (node: $subnode) isa runtime_node;
+    } then {
+        (node: $runtime_node, neighbour: $runtime_subnode) isa active_neighbours;
+        # (node: $runtime_node, neighbour: $runtime_subnode) isa active_neighbours;
+    };
+
+rule subnode_node_neighbour_transitive: 
+    when {
+        $runtime_node (node: $node) isa runtime_node;
+        (node: $node, subnode: $subnode) isa subnode;
+        $runtime_subnode (node: $subnode) isa runtime_node;
+        (node: $runtime_subnode, neighbour: $neighbour) isa active_neighbours;
+    } then {
+        (node: $runtime_node, neighbour: $neighbour) isa active_neighbours;
+    };
+
+rule active_connected_reflection:
+    when {
+        $runtime_node isa runtime_node;
+    } then {
+        (node: $runtime_node, connected: $runtime_node) isa active_connected_nodes;
+    };
+
+rule active_connected_nodes: 
+    when {
+        (node: $node, neighbour: $neighbour) isa active_neighbours;
+    } then {
+        (node: $node, connected: $neighbour) isa active_connected_nodes;
+    };
+
+rule active_connected_nodes_transitive: 
+    when {
+        (node: $node, connected: $connected_node) isa active_connected_nodes;
+        (node: $connected_node, connected: $connected_node_2) isa active_connected_nodes;
+    } then {
+        (node: $node, connected: $connected_node_2) isa active_connected_nodes;
+    };
+
+rule applicable_tactics:
+    when {
+        $ros_action (server: $server) isa ros_action;
+		$runtime_server (node: $server) isa runtime_node;
+        (node: $runtime_server, connected: $connected_nodes) isa active_connected_nodes;
+        $resolution_model (tactic: $tactic) isa resolution_model;
+        (tactic: $tactic, consequent: $consequent) isa tactic_rule;
+        {
+            $consequent isa Feature;
+            (variant: $consequent, resolution_action: $resolution_action) isa variant_resolution;
+        } or {
+            $consequent (expression: $expression) isa and_expression;
+            $expression isa Feature;
+            (variant: $expression, resolution_action: $resolution_action) isa variant_resolution;
+        };
+        $resolution_action (node: $node) isa resolution_action;
+		$connected_nodes isa runtime_node, has node_name $node_name, has namespace $namespace;
+        $runtime_node (node: $node) isa runtime_node, has node_name $node_name, has namespace $namespace;
+    } then {
+        (ros_action: $ros_action, resolution_model: $resolution_model, tactic: $tactic) isa applicable_tactics;
+    };

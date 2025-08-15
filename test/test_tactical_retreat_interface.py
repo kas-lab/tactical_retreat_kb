@@ -22,7 +22,7 @@ def kb_interface():
 	kb_interface = TacticalRetreatInterface(
 		"localhost:1729",
 		"test_model_interface",
-		["typedb/ros_model.tql", "typedb/schema_tactics_resolution.tql", "typedb/feature_model.tql"],
+		["typedb/ros_model.tql", "typedb/schema_tactics_resolution.tql", "typedb/feature_model.tql", "typedb/discover_tactics_schema.tql"],
 		["typedb/ros_model_example.tql", "typedb/tactics_example.tql"],
 		force_database=True,
 		force_data=True,
@@ -56,9 +56,9 @@ def test_get_connect_action_server_nodes(kb_interface):
     action_server_nodes = kb_interface.get_connected_action_server_nodes('bt_navigator_navigate_to_pose_rclcpp')
     assert len(action_server_nodes) == 2
     assert action_server_nodes[0]['namespace'] == ''
-    assert action_server_nodes[0]['node_name'] == 'planner_server'
+    assert action_server_nodes[0]['node_name'] == 'controller_server'
     assert action_server_nodes[1]['namespace'] == ''
-    assert action_server_nodes[1]['node_name'] == 'controller_server'
+    assert action_server_nodes[1]['node_name'] == 'planner_server'
 
 def test_get_connected_subscriber_nodes(kb_interface):
     subscriber_nodes = kb_interface.get_connected_subscriber_nodes('controller_server')
@@ -102,9 +102,8 @@ def test_get_active_neighbours(kb_interface):
     assert active_neighbours[1]['namespace'] == ''
     assert active_neighbours[1]['node_name'] == 'relay_node_cmd_vel'
 
-def test_connected_active_connected_nodes(kb_interface):
-    nodes = [{'node_name': 'bt_navigator', 'namespace': ''}]
-    connected_nodes = kb_interface.get_active_connected_nodes(nodes)
+def test_get_active_connected_nodes(kb_interface):
+    connected_nodes = kb_interface.get_active_connected_nodes('bt_navigator', '')
     assert len(connected_nodes) == 8
     assert connected_nodes[0]['node_name'] == 'behavior_server'
     assert connected_nodes[0]['namespace'] == ''
@@ -133,13 +132,13 @@ def test_does_tactic_affect_nodes(kb_interface):
     assert kb_interface.does_tactic_affect_nodes('MaxSpeedInternal', 'planner_server', '') is False
 
 def test_get_applicable_tactics(kb_interface):
-    tactics = kb_interface.get_applicable_tactics('rebetmc', '/navigate_to_pose')
+    tactics = kb_interface.get_applicable_tactics('rebetmc', '/navigate_to_pose', 'nav2_msgs/action/NavigateToPose')
     assert len(tactics) == 1
     assert tactics[0] == 'MaxSpeedInternal'
 
-    tactics = kb_interface.get_applicable_tactics('rebetmc', '/follow_path')
+    tactics = kb_interface.get_applicable_tactics('rebetmc', '/follow_path', 'nav2_msgs/action/FollowPath')
     assert len(tactics) == 1
     assert tactics[0] == 'MaxSpeedInternal'
 
-    tactics = kb_interface.get_applicable_tactics('rebetmc', '/compute_path_to_pose')
+    tactics = kb_interface.get_applicable_tactics('rebetmc', '/compute_path_to_pose', 'nav2_msgs/action/ComputePathToPose')
     assert len(tactics) == 0
