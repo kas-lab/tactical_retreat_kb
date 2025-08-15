@@ -334,6 +334,14 @@ class TacticalRetreatInterface(TypeDBInterface):
         return [result['tactic']['tactic_name'][0]['value'] for result in query_result]
 
     def does_tactic_affect_nodes(self, tactic_name: str, node_name: str, namespace: str = '') -> bool:
+        """
+        Check whether a given tactic affects a given node.
+
+        :param tactic_name: name of the tactic
+        :param node_name: name of the running node
+        :param namespace: namespace of the running node
+        :return: true or false
+        """
         query = f"""
             match
                 $tactic isa Tactic, has tactic_name '{tactic_name}';
@@ -352,3 +360,28 @@ class TacticalRetreatInterface(TypeDBInterface):
             count;
         """
         return (self.get_aggregate_database(query) > 0 )
+
+    def get_applicable_tactics(self, resolution_model: str, action_name: str) -> List[str]:
+        """
+        Get all tactics that are applicable given an ROS action name.
+
+        :param resolution_model: name of the resolution model to check
+        :param action_name: name of the ROS action
+        :return: list containing all tactic's names that are applicable
+        """
+        servers = self.get_action_server_nodes(action_name)
+        if len(servers) == 0:
+            return []
+
+        connected_nodes = self.get_active_connected_nodes(servers)
+        if len(connected_nodes) == 0:
+            return []
+
+        tactics = self.get_tactics(resolution_model)
+        applicable_tactics = set()
+        for t in tactics:
+            for n in connected_nodes:
+                if self.does_tactic_affect_nodes(t, n['node_name'], n['namespace']):
+                    applicable_tactics.add(t)
+                    break
+        return sorted(applicable_tactics)
