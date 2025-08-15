@@ -292,7 +292,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         ordered = sorted(neighbours)
         return [{'node_name': n, 'namespace': ns} for n, ns in ordered]
 
-    def get_active_connected_nodes(self, runtime_nodes: List[RuntimeNodeDict]):
+    def get_active_connected_nodes(self, runtime_nodes: List[RuntimeNodeDict]) -> List[RuntimeNodeDict]:
         stack = deque(runtime_nodes)
         visited = set()
 
@@ -332,3 +332,23 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_tactics(resolution_model)
         return [result['tactic']['tactic_name'][0]['value'] for result in query_result]
+
+    def does_tactic_affect_nodes(self, tactic_name: str, node_name: str, namespace: str = '') -> bool:
+        query = f"""
+            match
+                $tactic isa Tactic, has tactic_name '{tactic_name}';
+                (tactic: $tactic, consequent: $consequent) isa tactic_rule;
+                {{
+                    $consequent isa Feature;
+                    (variant: $consequent, resolution_action: $resolution_action) isa variant_resolution;
+                }} or {{
+                    $consequent (expression: $expression) isa and_expression;
+                    $expression isa Feature;
+                    (variant: $expression, resolution_action: $resolution_action) isa variant_resolution;
+                }};
+                $resolution_action (node: $node) isa resolution_action;
+                $runtime_node (node: $node) isa runtime_node, has node_name '{node_name}', has namespace '{namespace}';
+            get $runtime_node;
+            count;
+        """
+        return (self.get_aggregate_database(query) > 0 )

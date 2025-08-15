@@ -127,3 +127,7 @@ def test_get_tactics(kb_interface):
     tactics = kb_interface.get_tactics('rebetmc')
     assert len(tactics) == 1
     assert tactics[0] == 'MaxSpeedInternal'
+
+def test_does_tactic_affect_nodes(kb_interface):
+    assert kb_interface.does_tactic_affect_nodes('MaxSpeedInternal', 'velocity_smoother', '')
+    assert kb_interface.does_tactic_affect_nodes('MaxSpeedInternal', 'planner_server', '') is False
