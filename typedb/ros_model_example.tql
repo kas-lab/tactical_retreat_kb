@@ -3,21 +3,21 @@ insert
 ## Define ROS nodes
 
 ### Mirte exemplar nodes
-$mirte_bt_node isa LifeCycleNode, 
-	has package "mirte_exemplar", 
+$mirte_bt_node isa LifeCycleNode,
+	has package "mirte_exemplar",
 	has executable "mirte_bt";
 
 ### Nav2 nodes
-$amcl_node isa LifeCycleNode, 
-	has package "nav2_amcl", 
+$amcl_node isa LifeCycleNode,
+	has package "nav2_amcl",
 	has executable "amcl";
 
-$behavior_server_node isa LifeCycleNode, 
-	has package "nav2_behaviors", 
+$behavior_server_node isa LifeCycleNode,
+	has package "nav2_behaviors",
 	has executable "behavior_server";
 
-$bt_navigator_node isa LifeCycleNode, 
-	has package "nav2_bt_navigator", 
+$bt_navigator_node isa LifeCycleNode,
+	has package "nav2_bt_navigator",
 	has executable "bt_navigator";
 
 $bt_navigator_navigate_through_poses_rclcpp_node isa ROSNode;
@@ -26,24 +26,24 @@ $bt_navigator_navigate_to_pose_rclcpp_node isa ROSNode;
 subnode: $bt_navigator_navigate_through_poses_rclcpp_node,
 subnode: $bt_navigator_navigate_to_pose_rclcpp_node) isa subnode;
 
-$controller_server_node isa LifeCycleNode, 
-	has package "nav2_controller", 
+$controller_server_node isa LifeCycleNode,
+	has package "nav2_controller",
 	has executable "controller_server";
 
-$map_server_node isa LifeCycleNode, 
-	has package "nav2_map_server", 
+$map_server_node isa LifeCycleNode,
+	has package "nav2_map_server",
 	has executable "nav2_map_server";
 
-$planner_server_node isa LifeCycleNode, 
-	has package "nav2_planner", 
+$planner_server_node isa LifeCycleNode,
+	has package "nav2_planner",
 	has executable "planner_server";
 
-$smoother_server_node isa LifeCycleNode, 
-	has package "nav2_smoother", 
+$smoother_server_node isa LifeCycleNode,
+	has package "nav2_smoother",
 	has executable "smoother_server";
 
-$velocity_smoother_node isa LifeCycleNode, 
-	has package "nav2_velocity_smoother", 
+$velocity_smoother_node isa LifeCycleNode,
+	has package "nav2_velocity_smoother",
 	has executable "velocity_smoother";
 
 $relay_node isa ROSNode,
@@ -68,7 +68,7 @@ $odom_duration_param isa ParameterDouble,
 	has parameter_name "odom_duration";
 
 $velocity_smoother_parameters (
-	node: $velocity_smoother_node, 
+	node: $velocity_smoother_node,
 	parameter:$max_velocity_param,
 	parameter:$odom_topic_param,
 	parameter:$odom_duration_param) isa has_parameter;
@@ -79,30 +79,30 @@ $default_max_velocity_y isa ParameterValueDouble, has double_value 0.0;
 $default_max_velocity_z isa ParameterValueDouble, has double_value 1.0;
 
 $default_max_velocity_param_value isa ParameterValueArray;
-$default_max_velocity_array_x (parameter_array: $default_max_velocity_param_value, parameter_value: $default_max_velocity_x) 
+$default_max_velocity_array_x (parameter_array: $default_max_velocity_param_value, parameter_value: $default_max_velocity_x)
 	isa at_index, has parameter_value_index 0;
-$default_max_velocity_array_y (parameter_array: $default_max_velocity_param_value, parameter_value: $default_max_velocity_y) 
+$default_max_velocity_array_y (parameter_array: $default_max_velocity_param_value, parameter_value: $default_max_velocity_y)
 	isa at_index, has parameter_value_index 1;
-$default_max_velocity_array_z (parameter_array: $default_max_velocity_param_value, parameter_value: $default_max_velocity_z) 
+$default_max_velocity_array_z (parameter_array: $default_max_velocity_param_value, parameter_value: $default_max_velocity_z)
 	isa at_index, has parameter_value_index 2;
 
-(node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $default_max_velocity_param_value) 
+(node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $default_max_velocity_param_value)
 	isa has_parameter_value, has default_value true;
 
 # default param odom_topic
 $default_odom_topic isa ParameterValueString, has string_value "/odom";
-(node: $velocity_smoother_node, parameter: $odom_topic_param, parameter_value: $default_odom_topic) 
+(node: $velocity_smoother_node, parameter: $odom_topic_param, parameter_value: $default_odom_topic)
 	isa has_parameter_value, has default_value true;
 
 # default odom duration
 $default_odom_duration isa ParameterValueDouble, has double_value 1.0;
-(node: $velocity_smoother_node, parameter: $odom_duration_param, parameter_value: $default_odom_duration) 
+(node: $velocity_smoother_node, parameter: $odom_duration_param, parameter_value: $default_odom_duration)
 	isa has_parameter_value, has default_value true;
 
-## Define ROS topics 
+## Define ROS topics
 
 ### cmd_vel
-$cmd_vel_vs_qos isa QoSProfile, 
+$cmd_vel_vs_qos isa QoSProfile,
 	has reliabilty "RELIABLE",
 	has history "KEEP_LAST",
 	has depth 10,
@@ -132,17 +132,21 @@ $cmd_vel_nav_topic (
 
 ## Define ROS services
 
+(server: $amcl_node,
+client: $mirte_bt_node) isa ros_service,
+	has service_name "/set_initial_pose", has service_type "nav2_msgs/srv/SetInitialPose";
+
 ## Define ROS actions
 
 # strangely, the bt_navigator_node is both the server and client.
 # I guess we need to add a node to represent mirte's task decision layer, which will be a client here as well
-# for now, I will add a mirte_bt_node for this 
-(server: $bt_navigator_node, 
+# for now, I will add a mirte_bt_node for this
+(server: $bt_navigator_node,
 client: $bt_navigator_node,
-client: $mirte_bt_node) isa ros_action, 
+client: $mirte_bt_node) isa ros_action,
 	has action_name "/navigate_to_pose", has action_type "nav2_msgs/action/NavigateToPose";
 
-(client: $bt_navigator_navigate_to_pose_rclcpp_node, server: $planner_server_node) isa ros_action, 
+(client: $bt_navigator_navigate_to_pose_rclcpp_node, server: $planner_server_node) isa ros_action,
 	has action_name "/compute_path_to_pose", has action_type "nav2_msgs/action/ComputePathToPose";
 
 (client: $bt_navigator_navigate_to_pose_rclcpp_node,
@@ -152,6 +156,8 @@ server: $controller_server_node) isa ros_action,
 
 
 ## runtime node examples
+(node: $amcl_node) isa runtime_node, has node_name "amcl", has namespace "", has start_time 2025-08-06T10:56:12.111;
+
 (node: $bt_navigator_node) isa runtime_node, has node_name "bt_navigator", has namespace "", has start_time 2025-08-06T10:56:12.111;
 (node: $bt_navigator_navigate_to_pose_rclcpp_node) isa runtime_node, has node_name "bt_navigator_navigate_to_pose_rclcpp", has namespace "", has start_time 2025-08-06T10:56:12.111;
 (node: $bt_navigator_navigate_through_poses_rclcpp_node) isa runtime_node, has node_name "bt_navigator_navigate_through_poses_rclcpp", has namespace "", has start_time 2025-08-06T10:56:12.111;
