@@ -96,11 +96,14 @@ def test_get_active_neighbours(kb_interface):
     assert active_neighbours[0]['node_name'] == 'velocity_smoother'
 
     active_neighbours = kb_interface.get_active_neighbours('velocity_smoother')
-    assert len(active_neighbours) == 2
+    assert len(active_neighbours) == 3
     assert active_neighbours[0]['namespace'] == ''
     assert active_neighbours[0]['node_name'] == 'behavior_server'
     assert active_neighbours[1]['namespace'] == ''
-    assert active_neighbours[1]['node_name'] == 'relay_node_cmd_vel'
+    assert active_neighbours[1]['node_name'] == 'controller_server'
+    assert active_neighbours[2]['namespace'] == ''
+    assert active_neighbours[2]['node_name'] == 'relay_node_cmd_vel'
+
 
 def test_get_active_connected_nodes(kb_interface):
     connected_nodes = kb_interface.get_active_connected_nodes('bt_navigator', '')
