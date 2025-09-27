@@ -50,6 +50,32 @@ rule active_neighbours_topic_subscriber:
         (node:$runtime_node, neighbour: $subscriber_runtime) isa active_neighbours;
     };
 
+rule active_neighbours_topic_publisher:
+    when {
+        $runtime_node (node: $node) isa runtime_node, has node_name $node_name, has namespace $namespace;
+        (publisher: $publisher_node, subscriber: $node) isa ros_topic;
+        $publisher_runtime (node: $publisher_node) isa runtime_node;
+        not {
+            $publisher_runtime has node_name $node_name;
+            $publisher_runtime has namespace $namespace;
+        };
+    } then {
+        (node:$runtime_node, neighbour: $publisher_runtime) isa active_neighbours;
+    };
+
+rule active_neighbours_service_server:
+    when {
+        $runtime_node (node: $node) isa runtime_node, has node_name $node_name, has namespace $namespace;
+        (server: $service_server, client: $node) isa ros_service;
+        $service_server_runtime (node: $service_server) isa runtime_node;
+        not {
+            $service_server_runtime has node_name $node_name;
+            $service_server_runtime has namespace $namespace;
+        };
+    } then {
+        (node:$runtime_node, neighbour: $service_server_runtime) isa active_neighbours;
+    };
+
 rule node_subnode_neighbour:
     when {
         $runtime_node (node: $node) isa runtime_node;
@@ -57,10 +83,9 @@ rule node_subnode_neighbour:
         $runtime_subnode (node: $subnode) isa runtime_node;
     } then {
         (node: $runtime_node, neighbour: $runtime_subnode) isa active_neighbours;
-        # (node: $runtime_node, neighbour: $runtime_subnode) isa active_neighbours;
     };
 
-rule subnode_node_neighbour_transitive: 
+rule subnode_node_neighbour_transitive:
     when {
         $runtime_node (node: $node) isa runtime_node;
         (node: $node, subnode: $subnode) isa subnode;
@@ -77,14 +102,14 @@ rule active_connected_reflection:
         (node: $runtime_node, connected: $runtime_node) isa active_connected_nodes;
     };
 
-rule active_connected_nodes: 
+rule active_connected_nodes:
     when {
         (node: $node, neighbour: $neighbour) isa active_neighbours;
     } then {
         (node: $node, connected: $neighbour) isa active_connected_nodes;
     };
 
-rule active_connected_nodes_transitive: 
+rule active_connected_nodes_transitive:
     when {
         (node: $node, connected: $connected_node) isa active_connected_nodes;
         (node: $connected_node, connected: $connected_node_2) isa active_connected_nodes;
