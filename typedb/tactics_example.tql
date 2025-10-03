@@ -1,10 +1,9 @@
 match
 
 $velocity_smoother_node isa LifeCycleNode,
-	has package "nav2_velocity_smoother",
-	has executable "velocity_smoother";
+	has node_name "velocity_smoother";
 
-insert 
+insert
 
 # define Feature Model
 $f_max_speed isa Feature, has feature_name "MAX_SPEED";
@@ -13,7 +12,7 @@ $f_hi_speed isa Feature, has feature_name "HIGH_SPEED";
 $f_med_speed isa Feature, has feature_name "MED_SPEED";
 $alternative (parent: $f_max_speed, child: $f_low_speed, child: $f_med_speed, child: $f_hi_speed) isa alternative;
 
-# define MaxSpeedInternal Tactic    
+# define MaxSpeedInternal Tactic
 $ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal", has tactic_period 1.0;
 
 $t_measured_nearest_object isa Term, has term_name "t_measured_nearest_object";
@@ -80,6 +79,6 @@ $low_speed_resolution (resolution_action: $sp_max_speed_low, variant: $f_low_spe
 $med_speed_resolution (resolution_action: $sp_max_speed_med, variant: $f_med_speed) isa variant_resolution;
 $high_speed_resolution (resolution_action: $sp_max_speed_high, variant: $f_hi_speed) isa variant_resolution;
 
-$res_rebetmc (tactic: $ta_max_speed, variant_resolution:$low_speed_resolution,  variant_resolution:$med_speed_resolution,  variant_resolution:$high_speed_resolution) isa resolution_model, 
+$res_rebetmc (tactic: $ta_max_speed, variant_resolution:$low_speed_resolution,  variant_resolution:$med_speed_resolution,  variant_resolution:$high_speed_resolution) isa resolution_model,
     has resolution_model_name "rebetmc", has ros_system "nav2";
 

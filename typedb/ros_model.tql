@@ -54,7 +54,7 @@ lifespan sub attribute,
     value double;  # 0.0 indicates infinite
 liveliness sub attribute,
     value string,
-    regex "^(AUTOMATIC|MANUAL)"; 
+    regex "^(AUTOMATIC|MANUAL)";
 lease_duration sub attribute,
     value double;  # 0.0 indicates infinite
 
@@ -82,8 +82,10 @@ parameter_value_index sub attribute,
 ## Entities
 
 ROSNode sub entity,
-    owns package,
-    owns executable,
+    owns node_name @key,
+    owns namespace,
+    owns start_time,
+    owns end_time,
     plays ros_topic:publisher,
     plays ros_topic:subscriber,
     plays ros_service:server,
@@ -92,7 +94,7 @@ ROSNode sub entity,
     plays ros_action:client,
     plays has_parameter:node,
     plays has_parameter_value:node,
-    plays runtime_node:node;
+    plays node_deployment:node;
 
 LifeCycleNode sub ROSNode,
     owns lifecycle_state;
@@ -104,7 +106,7 @@ QoSProfile sub entity,
     owns durability,
     owns deadline,
     owns lifespan,
-    owns liveliness, 
+    owns liveliness,
     owns lease_duration,
     plays ros_topic:qos;
 
@@ -178,9 +180,7 @@ at_index sub relation,
     relates parameter_array,
     relates parameter_value;
 
-runtime_node sub relation,
-    owns node_name @key,
-    owns namespace,
-    owns start_time,
-    owns end_time,
+node_deployment sub relation,
+    owns package,
+    owns executable,
     relates node;

@@ -9,12 +9,17 @@ $odom_topic_param isa ParameterString,
 $odom_duration_param isa ParameterDouble,
 	has parameter_name "odom_duration";
 
-$velocity_smoother isa LifeCycleNode, 
-	has package "nav2_velocity_smoother", 
+$velocity_smoother isa LifeCycleNode,
+	has node_name "velocity_smoother",
+	has namespace "",
+	has start_time 2025-08-06T10:56:12.111;
+
+(node: $velocity_smoother) isa node_deployment,
+	has package "nav2_velocity_smoother",
 	has executable "velocity_smoother";
 
 $velocity_smoother_parameters (
-	node: $velocity_smoother, 
+	node: $velocity_smoother,
 	parameter:$max_velocity_param,
 	parameter:$odom_topic_param,
 	parameter:$odom_duration_param) isa has_parameter;
@@ -25,31 +30,36 @@ $default_max_velocity_y isa ParameterValueDouble, has double_value 0.0;
 $default_max_velocity_z isa ParameterValueDouble, has double_value 1.0;
 
 $default_max_velocity_param_value isa ParameterValueArray;
-$default_max_velocity_array_x (parameter_array: $default_max_velocity_param_value, parameter_value: $default_max_velocity_x) 
+$default_max_velocity_array_x (parameter_array: $default_max_velocity_param_value, parameter_value: $default_max_velocity_x)
 	isa at_index, has parameter_value_index 0;
-$default_max_velocity_array_y (parameter_array: $default_max_velocity_param_value, parameter_value: $default_max_velocity_y) 
+$default_max_velocity_array_y (parameter_array: $default_max_velocity_param_value, parameter_value: $default_max_velocity_y)
 	isa at_index, has parameter_value_index 1;
-$default_max_velocity_array_z (parameter_array: $default_max_velocity_param_value, parameter_value: $default_max_velocity_z) 
+$default_max_velocity_array_z (parameter_array: $default_max_velocity_param_value, parameter_value: $default_max_velocity_z)
 	isa at_index, has parameter_value_index 2;
 
-(node: $velocity_smoother, parameter: $max_velocity_param, parameter_value: $default_max_velocity_param_value) 
+(node: $velocity_smoother, parameter: $max_velocity_param, parameter_value: $default_max_velocity_param_value)
 	isa has_parameter_value, has default_value true;
 
 # default param odom_topic
 $default_odom_topic isa ParameterValueString, has string_value "/odom";
-(node: $velocity_smoother, parameter: $odom_topic_param, parameter_value: $default_odom_topic) 
+(node: $velocity_smoother, parameter: $odom_topic_param, parameter_value: $default_odom_topic)
 	isa has_parameter_value, has default_value true;
 
 # default odom duration
 $default_odom_duration isa ParameterValueDouble, has double_value 1.0;
-(node: $velocity_smoother, parameter: $odom_duration_param, parameter_value: $default_odom_duration) 
+(node: $velocity_smoother, parameter: $odom_duration_param, parameter_value: $default_odom_duration)
 	isa has_parameter_value, has default_value true;
 
 $relay_node isa ROSNode,
+	has node_name "relay_node_cmd_vel",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+
+(node: $relay_node) isa node_deployment,
 	has package "topic_tools",
 	has executable "relay";
 
-$cmd_vel_vs_qos isa QoSProfile, 
+$cmd_vel_vs_qos isa QoSProfile,
 	has reliabilty "RELIABLE",
 	has history "KEEP_LAST",
 	has depth 10,
@@ -59,11 +69,7 @@ $cmd_vel_vs_qos isa QoSProfile,
 	has liveliness "AUTOMATIC",
 	has lease_duration 0.0;
 
-$cmd_vel_topic (publisher: $velocity_smoother, subscriber: $relay_node, qos: $cmd_vel_vs_qos) 
-	isa ros_topic, 
-	has topic_type "geometry_msgs/msg/Twist", 
+$cmd_vel_topic (publisher: $velocity_smoother, subscriber: $relay_node, qos: $cmd_vel_vs_qos)
+	isa ros_topic,
+	has topic_type "geometry_msgs/msg/Twist",
 	has topic_name "/cmd/vel";
-
-## runtime node examples
-(node: $velocity_smoother) isa runtime_node, has node_name "velocity_smoother", has namespace "", has start_time 2025-08-06T10:56:12.111;
-(node: $relay_node) isa runtime_node, has node_name "relay_node_cmd_vel", has namespace "", has start_time 2025-08-06T10:57:56.666;
