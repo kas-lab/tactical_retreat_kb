@@ -1,0 +1,81 @@
+define
+
+## Attributes
+name sub attribute,
+	abstract,
+	value string;
+
+system_name sub name,
+	value string;
+start_time sub attribute,
+	value datetime;
+
+requirement_name sub name,
+	value string;
+description sub attribute,
+	value string;
+
+bool_value sub attribute,
+	value boolean;
+required_value sub attribute,
+	value double;
+quantified_value sub attribute,
+	value double;
+
+interval sub attribute,
+	value double;
+slope sub attribute,
+	value double;
+expoent sub attribute,
+	value double;
+
+## Entities
+System sub entity,
+	owns system_name @key,
+	owns start_time,
+	plays system_requirement:system;
+
+Term sub entity,
+	abstract,
+	plays expression:term;
+
+BoolTerm sub Term,
+	owns bool_value;
+Proposition sub Term,
+	owns quantified_value,
+	owns description;
+
+FuzzyVariable sub entity,
+	abstract,
+	owns interval,
+	owns slope,
+	owns expoent;
+
+FuzzySet sub FuzzyVariable,
+	plays fuzzy_set_expression:set;
+
+## Relations
+system_requirement sub relation,
+	abstract,
+	relates system;
+
+relaxed_requirement sub system_requirement,
+	owns requirement_name @key,
+	owns description,
+	relates expression;
+
+expression sub relation,
+	abstract,
+	relates expression,
+	relates term,
+	plays relaxed_requirement:expression,
+	plays expression:expression;
+
+shall_expression sub expression;
+
+fuzzy_set_expression sub expression,
+	abstract,
+	relates set;
+
+as_close_as_possible_expression sub fuzzy_set_expression,
+	owns required_value;

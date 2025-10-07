@@ -1,0 +1,21 @@
+insert
+
+$veloicity_proposition isa Proposition,
+	has quantified_value 0.21221, # just an example, this should be inserted at runtime
+	has description "The robot maintain its velocity";
+
+$velocity_set isa FuzzySet,
+	has interval 0.05,
+	has slope 1.0,
+	has expoent 1.0;
+
+$velocity_as_close_expression (set: $velocity_set, term: $veloicity_proposition) isa as_close_as_possible_expression,
+	has required_value 0.26;
+
+$velocity_shall_expression (expression: $velocity_as_close_expression) isa shall_expression;
+
+$mirte isa System, has system_name "Mirte";
+
+$velocity_requirement (system: $mirte, expression: $velocity_shall_expression) isa relaxed_requirement,
+	has requirement_name "R1.1 Velocity",
+	has description "The robot SHALL maintain its velocity AS CLOSE AS POSSIBLE TO 0.26 m/s.";
