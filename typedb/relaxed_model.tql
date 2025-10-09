@@ -22,11 +22,16 @@ required_value sub attribute,
 quantified_value sub attribute,
 	value double;
 
-interval sub attribute,
+duration sub attribute,
 	value double;
-slope sub attribute,
-	value double;
+
+### fuzzy attributes
+
 expoent sub attribute,
+	value double;
+inflection_point sub attribute,
+	value double;
+curvature sub attribute,
 	value double;
 
 ## Entities
@@ -46,13 +51,42 @@ Proposition sub Term,
 	owns description;
 
 FuzzyVariable sub entity,
-	abstract,
-	owns interval,
-	owns slope,
-	owns expoent;
+	abstract;
 
+## fuzzy set with a membership function m(x) with the form
 FuzzySet sub FuzzyVariable,
 	plays fuzzy_set_expression:set;
+
+### "as many as possible" fuzzy membership functions
+
+## exponential saturation membership function
+## m(x) = 1 - e^(-expoent * x), expoent > 0
+FuzzyExponentialSaturation sub FuzzySet,
+	owns expoent; # speed of saturation
+
+## sigmoid membership function
+## m(x) = 1 / (1 + e ^ -expoent*(x - x0))
+FuzzySigmoid sub FuzzySet,
+	owns expoent,
+	owns inflection_point; # where m(inflection_point) = 0.5
+
+## bounded linear fraction membership function (monotonic)
+## m(x) = x / (x + curvature), curvature > 0
+FuzzyBoundedLinearFraction sub FuzzySet,
+	owns curvature; # controls the curvature
+
+### "as few as possible"/"as close as possible" fuzzy membership functions
+
+## exponential decay membership function
+## m(x) = e^(-expoent * x), expoent > 0
+FuzzyExponentialDecay sub FuzzySet,
+	owns expoent;
+
+## rational decay membership function
+## m(x) = curvature / (x + curvature), curvature > 0
+FuzzyRationalDecay sub FuzzySet,
+	owns curvature;
+
 
 ## Relations
 system_requirement sub relation,
@@ -79,3 +113,12 @@ fuzzy_set_expression sub expression,
 
 as_close_as_possible_expression sub fuzzy_set_expression,
 	owns required_value;
+
+as_many_as_possible_expression sub fuzzy_set_expression;
+
+event_expression sub expression,
+	abstract,
+	owns duration;  # duration as double or datetime?
+
+after_expression sub event_expression;
+before_expression sub event_expression;
