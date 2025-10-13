@@ -1,18 +1,19 @@
 insert
 
-## Examples from RELAXED paper
+# Examples from RELAXED paper
 $smart_house isa System, has system_name "Smart House";
 
+## Non-invariant requirements
 ### Requirement 1.1
 $foodpackage_proposition isa Proposition,
-	has quantified_value 0.232321, # just an example, this should be inserted at runtime
+	has quantified_value 9.0, # just an example, this should be inserted at runtime
 	has description "The fridge detects and communicates information with food packages";
 
 $food_packages_set isa FuzzySigmoid,
 	has inflection_point 5.0,
 	has expoent 0.5889;
 
-$as_many_food_as_possible (set: $food_packages_set, term: $foodpackage_proposition) isa as_many_as_possible_expression;
+$as_many_food_as_possible (ascend_membership: $food_packages_set, term: $foodpackage_proposition) isa as_many_as_possible_expression;
 $food_shall_expression (expression: $as_many_food_as_possible) isa shall_expression;
 
 $r1_1 (system: $smart_house, expression: $food_shall_expression) isa relaxed_requirement,
@@ -24,10 +25,11 @@ $dietplan_proposition isa Proposition,
 	has quantified_value 1820, # just an example, this should be inserted at runtime
 	has description "The fridge suggests a dietplan";
 
-$calories_set isa FuzzyExponentialDecay,
-	has expoent 0.01;
+$calories_set isa FuzzyGuassian,
+	has center 0.0,
+	has sigma 100;
 
-$calories_as_close_expression (set: $calories_set, term: $dietplan_proposition) isa as_close_as_possible_expression,
+$calories_as_close_expression (unimodal_membership: $calories_set, term: $dietplan_proposition) isa as_close_as_possible_expression,
 	has required_value 1800;
 
 $calories_dietplan_shall_expression (expression: $calories_as_close_expression) isa shall_expression;
@@ -47,10 +49,12 @@ $liquid_intake_proposition isa Proposition,
 	has quantified_value 1.9, # just an example, this should be inserted at runtime
 	has description "The system ensures a liquid intake";
 
-$liquid_set isa FuzzyExponentialDecay,
-	has expoent -0.85;
+$liquid_set isa FuzzyTriangular,
+	has a -0.5,
+	has b 0.0,
+	has c 0.5;
 
-$liquid_intake_as_close_expression (set: $liquid_set, term: $liquid_intake_proposition) isa as_close_as_possible_expression,
+$liquid_intake_as_close_expression (unimodal_membership: $liquid_set, term: $liquid_intake_proposition) isa as_close_as_possible_expression,
 	has required_value 2.0;
 
 $liquid_intake_shall_expression (expression: $liquid_intake_as_close_expression) isa shall_expression;
@@ -58,29 +62,27 @@ $liquid_intake_shall_expression (expression: $liquid_intake_as_close_expression)
 $minimum_liquid_intake_proposition isa Proposition,
 	has quantified_value 1.5, # different from the other proposition I believe this is design time info
 	has description "The system ensures minimum liquid intake";
-$liquid_intake_before_expression (term: $minimum_liquid_intake_proposition) isa before_expression, has duration 21.0;
+$liquid_intake_before_expression (term: $minimum_liquid_intake_proposition) isa before_expression, has event_duration 21.0;
 $minmum_liquid_intake_shall_expression (expression: $liquid_intake_before_expression) isa shall_expression;
 
 $r1_3 (system: $smart_house, expression: $liquid_intake_shall_expression, expression: $minmum_liquid_intake_shall_expression) isa relaxed_requirement,
 	has requirement_name "R1.3 Liquid intake",
 	has description "The system SHALL ensure that Mary’s liquid intake is as AS CLOSE AS POSSIBLE TO ideal during the course of the day. The system SHALL ensure minimum liquid intake BEFORE bedtime.";
 
-## Examples Mirte's MVP use case
+### Requirement 1.4
+$energy_comsumption_proposition isa Proposition,
+	has quantified_value 500, # just an example, this should be inserted at runtime
+	has description "The system consumes energy during normal operation";
 
-$veloicity_proposition isa Proposition,
-	has quantified_value 0.21221, # just an example, this should be inserted at runtime
-	has description "The robot maintain its velocity";
+$energy_comsumption_set isa FuzzyExponentialDecay,
+	has expoent 0.2;
 
-$velocity_set isa FuzzyRationalDecay,
-	has curvature 0.08;
+$as_few_energy_as_possible (decay_membership: $energy_comsumption_set, term: $energy_comsumption_proposition) isa as_few_as_possible_expression;
+$energy_shall_expression (expression: $as_few_energy_as_possible) isa shall_expression;
 
-$velocity_as_close_expression (set: $velocity_set, term: $veloicity_proposition) isa as_close_as_possible_expression,
-	has required_value 0.26;
+$r1_4 (system: $smart_house, expression: $energy_shall_expression) isa relaxed_requirement,
+	has requirement_name "R1.4 Energy comsumption",
+	has description "The system SHALL consume AS FEW units of energy AS POSSIBLE during normal operation.";
 
-$velocity_shall_expression (expression: $velocity_as_close_expression) isa shall_expression;
 
-$mirte isa System, has system_name "Mirte";
-
-$velocity_requirement (system: $mirte, expression: $velocity_shall_expression) isa relaxed_requirement,
-	has requirement_name "R1.1 Velocity",
-	has description "The robot SHALL maintain its velocity AS CLOSE AS POSSIBLE TO 0.26 m/s.";
+## Invariant requirements
