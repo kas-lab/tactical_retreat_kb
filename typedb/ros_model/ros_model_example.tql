@@ -69,7 +69,16 @@ $cmd_vel_vs_qos isa QoSProfile,
 	has liveliness "AUTOMATIC",
 	has lease_duration 0.0;
 
-$cmd_vel_topic (publisher: $velocity_smoother, subscriber: $relay_node, qos: $cmd_vel_vs_qos)
-	isa ros_topic,
-	has topic_type "geometry_msgs/msg/Twist",
-	has topic_name "/cmd/vel";
+$velocity_smoother_cmd_vel_pub isa Publisher,
+	has name "/cmd/vel",
+	has interface_type "geometry_msgs/msg/Twist";
+
+$relay_node_cmd_vel_sub isa Subscriber,
+	has name "/cmd/vel",
+	has interface_type "geometry_msgs/msg/Twist";
+
+$vs_cmd_vel_pub_qos (topic: $velocity_smoother_cmd_vel_pub, qos: $cmd_vel_vs_qos) isa has_qos;
+(node: $velocity_smoother, publisher: $velocity_smoother_cmd_vel_pub) isa has_topic;
+
+$relay_cmd_vel_sub_qos (topic: $relay_node_cmd_vel_sub, qos: $cmd_vel_vs_qos) isa has_qos;
+(node: $relay_node, subscriber: $relay_node_cmd_vel_sub) isa has_topic;
