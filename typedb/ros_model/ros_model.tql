@@ -112,7 +112,7 @@ ROSInterface sub entity,
 TopicInterface sub ROSInterface,
     abstract,
     owns gid,
-    plays has_qos:topic;
+    plays has_qos:interface;
 Subscriber sub TopicInterface,
     plays has_topic:subscriber;
 Publisher sub TopicInterface,
@@ -144,7 +144,7 @@ ActionServer sub ActionInterface,
     plays has_action:server;
 
 has_qos sub relation,
-    relates topic,
+    relates interface,
     relates qos;
 
 has_interface sub relation,
