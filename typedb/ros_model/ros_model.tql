@@ -49,7 +49,7 @@ reliability sub attribute,
     regex "^(BEST_EFFORT|RELIABLE)";
 history sub attribute,
     value string,
-    regex "^(KEEP_LAST|KEEP_ALL|UNKOWN)";
+    regex "^(KEEP_LAST|KEEP_ALL|UNKNOWN)";
 depth sub attribute,
     value long;
 durability sub attribute,
