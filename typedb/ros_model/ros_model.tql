@@ -56,14 +56,14 @@ durability sub attribute,
     value string,
     regex "^(TRANSIENT_LOCAL|VOLATILE)";
 deadline sub attribute,
-    value double;  # 0.0 indicates infinite
+    value long;  # 0 indicates infinite
 lifespan sub attribute,
-    value double;  # 0.0 indicates infinite
+    value long;  # 0 indicates infinite
 liveliness sub attribute,
     value string,
     regex "^(AUTOMATIC|MANUAL)";
 lease_duration sub attribute,
-    value double;  # 0.0 indicates infinite
+    value long;  # 0 indicates infinite
 
 ### Parameter attributes
 parameter_name sub attribute,

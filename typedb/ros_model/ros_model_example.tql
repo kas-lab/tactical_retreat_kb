@@ -64,10 +64,10 @@ $cmd_vel_vs_qos isa QoSProfile,
 	has history "KEEP_LAST",
 	has depth 10,
 	has durability "VOLATILE",
-	has lifespan 0.0,
-	has deadline 0.0,
+	has lifespan 0,
+	has deadline 0,
 	has liveliness "AUTOMATIC",
-	has lease_duration 0.0;
+	has lease_duration 0;
 
 $velocity_smoother_cmd_vel_pub isa Publisher,
 	has name "/cmd/vel",
