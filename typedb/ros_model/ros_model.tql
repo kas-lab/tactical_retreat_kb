@@ -44,7 +44,7 @@ gid sub attribute,
     value long;
 
 ### QoS attributes
-reliabilty sub attribute,
+reliability sub attribute,
     value string,
     regex "^(BEST_EFFORT|RELIABLE)";
 history sub attribute,
@@ -119,7 +119,7 @@ Publisher sub TopicInterface,
     plays has_topic:publisher;
 
 QoSProfile sub entity,
-    owns reliabilty,
+    owns reliability,
     owns history,
     owns depth,
     owns durability,
