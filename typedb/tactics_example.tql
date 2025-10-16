@@ -1,4 +1,9 @@
-insert 
+match
+
+$velocity_smoother_node isa LifeCycleNode,
+	has node_name "velocity_smoother";
+
+insert
 
 # define Feature Model
 $f_max_speed isa Feature, has feature_name "MAX_SPEED";
@@ -7,15 +12,11 @@ $f_hi_speed isa Feature, has feature_name "HIGH_SPEED";
 $f_med_speed isa Feature, has feature_name "MED_SPEED";
 $alternative (parent: $f_max_speed, child: $f_low_speed, child: $f_med_speed, child: $f_hi_speed) isa alternative;
 
-# define MaxSpeedInternal Tactic    
+# define MaxSpeedInternal Tactic
 $ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal", has tactic_period 1.0;
 
 $t_measured_nearest_object isa Term, has term_name "t_measured_nearest_object";
 $t_measured_movement_power isa Term, has term_name "t_measured_movement_power";
-
-
-# define ROSNodes
-$velocity_smoother_node isa ROSNode, has node_name "velocity_smoother";
 
 $t_nearest_object_close isa Term, has term_name "nearest_object_close", has term_value 0.1;
 
@@ -38,32 +39,32 @@ $tatic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15,
 $p_max_speed isa Parameter, has parameter_name "max_velocity";
 
 # define parameter values low
-$p_max_velocity_x_low isa ParameterDouble, has double_value 0.10;
-$p_max_velocity_y_low isa ParameterDouble, has double_value 0.0;
-$p_max_velocity_z_low isa ParameterDouble, has double_value 1.0;
+$p_max_velocity_x_low isa ParameterValueDouble, has double_value 0.10;
+$p_max_velocity_y_low isa ParameterValueDouble, has double_value 0.0;
+$p_max_velocity_z_low isa ParameterValueDouble, has double_value 1.0;
 # define parameter array low
-$p_max_speed_low_array isa ParameterArray;
+$p_max_speed_low_array isa ParameterValueArray;
 $p_max_speed_low_array_0 (parameter_array: $p_max_speed_low_array, parameter_value: $p_max_velocity_x_low) isa at_index, has parameter_value_index 0;
 $p_max_speed_low_array_1 (parameter_array: $p_max_speed_low_array, parameter_value: $p_max_velocity_y_low) isa at_index, has parameter_value_index 1;
 $p_max_speed_low_array_2 (parameter_array: $p_max_speed_low_array, parameter_value: $p_max_velocity_z_low) isa at_index, has parameter_value_index 2;
 
 
 # define parameter values med
-$p_max_velocity_x_med isa ParameterDouble, has double_value 0.18;
-$p_max_velocity_y_med isa ParameterDouble, has double_value 0.0;
-$p_max_velocity_z_med isa ParameterDouble, has double_value 1.0;
+$p_max_velocity_x_med isa ParameterValueDouble, has double_value 0.18;
+$p_max_velocity_y_med isa ParameterValueDouble, has double_value 0.0;
+$p_max_velocity_z_med isa ParameterValueDouble, has double_value 1.0;
 # define parameter array med
-$p_max_speed_med_array isa ParameterArray;
+$p_max_speed_med_array isa ParameterValueArray;
 $p_max_speed_med_array_0 (parameter_array: $p_max_speed_med_array, parameter_value: $p_max_velocity_x_med) isa at_index, has parameter_value_index 0;
 $p_max_speed_med_array_1 (parameter_array: $p_max_speed_med_array, parameter_value: $p_max_velocity_y_med) isa at_index, has parameter_value_index 1;
 $p_max_speed_med_array_2 (parameter_array: $p_max_speed_med_array, parameter_value: $p_max_velocity_z_med) isa at_index, has parameter_value_index 2;
 
 # define parameter values high
-$p_max_velocity_x_high isa ParameterDouble, has double_value 0.26;
-$p_max_velocity_y_high isa ParameterDouble, has double_value 0.0;
-$p_max_velocity_z_high isa ParameterDouble, has double_value 1.0;
+$p_max_velocity_x_high isa ParameterValueDouble, has double_value 0.26;
+$p_max_velocity_y_high isa ParameterValueDouble, has double_value 0.0;
+$p_max_velocity_z_high isa ParameterValueDouble, has double_value 1.0;
 # define parameter array high
-$p_max_speed_high_array isa ParameterArray;
+$p_max_speed_high_array isa ParameterValueArray;
 $p_max_speed_high_array_0 (parameter_array: $p_max_speed_high_array, parameter_value: $p_max_velocity_x_high) isa at_index, has parameter_value_index 0;
 $p_max_speed_high_array_1 (parameter_array: $p_max_speed_high_array, parameter_value: $p_max_velocity_y_high) isa at_index, has parameter_value_index 1;
 $p_max_speed_high_array_2 (parameter_array: $p_max_speed_high_array, parameter_value: $p_max_velocity_z_high) isa at_index, has parameter_value_index 2;
@@ -78,6 +79,6 @@ $low_speed_resolution (resolution_action: $sp_max_speed_low, variant: $f_low_spe
 $med_speed_resolution (resolution_action: $sp_max_speed_med, variant: $f_med_speed) isa variant_resolution;
 $high_speed_resolution (resolution_action: $sp_max_speed_high, variant: $f_hi_speed) isa variant_resolution;
 
-$res_rebetmc (tactic: $ta_max_speed, variant_resolution:$low_speed_resolution,  variant_resolution:$med_speed_resolution,  variant_resolution:$high_speed_resolution) isa resolution_model, 
+$res_rebetmc (tactic: $ta_max_speed, variant_resolution:$low_speed_resolution,  variant_resolution:$med_speed_resolution,  variant_resolution:$high_speed_resolution) isa resolution_model,
     has resolution_model_name "rebetmc", has ros_system "nav2";
 
