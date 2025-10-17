@@ -1,0 +1,6 @@
+match
+    $bt_navigator_node isa ROSNode, has node_name "bt_navigator", has namespace "";
+    (node:$bt_navigator_node, subnode: $subnode) isa subnode;
+fetch
+    $subnode: node_name, namespace;
+

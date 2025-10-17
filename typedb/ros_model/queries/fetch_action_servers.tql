@@ -1,0 +1,5 @@
+match
+	(server: $server) isa has_action;
+	$server has name "/navigate_to_pose";
+fetch
+	$server: attribute;

@@ -1,7 +1,0 @@
-match
-    (node: $bt_navigator_node) isa runtime_node, has node_name "bt_navigator", has namespace "";
-    (node:$bt_navigator_node, subnode: $subnode) isa subnode;
-    $runtime_subnode (node: $subnode) isa runtime_node;
-#get $runtime_subnode;
-fetch
-    $runtime_subnode: node_name, namespace;
