@@ -87,7 +87,7 @@ ROSNode sub entity,
     plays has_interface:node,
     plays has_parameter:node,
     plays has_parameter_value:node,
-    plays node_deployment:node;
+    plays node_deployment:node,
     plays process_group:node,
     plays subnode:subnode;
 
