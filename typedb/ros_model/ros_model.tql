@@ -217,11 +217,3 @@ process_group sub relation,
 
 subnode sub process_group,
     relates subnode;
-
-rule node_is_active:
-    when {
-        $r_node (node: $node) isa runtime_node;
-        not {$r_node has end_time $time;};
-    } then {
-        $node has is_active true;
-    };
