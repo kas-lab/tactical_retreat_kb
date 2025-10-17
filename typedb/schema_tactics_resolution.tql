@@ -1,4 +1,4 @@
-define 
+define
 
 ros_system sub attribute,
     value string;
@@ -59,10 +59,10 @@ expression sub relation,
 and_expression sub expression,
     relates expression,
     plays tactic_rule:consequent;
-    
+
 or_expression sub expression,
     relates expression;
-    
+
 inequality_expression sub expression,
     owns operator,
     relates lhs_term,
@@ -89,7 +89,7 @@ resolution_action sub relation,
 set_nodes_parameters sub resolution_action,
     relates parameter,
     relates parameter_value;
-    
+
 set_lifecycle_state sub resolution_action,
     owns lifecycle_state;
 
@@ -156,13 +156,13 @@ rule inequality_expression_valid:
     } then {
         $ineq_exp has expression_valid  true;
     };
-    
+
 rule inequality_expression_invalid:
     when {
         $ineq_exp (lhs_term: $t_lhs, rhs_term: $t_rhs) isa inequality_expression;
         {
             not { $t_lhs has term_value $lhs_value;};
-           
+
         } or {
              not { $t_rhs has term_value $rhs_value;};
         } or {

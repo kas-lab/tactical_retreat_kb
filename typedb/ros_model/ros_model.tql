@@ -26,41 +26,35 @@ end_time sub attribute,
     value datetime;
 
 ### ROS interfaces attributes
-topic_type sub attribute,
+name sub attribute,
     value string;
-service_type sub attribute,
-    value string;
-action_type sub attribute,
+interface_type sub attribute,
     value string;
 
-topic_name sub attribute,
-    value string;
-service_name sub attribute,
-    value string;
-action_name sub attribute,
-    value string;
+gid sub attribute,
+    value long;
 
 ### QoS attributes
-reliabilty sub attribute,
+reliability sub attribute,
     value string,
     regex "^(BEST_EFFORT|RELIABLE)";
 history sub attribute,
     value string,
-    regex "^(KEEP_LAST|KEEP_ALL|UNKOWN)";
+    regex "^(KEEP_LAST|KEEP_ALL|UNKNOWN)";
 depth sub attribute,
     value long;
 durability sub attribute,
     value string,
     regex "^(TRANSIENT_LOCAL|VOLATILE)";
 deadline sub attribute,
-    value double;  # 0.0 indicates infinite
+    value long;  # 0 indicates infinite
 lifespan sub attribute,
-    value double;  # 0.0 indicates infinite
+    value long;  # 0 indicates infinite
 liveliness sub attribute,
     value string,
-    regex "^(AUTOMATIC|MANUAL)"; 
+    regex "^(AUTOMATIC|MANUAL)";
 lease_duration sub attribute,
-    value double;  # 0.0 indicates infinite
+    value long;  # 0 indicates infinite
 
 ### Parameter attributes
 parameter_name sub attribute,
@@ -86,35 +80,85 @@ parameter_value_index sub attribute,
 ## Entities
 
 ROSNode sub entity,
-    owns package,
-    owns executable,
-    owns is_active,
-    plays ros_topic:publisher,
-    plays ros_topic:subscriber,
-    plays ros_service:server,
-    plays ros_service:client,
-    plays ros_action:server,
-    plays ros_action:client,
+    owns node_name @key,
+    owns namespace,
+    owns start_time,
+    owns end_time,
+    plays has_interface:node,
     plays has_parameter:node,
     plays has_parameter_value:node,
-    plays runtime_node:node,
+    plays node_deployment:node;
     plays process_group:node,
     plays subnode:subnode;
 
 LifeCycleNode sub ROSNode,
     owns lifecycle_state;
 
+### ROS interfaces
+ROSInterface sub entity,
+    abstract,
+    owns name,
+    owns interface_type,
+    plays has_interface:afferent,
+    plays has_interface:efferent;
+
+TopicInterface sub ROSInterface,
+    abstract,
+    owns gid,
+    plays has_qos:interface;
+Subscriber sub TopicInterface,
+    plays has_topic:subscriber;
+Publisher sub TopicInterface,
+    plays has_topic:publisher;
+
 QoSProfile sub entity,
-    owns reliabilty,
+    owns reliability,
     owns history,
     owns depth,
     owns durability,
     owns deadline,
     owns lifespan,
-    owns liveliness, 
+    owns liveliness,
     owns lease_duration,
-    plays ros_topic:qos;
+    plays has_qos:qos;
 
+ServiceInterface sub ROSInterface,
+    abstract;
+ServiceClient sub ServiceInterface,
+    plays has_service:client;
+ServiceServer sub ServiceInterface,
+    plays has_service:server;
+
+ActionInterface sub ROSInterface,
+    abstract;
+ActionClient sub ActionInterface,
+    plays has_action:client;
+ActionServer sub ActionInterface,
+    plays has_action:server;
+
+has_qos sub relation,
+    relates interface,
+    relates qos;
+
+has_interface sub relation,
+    abstract,
+    relates node,
+    relates afferent,
+    relates efferent;
+
+has_topic sub has_interface,
+    relates subscriber as afferent,
+    relates publisher as efferent;
+
+has_service sub has_interface,
+    relates client as afferent,
+    relates server as efferent;
+
+has_action sub has_interface,
+    relates client as afferent,
+    relates server as efferent;
+
+### Parameter related entities
 Parameter sub entity,
     owns parameter_name,
     plays has_parameter:parameter,
@@ -148,28 +192,6 @@ ParameterValueArray sub ParameterValue,
     plays at_index:parameter_array;
 
 ## Relations
-ros_interface sub relation,
-    abstract;
-
-ros_topic sub ros_interface,
-    owns topic_type,
-    owns topic_name,
-    relates publisher,
-    relates subscriber,
-    relates qos;
-
-ros_service sub ros_interface,
-    owns service_name,
-    owns service_type,
-    relates server,
-    relates client;
-
-ros_action sub ros_interface,
-    owns action_name,
-    owns action_type,
-    relates server,
-    relates client;
-
 has_parameter sub relation,
     relates node,
     relates parameter;
@@ -185,11 +207,9 @@ at_index sub relation,
     relates parameter_array,
     relates parameter_value;
 
-runtime_node sub relation,
-    owns node_name @key,
-    owns namespace,
-    owns start_time,
-    owns end_time,
+node_deployment sub relation,
+    owns package,
+    owns executable,
     relates node;
 
 process_group sub relation,
