@@ -13,6 +13,8 @@ description sub attribute,
 	value string;
 in_effect sub attribute,
 	value boolean;
+fulfillment sub attribute,
+	value double;
 
 ### term attributes
 bool_value sub attribute,
@@ -132,10 +134,12 @@ system_requirement sub relation,
 relaxed_requirement sub system_requirement,
 	owns requirement_name @key,
 	owns description,
+	owns fulfillment,
 	relates expression;
 
 expression sub relation,
 	abstract,
+	owns fulfillment,
 	relates expression,
 	relates term,
 	plays relaxed_requirement:expression,
@@ -255,4 +259,31 @@ rule fuzzy-expression-decay-membership-evaluation :
 		?membership = ?membership_;
 	} then {
 		$fuzzy_expression has membership ?membership;
+	};
+
+## expressions fulfillment rules
+rule shall-expression-fulfillment :
+	when {
+		$shall_expression (expression: $expression) isa shall_expression;
+		$expression has fulfillment $fulfillment;
+	} then {
+		$shall_expression has $fulfillment;
+	};
+
+## membership and fulfillment are redundant
+rule fuzzy-expression-fulfillment :
+	when {
+		$fuzzy_expression isa fuzzy_expression, has membership $membership;
+		?fulfillment = $membership;
+	} then {
+		$fuzzy_expression has fulfillment ?fulfillment;
+	};
+
+# ## requirement fulfillment
+rule requirement-fulfillment :
+	when {
+		$req (expression: $expression) isa relaxed_requirement;
+		$expression has fulfillment $fulfillment;
+	} then {
+		$req has $fulfillment;
 	};

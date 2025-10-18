@@ -492,3 +492,31 @@ class TacticalRetreatInterface(TypeDBInterface):
             resolution_model, action_name, action_type)
         return [result['tactic']['tactic_name'][0]['value']
                 for result in query_result]
+
+    def fetch_relaxed_requirement_fulfillment(
+            self,
+            system_name: str,
+            requirement_name: str) -> List[dict[str,
+                                        MatchResultDict]]:
+        """
+        Fetch relaxed requirement fulfillment.
+        """
+        query = f"""
+            match
+                $system isa System, has system_name '{system_name}';
+                (system: $system) isa relaxed_requirement,
+                    has requirement_name '{requirement_name}',
+                    has fulfillment $fulfillment;
+            fetch $fulfillment;
+        """
+        return self.fetch_database(query)
+
+    def get_relaxed_requirement_fulfillment(
+            self,
+            system_name: str,
+            requirement_name: str) -> List[dict[str,
+                                        MatchResultDict]]:
+        """
+        Fetch relaxed requirement fulfillment.
+        """
+        return self.fetch_relaxed_requirement_fulfillment(system_name, requirement_name)[0]['fulfillment']['value']
