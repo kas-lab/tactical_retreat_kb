@@ -32,7 +32,8 @@ event_end_duration sub attribute,
 membership sub attribute,
 	value double;
 
-expoent sub attribute,
+### fuzzy membership attributes
+exponent sub attribute,
 	value double;
 inflection_point sub attribute,
 	value double;
@@ -93,14 +94,14 @@ FuzzyGuassian sub UnimodalMembership,
 ### Ascend "as many as possible" fuzzy membership functions
 
 ## exponential saturation membership function
-## m(x) = 1 - e^(-expoent * x), expoent > 0
+## m(x) = 1 - e^(-exponent * x), exponent > 0
 FuzzyExponentialSaturation sub AscendMembership,
-	owns expoent; # speed of saturation
+	owns exponent; # speed of saturation
 
 ## sigmoid membership function
-## m(x) = 1 / (1 + e ^ -expoent*(x - x0))
+## m(x) = 1 / (1 + e ^ -exponent*(x - x0))
 FuzzySigmoid sub AscendMembership,
-	owns expoent,
+	owns exponent,
 	owns inflection_point; # where m(inflection_point) = 0.5
 
 ## bounded linear fraction membership function (monotonic)
@@ -111,9 +112,9 @@ FuzzyBoundedLinearFraction sub AscendMembership,
 ### Decay "as few as possible"/"as close as possible" fuzzy membership functions
 
 ## exponential decay membership function
-## m(x) = e^(-expoent * x), expoent > 0
+## m(x) = e^(-exponent * x), exponent > 0
 FuzzyExponentialDecay sub DecayMembership,
-	owns expoent;
+	owns exponent;
 
 ## rational decay membership function
 ## m(x) = curvature / (x + curvature), curvature > 0
@@ -223,11 +224,11 @@ rule fuzzy-expression-ascend-membership-evaluation :
 		$proposition isa Proposition, has quantified_value $quantified_value;
 		$fuzzy_expression (ascend_membership: $fuzzy_membership, term: $proposition) isa fuzzy_ascend_expression;
 		{
-			$fuzzy_membership isa FuzzyExponentialSaturation, has expoent $expoent;
-			?membership_ = 1.0 - 2.71828 ^ ( -1.0 * $expoent * $quantified_value);
+			$fuzzy_membership isa FuzzyExponentialSaturation, has exponent $exponent;
+			?membership_ = 1.0 - 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
 		} or {
-			$fuzzy_membership isa FuzzySigmoid, has inflection_point $inflection_point, has expoent $expoent;
-			?membership_ = 1.0 / ( 1.0 + 2.71828 ^ ( -1.0 * $expoent * ($quantified_value - $inflection_point)));
+			$fuzzy_membership isa FuzzySigmoid, has inflection_point $inflection_point, has exponent $exponent;
+			?membership_ = 1.0 / ( 1.0 + 2.71828 ^ ( -1.0 * $exponent * ($quantified_value - $inflection_point)));
 		} or {
 			$fuzzy_membership isa FuzzyBoundedLinearFraction, has curvature $curvature;
 			?membership_ = $quantified_value / ($quantified_value + $curvature);
@@ -242,8 +243,8 @@ rule fuzzy-expression-decay-membership-evaluation :
 		$proposition isa Proposition, has quantified_value $quantified_value;
 		$fuzzy_expression (decay_membership: $fuzzy_membership, term: $proposition) isa fuzzy_decay_expression;
 		{
-			$fuzzy_variable isa FuzzyExponentialDecay, has expoent $expoent;
-			?membership_ = 2.71828 ^ ( -1.0 * $expoent * $quantified_value);
+			$fuzzy_variable isa FuzzyExponentialDecay, has exponent $exponent;
+			?membership_ = 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
 		} or {
 			$fuzzy_variable isa FuzzyRationalDecay, has curvature $curvature;
 			?membership_ = $curvature / ($quantified_value + $curvature);

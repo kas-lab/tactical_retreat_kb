@@ -11,7 +11,7 @@ $foodpackage_proposition isa Proposition,
 
 $food_packages_set isa FuzzySigmoid,
 	has inflection_point 5.0,
-	has expoent 0.5889;
+	has exponent 0.5889;
 
 $as_many_food_as_possible (ascend_membership: $food_packages_set, term: $foodpackage_proposition) isa as_many_as_possible_expression;
 $food_shall_expression (expression: $as_many_food_as_possible) isa shall_expression;
@@ -75,7 +75,7 @@ $energy_comsumption_proposition isa Proposition,
 	has description "The system consumes energy during normal operation";
 
 $energy_comsumption_set isa FuzzyExponentialDecay,
-	has expoent 0.2;
+	has exponent 0.2;
 
 $as_few_energy_as_possible (decay_membership: $energy_comsumption_set, term: $energy_comsumption_proposition) isa as_few_as_possible_expression;
 $energy_shall_expression (expression: $as_few_energy_as_possible) isa shall_expression;
