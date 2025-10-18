@@ -20,17 +20,18 @@ from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInte
 
 @pytest.fixture
 def kb_interface():
-    kb_interface = TacticalRetreatInterface("localhost:1729",
-                                            "test_model_interface",
-                                            ["typedb/ros_model.tql",
-                                             "typedb/schema_tactics_resolution.tql",
-                                             "typedb/feature_model.tql",
-                                             "typedb/discover_tactics_schema.tql"],
-                                            ["typedb/ros_model_example.tql",
-                                             "typedb/tactics_example.tql"],
-                                            force_database=True,
-                                            force_data=True,
-                                            infer=True)
+    kb_interface = TacticalRetreatInterface(
+        "localhost:1729",
+        "test_model_interface",
+        ["typedb/ros_model/ros_model.tql",
+            "typedb/schema_tactics_resolution.tql",
+            "typedb/feature_model.tql",
+            "typedb/discover_tactics_schema.tql"],
+        ["typedb/ros_model/ros_model_example.tql",
+            "typedb/tactics_example.tql"],
+        force_database=True,
+        force_data=True,
+        infer=True)
     return kb_interface
 
 
@@ -78,49 +79,49 @@ def test_get_connected_subscriber_nodes(kb_interface):
     assert subscriber_nodes[0]['node_name'] == 'velocity_smoother'
 
 
-def test_get_active_neighbours(kb_interface):
-    active_neighbours = kb_interface.get_active_neighbours('bt_navigator')
-    assert len(active_neighbours) == 4
-    assert active_neighbours[0]['namespace'] == ''
-    assert active_neighbours[0]['node_name'] == 'bt_navigator_navigate_through_poses_rclcpp'
-    assert active_neighbours[1]['namespace'] == ''
-    assert active_neighbours[1]['node_name'] == 'bt_navigator_navigate_to_pose_rclcpp'
-    assert active_neighbours[2]['namespace'] == ''
-    assert active_neighbours[2]['node_name'] == 'controller_server'
-    assert active_neighbours[3]['namespace'] == ''
-    assert active_neighbours[3]['node_name'] == 'planner_server'
+def test_get_neighbours(kb_interface):
+    neighbours = kb_interface.get_neighbours('bt_navigator')
+    assert len(neighbours) == 4
+    assert neighbours[0]['namespace'] == ''
+    assert neighbours[0]['node_name'] == 'bt_navigator_navigate_through_poses_rclcpp'
+    assert neighbours[1]['namespace'] == ''
+    assert neighbours[1]['node_name'] == 'bt_navigator_navigate_to_pose_rclcpp'
+    assert neighbours[2]['namespace'] == ''
+    assert neighbours[2]['node_name'] == 'controller_server'
+    assert neighbours[3]['namespace'] == ''
+    assert neighbours[3]['node_name'] == 'planner_server'
 
-    active_neighbours = kb_interface.get_active_neighbours(
+    neighbours = kb_interface.get_neighbours(
         'bt_navigator_navigate_through_poses_rclcpp')
-    assert len(active_neighbours) == 1
-    assert active_neighbours[0]['namespace'] == ''
-    assert active_neighbours[0]['node_name'] == 'controller_server'
+    assert len(neighbours) == 1
+    assert neighbours[0]['namespace'] == ''
+    assert neighbours[0]['node_name'] == 'controller_server'
 
-    active_neighbours = kb_interface.get_active_neighbours(
+    neighbours = kb_interface.get_neighbours(
         'bt_navigator_navigate_to_pose_rclcpp')
-    assert len(active_neighbours) == 2
-    assert active_neighbours[0]['namespace'] == ''
-    assert active_neighbours[0]['node_name'] == 'controller_server'
-    assert active_neighbours[1]['namespace'] == ''
-    assert active_neighbours[1]['node_name'] == 'planner_server'
+    assert len(neighbours) == 2
+    assert neighbours[0]['namespace'] == ''
+    assert neighbours[0]['node_name'] == 'controller_server'
+    assert neighbours[1]['namespace'] == ''
+    assert neighbours[1]['node_name'] == 'planner_server'
 
-    active_neighbours = kb_interface.get_active_neighbours('controller_server')
-    assert len(active_neighbours) == 1
-    assert active_neighbours[0]['namespace'] == ''
-    assert active_neighbours[0]['node_name'] == 'velocity_smoother'
+    neighbours = kb_interface.get_neighbours('controller_server')
+    assert len(neighbours) == 1
+    assert neighbours[0]['namespace'] == ''
+    assert neighbours[0]['node_name'] == 'velocity_smoother'
 
-    active_neighbours = kb_interface.get_active_neighbours('velocity_smoother')
-    assert len(active_neighbours) == 3
-    assert active_neighbours[0]['namespace'] == ''
-    assert active_neighbours[0]['node_name'] == 'behavior_server'
-    assert active_neighbours[1]['namespace'] == ''
-    assert active_neighbours[1]['node_name'] == 'controller_server'
-    assert active_neighbours[2]['namespace'] == ''
-    assert active_neighbours[2]['node_name'] == 'relay_node_cmd_vel'
+    neighbours = kb_interface.get_neighbours('velocity_smoother')
+    assert len(neighbours) == 3
+    assert neighbours[0]['namespace'] == ''
+    assert neighbours[0]['node_name'] == 'behavior_server'
+    assert neighbours[1]['namespace'] == ''
+    assert neighbours[1]['node_name'] == 'controller_server'
+    assert neighbours[2]['namespace'] == ''
+    assert neighbours[2]['node_name'] == 'relay_node_cmd_vel'
 
 
-def test_get_active_connected_nodes(kb_interface):
-    connected_nodes = kb_interface.get_active_connected_nodes(
+def test_get_connected_nodes(kb_interface):
+    connected_nodes = kb_interface.get_connected_nodes(
         'bt_navigator', '')
     assert len(connected_nodes) == 8
     assert connected_nodes[0]['node_name'] == 'behavior_server'

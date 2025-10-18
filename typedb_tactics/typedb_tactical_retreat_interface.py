@@ -35,30 +35,30 @@ class RuntimeNodeDict(TypedDict):
     node_name: str  #: node name
 
 
-def runtime_node_query_to_runtime_node_dict(
+def node_query_to_node_dict(
         query_result: List[dict[str, MatchResultDict]],
-        runtime_node_variable: str = 'runtime_node') -> List[RuntimeNodeDict]:
-    runtime_node_dict = list()
+        node_variable: str = 'node') -> List[RuntimeNodeDict]:
+    node_dict = list()
     for result in query_result:
-        runtime_node = result.get(runtime_node_variable)
-        if len(runtime_node['namespace']) > 1:
+        node = result.get(node_variable)
+        if len(node['namespace']) > 1:
             logger.error(
-                'In runtime_node_query_to_runtime_node_dict: '
+                'In node_query_to_node_dict: '
                 'runtime node has more than 1 namespace')
-            return runtime_node_dict
-        if len(runtime_node['node_name']) > 1:
+            return node_dict
+        if len(node['node_name']) > 1:
             logger.error(
-                'In runtime_node_query_to_runtime_node_dict: '
+                'In node_query_to_node_dict: '
                 'runtime node has more than 1 node_name')
-            return runtime_node_dict
-        runtime_node_dict.append({
-            'node_name': runtime_node['node_name'][0]['value'],
-            'namespace': runtime_node['namespace'][0]['value'],
+            return node_dict
+        node_dict.append({
+            'node_name': node['node_name'][0]['value'],
+            'namespace': node['namespace'][0]['value'],
         }
         )
     # Sort list to guarantee deterministic list order
-    runtime_node_dict.sort(key=lambda d: (d['node_name'], d['namespace']))
-    return runtime_node_dict
+    node_dict.sort(key=lambda d: (d['node_name'], d['namespace']))
+    return node_dict
 
 
 class TacticalRetreatInterface(TypeDBInterface):
@@ -95,12 +95,11 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query = f"""
             match
-                (node: $parent_node) isa runtime_node, has node_name '{node_name}',
+                $parent_node isa ROSNode, has node_name '{node_name}',
                     has namespace '{namespace}';
-                (node:$parent_node, subnode: $subnode) isa subnode;
-                $runtime_node (node: $subnode) isa runtime_node;
+                (node: $parent_node, subnode: $subnode) isa subnode;
             fetch
-                $runtime_node: node_name, namespace;
+                $subnode: node_name, namespace;
         """
         return self.fetch_database(query)
 
@@ -115,8 +114,8 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param namespace: namespace of the parent running node
         :return: list of dictionaries with the node_name and namespace of the subnodes
         """
-        return runtime_node_query_to_runtime_node_dict(
-            self.fetch_subnodes(node_name, namespace))
+        return node_query_to_node_dict(
+            self.fetch_subnodes(node_name, namespace), 'subnode')
 
     def fetch_action_clients_nodes(
             self, action_name: str) -> List[dict[str, MatchResultDict]]:
@@ -128,10 +127,10 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query = f"""
             match
-                (client: $client) isa ros_action, has action_name '{action_name}';
-                $runtime_node (node: $client) isa runtime_node;
+                $action_client isa ActionClient, has interface_name '{action_name}';
+                (node: $node, client: $action_client) isa has_action;
             fetch
-                $runtime_node: node_name, namespace;
+                $node: node_name, namespace;
         """
         return self.fetch_database(query)
 
@@ -143,7 +142,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param action: action name
         :return: list of dictionaries with the node_name and namespace of the client nodes
         """
-        return runtime_node_query_to_runtime_node_dict(
+        return node_query_to_node_dict(
             self.fetch_action_clients(action_name))
 
     def fetch_action_server_nodes(
@@ -156,10 +155,10 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query = f"""
             match
-                (server: $server) isa ros_action, has action_name '{action_name}';
-                $runtime_node (node: $server) isa runtime_node;
+                $action_server isa ActionServer, has interface_name '{action_name}';
+                (node: $node, server: $action_server) isa has_action;
             fetch
-                $runtime_node: node_name, namespace;
+                $node: node_name, namespace;
         """
         return self.fetch_database(query)
 
@@ -171,7 +170,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param action: action name
         :return: list of dictionaries with the node_name and namespace of the client nodes
         """
-        return runtime_node_query_to_runtime_node_dict(
+        return node_query_to_node_dict(
             self.fetch_action_server_nodes(action_name))
 
     def fetch_action_clients_names(
@@ -185,11 +184,11 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query = f"""
             match
-                (node: $node) isa runtime_node, has node_name '{node_name}',
+                $node isa ROSNode, has node_name '{node_name}',
                     has namespace '{namespace}';
-                $action (client: $node) isa ros_action;
+                (node: $node, client: $action_client) isa has_action;
             fetch
-                $action: action_name, action_type;
+                $action_client: interface_name, interface_type;
         """
         return self.fetch_database(query)
 
@@ -206,28 +205,28 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         ros_action_result_dict = list()
         for result in self.fetch_action_clients_names(node_name, namespace):
-            action = result.get('action')
-            if len(action['action_name']) == 0:
+            action = result.get('action_client')
+            if len(action['interface_name']) == 0:
                 logger.error(
                     'In get_action_clients_names: action does not have an action_name')
                 return ros_action_result_dict
-            if len(action['action_name']) > 1:
+            if len(action['interface_name']) > 1:
                 logger.error(
                     'In get_action_clients_names: action has more than 1 action_name')
                 return ros_action_result_dict
-            if len(action['action_type']) > 1:
+            if len(action['interface_type']) > 1:
                 logger.error(
                     'In get_action_clients_names: action {} has more than 1 action_type'.format(
                         action['action_name']))
                 return ros_action_result_dict
-            if len(action['action_type']) == 0:
+            if len(action['interface_type']) == 0:
                 logger.error(
                     'In get_action_clients_names: action {} does not have an action_type'.format(
                         action['action_name']))
                 return ros_action_result_dict
             ros_action_result_dict.append({
-                'action_name': action['action_name'][0]['value'],
-                'action_type': action['action_type'][0]['value'],
+                'action_name': action['interface_name'][0]['value'],
+                'action_type': action['interface_type'][0]['value'],
             }
             )
         # Sort list to guarantee deterministic list order
@@ -248,12 +247,18 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query = f"""
             match
-                (node: $node) isa runtime_node, has node_name '{node_name}',
+                $node isa ROSNode, has node_name '{node_name}',
                     has namespace '{namespace}';
-                (server: $server, client: $node) isa ros_action;
-                $runtime_node (node: $server) isa runtime_node;
+                (node: $node, client: $action_client) isa has_action;
+                $action_client isa ActionClient,
+                    has interface_name $interface_name,
+                    has interface_type $interface_type;
+                $action_server isa ActionServer,
+                    has interface_name $interface_name,
+                    has interface_type $interface_type;
+                (node: $server_node, server: $action_server) isa has_action;
             fetch
-                $runtime_node: node_name, namespace;
+                $server_node: node_name, namespace;
         """
         return self.fetch_database(query)
 
@@ -268,8 +273,8 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param namespace: namespace of the running node
         :return: list of dictionaries with the node_name and namespace of the action server nodes
         """
-        return runtime_node_query_to_runtime_node_dict(
-            self.fetch_connected_action_server_nodes(node_name, namespace))
+        return node_query_to_node_dict(
+            self.fetch_connected_action_server_nodes(node_name, namespace), 'server_node')
 
     def fetch_connected_subscriber_nodes(
             self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
@@ -282,12 +287,18 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query = f"""
             match
-                (node: $node) isa runtime_node, has node_name '{node_name}',
+                $node isa ROSNode, has node_name '{node_name}',
                     has namespace '{namespace}';
-                (subscriber: $subscriber, publisher: $node) isa ros_topic;
-                $runtime_node (node: $subscriber) isa runtime_node;
+                (node: $node, publisher: $publisher) isa has_topic;
+                $publisher isa Publisher,
+                    has interface_name $interface_name,
+                    has interface_type $interface_type;
+                $subscriber isa Subscriber,
+                    has interface_name $interface_name,
+                    has interface_type $interface_type;
+                (node: $subscriber_node, subscriber: $subscriber) isa has_topic;
             fetch
-                $runtime_node: node_name, namespace;
+                $subscriber_node: node_name, namespace;
         """
         return self.fetch_database(query)
 
@@ -302,8 +313,8 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param namespace: namespace of the running node
         :return: list of dictionaries with the node_name and namespace of the subscriber nodes
         """
-        return runtime_node_query_to_runtime_node_dict(
-            self.fetch_connected_subscriber_nodes(node_name, namespace))
+        return node_query_to_node_dict(
+            self.fetch_connected_subscriber_nodes(node_name, namespace), 'subscriber_node')
 
     def fetch_tactics(
             self, resolution_model: str) -> List[dict[str, MatchResultDict]]:
@@ -361,52 +372,52 @@ class TacticalRetreatInterface(TypeDBInterface):
                         variant_resolution;
                 }};
                 $resolution_action (node: $node) isa resolution_action;
-                $runtime_node (node: $node) isa runtime_node, has node_name '{node_name}',
+                $node isa ROSNode, has node_name '{node_name}',
                     has namespace '{namespace}';
-            get $runtime_node;
+            get $node;
             count;
         """
         return (self.get_aggregate_database(query) > 0)
 
-    def fetch_active_neighbours(
+    def fetch_neighbours(
             self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
         """
-        Fetch the active neighbours of a running node.
+        Fetch the neighbours of a node.
 
-        :param node_name: node name of the running node
-        :param namespace: namespace of the running node
+        :param node_name: node name of the node
+        :param namespace: namespace of the node
         :return: fetch query result
         """
         query = f"""
             match
-                $runtime_node (node: $node) isa runtime_node,
+                $node isa ROSNode,
                     has node_name '{node_name}', has namespace '{namespace}';
-                $active_neighbours (node: $runtime_node, neighbour: $neighbour) isa
-                    active_neighbours;
+                $neighbours (node: $node, neighbour: $neighbour) isa
+                    neighbours;
             fetch
                 $neighbour: node_name, namespace;
         """
         return self.fetch_database(query)
 
-    def get_active_neighbours(
+    def get_neighbours(
             self,
             node_name: str,
             namespace: str = '') -> List[RuntimeNodeDict]:
         """
-        Get the active neighbours of a running node.
+        Get the neighbours of a node.
 
-        :param node_name: node name of the running node
-        :param namespace: namespace of the running node
+        :param node_name: node name of the node
+        :param namespace: namespace of the node
         :return: list of dictionaries with the node_name and namespace of the neighbour nodes
         """
-        return runtime_node_query_to_runtime_node_dict(
-            self.fetch_active_neighbours(
+        return node_query_to_node_dict(
+            self.fetch_neighbours(
                 node_name, namespace), 'neighbour')
 
-    def fetch_active_connected_nodes(
+    def fetch_connected_nodes(
             self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
         """
-        Fetch the active connected nodes of a running node.
+        Fetch the connected nodes of a node.
 
         :param node_name: node name of the running node
         :param namespace: namespace of the running node
@@ -414,28 +425,28 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query = f"""
             match
-                $runtime_node (node: $node) isa runtime_node, has node_name '{node_name}',
+                $node isa ROSNode, has node_name '{node_name}',
                     has namespace '{namespace}';
-                $active_connected_nodes (node: $runtime_node, connected: $connected)
-                    isa active_connected_nodes;
+                $connected_nodes (node: $node, connected: $connected)
+                    isa connected_nodes;
             fetch
                 $connected: node_name, namespace;
         """
         return self.fetch_database(query)
 
-    def get_active_connected_nodes(
+    def get_connected_nodes(
             self,
             node_name: str,
             namespace: str = '') -> List[RuntimeNodeDict]:
         """
-        Get the active connected nodes of a running node.
+        Get the connected nodes of a node.
 
         :param node_name: node name of the running node
         :param namespace: namespace of the running node
         :return: list of dictionaries with the node_name and namespace of the neighbour nodes
         """
-        return runtime_node_query_to_runtime_node_dict(
-            self.fetch_active_connected_nodes(
+        return node_query_to_node_dict(
+            self.fetch_connected_nodes(
                 node_name, namespace), 'connected')
 
     def fetch_applicable_tactics(self,
@@ -453,11 +464,11 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query = f"""
             match
-                $ros_action isa ros_action, has action_name '{action_name}',
-                    has action_type '{action_type}';
+                $action isa ActionServer, has interface_name '{action_name}',
+                    has interface_type '{action_type}';
                 $resolution_model isa resolution_model,
                     has resolution_model_name '{resolution_model}';
-                (ros_action: $ros_action, resolution_model: $resolution_model, tactic: $tactic)
+                (action: $action, resolution_model: $resolution_model, tactic: $tactic)
                     isa applicable_tactics;
             fetch
                 $tactic: tactic_name;
