@@ -1,127 +1,120 @@
 define
 
 ### Discover applicable tactics things and rules
-active_neighbours sub relation,
+neighbours sub relation,
     relates node,
     relates neighbour;
 
-runtime_node plays active_neighbours:node;
-runtime_node plays active_neighbours:neighbour;
+ROSNode plays neighbours:node;
+ROSNode plays neighbours:neighbour;
 
-active_connected_nodes sub relation,
+connected_nodes sub relation,
     relates node,
     relates connected;
 
-runtime_node plays active_connected_nodes:node;
-runtime_node plays active_connected_nodes:connected;
+ROSNode plays connected_nodes:node;
+ROSNode plays connected_nodes:connected;
 
 applicable_tactics sub relation,
-    relates ros_action,
+    relates action,
     relates resolution_model,
     relates tactic;
 
-ros_action plays applicable_tactics:ros_action;
+ActionServer plays applicable_tactics:action;
 resolution_model plays applicable_tactics:resolution_model;
 Tactic plays applicable_tactics:tactic;
 
-rule active_neighbours_action_server:
+rule neighbours_efferents:
     when {
-        $runtime_node (node: $node) isa runtime_node, has node_name $node_name, has namespace $namespace;
-        (server: $action_server, client: $node) isa ros_action;
-        $action_server_runtime (node: $action_server) isa runtime_node;
+        $afferent_node isa ROSNode, has node_name $node_name, has namespace $namespace;
+        (node: $afferent_node, afferent: $afferent) isa has_interface;
+        $afferent has interface_name $interface_name, has interface_type $interface_type;
+
+        $efferent has interface_name $interface_name, has interface_type $interface_type;
+        (node: $efferent_node, efferent: $efferent) isa has_interface;
+
         not {
-            $action_server_runtime has node_name $node_name;
-            $action_server_runtime has namespace $namespace;
+            $efferent_node has node_name $node_name;
+            $efferent_node has namespace $namespace;
         };
     } then {
-        (node:$runtime_node, neighbour: $action_server_runtime) isa active_neighbours;
+        (node: $afferent_node, neighbour: $efferent_node) isa neighbours;
     };
 
-rule active_neighbours_topic_subscriber:
+rule neighbours_afferents:
     when {
-        $runtime_node (node: $node) isa runtime_node, has node_name $node_name, has namespace $namespace;
-        (publisher: $node, subscriber: $subscriber_node) isa ros_topic;
-        $subscriber_runtime (node: $subscriber_node) isa runtime_node;
-        not {
-            $subscriber_runtime has node_name $node_name;
-            $subscriber_runtime has namespace $namespace;
-        };
-    } then {
-        (node:$runtime_node, neighbour: $subscriber_runtime) isa active_neighbours;
-    };
+        $efferent_node isa ROSNode, has node_name $node_name, has namespace $namespace;
+        (node: $efferent_node, efferent: $efferent) isa has_interface;
+        $efferent has interface_name $interface_name, has interface_type $interface_type;
 
-rule active_neighbours_topic_publisher:
-    when {
-        $runtime_node (node: $node) isa runtime_node, has node_name $node_name, has namespace $namespace;
-        (publisher: $publisher_node, subscriber: $node) isa ros_topic;
-        $publisher_runtime (node: $publisher_node) isa runtime_node;
-        not {
-            $publisher_runtime has node_name $node_name;
-            $publisher_runtime has namespace $namespace;
-        };
-    } then {
-        (node:$runtime_node, neighbour: $publisher_runtime) isa active_neighbours;
-    };
+        $afferent has interface_name $interface_name, has interface_type $interface_type;
+        (node: $afferent_node, afferent: $afferent) isa has_interface;
 
-rule active_neighbours_service_server:
-    when {
-        $runtime_node (node: $node) isa runtime_node, has node_name $node_name, has namespace $namespace;
-        (server: $service_server, client: $node) isa ros_service;
-        $service_server_runtime (node: $service_server) isa runtime_node;
+        # Do not consider ServiceClients as neighbours
         not {
-            $service_server_runtime has node_name $node_name;
-            $service_server_runtime has namespace $namespace;
+            $afferent isa ServiceClient;
+        };
+
+        # Do not consider ActionClients as neighbours
+        not {
+            $afferent isa ActionClient;
+        };
+
+        not {
+            $afferent_node has node_name $node_name;
+            $afferent_node has namespace $namespace;
         };
     } then {
-        (node:$runtime_node, neighbour: $service_server_runtime) isa active_neighbours;
+        (node: $efferent_node, neighbour: $afferent_node) isa neighbours;
     };
 
 rule node_subnode_neighbour:
     when {
-        $runtime_node (node: $node) isa runtime_node;
+        $node isa ROSNode;
         (node: $node, subnode: $subnode) isa subnode;
-        $runtime_subnode (node: $subnode) isa runtime_node;
     } then {
-        (node: $runtime_node, neighbour: $runtime_subnode) isa active_neighbours;
+        (node: $node, neighbour: $subnode) isa neighbours;
     };
 
 rule subnode_node_neighbour_transitive:
     when {
-        $runtime_node (node: $node) isa runtime_node;
+        $node isa ROSNode;
         (node: $node, subnode: $subnode) isa subnode;
-        $runtime_subnode (node: $subnode) isa runtime_node;
-        (node: $runtime_subnode, neighbour: $neighbour) isa active_neighbours;
+        (node: $subnode, neighbour: $neighbour) isa neighbours;
     } then {
-        (node: $runtime_node, neighbour: $neighbour) isa active_neighbours;
+        (node: $node, neighbour: $neighbour) isa neighbours;
     };
 
-rule active_connected_reflection:
+rule connected_reflection:
     when {
-        $runtime_node isa runtime_node;
+        $node isa ROSNode;
     } then {
-        (node: $runtime_node, connected: $runtime_node) isa active_connected_nodes;
+        (node: $node, connected: $node) isa connected_nodes;
     };
 
-rule active_connected_nodes:
+rule connected_nodes:
     when {
-        (node: $node, neighbour: $neighbour) isa active_neighbours;
+        (node: $node, neighbour: $neighbour) isa neighbours;
     } then {
-        (node: $node, connected: $neighbour) isa active_connected_nodes;
+        (node: $node, connected: $neighbour) isa connected_nodes;
     };
 
-rule active_connected_nodes_transitive:
+rule connected_nodes_transitive:
     when {
-        (node: $node, connected: $connected_node) isa active_connected_nodes;
-        (node: $connected_node, connected: $connected_node_2) isa active_connected_nodes;
+        (node: $node, connected: $connected_node) isa connected_nodes;
+        (node: $connected_node, connected: $connected_node_2) isa connected_nodes;
     } then {
-        (node: $node, connected: $connected_node_2) isa active_connected_nodes;
+        (node: $node, connected: $connected_node_2) isa connected_nodes;
     };
 
 rule applicable_tactics:
     when {
-        $ros_action (server: $server) isa ros_action;
-		$runtime_server (node: $server) isa runtime_node;
-        (node: $runtime_server, connected: $connected_nodes) isa active_connected_nodes;
+        # Find nodes connected to ActionServer's node
+        $action_server isa ActionServer, has interface_name $interface_name, has interface_type $interface_type;
+        (node: $action_server_node, server: $action_server) isa has_action;
+        (node: $action_server_node, connected: $connected_nodes) isa connected_nodes;
+
+        # Find nodes impacted by tactics
         $resolution_model (tactic: $tactic) isa resolution_model;
         (tactic: $tactic, consequent: $consequent) isa tactic_rule;
         {
@@ -133,8 +126,10 @@ rule applicable_tactics:
             (variant: $expression, resolution_action: $resolution_action) isa variant_resolution;
         };
         $resolution_action (node: $node) isa resolution_action;
-		$connected_nodes isa runtime_node, has node_name $node_name, has namespace $namespace;
-        $runtime_node (node: $node) isa runtime_node, has node_name $node_name, has namespace $namespace;
+
+        # match the connected nodes with the nodes impacted by a tactic
+        $connected_nodes isa ROSNode, has node_name $node_name, has namespace $namespace;
+        $node has node_name $node_name, has namespace $namespace;
     } then {
-        (ros_action: $ros_action, resolution_model: $resolution_model, tactic: $tactic) isa applicable_tactics;
+        (action: $action_server, resolution_model: $resolution_model, tactic: $tactic) isa applicable_tactics;
     };
