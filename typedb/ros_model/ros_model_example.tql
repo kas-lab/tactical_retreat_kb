@@ -152,12 +152,12 @@ $default_odom_duration isa ParameterValueDouble, has double_value 1.0;
 
 ### set_initial_pose service
 $amcl_init_pose_server isa ServiceServer,
-	has name "/set_initial_pose",
+	has interface_name "/set_initial_pose",
 	has interface_type "nav2_msgs/srv/SetInitialPose";
 (node: $amcl_node, server: $amcl_init_pose_server) isa has_service;
 
 $mirte_bt_init_pose_client isa ServiceClient,
-	has name "/set_initial_pose",
+	has interface_name "/set_initial_pose",
 	has interface_type "nav2_msgs/srv/SetInitialPose";
 (node: $mirte_bt_node, client: $mirte_bt_init_pose_client) isa has_service;
 
@@ -165,44 +165,44 @@ $mirte_bt_init_pose_client isa ServiceClient,
 
 ### navigate_to_pose action
 $bt_navigator_navigate_to_pose_server isa ActionServer,
-	has name "/navigate_to_pose",
+	has interface_name "/navigate_to_pose",
 	has interface_type "nav2_msgs/action/NavigateToPose";
 (node: $bt_navigator_node, server: $bt_navigator_navigate_to_pose_server) isa has_action;
 
 $bt_navigator_navigate_to_pose_client isa ActionClient,
-	has name "/navigate_to_pose",
+	has interface_name "/navigate_to_pose",
 	has interface_type "nav2_msgs/action/NavigateToPose";
 (node: $bt_navigator_node, client: $bt_navigator_navigate_to_pose_client) isa has_action;
 
 $mirte_bt_navigate_to_pose_client isa ActionClient,
-	has name "/navigate_to_pose",
+	has interface_name "/navigate_to_pose",
 	has interface_type "nav2_msgs/action/NavigateToPose";
 (node: $mirte_bt_node, client: $mirte_bt_navigate_to_pose_client) isa has_action;
 
 ### compute_path_to_pose action
 $planner_server_compute_path_to_pose_server isa ActionServer,
-	has name "/compute_path_to_pose",
+	has interface_name "/compute_path_to_pose",
 	has interface_type "nav2_msgs/action/ComputePathToPose";
 (node: $planner_server_node, server: $planner_server_compute_path_to_pose_server) isa has_action;
 
 $bt_navigator_compute_path_to_pose_client isa ActionClient,
-	has name "/compute_path_to_pose",
+	has interface_name "/compute_path_to_pose",
 	has interface_type "nav2_msgs/action/ComputePathToPose";
 (node: $bt_navigator_navigate_to_pose_rclcpp_node, client: $bt_navigator_compute_path_to_pose_client) isa has_action;
 
 ### follow_path action
 $controller_server_follow_path_server isa ActionServer,
-	has name "/follow_path",
+	has interface_name "/follow_path",
 	has interface_type "nav2_msgs/action/FollowPath";
 (node: $controller_server_node, server: $controller_server_follow_path_server) isa has_action;
 
 $bt_navigator_navigate_to_pose_follow_path_client isa ActionClient,
-	has name "/follow_path",
+	has interface_name "/follow_path",
 	has interface_type "nav2_msgs/action/FollowPath";
 (node: $bt_navigator_navigate_to_pose_rclcpp_node, client: $bt_navigator_navigate_to_pose_follow_path_client) isa has_action;
 
 $bt_navigator_navigate_through_poses_follow_path_client isa ActionClient,
-	has name "/follow_path",
+	has interface_name "/follow_path",
 	has interface_type "nav2_msgs/action/FollowPath";
 (node: $bt_navigator_navigate_through_poses_rclcpp_node, client: $bt_navigator_navigate_through_poses_follow_path_client) isa has_action;
 
@@ -220,32 +220,32 @@ $cmd_vel_qos isa QoSProfile,
 
 ### cmd_vel topic
 $velocity_smoother_cmd_vel_pub isa Publisher,
-	has name "/cmd_vel",
+	has interface_name "/cmd_vel",
 	has interface_type "geometry_msgs/msg/Twist";
 (interface: $velocity_smoother_cmd_vel_pub, qos: $cmd_vel_qos) isa has_qos;
 (node: $velocity_smoother_node, publisher: $velocity_smoother_cmd_vel_pub) isa has_topic;
 
 $behavior_server_cmd_vel_sub isa Subscriber,
-	has name "/cmd_vel",
+	has interface_name "/cmd_vel",
 	has interface_type "geometry_msgs/msg/Twist";
 (interface: $behavior_server_cmd_vel_sub, qos: $cmd_vel_qos) isa has_qos;
 (node: $behavior_server_node, subscriber: $behavior_server_cmd_vel_sub) isa has_topic;
 
 $relay_node_cmd_vel_sub isa Subscriber,
-	has name "/cmd_vel",
+	has interface_name "/cmd_vel",
 	has interface_type "geometry_msgs/msg/Twist";
 (interface: $relay_node_cmd_vel_sub, qos: $cmd_vel_qos) isa has_qos;
 (node: $relay_node, subscriber: $relay_node_cmd_vel_sub) isa has_topic;
 
 ### cmd_vel_nav topic
 $controller_server_cmd_vel_nav_pub isa Publisher,
-	has name "/cmd_vel_nav",
+	has interface_name "/cmd_vel_nav",
 	has interface_type "geometry_msgs/msg/Twist";
 (interface: $controller_server_cmd_vel_nav_pub, qos: $cmd_vel_qos) isa has_qos;
 (node: $controller_server_node, publisher: $controller_server_cmd_vel_nav_pub) isa has_topic;
 
 $velocity_smoother_cmd_vel_nav_sub isa Subscriber,
-	has name "/cmd_vel_nav",
+	has interface_name "/cmd_vel_nav",
 	has interface_type "geometry_msgs/msg/Twist";
 (interface: $velocity_smoother_cmd_vel_nav_sub, qos: $cmd_vel_qos) isa has_qos;
 (node: $velocity_smoother_node, subscriber: $velocity_smoother_cmd_vel_nav_sub) isa has_topic;
