@@ -20,4 +20,5 @@ $mirte isa System, has system_name "Mirte";
 
 $velocity_requirement (system: $mirte, expression: $velocity_shall_expression) isa relaxed_requirement,
 	has requirement_name "R1.1 Velocity",
+	has in_effect true,
 	has description "The robot SHALL maintain its velocity AS CLOSE AS POSSIBLE TO 0.26 m/s.";

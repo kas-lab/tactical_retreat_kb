@@ -11,13 +11,12 @@ requirement_name sub attribute,
 	value string;
 description sub attribute,
 	value string;
+in_effect sub attribute,
+	value boolean;
 
+### term attributes
 bool_value sub attribute,
 	value boolean;
-required_value sub attribute,
-	value double;
-required_period sub attribute,
-	value double;
 quantified_value sub attribute,
 	value double;
 
@@ -27,9 +26,12 @@ event_duration sub attribute,
 event_end_duration sub attribute,
 	value double;
 
-
 ### fuzzy expr attributes
 membership sub attribute,
+	value double;
+required_value sub attribute,
+	value double;
+required_period sub attribute,
 	value double;
 
 ### fuzzy membership attributes
@@ -124,6 +126,7 @@ FuzzyRationalDecay sub DecayMembership,
 ## Relations
 system_requirement sub relation,
 	abstract,
+	owns in_effect,
 	relates system;
 
 relaxed_requirement sub system_requirement,
