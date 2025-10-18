@@ -1,16 +1,13 @@
 define
 
 ## Attributes
-name sub attribute,
-	abstract,
-	value string;
-
-system_name sub name,
+system_name sub attribute,
 	value string;
 start_time sub attribute,
 	value datetime;
 
-requirement_name sub name,
+### requirement attributes
+requirement_name sub attribute,
 	value string;
 description sub attribute,
 	value string;
@@ -158,7 +155,6 @@ after_expression sub event_expression;
 before_expression sub event_expression;
 in_expression sub event_expression,
 	owns event_end_duration;
-
 
 ### Fuzzy expressions
 fuzzy_expression sub expression,
