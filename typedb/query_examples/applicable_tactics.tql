@@ -1,5 +1,5 @@
 match
-	(server: $server) isa ros_action, has action_name "/navigate_to_pose";
-	$server has is_active true;
-fetch
-	$server: attribute;
+   $action isa ActionServer, has interface_name '/navigate_to_pose', has interface_type 'nav2_msgs/action/NavigateToPose';
+   $resolution_model isa resolution_model, has resolution_model_name 'rebetmc';
+   (action: $action, resolution_model: $resolution_model, tactic: $tactic) isa applicable_tactics;
+fetch  $tactic: tactic_name;

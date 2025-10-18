@@ -1,7 +1,7 @@
 match
     $tactic isa Tactic, has tactic_name "MaxSpeedInternal";
     (tactic: $tactic, consequent: $consequent) isa tactic_rule;
-    { 
+    {
          $consequent isa Feature;
          (variant: $consequent, resolution_action: $resolution_action) isa variant_resolution;
     } or {
@@ -10,6 +10,6 @@ match
         (variant: $expression, resolution_action: $resolution_action) isa variant_resolution;
     };
     $resolution_action (node: $node) isa resolution_action;
-    $runtime_node (node: $node) isa runtime_node, has node_name 'velocity_smoother';
-get $runtime_node;
+    $node isa ROSNode, has node_name 'velocity_smoother';
+get $node;
 count;
