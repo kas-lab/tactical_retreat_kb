@@ -13,9 +13,6 @@ rule_name sub name;
 term_name sub name;
 variant_name sub name;
 
-tactic_period sub attribute,
-    value double;
-
 tactic_resolution_model sub attribute,
     value string;
 
@@ -96,7 +93,6 @@ set_lifecycle_state sub resolution_action,
 ### Entities
 Tactic sub entity,
     owns tactic_name @key,
-    owns tactic_period,
     plays tactic_rule:tactic,
     plays resolution_model:tactic;
 

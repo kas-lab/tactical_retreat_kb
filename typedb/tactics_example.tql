@@ -13,7 +13,7 @@ $f_med_speed isa Feature, has feature_name "MED_SPEED";
 $alternative (parent: $f_max_speed, child: $f_low_speed, child: $f_med_speed, child: $f_hi_speed) isa alternative;
 
 # define MaxSpeedInternal Tactic
-$ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal", has tactic_period 1.0;
+$ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal";
 
 $t_measured_nearest_object isa Term, has term_name "t_measured_nearest_object";
 $t_measured_movement_power isa Term, has term_name "t_measured_movement_power";
