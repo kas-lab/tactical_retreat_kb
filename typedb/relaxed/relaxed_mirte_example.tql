@@ -14,11 +14,11 @@ $velocity_set isa FuzzyTriangular,
 $velocity_as_close_expression (unimodal_membership: $velocity_set, term: $veloicity_proposition) isa as_close_as_possible_expression,
 	has required_value 0.26;
 
-$velocity_shall_expression (expression: $velocity_as_close_expression) isa shall_expression;
+$velocity_shall_expression (relaxed_expression: $velocity_as_close_expression) isa shall_expression;
 
 $mirte isa System, has system_name "Mirte";
 
-$velocity_requirement (system: $mirte, expression: $velocity_shall_expression) isa relaxed_requirement,
+$velocity_requirement (system: $mirte, relaxed_expression: $velocity_shall_expression) isa relaxed_requirement,
 	has requirement_name "R1.1 Velocity",
 	has in_effect true,
 	has description "The robot SHALL maintain its velocity AS CLOSE AS POSSIBLE TO 0.26 m/s.";

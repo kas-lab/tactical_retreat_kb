@@ -64,7 +64,7 @@ System sub entity,
 
 Term sub entity,
 	abstract,
-	plays expression:term;
+	plays relaxed_expression:term;
 
 BoolTerm sub Term,
 	owns bool_value;
@@ -135,27 +135,27 @@ relaxed_requirement sub system_requirement,
 	owns requirement_name @key,
 	owns description,
 	owns fulfillment,
-	relates expression;
+	relates relaxed_expression;
 
-expression sub relation,
+relaxed_expression sub relation,
 	abstract,
 	owns fulfillment,
-	relates expression,
+	relates relaxed_expression,
 	relates term,
-	plays relaxed_requirement:expression,
-	plays expression:expression,
+	plays relaxed_requirement:relaxed_expression,
+	plays relaxed_expression:relaxed_expression,
 	plays until_expression:after;
 
-shall_expression sub expression;
-may_expression sub expression;
-eventually_expression sub expression;
+shall_expression sub relaxed_expression;
+may_expression sub relaxed_expression;
+eventually_expression sub relaxed_expression;
 
-until_expression sub expression,
-	relates before as expression,
+until_expression sub relaxed_expression,
+	relates before as relaxed_expression,
 	relates after;
 
 ### Event expressions
-event_expression sub expression,
+event_expression sub relaxed_expression,
 	abstract,
 	owns event_duration;
 
@@ -165,7 +165,7 @@ in_expression sub event_expression,
 	owns event_end_duration;
 
 ### Fuzzy expressions
-fuzzy_expression sub expression,
+fuzzy_expression sub relaxed_expression,
 	abstract,
 	owns membership;
 
@@ -264,8 +264,8 @@ rule fuzzy-expression-decay-membership-evaluation :
 ## expressions fulfillment rules
 rule shall-expression-fulfillment :
 	when {
-		$shall_expression (expression: $expression) isa shall_expression;
-		$expression has fulfillment $fulfillment;
+		$shall_expression (relaxed_expression: $relaxed_expression) isa shall_expression;
+		$relaxed_expression has fulfillment $fulfillment;
 	} then {
 		$shall_expression has $fulfillment;
 	};
@@ -282,8 +282,8 @@ rule fuzzy-expression-fulfillment :
 # ## requirement fulfillment
 rule requirement-fulfillment :
 	when {
-		$req (expression: $expression) isa relaxed_requirement;
-		$expression has fulfillment $fulfillment;
+		$req (relaxed_expression: $relaxed_expression) isa relaxed_requirement;
+		$relaxed_expression has fulfillment $fulfillment;
 	} then {
 		$req has $fulfillment;
 	};
