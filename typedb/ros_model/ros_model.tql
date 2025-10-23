@@ -22,7 +22,7 @@ end_time sub attribute,
     value datetime;
 
 ### ROS interfaces attributes
-name sub attribute,
+interface_name sub attribute,
     value string;
 interface_type sub attribute,
     value string;
@@ -104,7 +104,7 @@ LifeCycleNode sub ROSNode,
 ### ROS interfaces
 ROSInterface sub entity,
     abstract,
-    owns name,
+    owns interface_name,
     owns interface_type,
     plays has_interface:afferent,
     plays has_interface:efferent;

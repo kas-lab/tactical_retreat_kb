@@ -60,7 +60,7 @@ $relay_node isa ROSNode,
 	has executable "relay";
 
 $cmd_vel_vs_qos isa QoSProfile,
-	has reliabilty "RELIABLE",
+	has reliability "RELIABLE",
 	has history "KEEP_LAST",
 	has depth 10,
 	has durability "VOLATILE",
@@ -70,11 +70,11 @@ $cmd_vel_vs_qos isa QoSProfile,
 	has lease_duration 0;
 
 $velocity_smoother_cmd_vel_pub isa Publisher,
-	has name "/cmd/vel",
+	has interface_name "/cmd/vel",
 	has interface_type "geometry_msgs/msg/Twist";
 
 $relay_node_cmd_vel_sub isa Subscriber,
-	has name "/cmd/vel",
+	has interface_name "/cmd/vel",
 	has interface_type "geometry_msgs/msg/Twist";
 
 $vs_cmd_vel_pub_qos (interface: $velocity_smoother_cmd_vel_pub, qos: $cmd_vel_vs_qos) isa has_qos;

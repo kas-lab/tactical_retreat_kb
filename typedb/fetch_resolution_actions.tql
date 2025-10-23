@@ -1,12 +1,14 @@
 match
-    $r (tactic:$t, consequent:$c) isa tactic_rule, has rule_valid true;
-    (tactic:$t, variant_resolution:$vr) isa resolution_model;
-    $vr (resolution_action:$res_action, variant: $c) isa variant_resolution;
+    (tactic:$t, consequent:$fa) isa tactic_rule, has rule_valid true;
 fetch
     set_parameter_action:{
         match
+            $fa (activation: $feature_activate) isa feature_adaptation;
+            (tactic:$t, variant_resolution:$vr) isa resolution_model;
+            $vr (resolution_action:$res_action, variant: $feature_activate) isa variant_resolution;
             $res_action (node: $node, parameter: $parameter, parameter_value: $parameter_value) isa! set_nodes_parameters;
         fetch
+            $node: node_name;
             $parameter: parameter_name;
             param_values: {
                 match
@@ -19,7 +21,20 @@ fetch
     };
     set_lifecycle_action:{
         match
+            $fa (activation: $feature_activate) isa feature_adaptation;
+            (tactic:$t, variant_resolution:$vr) isa resolution_model;
+            $vr (resolution_action:$res_action, variant: $feature_activate) isa variant_resolution;
             $res_action (node: $node) isa! set_lifecycle_state;
         fetch
+            $node: node_name;
             $res_action: lifecycle_state;
+    };
+    deactivate_feature: {
+        match
+            $fa (deactivation: $feature_deactivate) isa feature_adaptation;
+            (tactic:$t, variant_resolution:$vr) isa resolution_model;
+            $vr (resolution_action:$res_action, variant: $feature_deactivate) isa variant_resolution;
+            $res_action (node: $node) isa! set_lifecycle_state;
+        fetch
+            $node: node_name;
     };

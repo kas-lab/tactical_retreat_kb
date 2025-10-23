@@ -18,22 +18,27 @@ $ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal";
 $t_measured_nearest_object isa Term, has term_name "t_measured_nearest_object";
 $t_measured_movement_power isa Term, has term_name "t_measured_movement_power";
 
-$t_nearest_object_close isa Term, has term_name "nearest_object_close", has term_value 0.1;
+$t_nearest_object_close isa Term, has term_name "t_nearest_object_close", has term_value 0.1;
 
 $ineq_nearest_lower_than_10 (lhs_term:$t_measured_nearest_object, rhs_term: $t_nearest_object_close) isa inequality_expression, has operator "<";
 $t_movement_power_high isa Term, has term_name "t_movement_power_high", has term_value 40.0;
 $ineq_mv_pwer_greater_than_40  (lhs_term:$t_measured_movement_power, rhs_term: $t_movement_power_high) isa inequality_expression, has operator ">";
 $or_expression (expression:$ineq_nearest_lower_than_10, expression:$ineq_mv_pwer_greater_than_40) isa or_expression;
 
-$t_nearest_object_far isa Term, has term_name "nearest_object_far", has term_value 0.15;
+$t_nearest_object_far isa Term, has term_name "t_nearest_object_far", has term_value 0.15;
 $ineq_nearest_greater_than_15 (lhs_term:$t_measured_nearest_object, rhs_term: $t_nearest_object_far) isa inequality_expression, has operator ">";
 $t_movement_power_low isa Term, has term_name "t_movement_power_low", has term_value 39.0;
 $ineq_mv_pwer_lower_than_39  (lhs_term:$t_measured_movement_power, rhs_term: $t_movement_power_low) isa inequality_expression, has operator "<";
 $and_expression (expression:$ineq_nearest_greater_than_15, expression:$ineq_mv_pwer_lower_than_39) isa and_expression;
 
-$tatic_rule_min (tactic:$ta_max_speed, antecedent:$or_expression, consequent:$f_low_speed ) isa tactic_rule, has rule_name "MIN";
-$tatic_rule_max (tactic:$ta_max_speed, antecedent:$and_expression, consequent:$f_hi_speed ) isa tactic_rule, has rule_name "MAX";
-$tatic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15, consequent:$f_med_speed ) isa tactic_rule, has rule_name "MED";
+$fa_min (activation: $f_low_speed) isa feature_adaptation;
+$tatic_rule_min (tactic:$ta_max_speed, antecedent:$or_expression, consequent:$fa_min ) isa tactic_rule, has rule_name "MIN";
+
+$fa_max (activation: $f_hi_speed) isa feature_adaptation;
+$tatic_rule_max (tactic:$ta_max_speed, antecedent:$and_expression, consequent:$fa_max ) isa tactic_rule, has rule_name "MAX";
+
+$fa_med (activation: $f_med_speed) isa feature_adaptation;
+$tatic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15, consequent:$fa_med ) isa tactic_rule, has rule_name "MED";
 
 # define parameter max_speed
 $p_max_speed isa Parameter, has parameter_name "max_velocity";
@@ -79,6 +84,75 @@ $low_speed_resolution (resolution_action: $sp_max_speed_low, variant: $f_low_spe
 $med_speed_resolution (resolution_action: $sp_max_speed_med, variant: $f_med_speed) isa variant_resolution;
 $high_speed_resolution (resolution_action: $sp_max_speed_high, variant: $f_hi_speed) isa variant_resolution;
 
-$res_rebetmc (tactic: $ta_max_speed, variant_resolution:$low_speed_resolution,  variant_resolution:$med_speed_resolution,  variant_resolution:$high_speed_resolution) isa resolution_model,
+$res_rebetmc (
+	tactic: $ta_max_speed,
+	variant_resolution:$low_speed_resolution,
+	variant_resolution:$med_speed_resolution,
+	variant_resolution:$high_speed_resolution) isa resolution_model,
     has resolution_model_name "rebetmc", has ros_system "nav2";
 
+
+### mock Tactics
+
+## define Feature Model
+$f_parent isa Feature, has feature_name "f_parent";
+$f1 isa Feature, has feature_name "f1";
+$f2 isa Feature, has feature_name "f2";
+$f3 isa Feature, has feature_name "f3";
+$f4 isa Feature, has feature_name "f4";
+(
+	parent: $f_parent,
+	child: $f1,
+	child: $f2,
+	child: $f3,
+	child: $f4) isa alternative;
+
+## define tactic
+$tactic1 isa Tactic, has tactic_name "tactic1";
+
+## define terms
+$term1_measurement isa Term, has term_name "term1_measurement", has term_value 0.09;
+
+$term1 isa Term, has term_name "term1", has term_value 0.25;
+
+## define expression
+$ineq (lhs_term:$term1_measurement, rhs_term: $term1) isa inequality_expression, has operator "<";
+
+## define feature adaptation
+$fa (deactivation: $f1, activation: $f2, activation: $f3) isa feature_adaptation;
+
+## define tactic rule
+(tactic:$tactic1, antecedent:$ineq, consequent:$fa ) isa tactic_rule, has rule_name "rule1";
+
+## define mock node
+$mock_node1 isa ROSNode,
+	has node_name "mock_node1",
+	has namespace "mock_ns",
+	has start_time 2025-08-06T10:57:56.666;
+
+$mock_node2 isa ROSNode,
+	has node_name "mock_node2",
+	has namespace "mock_ns",
+	has start_time 2025-08-06T10:57:56.666;
+
+$mock_node3 isa ROSNode,
+	has node_name "mock_node3",
+	has namespace "mock_ns",
+	has start_time 2025-08-06T10:57:56.666;
+
+## define resolution action
+$set_lifecycle_mock_node1 (node: $mock_node1) isa set_lifecycle_state, has lifecycle_state 'active';
+$set_lifecycle_mock_node2 (node: $mock_node2) isa set_lifecycle_state, has lifecycle_state 'active';
+$set_lifecycle_mock_node3 (node: $mock_node3) isa set_lifecycle_state, has lifecycle_state 'active';
+
+## define variant resolutions
+$res1 (resolution_action: $set_lifecycle_mock_node1, variant: $f1) isa variant_resolution;
+$res2 (resolution_action: $set_lifecycle_mock_node2, variant: $f2) isa variant_resolution;
+$res3 (resolution_action: $set_lifecycle_mock_node3, variant: $f3) isa variant_resolution;
+
+$res_mock (
+	tactic: $tactic1,
+	variant_resolution:$res1,
+	variant_resolution:$res2,
+	variant_resolution:$res3) isa resolution_model,
+    has resolution_model_name "res_mock", has ros_system "mock";

@@ -17,7 +17,7 @@ feature_mandatory sub attribute,
 feature_hierarchy sub relation,
     relates parent,
     relates child;
-    
+
 alternative sub feature_hierarchy;
 or_group sub feature_hierarchy;
 
@@ -34,12 +34,13 @@ Feature sub entity,
     owns feature_selected,
     owns feature_mandatory,
     owns leaf_feature,
-    plays tactic_rule:consequent,
+    plays feature_adaptation:deactivation,
+    plays feature_adaptation:activation,
     plays variant_resolution:variant,
     plays feature_hierarchy:parent,
     plays feature_hierarchy:child,
     plays cross_tree_constraint:feature;
-    
+
 # Rules
 rule leaf_feature:
     when {
