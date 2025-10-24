@@ -79,6 +79,8 @@ $low_speed_resolution (resolution_action: $sp_max_speed_low, variant: $f_low_spe
 $med_speed_resolution (resolution_action: $sp_max_speed_med, variant: $f_med_speed) isa variant_resolution;
 $high_speed_resolution (resolution_action: $sp_max_speed_high, variant: $f_hi_speed) isa variant_resolution;
 
-$res_rebetmc (tactic: $ta_max_speed, variant_resolution:$low_speed_resolution,  variant_resolution:$med_speed_resolution,  variant_resolution:$high_speed_resolution) isa resolution_model,
+$res_rebetmc (tactic: $ta_max_speed,
+	variant_resolution:$low_speed_resolution,
+	variant_resolution:$med_speed_resolution,
+	variant_resolution:$high_speed_resolution) isa resolution_model,
     has resolution_model_name "rebetmc", has ros_system "nav2";
-
