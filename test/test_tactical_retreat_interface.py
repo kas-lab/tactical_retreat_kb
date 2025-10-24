@@ -26,7 +26,7 @@ def kb_interface():
         ["typedb/ros_model/ros_model.tql",
             "typedb/tactics_model/tactics_model.tql",
             "typedb/feature_model/feature_model.tql",
-            "typedb/discover_tactics_model/discover_tactics_schema.tql"],
+            "typedb/discover_tactics_model/discover_tactics_model.tql"],
         ["typedb/ros_model/ros_model_example.tql",
             "typedb/tactics_model/tactics_example.tql"],
         force_database=True,
