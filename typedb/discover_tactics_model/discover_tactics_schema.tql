@@ -18,11 +18,11 @@ ROSNode plays connected_nodes:connected;
 applicable_tactics sub relation,
     relates action,
     relates resolution_model,
-    relates tactic;
+    relates tactic_rule;
 
 ActionServer plays applicable_tactics:action;
 resolution_model plays applicable_tactics:resolution_model;
-Tactic plays applicable_tactics:tactic;
+tactic_rule plays applicable_tactics:tactic_rule;
 
 rule neighbours_efferents:
     when {
@@ -116,7 +116,7 @@ rule applicable_tactics:
 
         # Find nodes impacted by tactics
         $resolution_model (tactic: $tactic) isa resolution_model;
-        (tactic: $tactic, consequent: $consequent) isa tactic_rule;
+        $tactic_rule (tactic: $tactic, consequent: $consequent) isa tactic_rule;
         {
             $consequent isa Feature;
             (variant: $consequent, resolution_action: $resolution_action) isa variant_resolution;
@@ -131,5 +131,5 @@ rule applicable_tactics:
         $connected_nodes isa ROSNode, has node_name $node_name, has namespace $namespace;
         $node has node_name $node_name, has namespace $namespace;
     } then {
-        (action: $action_server, resolution_model: $resolution_model, tactic: $tactic) isa applicable_tactics;
+        (action: $action_server, resolution_model: $resolution_model, tactic_rule: $tactic_rule) isa applicable_tactics;
     };

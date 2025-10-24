@@ -468,10 +468,10 @@ class TacticalRetreatInterface(TypeDBInterface):
                     has interface_type '{action_type}';
                 $resolution_model isa resolution_model,
                     has resolution_model_name '{resolution_model}';
-                (action: $action, resolution_model: $resolution_model, tactic: $tactic)
+                (action: $action, resolution_model: $resolution_model, tactic_rule: $tactic_rule)
                     isa applicable_tactics;
             fetch
-                $tactic: tactic_name;
+                $tactic_rule: rule_name;
         """
         return self.fetch_database(query)
 
@@ -490,5 +490,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_applicable_tactics(
             resolution_model, action_name, action_type)
-        return [result['tactic']['tactic_name'][0]['value']
-                for result in query_result]
+        return sorted(
+            result['tactic_rule']['rule_name'][0]['value']
+            for result in query_result
+        )

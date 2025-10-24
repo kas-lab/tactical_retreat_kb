@@ -158,13 +158,17 @@ def test_does_tactic_affect_nodes(kb_interface):
 def test_get_applicable_tactics(kb_interface):
     tactics = kb_interface.get_applicable_tactics(
         'rebetmc', '/navigate_to_pose', 'nav2_msgs/action/NavigateToPose')
-    assert len(tactics) == 1
-    assert tactics[0] == 'MaxSpeedInternal'
+    assert len(tactics) == 3
+    assert tactics[0] == 'MAX'
+    assert tactics[1] == 'MED'
+    assert tactics[2] == 'MIN'
 
     tactics = kb_interface.get_applicable_tactics(
         'rebetmc', '/follow_path', 'nav2_msgs/action/FollowPath')
-    assert len(tactics) == 1
-    assert tactics[0] == 'MaxSpeedInternal'
+    assert len(tactics) == 3
+    assert tactics[0] == 'MAX'
+    assert tactics[1] == 'MED'
+    assert tactics[2] == 'MIN'
 
     tactics = kb_interface.get_applicable_tactics(
         'rebetmc', '/compute_path_to_pose', 'nav2_msgs/action/ComputePathToPose')
