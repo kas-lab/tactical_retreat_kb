@@ -37,22 +37,22 @@ gid sub attribute,
 ### QoS attributes
 reliability sub attribute,
     value string,
-    regex "^(BEST_EFFORT|RELIABLE)";
+    regex "^(BEST_EFFORT|RELIABLE|SYSTEM_DEFAULT)";
 history sub attribute,
     value string,
-    regex "^(KEEP_LAST|KEEP_ALL|UNKNOWN)";
+    regex "^(KEEP_LAST|KEEP_ALL|UNKNOWN|SYSTEM_DEFAULT)";
 depth sub attribute,
     value long;
 durability sub attribute,
     value string,
-    regex "^(TRANSIENT_LOCAL|VOLATILE)";
+    regex "^(TRANSIENT_LOCAL|VOLATILE|SYSTEM_DEFAULT)";
 deadline sub attribute,
     value long;  # 0 indicates infinite
 lifespan sub attribute,
     value long;  # 0 indicates infinite
 liveliness sub attribute,
     value string,
-    regex "^(AUTOMATIC|MANUAL)";
+    regex "^(AUTOMATIC|MANUAL|SYSTEM_DEFAULT)";
 lease_duration sub attribute,
     value long;  # 0 indicates infinite
 
