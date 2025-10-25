@@ -27,14 +27,8 @@ expression_valid sub attribute,
 rule_valid sub attribute,
     value boolean;
 
-term sub attribute,
-    value string;
-
-lhs_term sub attribute,
-    value string;
-
-rhs_term sub attribute,
-    value string;
+rhs_value sub attribute,
+    value double;
 
 operator sub attribute,
     value string,
@@ -51,6 +45,7 @@ tactic_rule sub relation,
     relates antecedent,
     relates consequent;
 
+#### expressions
 expression sub relation,
     abstract,
     owns expression_valid,
@@ -65,11 +60,12 @@ or_expression sub expression,
 
 inequality_expression sub expression,
     owns operator,
-    relates lhs_term,
-    relates rhs_term,
+    owns rhs_value,
+    relates lhs_value,
     plays and_expression:expression,
     plays or_expression:expression;
 
+#### resolution model
 resolution_model sub relation,
     owns resolution_model_name @key,
     owns ros_system,
@@ -100,11 +96,48 @@ Tactic sub entity,
     plays tactic_rule:tactic,
     plays resolution_model:tactic;
 
-Term sub entity,
-    owns term_value,
-    owns term_name,
-    plays inequality_expression:lhs_term,
-    plays inequality_expression:rhs_term;
+measure_name sub name;
+description sub attribute,
+    value string;
+
+measurement_time sub attribute,
+    value datetime;
+measurement_value sub attribute,
+    value double;
+latest sub attribute,
+    value boolean;
+
+Measure sub entity,
+    owns measure_name @key,
+    owns description,
+    plays measurement:measure,
+    plays measurement_interface:measure,
+    plays inequality_expression:lhs_value;
+
+EnvironmentalAttribute sub Measure;
+QualityAttribute sub Measure;
+
+measurement sub relation,
+    owns measurement_time,
+    owns measurement_value,
+    owns latest,
+    relates measure;
+
+measurement_function_name sub attribute,
+    value string;
+measurement_function_lib sub attribute,
+    value string;
+measurement_function_args sub attribute,
+    value string;
+
+measurement_interface sub relation,
+    owns measurement_function_name,
+    owns measurement_function_lib,
+    owns measurement_function_args,
+    relates measure,
+    relates publisher;
+
+Publisher plays measurement_interface:publisher;
 
 ROSNode plays resolution_action:node;
 
@@ -113,12 +146,28 @@ Parameter plays set_nodes_parameters:parameter;
 ParameterValue plays set_nodes_parameters:parameter_value;
 
 # rules
+rule measurement_latest:
+    when {
+        $measurement (measure: $measure) isa measurement,
+            has measurement_time $time,
+            has measurement_value $measurement_value;
+        not {
+            $measurement2 (measure: $measure) isa measurement,
+                has measurement_time $time2,
+                has measurement_value $measurement_value2;
+            $time2 > $time;
+        };
+    } then {
+        $measurement has latest true;
+    };
+
 rule tactic_rule_valid:
     when {
         $tr (antecedent: $a) isa tactic_rule;
-        $a isa expression, has expression_valid true;
+        $a isa expression, has expression_valid $expression_valid;
+        ?rule_valid = $expression_valid;
     } then {
-        $tr has rule_valid true;
+        $tr has rule_valid ?rule_valid;
     };
 
 rule and_expression_valid:
@@ -133,6 +182,14 @@ rule and_expression_valid:
         $and_exp has expression_valid true;
     };
 
+rule and_expression_invalid:
+    when {
+        $and_exp (expression: $e) isa and_expression;
+        $e has expression_valid false;
+    } then {
+        $and_exp has expression_valid false;
+    };
+
 rule or_expression_valid:
     when {
         $or_exp (expression: $e) isa or_expression;
@@ -141,17 +198,41 @@ rule or_expression_valid:
         $or_exp has expression_valid true;
     };
 
+rule or_expression_invalid:
+    when {
+        $or_exp isa or_expression;
+        not {
+            $or_exp (expression: $valid_e) isa or_expression;
+            $valid_e has expression_valid true;
+        };
+    } then {
+        $or_exp has expression_valid false;
+    };
+
 rule inequality_expression_valid:
     when {
-        $ineq_exp (lhs_term: $t_lhs, rhs_term: $t_rhs) isa inequality_expression;
-        $t_lhs has term_value $lhs_value;
-        $t_rhs has term_value $rhs_value;
+        $ineq_exp (lhs_value: $measure) isa inequality_expression,
+            has rhs_value $rhs_value;
+        (measure: $measure) isa measurement,
+            has latest true, has measurement_value $measurement_value;
         {
             $ineq_exp has operator ">";
-            $lhs_value > $rhs_value;
+            $measurement_value > $rhs_value;
+        } or {
+            $ineq_exp has operator ">=";
+            $measurement_value >= $rhs_value;
         } or {
             $ineq_exp has operator "<";
-            $lhs_value < $rhs_value;
+            $measurement_value < $rhs_value;
+        } or {
+            $ineq_exp has operator "<=";
+            $measurement_value <= $rhs_value;
+        } or {
+            $ineq_exp has operator "==";
+            $measurement_value == $rhs_value;
+        } or {
+            $ineq_exp has operator "!=";
+            $measurement_value != $rhs_value;
         };
     } then {
         $ineq_exp has expression_valid  true;
@@ -159,22 +240,50 @@ rule inequality_expression_valid:
 
 rule inequality_expression_invalid:
     when {
-        $ineq_exp (lhs_term: $t_lhs, rhs_term: $t_rhs) isa inequality_expression;
+        $ineq_exp (lhs_value: $measure) isa inequality_expression,
+            has rhs_value $rhs_value;
         {
-            not { $t_lhs has term_value $lhs_value;};
-
+            not {
+                (measure: $measure) isa measurement,
+                    has latest true,
+                    has measurement_value $measurement_value;
+            };
         } or {
-             not { $t_rhs has term_value $rhs_value;};
-        } or {
+            (measure: $measure) isa measurement,
+                has latest true,
+                has measurement_value $measurement_value;
             $ineq_exp has operator ">";
-            $t_lhs has term_value $lhs_value;
-            $t_rhs has term_value $rhs_value;
-            $lhs_value <= $rhs_value;
+            $measurement_value <= $rhs_value;
         } or {
+            (measure: $measure) isa measurement,
+                has latest true,
+                has measurement_value $measurement_value;
+            $ineq_exp has operator ">=";
+            $measurement_value < $rhs_value;
+        } or {
+            (measure: $measure) isa measurement,
+                has latest true,
+                has measurement_value $measurement_value;
             $ineq_exp has operator "<";
-            $t_lhs has term_value $lhs_value;
-            $t_rhs has term_value $rhs_value;
-            $lhs_value >= $rhs_value;
+            $measurement_value >= $rhs_value;
+        } or {
+            (measure: $measure) isa measurement,
+                has latest true,
+                has measurement_value $measurement_value;
+            $ineq_exp has operator "<=";
+            $measurement_value > $rhs_value;
+        } or {
+            (measure: $measure) isa measurement,
+                has latest true,
+                has measurement_value $measurement_value;
+            $ineq_exp has operator "==";
+            $measurement_value != $rhs_value;
+        } or {
+            (measure: $measure) isa measurement,
+                has latest true,
+                has measurement_value $measurement_value;
+            $ineq_exp has operator "!=";
+            $measurement_value == $rhs_value;
         };
     } then {
         $ineq_exp has expression_valid  false;
