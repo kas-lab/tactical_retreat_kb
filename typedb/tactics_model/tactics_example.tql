@@ -5,6 +5,34 @@ $velocity_smoother_node isa LifeCycleNode,
 
 insert
 
+# context model
+$ea_nearest_object isa EnvironmentalAttribute, has measure_name "ea_nearest_object";
+$qa_movement_power isa QualityAttribute, has measure_name "qa_movement_power";
+
+## example measurement
+(measure: $ea_nearest_object) isa measurement,
+        has measurement_time 2025-09-06T12:57:56.666,
+        has measurement_value 0.09;
+
+## Nearest object
+$scan_filtered_pub isa Publisher,
+	has interface_name '/scan_filtered',
+    has interface_type 'sensor_msgs/msg/LaserScan';
+$sensor_qos isa QoSProfile,
+	has reliability 'BEST_EFFORT',
+	has history 'KEEP_LAST',
+	has depth 5,
+	has durability 'VOLATILE',
+	has lifespan 0,
+	has deadline 0,
+	has liveliness 'SYSTEM_DEFAULT',
+	has lease_duration 0;
+(interface: $scan_filtered_pub, qos: $sensor_qos) isa has_qos;
+(measure: $ea_nearest_object, publisher: $scan_filtered_pub) isa measurement_interface,
+    has measurement_function_name 'get_nearest_scan_distance_in_base',
+    has measurement_function_lib 'ros_monitors.laser_scan_functions',
+    has measurement_function_args 'base_link';
+
 # define Feature Model
 $f_max_speed isa Feature, has feature_name "MAX_SPEED";
 $f_low_speed isa Feature, has feature_name "LOW_SPEED";
@@ -15,20 +43,22 @@ $alternative (parent: $f_max_speed, child: $f_low_speed, child: $f_med_speed, ch
 # define MaxSpeedInternal Tactic
 $ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal", has tactic_period 1.0;
 
-$t_measured_nearest_object isa Term, has term_name "t_measured_nearest_object";
-$t_measured_movement_power isa Term, has term_name "t_measured_movement_power";
-
-$t_nearest_object_close isa Term, has term_name "nearest_object_close", has term_value 0.1;
-
-$ineq_nearest_lower_than_10 (lhs_term:$t_measured_nearest_object, rhs_term: $t_nearest_object_close) isa inequality_expression, has operator "<";
-$t_movement_power_high isa Term, has term_name "t_movement_power_high", has term_value 40.0;
-$ineq_mv_pwer_greater_than_40  (lhs_term:$t_measured_movement_power, rhs_term: $t_movement_power_high) isa inequality_expression, has operator ">";
+# nearest_object < 0.1
+$ineq_nearest_lower_than_10 (lhs_value:$ea_nearest_object) isa inequality_expression,
+	has operator "<", has rhs_value 0.1;
+# movement power > 40.0
+$ineq_mv_pwer_greater_than_40  (lhs_value:$qa_movement_power) isa inequality_expression,
+	has operator ">", has rhs_value 40.0;
+# (nearest_object < 0.1) or (movement power > 40.0)
 $or_expression (expression:$ineq_nearest_lower_than_10, expression:$ineq_mv_pwer_greater_than_40) isa or_expression;
 
-$t_nearest_object_far isa Term, has term_name "nearest_object_far", has term_value 0.15;
-$ineq_nearest_greater_than_15 (lhs_term:$t_measured_nearest_object, rhs_term: $t_nearest_object_far) isa inequality_expression, has operator ">";
-$t_movement_power_low isa Term, has term_name "t_movement_power_low", has term_value 39.0;
-$ineq_mv_pwer_lower_than_39  (lhs_term:$t_measured_movement_power, rhs_term: $t_movement_power_low) isa inequality_expression, has operator "<";
+# nearest_object > 0.15
+$ineq_nearest_greater_than_15 (lhs_value:$ea_nearest_object) isa inequality_expression,
+	has operator ">", has rhs_value 0.15;
+# movement power < 40.0
+$ineq_mv_pwer_lower_than_39  (lhs_value:$qa_movement_power) isa inequality_expression,
+	has operator "<", has rhs_value 39.0;
+# (nearest_object > 0.15) and (movement power < 40.0)
 $and_expression (expression:$ineq_nearest_greater_than_15, expression:$ineq_mv_pwer_lower_than_39) isa and_expression;
 
 $tatic_rule_min (tactic:$ta_max_speed, antecedent:$or_expression, consequent:$f_low_speed ) isa tactic_rule, has rule_name "MIN";
@@ -47,7 +77,6 @@ $p_max_speed_low_array isa ParameterValueArray;
 $p_max_speed_low_array_0 (parameter_array: $p_max_speed_low_array, parameter_value: $p_max_velocity_x_low) isa at_index, has parameter_value_index 0;
 $p_max_speed_low_array_1 (parameter_array: $p_max_speed_low_array, parameter_value: $p_max_velocity_y_low) isa at_index, has parameter_value_index 1;
 $p_max_speed_low_array_2 (parameter_array: $p_max_speed_low_array, parameter_value: $p_max_velocity_z_low) isa at_index, has parameter_value_index 2;
-
 
 # define parameter values med
 $p_max_velocity_x_med isa ParameterValueDouble, has double_value 0.18;
