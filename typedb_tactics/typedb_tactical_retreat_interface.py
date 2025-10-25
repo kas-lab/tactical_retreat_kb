@@ -274,7 +274,8 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: list of dictionaries with the node_name and namespace of the action server nodes
         """
         return node_query_to_node_dict(
-            self.fetch_connected_action_server_nodes(node_name, namespace), 'server_node')
+            self.fetch_connected_action_server_nodes(
+                node_name, namespace), 'server_node')
 
     def fetch_connected_subscriber_nodes(
             self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
@@ -314,7 +315,8 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: list of dictionaries with the node_name and namespace of the subscriber nodes
         """
         return node_query_to_node_dict(
-            self.fetch_connected_subscriber_nodes(node_name, namespace), 'subscriber_node')
+            self.fetch_connected_subscriber_nodes(
+                node_name, namespace), 'subscriber_node')
 
     def fetch_tactics(
             self, resolution_model: str) -> List[dict[str, MatchResultDict]]:
@@ -494,3 +496,103 @@ class TacticalRetreatInterface(TypeDBInterface):
             result['tactic_rule']['rule_name'][0]['value']
             for result in query_result
         )
+
+    def fetch_latest_measurement(
+            self, measure_name: str) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch latest measurement of a measure.
+
+        :param measure_name: measure name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $measure isa Measure, has measure_name '{measure_name}';
+                $measurement (measure: $measure) isa measurement,
+                    has latest true;
+            fetch
+                $measurement: measurement_value;
+        """
+        return self.fetch_database(query)
+
+    def get_latest_measurement(self, measure_name: str) -> float:
+        """
+        Get all tactics that are applicable given an ROS action name and resolution model.
+
+        :param resolution_model: name of the resolution model to check
+        :param action_name: name of the ROS action
+        :param action_name: type of the ROS action
+        :return: list containing all tactic's names that are applicable
+        """
+        query_result = self.fetch_latest_measurement(
+            measure_name)
+        if len(query_result) == 0:
+            return float('nan')
+        return query_result[0]['measurement']['measurement_value'][0]['value']
+
+    def fetch_ineq_expression_valid(self,
+                                    measure_name: str,
+                                    operator: str,
+                                    value: float) -> List[dict[str,
+                                                               MatchResultDict]]:
+        """
+        Fetch whether a inequality expression is valid.
+
+        :param measure_name: measure name
+        :param operator: ineq operator
+        :param value: value
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $measure isa Measure, has measure_name '{measure_name}';
+                $expr (lhs_value: $measure) isa inequality_expression,
+                    has operator '{operator}',
+                    has rhs_value {value};
+            fetch
+                $expr: expression_valid;
+        """
+        return self.fetch_database(query)
+
+    def get_ineq_expression_valid(
+            self,
+            measure_name: str,
+            operator: str,
+            value: float) -> bool:
+        """
+        Get whether a inequality expression is valid.
+
+        :param measure_name: measure name
+        :param operator: ineq operator
+        :param value: value
+        :return: true or false
+        """
+        query_result = self.fetch_ineq_expression_valid(
+            measure_name, operator, value)
+        return query_result[0]['expr']['expression_valid'][0]['value']
+
+    def fetch_tactic_rule_valid(
+            self, tactic_rule: str) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch whether a tactic_rule is valid.
+
+        :param tactic_rule: tactic rule name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $tr isa tactic_rule, has rule_name '{tactic_rule}';
+            fetch
+                $tr: rule_valid;
+        """
+        return self.fetch_database(query)
+
+    def get_tactic_rule_valid(self, tactic_rule: str) -> bool:
+        """
+        Get whether a tactic_rule is valid.
+
+        :param tactic_rule: measure name
+        :return: true or false
+        """
+        query_result = self.fetch_tactic_rule_valid(tactic_rule)
+        return query_result[0]['tr']['rule_valid'][0]['value']
