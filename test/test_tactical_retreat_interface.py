@@ -13,9 +13,6 @@
 # limitations under the License.
 import pytest
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
-# from rosa_kb.typedb_model_interface \
-#     import convert_component_parameter_value_to_py_type
-# from datetime import datetime
 
 
 @pytest.fixture
@@ -32,7 +29,8 @@ def kb_interface():
         force_database=True,
         force_data=True,
         infer=True)
-    return kb_interface
+    yield kb_interface
+    kb_interface.delete_database()
 
 
 def test_get_subnodes(kb_interface):
