@@ -6,8 +6,8 @@ $velocity_smoother_node isa LifeCycleNode,
 insert
 
 # context model
-$ea_nearest_object isa EnvironmentalAttribute, has measure_name "ea_nearest_object";
-$qa_movement_power isa QualityAttribute, has measure_name "qa_movement_power";
+$ea_nearest_object isa Measure, has measure_name "ea_nearest_object";
+$qa_movement_power isa Measure, has measure_name "qa_movement_power";
 
 ## example measurement
 (measure: $ea_nearest_object) isa measurement,

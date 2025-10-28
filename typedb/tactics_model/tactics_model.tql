@@ -114,9 +114,6 @@ Measure sub entity,
     plays measurement_interface:measure,
     plays inequality_expression:lhs_value;
 
-EnvironmentalAttribute sub Measure;
-QualityAttribute sub Measure;
-
 measurement sub relation,
     owns measurement_time,
     owns measurement_value,
