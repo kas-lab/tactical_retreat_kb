@@ -132,9 +132,13 @@ measurement_interface sub relation,
     owns measurement_function_lib,
     owns measurement_function_args,
     relates measure,
-    relates publisher;
+    relates publisher,
+    relates service,
+    relates action;
 
 Publisher plays measurement_interface:publisher;
+ServiceServer plays measurement_interface:service;
+ActionServer plays measurement_interface:action;
 
 ROSNode plays resolution_action:node;
 
