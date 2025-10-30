@@ -508,10 +508,15 @@ class TacticalRetreatInterface(TypeDBInterface):
         query = f"""
             match
                 $measure isa Measure, has measure_name '{measure_name}';
-                $measurement (measure: $measure) isa measurement,
+                $measurement (measure: $measure,
+                              measurement_value: $measurement_val) isa measurement,
                     has latest true;
+                {{   $measurement_val isa MeasurementValueDouble, has double_value $value; }}
+                or {{ $measurement_val isa MeasurementValueInteger, has integer_value $value; }}
+                or {{ $measurement_val isa MeasurementValueString, has string_value $value; }}
+                or {{$measurement_val isa MeasurementValueBool, has bool_value $value; }};
             fetch
-                $measurement: measurement_value;
+                $value;
         """
         return self.fetch_database(query)
 
@@ -526,9 +531,10 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_latest_measurement(
             measure_name)
+
         if len(query_result) == 0:
             return float('nan')
-        return query_result[0]['measurement']['measurement_value'][0]['value']
+        return query_result[0]['value']['value']
 
     def fetch_ineq_expression_valid(self,
                                     measure_name: str,
@@ -546,9 +552,9 @@ class TacticalRetreatInterface(TypeDBInterface):
         query = f"""
             match
                 $measure isa Measure, has measure_name '{measure_name}';
-                $expr (lhs_value: $measure) isa inequality_expression,
-                    has operator '{operator}',
-                    has rhs_value {value};
+                $litdouble isa LiteralValueDouble, has double_value {value};
+                $expr (lhs_value: $measure, rhs_value:$litdouble) isa inequality_expression,
+                    has operator '{operator}';
             fetch
                 $expr: expression_valid;
         """

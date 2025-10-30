@@ -27,15 +27,19 @@ expression_valid sub attribute,
 rule_valid sub attribute,
     value boolean;
 
-rhs_value sub attribute,
-    value double;
-
 operator sub attribute,
     value string,
     regex "^(<|<=|>|>=|==|!=)";
 
-term_value sub attribute,
+
+bool_value sub attribute,
+    value boolean;
+integer_value sub attribute,
+    value long;
+double_value sub attribute,
     value double;
+string_value sub attribute,
+    value string;
 
 ### Relations
 tactic_rule sub relation,
@@ -60,7 +64,7 @@ or_expression sub expression,
 
 inequality_expression sub expression,
     owns operator,
-    owns rhs_value,
+    relates rhs_value,
     relates lhs_value,
     plays and_expression:expression,
     plays or_expression:expression;
@@ -102,10 +106,12 @@ description sub attribute,
 
 measurement_time sub attribute,
     value datetime;
-measurement_value sub attribute,
-    value double;
+
 latest sub attribute,
     value boolean;
+
+measurement_value_index sub attribute,
+    value long;
 
 Measure sub entity,
     owns measure_name @key,
@@ -114,11 +120,56 @@ Measure sub entity,
     plays measurement_interface:measure,
     plays inequality_expression:lhs_value;
 
+MeasureBool sub Measure;
+MeasureInteger sub Measure;
+MeasureDouble sub Measure;
+MeasureString sub Measure;
+
+MeasureBoolArray sub Measure;
+MeasureIntegerArray sub Measure;
+MeasureStringArray sub Measure;
+MeasureDoubleArray sub Measure;
+
 measurement sub relation,
     owns measurement_time,
-    owns measurement_value,
     owns latest,
-    relates measure;
+    relates measure,
+    relates measurement_value;
+
+MultiValue sub entity,
+    abstract,
+    plays value_at_index:multivalue_value,
+    plays measurement:measurement_value,
+    plays inequality_expression:rhs_value;
+
+MultiValueBool sub MultiValue,
+    owns bool_value;
+MultiValueInteger sub MultiValue,
+    owns integer_value;
+MultiValueDouble sub MultiValue,
+    owns double_value;
+MultiValueString sub MultiValue,
+    owns string_value;
+
+MultiValueArray sub MultiValue,
+    plays value_at_index:multivalue_array;
+
+MeasurementValueBool sub MultiValueBool;
+MeasurementValueInteger sub MultiValueInteger;
+MeasurementValueDouble sub MultiValueDouble;
+MeasurementValueString sub MultiValueString;
+MeasurementValueArray sub MultiValueArray;
+
+LiteralValueBool sub MultiValueBool;
+LiteralValueInteger sub MultiValueInteger;
+LiteralValueDouble sub MultiValueDouble;
+LiteralValueString sub MultiValueString;
+LiteralValueArray sub MultiValueArray;
+
+value_at_index sub relation,
+    owns measurement_value_index,
+    relates multivalue_array,
+    relates multivalue_value;
 
 measurement_function_name sub attribute,
     value string;
@@ -149,13 +200,11 @@ ParameterValue plays set_nodes_parameters:parameter_value;
 # rules
 rule measurement_latest:
     when {
-        $measurement (measure: $measure) isa measurement,
-            has measurement_time $time,
-            has measurement_value $measurement_value;
+        $measurement (measure: $measure, measurement_value: $mv) isa measurement,
+            has measurement_time $time;
         not {
-            $measurement2 (measure: $measure) isa measurement,
-                has measurement_time $time2,
-                has measurement_value $measurement_value2;
+            $measurement2 (measure: $measure, measurement_value: $nmv) isa measurement,
+                has measurement_time $time2;
             $time2 > $time;
         };
     } then {
@@ -212,82 +261,247 @@ rule or_expression_invalid:
 
 rule inequality_expression_valid:
     when {
-        $ineq_exp (lhs_value: $measure) isa inequality_expression,
-            has rhs_value $rhs_value;
-        (measure: $measure) isa measurement,
-            has latest true, has measurement_value $measurement_value;
+        $ineq_exp (lhs_value: $measure, rhs_value: $rhs) isa inequality_expression;
+        (measure: $measure, measurement_value: $mv) isa measurement,
+            has latest true;
+
+        # double vs double
         {
+            $mv isa MultiValueDouble, has double_value $lhs_v;
+            $rhs isa MultiValueDouble, has double_value $rhs_v;
             $ineq_exp has operator ">";
-            $measurement_value > $rhs_value;
+            $lhs_v > $rhs_v;
         } or {
+            $mv isa MultiValueDouble, has double_value $lhs_v;
+            $rhs isa MultiValueDouble, has double_value $rhs_v;
             $ineq_exp has operator ">=";
-            $measurement_value >= $rhs_value;
+            $lhs_v >= $rhs_v;
         } or {
+            $mv isa MultiValueDouble, has double_value $lhs_v;
+            $rhs isa MultiValueDouble, has double_value $rhs_v;
             $ineq_exp has operator "<";
-            $measurement_value < $rhs_value;
+            $lhs_v < $rhs_v;
         } or {
+            $mv isa MultiValueDouble, has double_value $lhs_v;
+            $rhs isa MultiValueDouble, has double_value $rhs_v;
             $ineq_exp has operator "<=";
-            $measurement_value <= $rhs_value;
+            $lhs_v <= $rhs_v;
         } or {
+            $mv isa MultiValueDouble, has double_value $lhs_v;
+            $rhs isa MultiValueDouble, has double_value $rhs_v;
             $ineq_exp has operator "==";
-            $measurement_value == $rhs_value;
+            $lhs_v == $rhs_v;
         } or {
+            $mv isa MultiValueDouble, has double_value $lhs_v;
+            $rhs isa MultiValueDouble, has double_value $rhs_v;
             $ineq_exp has operator "!=";
-            $measurement_value != $rhs_value;
+            $lhs_v != $rhs_v;
+        } or {
+            # integer vs integer
+            $mv isa MultiValueInteger, has integer_value $lhs_i;
+            $rhs isa MultiValueInteger, has integer_value $rhs_i;
+            $ineq_exp has operator ">";
+            $lhs_i > $rhs_i;
+        } or {
+            $mv isa MultiValueInteger, has integer_value $lhs_i;
+            $rhs isa MultiValueInteger, has integer_value $rhs_i;
+            $ineq_exp has operator ">=";
+            $lhs_i >= $rhs_i;
+        } or {
+            $mv isa MultiValueInteger, has integer_value $lhs_i;
+            $rhs isa MultiValueInteger, has integer_value $rhs_i;
+            $ineq_exp has operator "<";
+            $lhs_i < $rhs_i;
+        } or {
+            $mv isa MultiValueInteger, has integer_value $lhs_i;
+            $rhs isa MultiValueInteger, has integer_value $rhs_i;
+            $ineq_exp has operator "<=";
+            $lhs_i <= $rhs_i;
+        } or {
+            $mv isa MultiValueInteger, has integer_value $lhs_i;
+            $rhs isa MultiValueInteger, has integer_value $rhs_i;
+            $ineq_exp has operator "==";
+            $lhs_i == $rhs_i;
+        } or {
+            $mv isa MultiValueInteger, has integer_value $lhs_i;
+            $rhs isa MultiValueInteger, has integer_value $rhs_i;
+            $ineq_exp has operator "!=";
+            $lhs_i != $rhs_i;
+        } or {
+            # boolean equality/inequality
+            $mv isa MultiValueBool, has bool_value $lhs_b;
+            $rhs isa MultiValueBool, has bool_value $rhs_b;
+            $ineq_exp has operator "==";
+            $lhs_b == $rhs_b;
+        } or {
+            $mv isa MultiValueBool, has bool_value $lhs_b;
+            $rhs isa MultiValueBool, has bool_value $rhs_b;
+            $ineq_exp has operator "!=";
+            $lhs_b != $rhs_b;
+        } or {
+            # string equality/inequality
+            $mv isa MultiValueString, has string_value $lhs_s;
+            $rhs isa MultiValueString, has string_value $rhs_s;
+            $ineq_exp has operator "==";
+            $lhs_s == $rhs_s;
+        } or {
+            $mv isa MultiValueString, has string_value $lhs_s;
+            $rhs isa MultiValueString, has string_value $rhs_s;
+            $ineq_exp has operator "!=";
+            $lhs_s != $rhs_s;
         };
     } then {
-        $ineq_exp has expression_valid  true;
+        $ineq_exp has expression_valid true;
     };
 
 rule inequality_expression_invalid:
     when {
-        $ineq_exp (lhs_value: $measure) isa inequality_expression,
-            has rhs_value $rhs_value;
+        $ineq_exp (lhs_value: $measure, rhs_value: $rhs) isa inequality_expression;
+
+        # no latest measurement => invalid
         {
             not {
-                (measure: $measure) isa measurement,
-                    has latest true,
-                    has measurement_value $measurement_value;
+                (measure: $measure, measurement_value: $mv) isa measurement,
+                    has latest true;
             };
         } or {
-            (measure: $measure) isa measurement,
-                has latest true,
-                has measurement_value $measurement_value;
+            # type mismatch (different MultiValue parents) => invalid
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueDouble;
+            not { $rhs isa MultiValueDouble; };
+        } or {
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueInteger;
+            not { $rhs isa MultiValueInteger; };
+        } or {
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueBool;
+            not { $rhs isa MultiValueBool; };
+        } or {
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueString;
+            not { $rhs isa MultiValueString; };
+        } or {
+            # same-type comparisons that fail (double)
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueDouble, has double_value $lhs_v;
+            $rhs isa MultiValueDouble, has double_value $rhs_v;
             $ineq_exp has operator ">";
-            $measurement_value <= $rhs_value;
+            $lhs_v <= $rhs_v;
         } or {
-            (measure: $measure) isa measurement,
-                has latest true,
-                has measurement_value $measurement_value;
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueDouble, has double_value $lhs_v;
+            $rhs isa MultiValueDouble, has double_value $rhs_v;
             $ineq_exp has operator ">=";
-            $measurement_value < $rhs_value;
+            $lhs_v < $rhs_v;
         } or {
-            (measure: $measure) isa measurement,
-                has latest true,
-                has measurement_value $measurement_value;
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueDouble, has double_value $lhs_v;
+            $rhs isa MultiValueDouble, has double_value $rhs_v;
             $ineq_exp has operator "<";
-            $measurement_value >= $rhs_value;
+            $lhs_v >= $rhs_v;
         } or {
-            (measure: $measure) isa measurement,
-                has latest true,
-                has measurement_value $measurement_value;
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueDouble, has double_value $lhs_v;
+            $rhs isa MultiValueDouble, has double_value $rhs_v;
             $ineq_exp has operator "<=";
-            $measurement_value > $rhs_value;
+            $lhs_v > $rhs_v;
         } or {
-            (measure: $measure) isa measurement,
-                has latest true,
-                has measurement_value $measurement_value;
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueDouble, has double_value $lhs_v;
+            $rhs isa MultiValueDouble, has double_value $rhs_v;
             $ineq_exp has operator "==";
-            $measurement_value != $rhs_value;
+            $lhs_v != $rhs_v;
         } or {
-            (measure: $measure) isa measurement,
-                has latest true,
-                has measurement_value $measurement_value;
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueDouble, has double_value $lhs_v;
+            $rhs isa MultiValueDouble, has double_value $rhs_v;
             $ineq_exp has operator "!=";
-            $measurement_value == $rhs_value;
+            $lhs_v == $rhs_v;
+        } or {
+            # integer failures
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueInteger, has integer_value $lhs_i;
+            $rhs isa MultiValueInteger, has integer_value $rhs_i;
+            $ineq_exp has operator ">";
+            $lhs_i <= $rhs_i;
+        } or {
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueInteger, has integer_value $lhs_i;
+            $rhs isa MultiValueInteger, has integer_value $rhs_i;
+            $ineq_exp has operator ">=";
+            $lhs_i < $rhs_i;
+        } or {
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueInteger, has integer_value $lhs_i;
+            $rhs isa MultiValueInteger, has integer_value $rhs_i;
+            $ineq_exp has operator "<";
+            $lhs_i >= $rhs_i;
+        } or {
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueInteger, has integer_value $lhs_i;
+            $rhs isa MultiValueInteger, has integer_value $rhs_i;
+            $ineq_exp has operator "<=";
+            $lhs_i > $rhs_i;
+        } or {
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueInteger, has integer_value $lhs_i;
+            $rhs isa MultiValueInteger, has integer_value $rhs_i;
+            $ineq_exp has operator "==";
+            $lhs_i != $rhs_i;
+        } or {
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueInteger, has integer_value $lhs_i;
+            $rhs isa MultiValueInteger, has integer_value $rhs_i;
+            $ineq_exp has operator "!=";
+            $lhs_i == $rhs_i;
+        } or {
+            # boolean failures
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueBool, has bool_value $lhs_b;
+            $rhs isa MultiValueBool, has bool_value $rhs_b;
+            $ineq_exp has operator "==";
+            $lhs_b != $rhs_b;
+        } or {
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueBool, has bool_value $lhs_b;
+            $rhs isa MultiValueBool, has bool_value $rhs_b;
+            $ineq_exp has operator "!=";
+            $lhs_b == $rhs_b;
+        } or {
+            # string failures
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueString, has string_value $lhs_s;
+            $rhs isa MultiValueString, has string_value $rhs_s;
+            $ineq_exp has operator "==";
+            $lhs_s != $rhs_s;
+        } or {
+            (measure: $measure, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa MultiValueString, has string_value $lhs_s;
+            $rhs isa MultiValueString, has string_value $rhs_s;
+            $ineq_exp has operator "!=";
+            $lhs_s == $rhs_s;
         };
     } then {
-        $ineq_exp has expression_valid  false;
+        $ineq_exp has expression_valid false;
     };
-
-

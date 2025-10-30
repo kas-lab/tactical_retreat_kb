@@ -9,10 +9,14 @@ insert
 $ea_nearest_object isa Measure, has measure_name "ea_nearest_object";
 $qa_movement_power isa Measure, has measure_name "qa_movement_power";
 
+
+$mvalueonine isa  MeasurementValueDouble,
+    has double_value 0.09;
+
+
 ## example measurement
-(measure: $ea_nearest_object) isa measurement,
-        has measurement_time 2025-09-06T12:57:56.666,
-        has measurement_value 0.09;
+(measure: $ea_nearest_object, measurement_value:$mvalueonine) isa measurement,
+        has measurement_time 2025-09-06T12:57:56.666;
 
 ## Nearest object
 $scan_filtered_pub isa Publisher,
@@ -44,20 +48,35 @@ $alternative (parent: $f_max_speed, child: $f_low_speed, child: $f_med_speed, ch
 $ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal", has tactic_period 1.0;
 
 # nearest_object < 0.1
-$ineq_nearest_lower_than_10 (lhs_value:$ea_nearest_object) isa inequality_expression,
-	has operator "<", has rhs_value 0.1;
+
+$litdouble isa LiteralValueDouble,
+    has double_value 0.1;
+
+$litdoublefoury isa LiteralValueDouble,
+    has double_value 40.0;
+
+$litdoublefifteen isa LiteralValueDouble,
+    has double_value 0.15;
+
+$litdoublethreenine isa LiteralValueDouble,
+    has double_value 39.0;
+    
+
+
+$ineq_nearest_lower_than_10 (lhs_value:$ea_nearest_object, rhs_value:$litdouble) isa inequality_expression,
+	has operator "<";
 # movement power > 40.0
-$ineq_mv_pwer_greater_than_40  (lhs_value:$qa_movement_power) isa inequality_expression,
-	has operator ">", has rhs_value 40.0;
+$ineq_mv_pwer_greater_than_40  (lhs_value:$qa_movement_power, rhs_value:$litdoublefoury) isa inequality_expression,
+	has operator ">";
 # (nearest_object < 0.1) or (movement power > 40.0)
 $or_expression (expression:$ineq_nearest_lower_than_10, expression:$ineq_mv_pwer_greater_than_40) isa or_expression;
 
 # nearest_object > 0.15
-$ineq_nearest_greater_than_15 (lhs_value:$ea_nearest_object) isa inequality_expression,
-	has operator ">", has rhs_value 0.15;
+$ineq_nearest_greater_than_15 (lhs_value:$ea_nearest_object, rhs_value:$litdoublefifteen) isa inequality_expression,
+	has operator ">";
 # movement power < 40.0
-$ineq_mv_pwer_lower_than_39  (lhs_value:$qa_movement_power) isa inequality_expression,
-	has operator "<", has rhs_value 39.0;
+$ineq_mv_pwer_lower_than_39  (lhs_value:$qa_movement_power, rhs_value:$litdoublethreenine) isa inequality_expression,
+	has operator "<";
 # (nearest_object > 0.15) and (movement power < 40.0)
 $and_expression (expression:$ineq_nearest_greater_than_15, expression:$ineq_mv_pwer_lower_than_39) isa and_expression;
 

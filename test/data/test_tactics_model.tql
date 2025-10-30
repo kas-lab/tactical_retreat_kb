@@ -3,67 +3,82 @@ insert
 ### measurements
 $m isa Measure, has measure_name "measure", has description "measure for tests";
 
-(measure: $m) isa measurement,
-	has measurement_value 1.0,
-	has measurement_time 2025-08-06T10:57:56.666;
+$mvalue1 isa MeasurementValueDouble,
+    has double_value 1.0;
+$mvalue2 isa  MeasurementValueDouble,
+    has double_value 1.1;
+$mvalue3 isa  MeasurementValueDouble,
+    has double_value 1.2;
+
+
+(measure: $m, measurement_value: $mvalue1) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666;
+
+(measure: $m, measurement_value: $mvalue2) isa measurement,
+    has measurement_time 2025-09-06T10:57:56.666;
+
+(measure: $m, measurement_value: $mvalue3) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666;
 
 (measure: $m) isa measurement,
-	has measurement_value 1.1,
-	has measurement_time 2025-09-06T10:57:56.666;
-
-(measure: $m) isa measurement,
-	has measurement_value 1.2,
-	has measurement_time 2025-09-06T11:57:56.666;
-
-(measure: $m) isa measurement,
-	has measurement_time 2025-09-06T12:57:56.666;
+    has measurement_time 2025-09-06T12:57:56.666;
 
 
 $m_no_measurement isa Measure, has measure_name "measure_no_measurement", has description "measure for tests";
 
 $m_no_valid_measurement isa Measure, has measure_name "measure_no_valid_measurement", has description "measure for tests";
 (measure: $m_no_valid_measurement) isa measurement,
-	has measurement_time 2025-09-06T12:57:56.666;
+    has measurement_time 2025-09-06T12:57:56.666;
 
+
+$litdouble isa LiteralValueDouble,
+    has double_value 1.3;
+    
+$litdoubletwo isa LiteralValueDouble,
+    has double_value 1.2;
+    
+$litdoublethree isa LiteralValueDouble,
+    has double_value 1.0;
 
 ### expressions
 
 #### inequality expressions
-$exp1 (lhs_value:$m) isa inequality_expression, has operator "<", has rhs_value 1.3; # True
-$exp2 (lhs_value:$m) isa inequality_expression, has operator "<", has rhs_value 1.2; # False
-$exp3 (lhs_value:$m) isa inequality_expression, has operator "<", has rhs_value 1.0; # False
-$exp4 (lhs_value:$m_no_measurement) isa inequality_expression, has operator "<", has rhs_value 1.0;
-$exp5 (lhs_value:$m_no_valid_measurement) isa inequality_expression, has operator "<", has rhs_value 1.0;
+$exp1 (lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operator "<"; # True
+$exp2 (lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator "<"; # False
+$exp3 (lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator "<"; # False
 
-$exp6 (lhs_value:$m) isa inequality_expression, has operator "<=", has rhs_value 1.3;
-$exp7 (lhs_value:$m) isa inequality_expression, has operator "<=", has rhs_value 1.2;
-$exp8 (lhs_value:$m) isa inequality_expression, has operator "<=", has rhs_value 1.0;
-$exp9 (lhs_value:$m_no_measurement) isa inequality_expression, has operator "<=", has rhs_value 1.0;
-$exp10 (lhs_value:$m_no_valid_measurement) isa inequality_expression, has operator "<=", has rhs_value 1.0;
+$exp4 (lhs_value:$m_no_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "<";
+$exp5 (lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "<";
 
-$exp11 (lhs_value:$m) isa inequality_expression, has operator ">", has rhs_value 1.3;
-$exp12 (lhs_value:$m) isa inequality_expression, has operator ">", has rhs_value 1.2;
-$exp13 (lhs_value:$m) isa inequality_expression, has operator ">", has rhs_value 1.0; # true
-$exp14 (lhs_value:$m_no_measurement) isa inequality_expression, has operator ">", has rhs_value 1.0;
-$exp15 (lhs_value:$m_no_valid_measurement) isa inequality_expression, has operator ">", has rhs_value 1.0;
+$exp6 (lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operator "<=";
+$exp7 (lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator "<=";
+$exp8 (lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator "<=";
+$exp9 (lhs_value:$m_no_measurement,  rhs_value:$litdoublethree) isa inequality_expression, has operator "<=";
+$exp10 (lhs_value:$m_no_valid_measurement,  rhs_value:$litdoublethree) isa inequality_expression, has operator "<=";
 
-(lhs_value:$m) isa inequality_expression, has operator ">=", has rhs_value 1.3;
-(lhs_value:$m) isa inequality_expression, has operator ">=", has rhs_value 1.2;
-(lhs_value:$m) isa inequality_expression, has operator ">=", has rhs_value 1.0;
-(lhs_value:$m_no_measurement) isa inequality_expression, has operator ">=", has rhs_value 1.0;
-(lhs_value:$m_no_valid_measurement) isa inequality_expression, has operator ">=", has rhs_value 1.0;
+$exp11 (lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operator ">";
+$exp12 (lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator ">";
+$exp13 (lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator ">"; # true
+$exp14 (lhs_value:$m_no_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator ">";
+$exp15 (lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator ">";
 
-(lhs_value:$m) isa inequality_expression, has operator "==", has rhs_value 1.3;
-(lhs_value:$m) isa inequality_expression, has operator "==", has rhs_value 1.2;
-(lhs_value:$m) isa inequality_expression, has operator "==", has rhs_value 1.0;
-(lhs_value:$m_no_measurement) isa inequality_expression, has operator "==", has rhs_value 1.0;
-(lhs_value:$m_no_valid_measurement) isa inequality_expression, has operator "==", has rhs_value 1.0;
+(lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operator ">=";
+(lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator ">=";
+(lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator ">=";
+(lhs_value:$m_no_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator ">=";
+(lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator ">=";
 
-(lhs_value:$m) isa inequality_expression, has operator "!=", has rhs_value 1.3;
-(lhs_value:$m) isa inequality_expression, has operator "!=", has rhs_value 1.2;
-(lhs_value:$m) isa inequality_expression, has operator "!=", has rhs_value 1.0;
-(lhs_value:$m_no_measurement) isa inequality_expression, has operator "!=", has rhs_value 1.0;
-(lhs_value:$m_no_valid_measurement) isa inequality_expression, has operator "!=", has rhs_value 1.0;
+(lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operator "==";
+(lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator "==";
+(lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator "==";
+(lhs_value:$m_no_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "==";
+(lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "==";
+
+(lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operator "!=";
+(lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator "!=";
+(lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator "!=";
+(lhs_value:$m_no_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "!=";
+(lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "!=";
 
 ### tactic rules
 
