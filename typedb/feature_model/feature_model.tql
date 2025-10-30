@@ -37,6 +37,7 @@ Feature sub entity,
     plays feature_adaptation:deactivation,
     plays feature_adaptation:activation,
     plays variant_resolution:variant,
+    plays and_expression:expression,
     plays feature_hierarchy:parent,
     plays feature_hierarchy:child,
     plays cross_tree_constraint:feature;

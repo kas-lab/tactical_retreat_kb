@@ -91,7 +91,6 @@ $res_rebetmc (
 	variant_resolution:$high_speed_resolution) isa resolution_model,
     has resolution_model_name "rebetmc", has ros_system "nav2";
 
-
 ### mock Tactics
 
 ## define Feature Model

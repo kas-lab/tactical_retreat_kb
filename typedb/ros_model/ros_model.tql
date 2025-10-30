@@ -11,6 +11,10 @@ lifecycle_state sub attribute,
     value string,
     regex "^(unconfigured|inactive|active|finalized)$";
 
+#### Should only be used by is_node_active rule
+is_active sub attribute,
+    value boolean;
+
 ### Runtime node attributes
 node_name sub attribute,
     value string;
@@ -26,19 +30,6 @@ interface_name sub attribute,
     value string;
 interface_type sub attribute,
     value string;
-# topic_type sub attribute,
-#     value string;
-# service_type sub attribute,
-#     value string;
-# action_type sub attribute,
-#     value string;
-
-# topic_name sub attribute,
-#     value string;
-# service_name sub attribute,
-#     value string;
-# action_name sub attribute,
-#     value string;
 
 gid sub attribute,
     value long;
@@ -96,7 +87,9 @@ ROSNode sub entity,
     plays has_interface:node,
     plays has_parameter:node,
     plays has_parameter_value:node,
-    plays node_deployment:node;
+    plays node_deployment:node,
+    plays process_group:node,
+    plays subnode:subnode;
 
 LifeCycleNode sub ROSNode,
     owns lifecycle_state;
@@ -218,3 +211,9 @@ node_deployment sub relation,
     owns package,
     owns executable,
     relates node;
+
+process_group sub relation,
+    relates node;
+
+subnode sub process_group,
+    relates subnode;

@@ -1,5 +1,112 @@
 insert
 
+## Define ROS nodes
+
+### Mirte exemplar nodes
+$mirte_bt_node isa LifeCycleNode,
+	has node_name "mirte_bt",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $mirte_bt_node) isa node_deployment,
+	has package "LifeCycleNode",
+	has executable "mirte_bt";
+
+### Nav2 nodes
+$amcl_node isa LifeCycleNode,
+	has node_name "amcl",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $amcl_node) isa node_deployment,
+	has package "nav2_amcl",
+	has executable "amcl";
+
+$behavior_server_node isa LifeCycleNode,
+	has node_name "behavior_server",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $behavior_server_node) isa node_deployment,
+	has package "nav2_behaviors",
+	has executable "behavior_server";
+
+$bt_navigator_node isa LifeCycleNode,
+	has node_name "bt_navigator",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $bt_navigator_node) isa node_deployment,
+	has package "nav2_bt_navigator",
+	has executable "bt_navigator";
+
+$bt_navigator_navigate_through_poses_rclcpp_node isa ROSNode,
+	has node_name "bt_navigator_navigate_through_poses_rclcpp",
+	has namespace "",
+	has start_time 2025-08-06T10:56:12.111;
+
+$bt_navigator_navigate_to_pose_rclcpp_node isa ROSNode,
+	has node_name "bt_navigator_navigate_to_pose_rclcpp",
+	has namespace "",
+	has start_time 2025-08-06T10:56:12.111;
+
+(node: $bt_navigator_node,
+	subnode: $bt_navigator_navigate_through_poses_rclcpp_node,
+	subnode: $bt_navigator_navigate_to_pose_rclcpp_node) isa subnode;
+
+$controller_server_node isa LifeCycleNode,
+	has node_name "controller_server",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $controller_server_node) isa node_deployment,
+	has package "nav2_controller",
+	has executable "controller_server";
+
+$map_server_node isa LifeCycleNode,
+	has node_name "map_server",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $map_server_node) isa node_deployment,
+	has package "nav2_map_server",
+	has executable "nav2_map_server";
+
+
+$planner_server_node isa LifeCycleNode,
+	has node_name "planner_server",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $planner_server_node) isa node_deployment,
+	has package "nav2_planner",
+	has executable "planner_server";
+
+$smoother_server_node isa LifeCycleNode,
+	has node_name "smoother_server",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $smoother_server_node) isa node_deployment,
+	has package "nav2_smoother",
+	has executable "smoother_server";
+
+$velocity_smoother_node isa LifeCycleNode,
+	has node_name "velocity_smoother",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $velocity_smoother_node) isa node_deployment,
+	has package "nav2_velocity_smoother",
+	has executable "velocity_smoother";
+
+$relay_node isa ROSNode,
+	has node_name "relay_node_cmd_vel",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $relay_node) isa node_deployment,
+	has package "topic_tools",
+	has executable "relay";
+
+## How to model these nodes?
+# /controller_manager Where is this node launched from?
+# /global_costmap/global_costmap [LifeCycle] Where is this node launched from?
+# /local_costmap/local_costmap [LifeCycle] Where is this node launched from?
+
+## Define parameters
+
+### velocity_smoother_node parameters
 $max_velocity_param isa ParameterDoubleArray,
 	has parameter_name "max_velocity";
 
@@ -9,17 +116,8 @@ $odom_topic_param isa ParameterString,
 $odom_duration_param isa ParameterDouble,
 	has parameter_name "odom_duration";
 
-$velocity_smoother isa LifeCycleNode,
-	has node_name "velocity_smoother",
-	has namespace "",
-	has start_time 2025-08-06T10:56:12.111;
-
-(node: $velocity_smoother) isa node_deployment,
-	has package "nav2_velocity_smoother",
-	has executable "velocity_smoother";
-
 $velocity_smoother_parameters (
-	node: $velocity_smoother,
+	node: $velocity_smoother_node,
 	parameter:$max_velocity_param,
 	parameter:$odom_topic_param,
 	parameter:$odom_duration_param) isa has_parameter;
@@ -37,29 +135,80 @@ $default_max_velocity_array_y (parameter_array: $default_max_velocity_param_valu
 $default_max_velocity_array_z (parameter_array: $default_max_velocity_param_value, parameter_value: $default_max_velocity_z)
 	isa at_index, has parameter_value_index 2;
 
-(node: $velocity_smoother, parameter: $max_velocity_param, parameter_value: $default_max_velocity_param_value)
+(node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $default_max_velocity_param_value)
 	isa has_parameter_value, has default_value true;
 
 # default param odom_topic
 $default_odom_topic isa ParameterValueString, has string_value "/odom";
-(node: $velocity_smoother, parameter: $odom_topic_param, parameter_value: $default_odom_topic)
+(node: $velocity_smoother_node, parameter: $odom_topic_param, parameter_value: $default_odom_topic)
 	isa has_parameter_value, has default_value true;
 
 # default odom duration
 $default_odom_duration isa ParameterValueDouble, has double_value 1.0;
-(node: $velocity_smoother, parameter: $odom_duration_param, parameter_value: $default_odom_duration)
+(node: $velocity_smoother_node, parameter: $odom_duration_param, parameter_value: $default_odom_duration)
 	isa has_parameter_value, has default_value true;
 
-$relay_node isa ROSNode,
-	has node_name "relay_node_cmd_vel",
-	has namespace "",
-	has start_time 2025-08-06T10:57:56.666;
+## Define ROS services
 
-(node: $relay_node) isa node_deployment,
-	has package "topic_tools",
-	has executable "relay";
+### set_initial_pose service
+$amcl_init_pose_server isa ServiceServer,
+	has interface_name "/set_initial_pose",
+	has interface_type "nav2_msgs/srv/SetInitialPose";
+(node: $amcl_node, server: $amcl_init_pose_server) isa has_service;
 
-$cmd_vel_vs_qos isa QoSProfile,
+$mirte_bt_init_pose_client isa ServiceClient,
+	has interface_name "/set_initial_pose",
+	has interface_type "nav2_msgs/srv/SetInitialPose";
+(node: $mirte_bt_node, client: $mirte_bt_init_pose_client) isa has_service;
+
+## Define ROS actions
+
+### navigate_to_pose action
+$bt_navigator_navigate_to_pose_server isa ActionServer,
+	has interface_name "/navigate_to_pose",
+	has interface_type "nav2_msgs/action/NavigateToPose";
+(node: $bt_navigator_node, server: $bt_navigator_navigate_to_pose_server) isa has_action;
+
+$bt_navigator_navigate_to_pose_client isa ActionClient,
+	has interface_name "/navigate_to_pose",
+	has interface_type "nav2_msgs/action/NavigateToPose";
+(node: $bt_navigator_node, client: $bt_navigator_navigate_to_pose_client) isa has_action;
+
+$mirte_bt_navigate_to_pose_client isa ActionClient,
+	has interface_name "/navigate_to_pose",
+	has interface_type "nav2_msgs/action/NavigateToPose";
+(node: $mirte_bt_node, client: $mirte_bt_navigate_to_pose_client) isa has_action;
+
+### compute_path_to_pose action
+$planner_server_compute_path_to_pose_server isa ActionServer,
+	has interface_name "/compute_path_to_pose",
+	has interface_type "nav2_msgs/action/ComputePathToPose";
+(node: $planner_server_node, server: $planner_server_compute_path_to_pose_server) isa has_action;
+
+$bt_navigator_compute_path_to_pose_client isa ActionClient,
+	has interface_name "/compute_path_to_pose",
+	has interface_type "nav2_msgs/action/ComputePathToPose";
+(node: $bt_navigator_navigate_to_pose_rclcpp_node, client: $bt_navigator_compute_path_to_pose_client) isa has_action;
+
+### follow_path action
+$controller_server_follow_path_server isa ActionServer,
+	has interface_name "/follow_path",
+	has interface_type "nav2_msgs/action/FollowPath";
+(node: $controller_server_node, server: $controller_server_follow_path_server) isa has_action;
+
+$bt_navigator_navigate_to_pose_follow_path_client isa ActionClient,
+	has interface_name "/follow_path",
+	has interface_type "nav2_msgs/action/FollowPath";
+(node: $bt_navigator_navigate_to_pose_rclcpp_node, client: $bt_navigator_navigate_to_pose_follow_path_client) isa has_action;
+
+$bt_navigator_navigate_through_poses_follow_path_client isa ActionClient,
+	has interface_name "/follow_path",
+	has interface_type "nav2_msgs/action/FollowPath";
+(node: $bt_navigator_navigate_through_poses_rclcpp_node, client: $bt_navigator_navigate_through_poses_follow_path_client) isa has_action;
+
+## Define ROS topics
+
+$cmd_vel_qos isa QoSProfile,
 	has reliability "RELIABLE",
 	has history "KEEP_LAST",
 	has depth 10,
@@ -69,16 +218,34 @@ $cmd_vel_vs_qos isa QoSProfile,
 	has liveliness "AUTOMATIC",
 	has lease_duration 0;
 
+### cmd_vel topic
 $velocity_smoother_cmd_vel_pub isa Publisher,
-	has interface_name "/cmd/vel",
+	has interface_name "/cmd_vel",
 	has interface_type "geometry_msgs/msg/Twist";
+(interface: $velocity_smoother_cmd_vel_pub, qos: $cmd_vel_qos) isa has_qos;
+(node: $velocity_smoother_node, publisher: $velocity_smoother_cmd_vel_pub) isa has_topic;
+
+$behavior_server_cmd_vel_sub isa Subscriber,
+	has interface_name "/cmd_vel",
+	has interface_type "geometry_msgs/msg/Twist";
+(interface: $behavior_server_cmd_vel_sub, qos: $cmd_vel_qos) isa has_qos;
+(node: $behavior_server_node, subscriber: $behavior_server_cmd_vel_sub) isa has_topic;
 
 $relay_node_cmd_vel_sub isa Subscriber,
-	has interface_name "/cmd/vel",
+	has interface_name "/cmd_vel",
 	has interface_type "geometry_msgs/msg/Twist";
-
-$vs_cmd_vel_pub_qos (interface: $velocity_smoother_cmd_vel_pub, qos: $cmd_vel_vs_qos) isa has_qos;
-(node: $velocity_smoother, publisher: $velocity_smoother_cmd_vel_pub) isa has_topic;
-
-$relay_cmd_vel_sub_qos (interface: $relay_node_cmd_vel_sub, qos: $cmd_vel_vs_qos) isa has_qos;
+(interface: $relay_node_cmd_vel_sub, qos: $cmd_vel_qos) isa has_qos;
 (node: $relay_node, subscriber: $relay_node_cmd_vel_sub) isa has_topic;
+
+### cmd_vel_nav topic
+$controller_server_cmd_vel_nav_pub isa Publisher,
+	has interface_name "/cmd_vel_nav",
+	has interface_type "geometry_msgs/msg/Twist";
+(interface: $controller_server_cmd_vel_nav_pub, qos: $cmd_vel_qos) isa has_qos;
+(node: $controller_server_node, publisher: $controller_server_cmd_vel_nav_pub) isa has_topic;
+
+$velocity_smoother_cmd_vel_nav_sub isa Subscriber,
+	has interface_name "/cmd_vel_nav",
+	has interface_type "geometry_msgs/msg/Twist";
+(interface: $velocity_smoother_cmd_vel_nav_sub, qos: $cmd_vel_qos) isa has_qos;
+(node: $velocity_smoother_node, subscriber: $velocity_smoother_cmd_vel_nav_sub) isa has_topic;
