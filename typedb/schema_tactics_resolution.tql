@@ -78,9 +78,13 @@ resolution_model sub relation,
     relates variant_resolution;
 
 variant_resolution sub relation,
+    abstract,
     relates resolution_action,
     relates variant,
     plays resolution_model:variant_resolution;
+
+variant_activation sub variant_resolution;
+variant_deactivation sub variant_resolution;
 
 resolution_action sub relation,
     abstract,
