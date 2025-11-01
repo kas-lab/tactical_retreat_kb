@@ -1,7 +1,0 @@
-match
-    $ea_nearest_object isa EnvironmentalAttribute, has measure_name "ea_nearest_object";
-    # $t_measured_nearest_object isa Term, has term_name "t_measured_nearest_object";
-insert
-    (measure: $ea_nearest_object) isa measurement,
-        has time 2025-09-06T12:57:56.666,
-        has measurement_value 0.09;

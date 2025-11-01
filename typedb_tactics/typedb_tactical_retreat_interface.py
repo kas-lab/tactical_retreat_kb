@@ -511,10 +511,16 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $measurement (measure: $measure,
                               measurement_value: $measurement_val) isa measurement,
                     has latest true;
-                {{   $measurement_val isa MeasurementValueDouble, has double_value $value; }}
-                or {{ $measurement_val isa MeasurementValueInteger, has integer_value $value; }}
-                or {{ $measurement_val isa MeasurementValueString, has string_value $value; }}
-                or {{$measurement_val isa MeasurementValueBool, has bool_value $value; }};
+                {{
+                    $measurement_val isa ValueDouble, has double_value $value;
+                }} or {{
+                    $measurement_val isa ValueInteger, has integer_value $value;
+                }} or {{
+                    $measurement_val isa ValueString, has string_value $value;
+                }}
+                or {{
+                    $measurement_val isa ValueBool, has bool_value $value;
+                }};
             fetch
                 $value;
         """
@@ -552,7 +558,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         query = f"""
             match
                 $measure isa Measure, has measure_name '{measure_name}';
-                $litdouble isa LiteralValueDouble, has double_value {value};
+                $litdouble isa ValueDouble, has double_value {value};
                 $expr (lhs_value: $measure, rhs_value:$litdouble) isa inequality_expression,
                     has operator '{operator}';
             fetch

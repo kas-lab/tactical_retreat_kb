@@ -1,0 +1,28 @@
+match
+    $v isa Value, has string_value $string;
+fetch
+    $string;
+
+match
+    $v isa Value, has integer_value $integer;
+fetch
+    $integer;
+
+match
+    $v isa Value, has bool_value $bool;
+fetch
+    $bool;
+
+match
+    $v isa Value, has double_value $double;
+fetch
+    $double;
+
+match
+    $array isa ValueArray;
+    (array: $array, array_value: $v) isa at_index,
+        has index $index;
+    $singleton_types sub! ValueSingleton;
+    $v isa $singleton_types;
+fetch
+    $v: attribute;

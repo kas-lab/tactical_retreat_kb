@@ -22,7 +22,9 @@ def kb_interface():
     kb_interface = TacticalRetreatInterface(
         'localhost:1729',
         'test_tactics_model',
-        ['typedb/ros_model/ros_model.tql',
+        ['typedb/data_structure/data_structure.tql',
+            'typedb/context_model/context_model.tql',
+            'typedb/ros_model/ros_model.tql',
             'typedb/tactics_model/tactics_model.tql'],
         ['test/data/test_tactics_model.tql'],
         force_database=True,
@@ -114,7 +116,9 @@ def kb_interface_example():
     kb_interface_example = TacticalRetreatInterface(
         'localhost:1729',
         'test_tactics_example_model',
-        ['typedb/ros_model/ros_model.tql',
+        ['typedb/data_structure/data_structure.tql',
+            'typedb/context_model/context_model.tql',
+            'typedb/ros_model/ros_model.tql',
             'typedb/tactics_model/tactics_model.tql',
             'typedb/feature_model/feature_model.tql'],
         ['typedb/ros_model/ros_model_example.tql',
