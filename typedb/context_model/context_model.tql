@@ -56,7 +56,7 @@ rule measurement_latest:
         $measurement (measure: $measure, measurement_value: $mv) isa measurement,
             has measurement_time $time;
         not {
-            $measurement2 (measure: $measure, measurement_value: $nmv) isa measurement,
+            (measure: $measure, measurement_value: $nmv) isa measurement,
                 has measurement_time $time2;
             $time2 > $time;
         };

@@ -123,8 +123,8 @@ rule and_expression_valid:
 
 rule and_expression_invalid:
     when {
-        $and_exp (expression: $e) isa and_expression;
-        $e has expression_valid false;
+        $and_exp isa and_expression;
+        not {$and_exp has expression_valid true;};
     } then {
         $and_exp has expression_valid false;
     };
@@ -140,10 +140,7 @@ rule or_expression_valid:
 rule or_expression_invalid:
     when {
         $or_exp isa or_expression;
-        not {
-            $or_exp (expression: $valid_e) isa or_expression;
-            $valid_e has expression_valid true;
-        };
+        not {$or_exp has expression_valid true;};
     } then {
         $or_exp has expression_valid false;
     };
@@ -153,244 +150,59 @@ rule inequality_expression_valid:
         $ineq_exp (lhs_value: $measure, rhs_value: $rhs) isa inequality_expression;
         (measure: $measure, measurement_value: $mv) isa measurement,
             has latest true;
-
-        # double vs double
         {
-            $mv isa ValueDouble, has double_value $lhs_v;
-            $rhs isa ValueDouble, has double_value $rhs_v;
-            $ineq_exp has operator ">";
-            $lhs_v > $rhs_v;
+            {
+                $mv isa ValueDouble, has double_value $lhs_v;
+                $rhs isa ValueDouble, has double_value $rhs_v;
+            } or {
+                $mv isa ValueInteger, has integer_value $lhs_v;
+                $rhs isa ValueInteger, has integer_value $rhs_v;
+            };
+            {
+                $ineq_exp has operator ">";
+                $lhs_v > $rhs_v;
+            } or {
+                $ineq_exp has operator ">=";
+                $lhs_v >= $rhs_v;
+            } or {
+                $ineq_exp has operator "<";
+                $lhs_v < $rhs_v;
+            } or {
+                $ineq_exp has operator "<=";
+                $lhs_v <= $rhs_v;
+            } or {
+                $ineq_exp has operator "==";
+                $lhs_v == $rhs_v;
+            } or {
+                $ineq_exp has operator "!=";
+                $lhs_v != $rhs_v;
+            };
         } or {
-            $mv isa ValueDouble, has double_value $lhs_v;
-            $rhs isa ValueDouble, has double_value $rhs_v;
-            $ineq_exp has operator ">=";
-            $lhs_v >= $rhs_v;
-        } or {
-            $mv isa ValueDouble, has double_value $lhs_v;
-            $rhs isa ValueDouble, has double_value $rhs_v;
-            $ineq_exp has operator "<";
-            $lhs_v < $rhs_v;
-        } or {
-            $mv isa ValueDouble, has double_value $lhs_v;
-            $rhs isa ValueDouble, has double_value $rhs_v;
-            $ineq_exp has operator "<=";
-            $lhs_v <= $rhs_v;
-        } or {
-            $mv isa ValueDouble, has double_value $lhs_v;
-            $rhs isa ValueDouble, has double_value $rhs_v;
-            $ineq_exp has operator "==";
-            $lhs_v == $rhs_v;
-        } or {
-            $mv isa ValueDouble, has double_value $lhs_v;
-            $rhs isa ValueDouble, has double_value $rhs_v;
-            $ineq_exp has operator "!=";
-            $lhs_v != $rhs_v;
-        } or {
-            # integer vs integer
-            $mv isa ValueInteger, has integer_value $lhs_i;
-            $rhs isa ValueInteger, has integer_value $rhs_i;
-            $ineq_exp has operator ">";
-            $lhs_i > $rhs_i;
-        } or {
-            $mv isa ValueInteger, has integer_value $lhs_i;
-            $rhs isa ValueInteger, has integer_value $rhs_i;
-            $ineq_exp has operator ">=";
-            $lhs_i >= $rhs_i;
-        } or {
-            $mv isa ValueInteger, has integer_value $lhs_i;
-            $rhs isa ValueInteger, has integer_value $rhs_i;
-            $ineq_exp has operator "<";
-            $lhs_i < $rhs_i;
-        } or {
-            $mv isa ValueInteger, has integer_value $lhs_i;
-            $rhs isa ValueInteger, has integer_value $rhs_i;
-            $ineq_exp has operator "<=";
-            $lhs_i <= $rhs_i;
-        } or {
-            $mv isa ValueInteger, has integer_value $lhs_i;
-            $rhs isa ValueInteger, has integer_value $rhs_i;
-            $ineq_exp has operator "==";
-            $lhs_i == $rhs_i;
-        } or {
-            $mv isa ValueInteger, has integer_value $lhs_i;
-            $rhs isa ValueInteger, has integer_value $rhs_i;
-            $ineq_exp has operator "!=";
-            $lhs_i != $rhs_i;
-        } or {
-            # boolean equality/inequality
-            $mv isa ValueBool, has bool_value $lhs_b;
-            $rhs isa ValueBool, has bool_value $rhs_b;
-            $ineq_exp has operator "==";
-            $lhs_b == $rhs_b;
-        } or {
-            $mv isa ValueBool, has bool_value $lhs_b;
-            $rhs isa ValueBool, has bool_value $rhs_b;
-            $ineq_exp has operator "!=";
-            $lhs_b != $rhs_b;
-        } or {
-            # string equality/inequality
-            $mv isa ValueString, has string_value $lhs_s;
-            $rhs isa ValueString, has string_value $rhs_s;
-            $ineq_exp has operator "==";
-            $lhs_s == $rhs_s;
-        } or {
-            $mv isa ValueString, has string_value $lhs_s;
-            $rhs isa ValueString, has string_value $rhs_s;
-            $ineq_exp has operator "!=";
-            $lhs_s != $rhs_s;
+            {
+                $mv isa ValueBool, has bool_value $lhs_v;
+                $rhs isa ValueBool, has bool_value $rhs_v;
+            } or {
+                $mv isa ValueString, has string_value $lhs_v;
+                $rhs isa ValueString, has string_value $rhs_v;
+            };
+            {
+                $ineq_exp has operator "==";
+                $lhs_v == $rhs_v;
+            } or {
+                $ineq_exp has operator "!=";
+                $lhs_v != $rhs_v;
+            };
         };
+
     } then {
         $ineq_exp has expression_valid true;
     };
 
+
 rule inequality_expression_invalid:
     when {
-        $ineq_exp (lhs_value: $measure, rhs_value: $rhs) isa inequality_expression;
-
-        # no latest measurement => invalid
-        {
-            not {
-                (measure: $measure, measurement_value: $mv) isa measurement,
-                    has latest true;
-            };
-        } or {
-            # type mismatch (different Value parents) => invalid
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueDouble;
-            not { $rhs isa ValueDouble; };
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueInteger;
-            not { $rhs isa ValueInteger; };
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueBool;
-            not { $rhs isa ValueBool; };
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueString;
-            not { $rhs isa ValueString; };
-        } or {
-            # same-type comparisons that fail (double)
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueDouble, has double_value $lhs_v;
-            $rhs isa ValueDouble, has double_value $rhs_v;
-            $ineq_exp has operator ">";
-            $lhs_v <= $rhs_v;
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueDouble, has double_value $lhs_v;
-            $rhs isa ValueDouble, has double_value $rhs_v;
-            $ineq_exp has operator ">=";
-            $lhs_v < $rhs_v;
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueDouble, has double_value $lhs_v;
-            $rhs isa ValueDouble, has double_value $rhs_v;
-            $ineq_exp has operator "<";
-            $lhs_v >= $rhs_v;
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueDouble, has double_value $lhs_v;
-            $rhs isa ValueDouble, has double_value $rhs_v;
-            $ineq_exp has operator "<=";
-            $lhs_v > $rhs_v;
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueDouble, has double_value $lhs_v;
-            $rhs isa ValueDouble, has double_value $rhs_v;
-            $ineq_exp has operator "==";
-            $lhs_v != $rhs_v;
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueDouble, has double_value $lhs_v;
-            $rhs isa ValueDouble, has double_value $rhs_v;
-            $ineq_exp has operator "!=";
-            $lhs_v == $rhs_v;
-        } or {
-            # integer failures
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueInteger, has integer_value $lhs_i;
-            $rhs isa ValueInteger, has integer_value $rhs_i;
-            $ineq_exp has operator ">";
-            $lhs_i <= $rhs_i;
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueInteger, has integer_value $lhs_i;
-            $rhs isa ValueInteger, has integer_value $rhs_i;
-            $ineq_exp has operator ">=";
-            $lhs_i < $rhs_i;
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueInteger, has integer_value $lhs_i;
-            $rhs isa ValueInteger, has integer_value $rhs_i;
-            $ineq_exp has operator "<";
-            $lhs_i >= $rhs_i;
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueInteger, has integer_value $lhs_i;
-            $rhs isa ValueInteger, has integer_value $rhs_i;
-            $ineq_exp has operator "<=";
-            $lhs_i > $rhs_i;
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueInteger, has integer_value $lhs_i;
-            $rhs isa ValueInteger, has integer_value $rhs_i;
-            $ineq_exp has operator "==";
-            $lhs_i != $rhs_i;
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueInteger, has integer_value $lhs_i;
-            $rhs isa ValueInteger, has integer_value $rhs_i;
-            $ineq_exp has operator "!=";
-            $lhs_i == $rhs_i;
-        } or {
-            # boolean failures
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueBool, has bool_value $lhs_b;
-            $rhs isa ValueBool, has bool_value $rhs_b;
-            $ineq_exp has operator "==";
-            $lhs_b != $rhs_b;
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueBool, has bool_value $lhs_b;
-            $rhs isa ValueBool, has bool_value $rhs_b;
-            $ineq_exp has operator "!=";
-            $lhs_b == $rhs_b;
-        } or {
-            # string failures
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueString, has string_value $lhs_s;
-            $rhs isa ValueString, has string_value $rhs_s;
-            $ineq_exp has operator "==";
-            $lhs_s != $rhs_s;
-        } or {
-            (measure: $measure, measurement_value: $mv) isa measurement,
-                has latest true;
-            $mv isa ValueString, has string_value $lhs_s;
-            $rhs isa ValueString, has string_value $rhs_s;
-            $ineq_exp has operator "!=";
-            $lhs_s == $rhs_s;
-        };
+        $ineq_exp isa inequality_expression;
+        not {$ineq_exp has expression_valid true;};
     } then {
         $ineq_exp has expression_valid false;
     };
