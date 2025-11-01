@@ -17,7 +17,7 @@ import pytest
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def kb_interface():
     kb_interface = TacticalRetreatInterface(
         'localhost:1729',
