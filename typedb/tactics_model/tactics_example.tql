@@ -6,9 +6,8 @@ $velocity_smoother_node isa LifeCycleNode,
 insert
 
 # context model
-$ea_nearest_object isa Measure, has measure_name "ea_nearest_object";
-$qa_movement_power isa Measure, has measure_name "qa_movement_power";
-
+$ea_nearest_object isa Measure, has measure_name "ea_nearest_object"; # meter?
+$qa_movement_power isa Measure, has measure_name "qa_movement_power"; # watt?
 
 $mvalueonine isa  ValueDouble,
     has double_value 0.09;
@@ -77,9 +76,34 @@ $ineq_mv_pwer_lower_than_39  (lhs_value:$qa_movement_power, rhs_value:$litdouble
 # (nearest_object > 0.15) and (movement power < 40.0)
 $and_expression (expression:$ineq_nearest_greater_than_15, expression:$ineq_mv_pwer_lower_than_39) isa and_expression;
 
-$tatic_rule_min (tactic:$ta_max_speed, antecedent:$or_expression, consequent:$f_low_speed ) isa tactic_rule, has rule_name "MIN";
-$tatic_rule_max (tactic:$ta_max_speed, antecedent:$and_expression, consequent:$f_hi_speed ) isa tactic_rule, has rule_name "MAX";
-$tatic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15, consequent:$f_med_speed ) isa tactic_rule, has rule_name "MED";
+### tactic rules effects
+$double_5 isa ValueDouble,
+    has double_value 5.0;
+$double_7 isa ValueDouble,
+    has double_value 7.0;
+$double_10 isa ValueDouble,
+    has double_value 10.0;
+
+$effect_move_pwr_min_speed (measure: $qa_movement_power, effect_value: $double_5) isa positive_effect;
+$effect_move_pwr_med_speed (measure: $qa_movement_power, effect_value: $double_7) isa positive_effect;
+$effect_move_pwr_max_speed (measure: $qa_movement_power, effect_value: $double_10) isa positive_effect;
+
+### tactic rules
+(tactic:$ta_max_speed,
+	antecedent:$or_expression,
+	consequent:$f_low_speed,
+	effect: $effect_move_pwr_min_speed )
+	isa tactic_rule, has rule_name "MIN";
+(tactic:$ta_max_speed,
+	antecedent:$ineq_nearest_greater_than_15,
+	consequent:$f_med_speed,
+	effect: $effect_move_pwr_med_speed)
+	isa tactic_rule, has rule_name "MED";
+(tactic:$ta_max_speed,
+	antecedent:$and_expression,
+	consequent:$f_hi_speed,
+	effect: $effect_move_pwr_max_speed )
+	isa tactic_rule, has rule_name "MAX";
 
 # define parameter max_speed
 $p_max_speed isa Parameter, has parameter_name "max_velocity";

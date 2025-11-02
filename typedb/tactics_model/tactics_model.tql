@@ -31,13 +31,20 @@ operator sub attribute,
     value string,
     regex "^(<|<=|>|>=|==|!=)";
 
-### Relations
+### Tactic
+Tactic sub entity,
+    owns tactic_name @key,
+    owns tactic_period,
+    plays tactic_rule:tactic,
+    plays resolution_model:tactic;
+
 tactic_rule sub relation,
     owns rule_name @key,
     owns rule_valid,
     relates tactic,
     relates antecedent,
-    relates consequent;
+    relates consequent,
+    relates effect;
 
 #### expressions
 expression sub relation,
@@ -93,12 +100,19 @@ Value plays set_nodes_parameters:parameter_value;
 set_lifecycle_state sub resolution_action,
     owns lifecycle_state;
 
-### Entities
-Tactic sub entity,
-    owns tactic_name @key,
-    owns tactic_period,
-    plays tactic_rule:tactic,
-    plays resolution_model:tactic;
+### effect
+effect sub relation,
+    abstract,
+    relates measure,
+    relates effect_value,
+    plays tactic_rule:effect;
+
+positive_effect sub effect;
+negative_effect sub effect;
+absolute_effect sub effect;
+
+Measure plays effect:measure;
+Value plays effect:effect_value;
 
 rule tactic_rule_valid:
     when {
