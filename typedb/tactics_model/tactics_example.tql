@@ -20,7 +20,7 @@ $mvalueonine isa  ValueDouble,
 ## Nearest object
 $scan_filtered_pub isa Publisher,
 	has interface_name '/scan_filtered',
-    has interface_type 'sensor_msgs/msg/LaserScan';
+    	has interface_type 'sensor_msgs/msg/LaserScan';
 $sensor_qos isa QoSProfile,
 	has reliability 'BEST_EFFORT',
 	has history 'KEEP_LAST',
@@ -30,12 +30,20 @@ $sensor_qos isa QoSProfile,
 	has deadline 0,
 	has liveliness 'SYSTEM_DEFAULT',
 	has lease_duration 0;
-(interface: $scan_filtered_pub, qos: $sensor_qos) isa has_qos;
-(measure: $ea_nearest_object, source: $scan_filtered_pub) isa measurement_interface,
+	
+$nearest_object_pub isa Publisher,
+	has interface_name '/nearest_object',
+	has interface_type 'std_msgs/msg/Float32';
+	
+	
+$nearest_object_processed (publisher_source: $nearest_object_pub) isa processed_interface,
     has measurement_function_name 'get_nearest_scan_distance_in_base',
     has measurement_function_lib 'ros_monitors.laser_scan_functions',
     has measurement_function_args 'base_link';
 
+
+(interface: $scan_filtered_pub, qos: $sensor_qos) isa has_qos;
+(measure: $ea_nearest_object, source: $scan_filtered_pub, processed: $nearest_object_processed) isa measurement_interface;
 # define Feature Model
 $f_max_speed isa Feature, has feature_name "MAX_SPEED";
 $f_low_speed isa Feature, has feature_name "LOW_SPEED";

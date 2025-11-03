@@ -45,11 +45,16 @@ measurement_function_args sub attribute,
     value string;
 
 measurement_interface sub relation,
+    relates measure,
+    relates source,
+    relates processed;
+
+processed_interface sub relation,
     owns measurement_function_name,
     owns measurement_function_lib,
     owns measurement_function_args,
-    relates measure,
-	relates source;
+    plays measurement_interface:processed,
+    relates publisher_source;
 
 rule measurement_latest:
     when {
