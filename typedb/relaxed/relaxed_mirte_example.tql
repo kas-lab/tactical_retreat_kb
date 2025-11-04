@@ -2,16 +2,20 @@ insert
 
 ## Examples Mirte's MVP use case
 
-$veloicity_proposition isa Proposition,
-	has quantified_value 0.22221, # just an example, this should be inserted at runtime
-	has description "The robot maintain its velocity";
+$velocity_measure isa Measure,
+	has measure_name "velocity_measure",
+	has description "The robot's velocity";
+
+# just an example, the measurement should be inserted at runtime
+$current_vel isa ValueDouble, has double_value 0.22221;
+(measure:$velocity_measure , measurement_value: $current_vel) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
 $velocity_set isa FuzzyTriangular,
 	has a -0.5,
 	has b 0.0,
 	has c 0.5;
 
-$velocity_as_close_expression (unimodal_membership: $velocity_set, term: $veloicity_proposition) isa as_close_as_possible_expression,
+$velocity_as_close_expression (unimodal_membership: $velocity_set, term: $velocity_measure) isa as_close_as_possible_expression,
 	has required_value 0.26;
 
 $velocity_shall_expression (relaxed_expression: $velocity_as_close_expression) isa shall_expression;

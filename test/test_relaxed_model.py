@@ -19,7 +19,9 @@ def kb_interface():
     kb_interface = TacticalRetreatInterface(
         "localhost:1729",
         "test_model_interface",
-        ["typedb/relaxed/relaxed_model.tql"],
+        ["typedb/data_structure/data_structure.tql",
+            "typedb/context_model/context_model.tql",
+            "typedb/relaxed/relaxed_model.tql"],
         ["typedb/relaxed/relaxed_mirte_example.tql"],
         force_database=True,
         force_data=True,
