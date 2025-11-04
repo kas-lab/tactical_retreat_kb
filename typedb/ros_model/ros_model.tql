@@ -37,22 +37,22 @@ gid sub attribute,
 ### QoS attributes
 reliability sub attribute,
     value string,
-    regex "^(BEST_EFFORT|RELIABLE)";
+    regex "^(BEST_EFFORT|RELIABLE|SYSTEM_DEFAULT)";
 history sub attribute,
     value string,
-    regex "^(KEEP_LAST|KEEP_ALL|UNKNOWN)";
+    regex "^(KEEP_LAST|KEEP_ALL|UNKNOWN|SYSTEM_DEFAULT)";
 depth sub attribute,
     value long;
 durability sub attribute,
     value string,
-    regex "^(TRANSIENT_LOCAL|VOLATILE)";
+    regex "^(TRANSIENT_LOCAL|VOLATILE|SYSTEM_DEFAULT)";
 deadline sub attribute,
     value long;  # 0 indicates infinite
 lifespan sub attribute,
     value long;  # 0 indicates infinite
 liveliness sub attribute,
     value string,
-    regex "^(AUTOMATIC|MANUAL)";
+    regex "^(AUTOMATIC|MANUAL|SYSTEM_DEFAULT)";
 lease_duration sub attribute,
     value long;  # 0 indicates infinite
 
@@ -62,20 +62,6 @@ parameter_name sub attribute,
 
 default_value sub attribute,
     value boolean;
-
-### Follows ROS2 ParameterValue name convention: https://docs.ros2.org/foxy/api/rcl_interfaces/msg/ParameterValue.html
-bool_value sub attribute,
-    value boolean;
-integer_value sub attribute,
-    value long;
-double_value sub attribute,
-    value double;
-string_value sub attribute,
-    value string;
-
-### parameter value index
-parameter_value_index sub attribute,
-    value long;
 
 ## Entities
 
@@ -158,6 +144,11 @@ has_action sub has_interface,
     relates client as afferent,
     relates server as efferent;
 
+#### Connection to context model
+Publisher plays measurement_interface:source;
+ServiceServer plays measurement_interface:source;
+ActionServer plays measurement_interface:source;
+
 ### Parameter related entities
 Parameter sub entity,
     owns parameter_name,
@@ -174,22 +165,7 @@ ParameterIntegerArray sub Parameter;
 ParameterStringArray sub Parameter;
 ParameterDoubleArray sub Parameter;
 
-ParameterValue sub entity,
-    abstract,
-    plays at_index:parameter_value,
-    plays has_parameter_value:parameter_value;
-
-ParameterValueBool sub ParameterValue,
-    owns bool_value;
-ParameterValueInteger sub ParameterValue,
-    owns integer_value;
-ParameterValueDouble sub ParameterValue,
-    owns double_value;
-ParameterValueString sub ParameterValue,
-    owns string_value;
-
-ParameterValueArray sub ParameterValue,
-    plays at_index:parameter_array;
+Value plays has_parameter_value:parameter_value;
 
 ## Relations
 has_parameter sub relation,
@@ -200,11 +176,6 @@ has_parameter_value sub relation,
     owns default_value,
     relates node,
     relates parameter,
-    relates parameter_value;
-
-at_index sub relation,
-    owns parameter_value_index,
-    relates parameter_array,
     relates parameter_value;
 
 node_deployment sub relation,

@@ -1,0 +1,23 @@
+insert
+
+### measurements
+$m isa Measure, has measure_name "measure", has description "measure for tests";
+
+$mvalue1 isa ValueDouble,
+    has double_value 1.0;
+$mvalue2 isa  ValueDouble,
+    has double_value 1.1;
+$mvalue3 isa  ValueDouble,
+    has double_value 1.2;
+
+(measure: $m, measurement_value: $mvalue1) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666;
+
+(measure: $m, measurement_value: $mvalue2) isa measurement,
+    has measurement_time 2025-09-06T10:57:56.666;
+
+(measure: $m, measurement_value: $mvalue3) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666;
+
+(measure: $m) isa measurement,
+    has measurement_time 2025-09-06T12:57:56.666;

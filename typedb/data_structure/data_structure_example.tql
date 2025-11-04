@@ -1,0 +1,25 @@
+insert
+
+# string value
+$string isa ValueString, has string_value "iamastring";
+
+# integer value
+$integer isa ValueInteger, has integer_value 10;
+
+# bool value
+$false_value isa ValueBool, has bool_value false;
+$true_value isa ValueBool, has bool_value true;
+
+# double value
+$double_0_26 isa ValueDouble, has double_value 0.26;
+$double_0_0 isa ValueDouble, has double_value 0.0;
+$double_1_0 isa ValueDouble, has double_value 1.0;
+
+# double value array
+$double_array isa ValueArray;
+(array: $double_array, array_value: $double_0_26)
+	isa at_index, has index 0;
+(array: $double_array, array_value: $double_0_0)
+	isa at_index, has index 1;
+(array: $double_array, array_value: $double_1_0)
+	isa at_index, has index 2;
