@@ -10,7 +10,6 @@ name sub attribute,
 resolution_model_name sub name;
 tactic_name sub name;
 rule_name sub name;
-term_name sub name;
 variant_name sub name;
 
 tactic_resolution_model sub attribute,
@@ -24,21 +23,9 @@ expression_valid sub attribute,
 rule_valid sub attribute,
     value boolean;
 
-term sub attribute,
-    value string;
-
-lhs_term sub attribute,
-    value string;
-
-rhs_term sub attribute,
-    value string;
-
 operator sub attribute,
     value string,
     regex "^(<|<=|>|>=|==|!=)";
-
-term_value sub attribute,
-    value double;
 
 ### Relations
 tactic_rule sub relation,
@@ -48,6 +35,7 @@ tactic_rule sub relation,
     relates antecedent,
     relates consequent;
 
+#### expressions
 expression sub relation,
     abstract,
     owns expression_valid,
@@ -61,16 +49,21 @@ or_expression sub expression,
 
 inequality_expression sub expression,
     owns operator,
-    relates lhs_term,
-    relates rhs_term,
+    relates rhs_value,
+    relates lhs_value,
     plays and_expression:expression,
     plays or_expression:expression;
+
+#### connection with the context model
+Measure plays inequality_expression:lhs_value;
+Value plays inequality_expression:rhs_value;
 
 feature_adaptation sub relation,
     relates deactivation,
     relates activation,
     plays tactic_rule:consequent;
 
+#### resolution model
 resolution_model sub relation,
     owns resolution_model_name @key,
     owns ros_system,
@@ -91,9 +84,15 @@ resolution_action sub relation,
     relates node,
     plays variant_resolution:resolution_action;
 
+#### Connection to ROS model
+ROSNode plays resolution_action:node;
+
 set_nodes_parameters sub resolution_action,
     relates parameter,
     relates parameter_value;
+
+Parameter plays set_nodes_parameters:parameter;
+Value plays set_nodes_parameters:parameter_value;
 
 set_lifecycle_state sub resolution_action,
     owns lifecycle_state;
@@ -104,25 +103,13 @@ Tactic sub entity,
     plays tactic_rule:tactic,
     plays resolution_model:tactic;
 
-Term sub entity,
-    owns term_value,
-    owns term_name,
-    plays inequality_expression:lhs_term,
-    plays inequality_expression:rhs_term;
-
-ROSNode plays resolution_action:node;
-
-Parameter plays set_nodes_parameters:parameter;
-
-ParameterValue plays set_nodes_parameters:parameter_value;
-
-# rules
 rule tactic_rule_valid:
     when {
         $tr (antecedent: $a) isa tactic_rule;
-        $a isa expression, has expression_valid true;
+        $a isa expression, has expression_valid $expression_valid;
+        ?rule_valid = $expression_valid;
     } then {
-        $tr has rule_valid true;
+        $tr has rule_valid ?rule_valid;
     };
 
 rule and_expression_valid:
@@ -137,6 +124,14 @@ rule and_expression_valid:
         $and_exp has expression_valid true;
     };
 
+rule and_expression_invalid:
+    when {
+        $and_exp isa and_expression;
+        not {$and_exp has expression_valid true;};
+    } then {
+        $and_exp has expression_valid false;
+    };
+
 rule or_expression_valid:
     when {
         $or_exp (expression: $e) isa or_expression;
@@ -145,43 +140,72 @@ rule or_expression_valid:
         $or_exp has expression_valid true;
     };
 
+rule or_expression_invalid:
+    when {
+        $or_exp isa or_expression;
+        not {$or_exp has expression_valid true;};
+    } then {
+        $or_exp has expression_valid false;
+    };
+
 rule inequality_expression_valid:
     when {
-        $ineq_exp (lhs_term: $t_lhs, rhs_term: $t_rhs) isa inequality_expression;
-        $t_lhs has term_value $lhs_value;
-        $t_rhs has term_value $rhs_value;
+        $ineq_exp (lhs_value: $measure, rhs_value: $rhs) isa inequality_expression;
+        (measure: $measure, measurement_value: $mv) isa measurement,
+            has latest true;
         {
-            $ineq_exp has operator ">";
-            $lhs_value > $rhs_value;
+            {
+                $mv isa ValueDouble, has double_value $lhs_v;
+                $rhs isa ValueDouble, has double_value $rhs_v;
+            } or {
+                $mv isa ValueInteger, has integer_value $lhs_v;
+                $rhs isa ValueInteger, has integer_value $rhs_v;
+            };
+            {
+                $ineq_exp has operator ">";
+                $lhs_v > $rhs_v;
+            } or {
+                $ineq_exp has operator ">=";
+                $lhs_v >= $rhs_v;
+            } or {
+                $ineq_exp has operator "<";
+                $lhs_v < $rhs_v;
+            } or {
+                $ineq_exp has operator "<=";
+                $lhs_v <= $rhs_v;
+            } or {
+                $ineq_exp has operator "==";
+                $lhs_v == $rhs_v;
+            } or {
+                $ineq_exp has operator "!=";
+                $lhs_v != $rhs_v;
+            };
         } or {
-            $ineq_exp has operator "<";
-            $lhs_value < $rhs_value;
+            {
+                $mv isa ValueBool, has bool_value $lhs_v;
+                $rhs isa ValueBool, has bool_value $rhs_v;
+            } or {
+                $mv isa ValueString, has string_value $lhs_v;
+                $rhs isa ValueString, has string_value $rhs_v;
+            };
+            {
+                $ineq_exp has operator "==";
+                $lhs_v == $rhs_v;
+            } or {
+                $ineq_exp has operator "!=";
+                $lhs_v != $rhs_v;
+            };
         };
+
     } then {
-        $ineq_exp has expression_valid  true;
+        $ineq_exp has expression_valid true;
     };
+
 
 rule inequality_expression_invalid:
     when {
-        $ineq_exp (lhs_term: $t_lhs, rhs_term: $t_rhs) isa inequality_expression;
-        {
-            not { $t_lhs has term_value $lhs_value;};
-
-        } or {
-             not { $t_rhs has term_value $rhs_value;};
-        } or {
-            $ineq_exp has operator ">";
-            $t_lhs has term_value $lhs_value;
-            $t_rhs has term_value $rhs_value;
-            $lhs_value <= $rhs_value;
-        } or {
-            $ineq_exp has operator "<";
-            $t_lhs has term_value $lhs_value;
-            $t_rhs has term_value $rhs_value;
-            $lhs_value >= $rhs_value;
-        };
+        $ineq_exp isa inequality_expression;
+        not {$ineq_exp has expression_valid true;};
     } then {
-        $ineq_exp has expression_valid  false;
+        $ineq_exp has expression_valid false;
     };
-
-

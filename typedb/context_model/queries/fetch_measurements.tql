@@ -1,0 +1,16 @@
+match
+	$measure isa Measure, has measure_name 'measure';
+	$measurement (measure: $measure,
+		measurement_value: $measurement_val) isa measurement,
+		has latest true;
+	{
+		$measurement_val isa ValueDouble, has double_value $value;
+	} or {
+		$measurement_val isa ValueInteger, has integer_value $value;
+	} or {
+		$measurement_val isa ValueString, has string_value $value;
+	} or {
+		$measurement_val isa ValueBool, has bool_value $value;
+	};
+fetch
+	$value;

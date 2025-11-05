@@ -1,28 +1,30 @@
 match
 
 $velocity_smoother_node isa LifeCycleNode,
-	has node_name "velocity_smoother";
+    has node_name "velocity_smoother";
 $max_velocity_param isa ParameterDoubleArray,
-	has parameter_name "max_velocity";
-$max_velocity_has_param_value (node: $velocity_smoother, parameter: $max_velocity_param)
-	isa has_parameter_value;
+    has parameter_name "max_velocity";
+$max_velocity_has_param_value (node: $velocity_smoother,
+    parameter: $max_velocity_param)
+    isa has_parameter_value;
 
 delete $max_velocity_has_param_value isa has_parameter_value;
 
 insert
 
 # define default parameters max_velocity
-$medium_max_velocity_x isa ParameterValueDouble, has double_value 0.18;
-$medium_max_velocity_y isa ParameterValueDouble, has double_value 0.0;
-$medium_max_velocity_z isa ParameterValueDouble, has double_value 1.0;
+$medium_max_velocity_x isa ValueDouble, has double_value 0.18;
+$medium_max_velocity_y isa ValueDouble, has double_value 0.0;
+$medium_max_velocity_z isa ValueDouble, has double_value 1.0;
 
-$medium_max_velocity_param_value isa ParameterValueArray;
-$medium_max_velocity_array_x (parameter_array: $medium_max_velocity_param_value, parameter_value: $medium_max_velocity_x)
-	isa at_index, has parameter_value_index 0;
-$medium_max_velocity_array_y (parameter_array: $medium_max_velocity_param_value, parameter_value: $medium_max_velocity_y)
-	isa at_index, has parameter_value_index 1;
-$medium_max_velocity_array_z (parameter_array: $medium_max_velocity_param_value, parameter_value: $medium_max_velocity_z)
-	isa at_index, has parameter_value_index 2;
+$medium_max_velocity_param_value isa ValueArray;
+(array: $medium_max_velocity_param_value, array_value: $medium_max_velocity_x)
+    isa at_index, has index 0;
+(array: $medium_max_velocity_param_value, array_value: $medium_max_velocity_y)
+    isa at_index, has index 1;
+(array: $medium_max_velocity_param_value, array_value: $medium_max_velocity_z)
+    isa at_index, has index 2;
 
-(node: $velocity_smoother, parameter: $max_velocity_param, parameter_value: $medium_max_velocity_param_value)
-	isa has_parameter_value;
+(node: $velocity_smoother, parameter: $max_velocity_param,
+    parameter_value: $medium_max_velocity_param_value)
+    isa has_parameter_value;

@@ -13,26 +13,26 @@
 # limitations under the License.
 import pytest
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
-# from rosa_kb.typedb_model_interface \
-#     import convert_component_parameter_value_to_py_type
-# from datetime import datetime
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def kb_interface():
     kb_interface = TacticalRetreatInterface(
-        "localhost:1729",
-        "test_model_interface",
-        ["typedb/ros_model/ros_model.tql",
-            "typedb/tactics_model/tactics_model.tql",
-            "typedb/feature_model/feature_model.tql",
-            "typedb/discover_tactics_model/discover_tactics_model.tql"],
-        ["typedb/ros_model/ros_model_example.tql",
-            "typedb/tactics_model/tactics_example.tql"],
+        'localhost:1729',
+        'test_model_interface',
+        ['typedb/data_structure/data_structure.tql',
+            'typedb/context_model/context_model.tql',
+            'typedb/ros_model/ros_model.tql',
+            'typedb/tactics_model/tactics_model.tql',
+            'typedb/feature_model/feature_model.tql',
+            'typedb/discover_tactics_model/discover_tactics_model.tql'],
+        ['typedb/ros_model/ros_model_example.tql',
+            'typedb/tactics_model/tactics_example.tql'],
         force_database=True,
         force_data=True,
         infer=True)
-    return kb_interface
+    yield kb_interface
+    kb_interface.delete_database()
 
 
 def test_get_subnodes(kb_interface):

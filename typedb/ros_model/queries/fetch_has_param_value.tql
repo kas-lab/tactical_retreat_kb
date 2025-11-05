@@ -4,11 +4,14 @@ $velocity_smoother_node isa LifeCycleNode,
     has node_name "velocity_smoother";
 $max_velocity_param isa ParameterDoubleArray,
     has parameter_name "max_velocity";
-$max_velocity_has_param_value (node: $velocity_smoother, parameter: $max_velocity_param, parameter_value: $param_value_array)
+(node: $velocity_smoother,
+parameter: $max_velocity_param,
+parameter_value: $param_value_array)
     isa has_parameter_value;
-(parameter_array: $param_value_array, parameter_value: $param_value)
+(array: $param_value_array, array_value: $param_value)
     isa at_index;
-$param_value isa ParameterValueDouble;
+$singleton_types sub! ValueSingleton;
+$param_value isa $singleton_types;
 
 fetch
     $param_value: attribute;

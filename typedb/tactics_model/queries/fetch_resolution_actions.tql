@@ -15,10 +15,10 @@ fetch
                     $parameter: parameter_name;
                     param_values: {
                         match
-                            $parameter_value isa! ParameterValueArray;
-                            $index (parameter_array: $parameter_value, parameter_value: $value) isa at_index;
+                            $parameter_value isa! ValueArray;
+                            $index (array: $parameter_value, array_value: $value) isa at_index;
                         fetch
-                            $index: parameter_value_index;
+                            $index: index;
                             $value: attribute;
                     };
             };
@@ -44,10 +44,10 @@ fetch
                     $parameter: parameter_name;
                     param_values: {
                         match
-                            $parameter_value isa! ParameterValueArray;
-                            $index (parameter_array: $parameter_value, parameter_value: $value) isa at_index;
+                            $parameter_value isa! ValueArray;
+                            $index (array: $parameter_value, array_value: $value) isa at_index;
                         fetch
-                            $index: parameter_value_index;
+                            $index: index;
                             $value: attribute;
                     };
             };
