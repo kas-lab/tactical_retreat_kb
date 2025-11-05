@@ -3,8 +3,4 @@ match
 fetch
     $r: rule_name;
     $c: attribute;
-    
-#match 
-#    $t isa Term, has term_name $name, has term_value $value;
-#fetch
-#    $t: attribute;
+
