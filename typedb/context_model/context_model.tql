@@ -49,7 +49,8 @@ measurement_interface sub relation,
     owns measurement_function_lib,
     owns measurement_function_args,
     relates measure,
-	relates source;
+    relates source,
+    relates output;
 
 rule measurement_latest:
     when {
