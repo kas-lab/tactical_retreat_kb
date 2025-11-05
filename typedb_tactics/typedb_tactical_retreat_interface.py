@@ -504,6 +504,10 @@ class TacticalRetreatInterface(TypeDBInterface):
                                                 MatchResultDict]]:
         """
         Fetch relaxed requirement fulfillment.
+
+        :param system_name: system name
+        :param requirement_name: requirement name
+        :return: fetch query result
         """
         query = f"""
             match
@@ -522,6 +526,10 @@ class TacticalRetreatInterface(TypeDBInterface):
                                                 MatchResultDict]]:
         """
         Fetch relaxed requirement fulfillment.
+
+        :param system_name: system name
+        :param requirement_name: requirement name
+        :return: fulfillment value
         """
         return self.fetch_relaxed_requirement_fulfillment(
             system_name, requirement_name)[0]['fulfillment']['value']

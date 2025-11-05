@@ -14,6 +14,7 @@
 import pytest
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
+
 @pytest.fixture
 def kb_interface():
     kb_interface = TacticalRetreatInterface(
@@ -30,7 +31,6 @@ def kb_interface():
 
 
 def test_get_requirement_fulfillment(kb_interface):
-    fulfillment = kb_interface.get_relaxed_requirement_fulfillment('Mirte', 'R1.1 Velocity')
+    fulfillment = kb_interface.get_relaxed_requirement_fulfillment(
+        'Mirte', 'R1.1 Velocity')
     assert fulfillment == pytest.approx(0.92442)
-
-
