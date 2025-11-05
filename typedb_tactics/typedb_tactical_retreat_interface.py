@@ -492,14 +492,16 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_applicable_tactics(
             resolution_model, action_name, action_type)
-        return [result['tactic']['tactic_name'][0]['value']
-                for result in query_result]
+        return sorted(
+            result['tactic_rule']['rule_name'][0]['value']
+            for result in query_result
+        )
 
     def fetch_relaxed_requirement_fulfillment(
             self,
             system_name: str,
             requirement_name: str) -> List[dict[str,
-                                        MatchResultDict]]:
+                                                MatchResultDict]]:
         """
         Fetch relaxed requirement fulfillment.
         """
@@ -517,15 +519,12 @@ class TacticalRetreatInterface(TypeDBInterface):
             self,
             system_name: str,
             requirement_name: str) -> List[dict[str,
-                                        MatchResultDict]]:
+                                                MatchResultDict]]:
         """
         Fetch relaxed requirement fulfillment.
         """
-        return self.fetch_relaxed_requirement_fulfillment(system_name, requirement_name)[0]['fulfillment']['value']
-        return sorted(
-            result['tactic_rule']['rule_name'][0]['value']
-            for result in query_result
-        )
+        return self.fetch_relaxed_requirement_fulfillment(
+            system_name, requirement_name)[0]['fulfillment']['value']
 
     def fetch_latest_measurement(
             self, measure_name: str) -> List[dict[str, MatchResultDict]]:
