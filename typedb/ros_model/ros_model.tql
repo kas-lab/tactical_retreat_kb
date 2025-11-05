@@ -146,7 +146,7 @@ has_action sub has_interface,
 
 #### Connection to context model
 Publisher plays measurement_interface:source;
-Publisher plays processed_interface:publisher_source;
+Publisher plays measurement_interface:output;
 ServiceServer plays measurement_interface:source;
 ActionServer plays measurement_interface:source;
 
