@@ -20,7 +20,7 @@ feature_hierarchy sub relation,
     relates parent,
     relates child;
 
-alternative sub feature_hierarchy;
+alternative sub feature_hierarchy; # exclusive or (XOR)
 or_group sub feature_hierarchy;
 
 cross_tree_constraint sub relation,
@@ -56,28 +56,21 @@ rule leaf_feature:
         $f has leaf_feature true;
     };
 
-rule constraint_requires_satisfied:
+rule feature_selectable:
     when {
-        (constraint: $f_constraint, constrained: $f) isa requires_constraint;
-        $f_constraint has selected true;
+        $f isa Feature;
+        not {$f has selectable false;};
     } then {
         $f has selectable true;
     };
 
+## Rules for evaluating the constraints
 rule constraint_requires_invalid:
     when {
         (constraint: $f_constraint, constrained: $f) isa requires_constraint;
         not { $f_constraint has selected true;};
     } then {
         $f has selectable false;
-    };
-
-rule constraint_excludes_satisfied:
-    when {
-        (constraint: $f_constraint, constrained: $f) isa excludes_constraint;
-        not {$f_constraint has selected true;};
-    } then {
-        $f has selectable true;
     };
 
 rule constraint_excludes_invalid:
@@ -98,4 +91,3 @@ rule alternative_selected:
         $f_child_2 has selectable false;
     };
 
-# TODO: alternative_not_selected
