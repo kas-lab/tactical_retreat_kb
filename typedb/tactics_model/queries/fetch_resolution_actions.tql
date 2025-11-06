@@ -32,9 +32,9 @@ fetch
     };
     variant_deactivation: {
         match
-            $fa (deactivation: $feature_activate) isa feature_adaptation;
+            $fa (deactivation: $feature_deactivate) isa feature_adaptation;
             (tactic:$t, variant_resolution:$vr) isa resolution_model;
-            $vr (resolution_action:$res_action, variant: $feature_activate) isa variant_deactivation;
+            $vr (resolution_action:$res_action, variant: $feature_deactivate) isa variant_deactivation;
         fetch
             set_parameter_action: {
                 match
@@ -59,4 +59,3 @@ fetch
                     $res_action: lifecycle_state;
             };
     };
-
