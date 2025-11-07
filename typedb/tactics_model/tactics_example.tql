@@ -30,19 +30,19 @@ $sensor_qos isa QoSProfile,
 	has deadline 0,
 	has liveliness 'SYSTEM_DEFAULT',
 	has lease_duration 0;
-	
+
 $nearest_object_pub isa Publisher,
 	has interface_name '/nearest_object',
 	has interface_type 'std_msgs/msg/Float32';
-	
-	
+
+
 (interface: $scan_filtered_pub, qos: $sensor_qos) isa has_qos;
 
 (measure: $ea_nearest_object, source: $scan_filtered_pub, output: $nearest_object_pub) isa measurement_interface,
     has measurement_function_name 'get_nearest_scan_distance_in_base',
     has measurement_function_lib 'ros_monitors.laser_scan_functions',
     has measurement_function_args 'base_link';
-	
+
 # define Feature Model
 $f_max_speed isa Feature, has feature_name "MAX_SPEED";
 $f_low_speed isa Feature, has feature_name "LOW_SPEED";
@@ -51,7 +51,7 @@ $f_med_speed isa Feature, has feature_name "MED_SPEED";
 $alternative (parent: $f_max_speed, child: $f_low_speed, child: $f_med_speed, child: $f_hi_speed) isa alternative;
 
 # define MaxSpeedInternal Tactic
-$ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal", has tactic_period 1.0;
+$ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal";
 
 # nearest_object < 0.1
 
@@ -84,9 +84,14 @@ $ineq_mv_pwer_lower_than_39  (lhs_value:$qa_movement_power, rhs_value:$litdouble
 # (nearest_object > 0.15) and (movement power < 40.0)
 $and_expression (expression:$ineq_nearest_greater_than_15, expression:$ineq_mv_pwer_lower_than_39) isa and_expression;
 
-$tatic_rule_min (tactic:$ta_max_speed, antecedent:$or_expression, consequent:$f_low_speed ) isa tactic_rule, has rule_name "MIN";
-$tatic_rule_max (tactic:$ta_max_speed, antecedent:$and_expression, consequent:$f_hi_speed ) isa tactic_rule, has rule_name "MAX";
-$tatic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15, consequent:$f_med_speed ) isa tactic_rule, has rule_name "MED";
+$fa_min (activation: $f_low_speed) isa feature_adaptation;
+$tatic_rule_min (tactic:$ta_max_speed, antecedent:$or_expression, consequent:$fa_min ) isa tactic_rule, has rule_name "MIN";
+
+$fa_max (activation: $f_hi_speed) isa feature_adaptation;
+$tatic_rule_max (tactic:$ta_max_speed, antecedent:$and_expression, consequent:$fa_max ) isa tactic_rule, has rule_name "MAX";
+
+$fa_med (activation: $f_med_speed) isa feature_adaptation;
+$tatic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15, consequent:$fa_med ) isa tactic_rule, has rule_name "MED";
 
 # define parameter max_speed
 $p_max_speed isa Parameter, has parameter_name "max_velocity";
@@ -127,12 +132,97 @@ $sp_max_speed_med (node: $velocity_smoother_node, parameter: $p_max_speed, param
 $sp_max_speed_high (node: $velocity_smoother_node, parameter: $p_max_speed, parameter_value: $p_max_speed_high_array) isa set_nodes_parameters;
 
 # define variant resolutions
-$low_speed_resolution (resolution_action: $sp_max_speed_low, variant: $f_low_speed) isa variant_resolution;
-$med_speed_resolution (resolution_action: $sp_max_speed_med, variant: $f_med_speed) isa variant_resolution;
-$high_speed_resolution (resolution_action: $sp_max_speed_high, variant: $f_hi_speed) isa variant_resolution;
+$low_speed_resolution (resolution_action: $sp_max_speed_low, variant: $f_low_speed) isa variant_activation;
+$med_speed_resolution (resolution_action: $sp_max_speed_med, variant: $f_med_speed) isa variant_activation;
+$high_speed_resolution (resolution_action: $sp_max_speed_high, variant: $f_hi_speed) isa variant_activation;
 
-$res_rebetmc (tactic: $ta_max_speed,
+$res_rebetmc (
+	tactic: $ta_max_speed,
 	variant_resolution:$low_speed_resolution,
 	variant_resolution:$med_speed_resolution,
 	variant_resolution:$high_speed_resolution) isa resolution_model,
     has resolution_model_name "rebetmc", has ros_system "nav2";
+
+### mock Tactics
+
+## define Feature Model
+$f_parent isa Feature, has feature_name "f_parent";
+$f1 isa Feature, has feature_name "f1";
+$f2 isa Feature, has feature_name "f2";
+$f3 isa Feature, has feature_name "f3";
+$f4 isa Feature, has feature_name "f4";
+(
+	parent: $f_parent,
+	child: $f1,
+	child: $f2,
+	child: $f3,
+	child: $f4) isa alternative;
+
+## define tactic
+$tactic1 isa Tactic, has tactic_name "tactic1";
+
+# define measures
+$measure_mock isa Measure, has measure_name "measure_mock";
+$double_0_09 isa ValueDouble,
+    has double_value 0.09;
+(measure: $measure_mock, measurement_value:$double_0_09) isa measurement,
+        has measurement_time 2025-09-06T12:57:56.666;
+
+$double_0_25 isa ValueDouble,
+    has double_value 0.25;
+
+## define expression
+$ineq (lhs_value:$measure_mock, rhs_value: $double_0_25) isa inequality_expression, has operator "<";
+
+## define feature adaptation
+$fa (deactivation: $f1, activation: $f2, activation: $f3) isa feature_adaptation;
+
+## define tactic rule
+(tactic:$tactic1, antecedent:$ineq, consequent:$fa ) isa tactic_rule, has rule_name "rule1";
+
+## define mock node
+$mock_node1 isa ROSNode,
+	has node_name "mock_node1",
+	has namespace "mock_ns",
+	has start_time 2025-08-06T10:57:56.666;
+
+$mock_node2 isa ROSNode,
+	has node_name "mock_node2",
+	has namespace "mock_ns",
+	has start_time 2025-08-06T10:57:56.666;
+
+$mock_node3 isa ROSNode,
+	has node_name "mock_node3",
+	has namespace "mock_ns",
+	has start_time 2025-08-06T10:57:56.666;
+
+## define resolution action
+$set_lifecycle_mock_node1_active (node: $mock_node1) isa set_lifecycle_state, has lifecycle_state 'active';
+$set_lifecycle_mock_node1_inactive (node: $mock_node1) isa set_lifecycle_state, has lifecycle_state 'inactive';
+
+$set_lifecycle_mock_node2_active (node: $mock_node2) isa set_lifecycle_state, has lifecycle_state 'active';
+$set_lifecycle_mock_node2_inactive (node: $mock_node2) isa set_lifecycle_state, has lifecycle_state 'inactive';
+
+$set_lifecycle_mock_node3_active (node: $mock_node3) isa set_lifecycle_state, has lifecycle_state 'active';
+$set_lifecycle_mock_node3_inactive (node: $mock_node3) isa set_lifecycle_state, has lifecycle_state 'inactive';
+
+## define variant resolutions
+
+$f1_res_activate (resolution_action: $set_lifecycle_mock_node1_active, variant: $f1) isa variant_activation;
+$f1_res_inactive (resolution_action: $set_lifecycle_mock_node1_inactive, variant: $f1) isa variant_deactivation;
+
+$f2_res_active (resolution_action: $set_lifecycle_mock_node2_active, variant: $f2) isa variant_activation;
+$f2_res_inactive (resolution_action: $set_lifecycle_mock_node2_inactive, variant: $f2) isa variant_deactivation;
+
+$f3_res_active (resolution_action: $set_lifecycle_mock_node3_active, variant: $f3) isa variant_activation;
+$f3_res_inactive (resolution_action: $set_lifecycle_mock_node3_inactive, variant: $f3) isa variant_deactivation;
+
+$res_mock (
+	tactic: $tactic1,
+	variant_resolution:$f1_res_activate,
+	variant_resolution:$f1_res_inactive,
+	variant_resolution:$f2_res_active,
+	variant_resolution:$f2_res_inactive,
+	variant_resolution:$f3_res_active,
+	variant_resolution:$f3_res_inactive) isa resolution_model,
+    has resolution_model_name "res_mock", has ros_system "mock";
