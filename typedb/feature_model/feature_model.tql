@@ -37,13 +37,15 @@ Feature sub entity,
     owns selectable,
     owns mandatory,
     owns leaf_feature,
-    plays tactic_rule:consequent,
-    plays variant_resolution:variant,
-    plays and_expression:expression,
     plays feature_hierarchy:parent,
     plays feature_hierarchy:child,
     plays cross_tree_constraint:constraint,
     plays cross_tree_constraint:constrained;
+
+# Connection with tactics model
+Feature plays tactic_rule:consequent;
+Feature plays variant_resolution:variant;
+Feature plays and_expression:expression;
 
 # Rules
 rule leaf_feature:

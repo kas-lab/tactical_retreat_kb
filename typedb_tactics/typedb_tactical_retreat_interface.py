@@ -608,3 +608,19 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_tactic_rule_valid(tactic_rule)
         return query_result[0]['tr']['rule_valid'][0]['value']
+
+    def is_feature_selectable(self, feature_name: str) -> bool:
+        """
+        Return whether a feature is selectable.
+
+        :param feature_name: feature name
+        :return: true or false
+        """
+        query = f"""
+            match
+                $f isa Feature, has feature_name '{feature_name}';
+            fetch
+                $f: selectable;
+        """
+        query_result = self.fetch_database(query)
+        return query_result[0]['f']['selectable'][0]['value']
