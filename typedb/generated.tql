@@ -2,8 +2,8 @@ insert
 
 
 $map_server_node isa LifeCycleNode,
-            has node_name "map_server",
-            has namespace "";
+has node_name "map_server",
+has namespace "";
 $bond_disable_heartbeat_timeout_param isa ParameterBool,
     has parameter_name "bond_disable_heartbeat_timeout";
 $bond_disable_heartbeat_timeout_param_pvalue isa ValueBool;    
@@ -67,8 +67,8 @@ has interface_name "~/map",
 has interface_type "nav_msgs/GetMap";
 (node: $map_server_node, server: $map_server_node_service_server_6) isa has_service;    
 $amcl_node isa LifeCycleNode,
-            has node_name "amcl",
-            has namespace "";
+has node_name "amcl",
+has namespace "";
 $bond_disable_heartbeat_timeout_param_1 isa ParameterBool,
     has parameter_name "bond_disable_heartbeat_timeout";
 $bond_disable_heartbeat_timeout_param_1_pvalue isa ValueBool;    
@@ -344,8 +344,8 @@ has interface_name "request_nomotion_update",
 has interface_type "std_srvs/Empty";
 (node: $amcl_node, server: $amcl_node_service_server_6) isa has_service;    
 $lifecycle_manager_localization_node isa ROSNode,
-            has node_name "lifecycle_manager_localization",
-            has namespace "";
+has node_name "lifecycle_manager_localization",
+has namespace "";
 $bond_disable_heartbeat_timeout_param_2 isa ParameterBool,
     has parameter_name "bond_disable_heartbeat_timeout";
 $bond_disable_heartbeat_timeout_param_2_pvalue isa ValueBool;    
@@ -434,8 +434,8 @@ has interface_type "nav2_msgs/ManageLifecycleNodes";
 (node: $lifecycle_manager_localization_node, server: $lifecycle_manager_localization_node_service_server_1) isa has_service;    
 
 $controller_server_node isa LifeCycleNode,
-            has node_name "controller_server",
-            has namespace "";
+has node_name "controller_server",
+has namespace "";
 $bond_disable_heartbeat_timeout_param_3 isa ParameterBool,
     has parameter_name "/bond_disable_heartbeat_timeout";
 $bond_disable_heartbeat_timeout_param_3_pvalue isa ValueBool;    
@@ -1155,8 +1155,8 @@ has interface_name "~/get_transition_graph",
 has interface_type "lifecycle_msgs/GetAvailableTransitions";
 (node: $controller_server_node, server: $controller_server_node_service_server_4) isa has_service;    
 $smoother_server_node isa LifeCycleNode,
-            has node_name "smoother_server",
-            has namespace "";
+has node_name "smoother_server",
+has namespace "";
 $bond_disable_heartbeat_timeout_param_4 isa ParameterBool,
     has parameter_name "bond_disable_heartbeat_timeout";
 $bond_disable_heartbeat_timeout_param_4_pvalue isa ValueBool;    
@@ -1263,8 +1263,8 @@ has interface_name "~/get_transition_graph",
 has interface_type "lifecycle_msgs/GetAvailableTransitions";
 (node: $smoother_server_node, server: $smoother_server_node_service_server_4) isa has_service;    
 $planner_server_node isa LifeCycleNode,
-            has node_name "planner_server",
-            has namespace "";
+has node_name "planner_server",
+has namespace "";
 $bond_disable_heartbeat_timeout_param_5 isa ParameterBool,
     has parameter_name "/bond_disable_heartbeat_timeout";
 $bond_disable_heartbeat_timeout_param_5_pvalue isa ValueBool;    
@@ -1409,8 +1409,8 @@ has interface_name "~/get_transition_graph",
 has interface_type "lifecycle_msgs/GetAvailableTransitions";
 (node: $planner_server_node, server: $planner_server_node_service_server_4) isa has_service;    
 $behavior_server_node isa LifeCycleNode,
-            has node_name "behavior_server",
-            has namespace "";
+has node_name "behavior_server",
+has namespace "";
 $bond_disable_heartbeat_timeout_param_6 isa ParameterBool,
     has parameter_name "bond_disable_heartbeat_timeout";
 $bond_disable_heartbeat_timeout_param_6_pvalue isa ValueBool;    
@@ -1557,8 +1557,8 @@ has interface_name "~/get_transition_graph",
 has interface_type "lifecycle_msgs/GetAvailableTransitions";
 (node: $behavior_server_node, server: $behavior_server_node_service_server_4) isa has_service;    
 $bt_navigator_node isa LifeCycleNode,
-            has node_name "bt_navigator",
-            has namespace "";
+has node_name "bt_navigator",
+has namespace "";
 $bond_disable_heartbeat_timeout_param_7 isa ParameterBool,
     has parameter_name "/bond_disable_heartbeat_timeout";
 $bond_disable_heartbeat_timeout_param_7_pvalue isa ValueBool;    
@@ -1804,8 +1804,8 @@ has interface_name "~/get_transition_graph",
 has interface_type "lifecycle_msgs/GetAvailableTransitions";
 (node: $bt_navigator_node, server: $bt_navigator_node_service_server_4) isa has_service;    
 $bt_navigator_navigate_to_pose_rclcpp_node_node isa ROSNode,
-            has node_name "bt_navigator_navigate_to_pose_rclcpp_node",
-            has namespace "";
+has node_name "bt_navigator_navigate_to_pose_rclcpp_node",
+has namespace "";
 $bt_navigator_navigate_to_pose_rclcpp_node_node_sub isa Subscriber,
 has interface_name "clock",
 has interface_type "rosgraph_msgs/Clock";
@@ -1838,8 +1838,8 @@ has interface_name "follow_path",
 has interface_type "nav2_msgs/FollowPath";
 (node: $bt_navigator_navigate_to_pose_rclcpp_node_node, client: $bt_navigator_navigate_to_pose_rclcpp_node_node_action_client_2) isa has_action;    
 $bt_navigator_navigate_through_poses_rclcpp_node_node isa ROSNode,
-            has node_name "bt_navigator_navigate_through_poses_rclcpp_node",
-            has namespace "";
+has node_name "bt_navigator_navigate_through_poses_rclcpp_node",
+has namespace "";
 $bt_navigator_navigate_through_poses_rclcpp_node_node_sub isa Subscriber,
 has interface_name "clock",
 has interface_type "rosgraph_msgs/Clock";
@@ -1880,8 +1880,8 @@ has interface_name "wait",
 has interface_type "nav2_msgs/Wait";
 (node: $bt_navigator_navigate_through_poses_rclcpp_node_node, client: $bt_navigator_navigate_through_poses_rclcpp_node_node_action_client_4) isa has_action;    
 $waypoint_follower_node isa LifeCycleNode,
-            has node_name "waypoint_follower",
-            has namespace "";
+has node_name "waypoint_follower",
+has namespace "";
 $bond_disable_heartbeat_timeout_param_8 isa ParameterBool,
     has parameter_name "bond_disable_heartbeat_timeout";
 $bond_disable_heartbeat_timeout_param_8_pvalue isa ValueBool;    
@@ -1952,8 +1952,8 @@ has interface_name "~/get_transition_graph",
 has interface_type "lifecycle_msgs/GetAvailableTransitions";
 (node: $waypoint_follower_node, server: $waypoint_follower_node_service_server_4) isa has_service;    
 $velocity_smoother_node isa LifeCycleNode,
-            has node_name "velocity_smoother",
-            has namespace "";
+has node_name "velocity_smoother",
+has namespace "";
 $bond_disable_heartbeat_timeout_param_9 isa ParameterBool,
     has parameter_name "/bond_disable_heartbeat_timeout";
 $bond_disable_heartbeat_timeout_param_9_pvalue isa ValueBool;    
@@ -2098,8 +2098,8 @@ has interface_name "velocity_smoother/get_transition_graph",
 has interface_type "lifecycle_msgs/GetAvailableTransitions";
 (node: $velocity_smoother_node, server: $velocity_smoother_node_service_server_4) isa has_service;    
 $lifecycle_manager_navigation_node isa ROSNode,
-            has node_name "lifecycle_manager_navigation",
-            has namespace "";
+has node_name "lifecycle_manager_navigation",
+has namespace "";
 $bond_disable_heartbeat_timeout_param_10 isa ParameterBool,
     has parameter_name "bond_disable_heartbeat_timeout";
 $bond_disable_heartbeat_timeout_param_10_pvalue isa ValueBool;    
@@ -2240,9 +2240,7 @@ has interface_type "nav2_msgs/ManageLifecycleNodes";
 subnode: $bt_navigator_navigate_to_pose_rclcpp_node_node, 
 subnode: $bt_navigator_navigate_through_poses_rclcpp_node_node
     ) isa subnode;
-
-
-$ta_maxspeedinternal isa Tactic, has tactic_name "MaxSpeedInternal", has tactic_period 0;
+$ta_maxspeedinternal isa Tactic, has tactic_name "MaxSpeedInternal";
 
 # define Feature Model
 $f_low_speed isa Feature, has feature_name "LOW_SPEED", has feature_mandatory false, has feature_selected true;
@@ -2252,8 +2250,8 @@ $f_one_speed isa Feature, has feature_name "ONE_SPEED", has feature_mandatory fa
 $f_velocity_smoother isa Feature, has feature_name "VELOCITY_SMOOTHER", has feature_mandatory false, has feature_selected true;
 
 $context_model_node_node isa ROSNode,
-            has node_name "context_model_node",
-            has namespace "";
+has node_name "context_model_node",
+has namespace "";
 $context_model_node_node_pub isa Publisher,
 has interface_name "nearest_object",
 has interface_type "std_msgs/Float32";
@@ -2273,50 +2271,63 @@ $t_measured_movement_power isa Measure, has measure_name "movement_power";
 
 $movement_power_greater_val isa ValueDouble, has double_value 40.0;
 $movement_power_greater (lhs_value:$t_measured_movement_power, rhs_value: $movement_power_greater_val) isa inequality_expression, has operator ">";
-$tactic_rule_min (tactic:$ta_maxspeedinternal, antecedent:$movement_power_greater, consequent:$f_low_speed ) isa tactic_rule, has rule_name "MIN";
+$min_fa (
+activation: $f_low_speed    
+) isa feature_adaptation;
+$tactic_rule_min (tactic:$ta_maxspeedinternal, antecedent:$movement_power_greater, consequent:$min_fa ) isa tactic_rule, has rule_name "MIN";
 $movement_power_less_val isa ValueDouble, has double_value 40.0;
 $movement_power_less (lhs_value:$t_measured_movement_power, rhs_value: $movement_power_less_val) isa inequality_expression, has operator "<";
 $movement_power_greater_1_val isa ValueDouble, has double_value 39.0;
 $movement_power_greater_1 (lhs_value:$t_measured_movement_power, rhs_value: $movement_power_greater_1_val) isa inequality_expression, has operator ">";
 $and_mov_mov (expression:$movement_power_less, expression:$movement_power_greater_1) isa and_expression;
-$tactic_rule_med (tactic:$ta_maxspeedinternal, antecedent:$and_mov_mov, consequent:$f_med_speed ) isa tactic_rule, has rule_name "MED";
+$med_fa (
+activation: $f_med_speed    
+) isa feature_adaptation;
+$tactic_rule_med (tactic:$ta_maxspeedinternal, antecedent:$and_mov_mov, consequent:$med_fa ) isa tactic_rule, has rule_name "MED";
 $movement_power_less_1_val isa ValueDouble, has double_value 39.0;
 $movement_power_less_1 (lhs_value:$t_measured_movement_power, rhs_value: $movement_power_less_1_val) isa inequality_expression, has operator "<";
-$tactic_rule_max (tactic:$ta_maxspeedinternal, antecedent:$movement_power_less_1, consequent:$f_hi_speed ) isa tactic_rule, has rule_name "MAX";
+$max_fa (
+activation: $f_hi_speed    
+) isa feature_adaptation;
+$tactic_rule_max (tactic:$ta_maxspeedinternal, antecedent:$movement_power_less_1, consequent:$max_fa ) isa tactic_rule, has rule_name "MAX";
 $max_velocity_param_pvalue_3 isa ValueArray;    
 $sp_max_velocity (node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $max_velocity_param_pvalue_3) isa set_nodes_parameters;
-
-$low_speed_resolution (
-    resolution_action: $sp_max_velocity
-, variant: $f_low_speed) isa variant_resolution;
 $max_velocity_param_pvalue_3 isa ValueArray;    
 $sp_max_velocity_1 (node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $max_velocity_param_pvalue_3) isa set_nodes_parameters;
-
-$med_speed_resolution (
+$low_speed_resolution_act (
+    resolution_action: $sp_max_velocity
+, variant: $f_low_speed) isa variant_activation;
+$low_speed_resolution_deact (
     resolution_action: $sp_max_velocity_1
-, variant: $f_med_speed) isa variant_resolution;
+, variant: $f_low_speed) isa variant_deactivation;
 $max_velocity_param_pvalue_3 isa ValueArray;    
 $sp_max_velocity_2 (node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $max_velocity_param_pvalue_3) isa set_nodes_parameters;
-
-$hi_speed_resolution (
+$med_speed_resolution_act (
     resolution_action: $sp_max_velocity_2
-, variant: $f_hi_speed) isa variant_resolution;
+, variant: $f_med_speed) isa variant_activation;
+$max_velocity_param_pvalue_3 isa ValueArray;    
+$sp_max_velocity_3 (node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $max_velocity_param_pvalue_3) isa set_nodes_parameters;
+$hi_speed_resolution_act (
+    resolution_action: $sp_max_velocity_3
+, variant: $f_hi_speed) isa variant_activation;
 $odom_duration_param_pvalue isa ValueDouble;    
 $sp_odom_duration (node: $velocity_smoother_node, parameter: $odom_duration_param, parameter_value: $odom_duration_param_pvalue) isa set_nodes_parameters;
 $max_velocity_param_pvalue_3 isa ValueArray;    
-$sp_max_velocity_3 (node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $max_velocity_param_pvalue_3) isa set_nodes_parameters;
-
-$one_speed_resolution (
+$sp_max_velocity_4 (node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $max_velocity_param_pvalue_3) isa set_nodes_parameters;
+$one_speed_resolution_act (
     resolution_action: $sp_odom_duration, 
-    resolution_action: $sp_max_velocity_3
-, variant: $f_one_speed) isa variant_resolution;
+    resolution_action: $sp_max_velocity_4
+, variant: $f_one_speed) isa variant_activation;
 $slc_velocity_smoother_inactive (node: $velocity_smoother_node) isa set_lifecycle_state, has lifecycle_state "inactive";
-
-$velocity_smoother_resolution (
+$velocity_smoother_resolution_deact (
     resolution_action: $slc_velocity_smoother_inactive
-, variant: $f_velocity_smoother) isa variant_resolution;
-$res_rebetmc (tactic: $ta_maxspeedinternal, variant_resolution:$low_speed_resolution, variant_resolution:$med_speed_resolution, variant_resolution:$hi_speed_resolution, variant_resolution:$one_speed_resolution, variant_resolution:$velocity_smoother_resolution) isa resolution_model, 
+, variant: $f_velocity_smoother) isa variant_deactivation;
+$res_rebetmc (tactic: $ta_maxspeedinternal,
+variant_resolution:$low_speed_resolution_act, variant_resolution:$low_speed_resolution_deact, 
+ variant_resolution:$med_speed_resolution_act, 
+ variant_resolution:$hi_speed_resolution_act, 
+ variant_resolution:$one_speed_resolution_act, 
+ variant_resolution:$velocity_smoother_resolution_deact
+ ) 
+ isa resolution_model, 
     has resolution_model_name "rebetmc", has ros_system "rebet_mirte";
-
-
-
