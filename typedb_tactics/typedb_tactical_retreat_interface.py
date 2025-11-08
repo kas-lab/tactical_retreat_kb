@@ -362,17 +362,12 @@ class TacticalRetreatInterface(TypeDBInterface):
         query = f"""
             match
                 $tactic isa Tactic, has tactic_name '{tactic_name}';
-                (tactic: $tactic, consequent: $consequent) isa tactic_rule;
-                {{
-                    $consequent isa Feature;
-                    (variant: $consequent, resolution_action: $resolution_action) isa
-                        variant_resolution;
-                }} or {{
-                    $consequent (expression: $expression) isa and_expression;
-                    $expression isa Feature;
-                    (variant: $expression, resolution_action: $resolution_action) isa
-                        variant_resolution;
-                }};
+                (tactic: $tactic, consequent: $fa) isa tactic_rule;
+                $fa ($feature)
+                    isa feature_adaptation;
+                $feature isa Feature;
+                (variant: $feature, resolution_action: $resolution_action)
+                    isa variant_resolution;
                 $resolution_action (node: $node) isa resolution_action;
                 $node isa ROSNode, has node_name '{node_name}',
                     has namespace '{namespace}';

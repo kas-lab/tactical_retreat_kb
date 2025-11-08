@@ -45,6 +45,8 @@ Feature sub entity,
 # Connection with tactics model
 Feature plays tactic_rule:consequent;
 Feature plays variant_resolution:variant;
+Feature plays feature_adaptation:activation;
+Feature plays feature_adaptation:deactivation;
 Feature plays and_expression:expression;
 
 # Rules

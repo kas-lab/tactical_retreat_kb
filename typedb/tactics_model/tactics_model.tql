@@ -10,11 +10,7 @@ name sub attribute,
 resolution_model_name sub name;
 tactic_name sub name;
 rule_name sub name;
-term_name sub name;
 variant_name sub name;
-
-tactic_period sub attribute,
-    value double;
 
 tactic_resolution_model sub attribute,
     value string;
@@ -49,8 +45,7 @@ expression sub relation,
     plays tactic_rule:antecedent;
 
 and_expression sub expression,
-    relates expression,
-    plays tactic_rule:consequent;
+    relates expression;
 
 or_expression sub expression,
     relates expression;
@@ -66,6 +61,11 @@ inequality_expression sub expression,
 Measure plays inequality_expression:lhs_value;
 Value plays inequality_expression:rhs_value;
 
+feature_adaptation sub relation,
+    relates deactivation,
+    relates activation,
+    plays tactic_rule:consequent;
+
 #### resolution model
 resolution_model sub relation,
     owns resolution_model_name @key,
@@ -74,10 +74,14 @@ resolution_model sub relation,
     relates variant_resolution;
 
 variant_resolution sub relation,
+    abstract,
     owns feasible,
     relates resolution_action,
     relates variant,
     plays resolution_model:variant_resolution;
+
+variant_activation sub variant_resolution;
+variant_deactivation sub variant_resolution;
 
 resolution_action sub relation,
     abstract,
@@ -100,7 +104,6 @@ set_lifecycle_state sub resolution_action,
 ### Entities
 Tactic sub entity,
     owns tactic_name @key,
-    owns tactic_period,
     plays tactic_rule:tactic,
     plays resolution_model:tactic;
 
