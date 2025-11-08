@@ -31,6 +31,9 @@ operator sub attribute,
     value string,
     regex "^(<|<=|>|>=|==|!=)";
 
+feasible sub attribute,
+    value boolean;
+
 ### Relations
 tactic_rule sub relation,
     owns rule_name @key,
@@ -71,6 +74,7 @@ resolution_model sub relation,
     relates variant_resolution;
 
 variant_resolution sub relation,
+    owns feasible,
     relates resolution_action,
     relates variant,
     plays resolution_model:variant_resolution;
