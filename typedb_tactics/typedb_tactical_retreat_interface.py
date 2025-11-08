@@ -619,3 +619,19 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_database(query)
         return query_result[0]['f']['selectable'][0]['value']
+
+    def is_node_running(self, node_name:str) -> bool:
+        """
+        Return whether a ROS node is running.
+
+        :param node_name: node name
+        :return: true or false
+        """
+        query = f"""
+            match
+                $node isa ROSNode, has node_name '{node_name}';
+            fetch
+                $node: running;
+        """
+        query_result = self.fetch_database(query)
+        return query_result[0]['node']['running'][0]['value']

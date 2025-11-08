@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import math
 import pytest
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
@@ -21,7 +20,7 @@ from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInte
 def kb_interface():
     kb_interface = TacticalRetreatInterface(
         'localhost:1729',
-        'test_tactics_model',
+        'test_feature_model',
         ['typedb/data_structure/data_structure.tql',
             'typedb/context_model/context_model.tql',
             'typedb/ros_model/ros_model.tql',
