@@ -1,5 +1,29 @@
 # typedb_tactics
 
+## Models
+
+### Dependencies
+
+```mermaid
+graph LR
+    data_structure["data_structure.tql"]
+    context["context_model.tql"]
+    ros["ros_model.tql"]
+    feature["feature_model.tql"]
+    tactics["tactics_model.tql"]
+    discover["discover_tactics_model.tql"]
+
+    data_structure --> context
+    context --> ros
+    context --> feature
+    ros --> tactics
+    feature --> tactics
+    tactics --> discover
+```
+
+Arrows point from each prerequisite model to the model that depends on it.
+
+
 ## Docker
 
 ### Build
