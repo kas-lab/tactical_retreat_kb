@@ -620,7 +620,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.fetch_database(query)
         return query_result[0]['f']['selectable'][0]['value']
 
-    def is_node_running(self, node_name:str) -> bool:
+    def is_node_running(self, node_name: str) -> bool:
         """
         Return whether a ROS node is running.
 
@@ -635,3 +635,42 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_database(query)
         return query_result[0]['node']['running'][0]['value']
+
+    def is_set_nodes_parameters_feasible(
+            self, node_name: str, parameter_name: str) -> bool:
+        """
+        Return whether a set_nodes_parameters action is feasible.
+
+        :param node_name: node name
+        :param parameter_name: parameter name
+        :return: true or false
+        """
+        query = f"""
+            match
+                $ra (node: $node, parameter: $parameter) isa set_nodes_parameters;
+                $node isa ROSNode, has node_name '{node_name}';
+                $parameter isa Parameter, has parameter_name '{parameter_name}';
+            fetch
+                $ra: feasible;
+        """
+        query_result = self.fetch_database(query)
+        return query_result[0]['ra']['feasible'][0]['value']
+
+    def is_set_lifecycle_state_feasible(
+            self, node_name: str, lifecycle_state: str) -> bool:
+        """
+        Return whether a set_lifecycle_state action is feasible.
+
+        :param node_name: node name
+        :param lifecycle_state: parameter name
+        :return: true or false
+        """
+        query = f"""
+            match
+                $ra (node: $node) isa set_lifecycle_state, has lifecycle_state '{lifecycle_state}';
+                $node isa LifeCycleNode, has node_name '{node_name}';
+            fetch
+                $ra: feasible;
+        """
+        query_result = self.fetch_database(query)
+        return query_result[0]['ra']['feasible'][0]['value']

@@ -94,7 +94,7 @@ $fa_med (activation: $f_med_speed) isa feature_adaptation;
 $tatic_rule_med (tactic:$ta_max_speed, antecedent:$ineq_nearest_greater_than_15, consequent:$fa_med ) isa tactic_rule, has rule_name "MED";
 
 # define parameter max_speed
-$p_max_speed isa Parameter, has parameter_name "max_velocity";
+$p_max_speed isa ParameterDoubleArray, has parameter_name "max_velocity";
 
 # define parameter values low
 $p_max_velocity_x_low isa ValueDouble, has double_value 0.10;

@@ -42,12 +42,6 @@ Feature sub entity,
     plays cross_tree_constraint:constraint,
     plays cross_tree_constraint:constrained;
 
-# Connection with tactics model
-Feature plays tactic_rule:consequent;
-Feature plays variant_resolution:variant;
-Feature plays feature_adaptation:activation;
-Feature plays feature_adaptation:deactivation;
-Feature plays and_expression:expression;
 
 # Rules
 rule leaf_feature:

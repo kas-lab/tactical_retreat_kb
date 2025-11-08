@@ -10,6 +10,9 @@ executable sub attribute,
 lifecycle_state sub attribute,
     value string,
     regex "^(unconfigured|inactive|active|finalized)$";
+lifecycle_transition sub attribute,
+    value string,
+    regex "^(configure|shutdown|activate|deactivate|cleanup)$";
 
 #### Should only be used by is_node_active rule
 is_active sub attribute,

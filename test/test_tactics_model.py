@@ -25,6 +25,7 @@ def kb_interface():
         ['typedb/data_structure/data_structure.tql',
             'typedb/context_model/context_model.tql',
             'typedb/ros_model/ros_model.tql',
+            'typedb/feature_model/feature_model.tql',
             'typedb/tactics_model/tactics_model.tql'],
         ['test/data/test_tactics_model.tql'],
         force_database=True,
@@ -110,6 +111,58 @@ def test_get_tactic_rule_valid(kb_interface):
     assert kb_interface.get_tactic_rule_valid('tr6') is True
     assert kb_interface.get_tactic_rule_valid('tr7') is False
 
+    assert kb_interface.get_tactic_rule_valid('tr_consequent_feasible') is True
+    assert kb_interface.get_tactic_rule_valid('tr_consequent_unfeasible') is False
+
+    assert kb_interface.get_tactic_rule_valid('tr_variant_resolution_feasible') is True
+    assert kb_interface.get_tactic_rule_valid('tr_variant_resolution_unfeasible_1') is False
+    assert kb_interface.get_tactic_rule_valid('tr_variant_resolution_unfeasible_2') is False
+
+
+def test_set_nodes_parameters_feasible(kb_interface):
+    assert kb_interface.is_set_nodes_parameters_feasible(
+        'node_running', 'parameter') is True
+    assert kb_interface.is_set_nodes_parameters_feasible(
+        'node_not_running', 'parameter') is False
+
+
+def test_set_lifecycle_state_feasible(kb_interface):
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_active', 'active') is True
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_active', 'inactive') is True
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_active', 'unconfigured') is False
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_active', 'finalized') is True
+
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_inactive', 'active') is True
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_inactive', 'inactive') is True
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_inactive', 'unconfigured') is True
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_inactive', 'finalized') is True
+
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_unconfigured', 'active') is False
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_unconfigured', 'inactive') is True
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_unconfigured', 'unconfigured') is True
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_unconfigured', 'finalized') is True
+
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_finalized', 'active') is False
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_finalized', 'inactive') is False
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_finalized', 'unconfigured') is False
+    assert kb_interface.is_set_lifecycle_state_feasible(
+        'lifecycle_node_finalized', 'finalized') is True
+
 
 @pytest.fixture
 def kb_interface_example():
@@ -119,8 +172,8 @@ def kb_interface_example():
         ['typedb/data_structure/data_structure.tql',
             'typedb/context_model/context_model.tql',
             'typedb/ros_model/ros_model.tql',
-            'typedb/tactics_model/tactics_model.tql',
-            'typedb/feature_model/feature_model.tql'],
+            'typedb/feature_model/feature_model.tql',
+            'typedb/tactics_model/tactics_model.tql'],
         ['typedb/ros_model/ros_model_example.tql',
             'typedb/tactics_model/tactics_example.tql'],
         force_database=True,

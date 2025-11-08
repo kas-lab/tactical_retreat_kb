@@ -21,17 +21,14 @@ def kb_interface():
     kb_interface = TacticalRetreatInterface(
         'localhost:1729',
         'test_feature_model',
-        ['typedb/data_structure/data_structure.tql',
-            'typedb/context_model/context_model.tql',
-            'typedb/ros_model/ros_model.tql',
-            'typedb/tactics_model/tactics_model.tql',
-            'typedb/feature_model/feature_model.tql'],
+        ['typedb/feature_model/feature_model.tql'],
         ['test/data/test_feature_model.tql'],
         force_database=True,
         force_data=True,
         infer=True)
     yield kb_interface
     kb_interface.delete_database()
+
 
 def test_feature_selectable(kb_interface):
     assert kb_interface.is_feature_selectable('f_alternative_child_1') is False
