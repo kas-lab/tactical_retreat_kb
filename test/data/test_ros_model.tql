@@ -1,0 +1,11 @@
+insert
+
+$node_has_start_time isa ROSNode,
+	has node_name "node_has_start_time",
+	has start_time 2025-09-06T11:57:56.666;
+$node_no_start_time isa ROSNode,
+	has node_name "node_no_start_time";
+$node_has_end_time isa ROSNode,
+	has node_name "node_has_end_time",
+	has start_time 2025-09-06T11:57:56.666,
+	has end_time 2025-09-07T11:57:56.666;
