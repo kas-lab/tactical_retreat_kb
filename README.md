@@ -15,7 +15,6 @@ graph LR
 
     data_structure --> context
     context --> ros
-    context --> feature
     ros --> tactics
     feature --> tactics
     tactics --> discover
