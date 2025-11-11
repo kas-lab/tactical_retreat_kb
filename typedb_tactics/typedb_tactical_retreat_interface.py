@@ -20,9 +20,6 @@ from typing import Optional
 from typing import TypedDict
 from typing import List
 from typing import Iterator
-from typing import List
-from typing import Optional
-from typing import TypedDict
 from typing import Union
 
 from ros_typedb.typedb_interface import convert_py_type_to_query_type
@@ -689,23 +686,24 @@ class TacticalRetreatInterface(TypeDBInterface):
         return query_result[0]['ra']['feasible'][0]['value']
 
     def fetch_measures_inferfaces(self):
-        query = f"""
+        query = '''
             match
                 $measure isa Measure, has measure_name $measure_name;
-                $measurement_interface (measure: $measure, source: $source) isa measurement_interface;
+                $measurement_interface (measure: $measure, source: $source)
+                    isa measurement_interface;
             fetch
                 $measure_name;
                 $measurement_interface: attribute;
                 $source: interface_name, interface_type;
-            qos_sub_query: {{
+            qos_sub_query: {
                 match
                     $source isa! Publisher;
                     (interface: $source, qos: $qos) isa has_qos;
                     $qos isa QoSProfile;
                 fetch
                     $qos: attribute;
-            }};
-        """
+            };
+        '''
         return self.fetch_database(query)
 
     def get_measures_interfaces(self):
@@ -714,9 +712,11 @@ class TacticalRetreatInterface(TypeDBInterface):
             result_dict = {}
             measure = result.get('measure_name')
             if measure:
-                result_dict['measure_name'] = convert_query_type_to_py_type(measure)
+                result_dict['measure_name'] = convert_query_type_to_py_type(
+                    measure)
 
-            result_dict['source'] = result.get('source').get('type').get('label')
+            result_dict['source'] = result.get(
+                'source').get('type').get('label')
             result_dict['interface_name'] = convert_query_type_to_py_type(
                 result.get('source').get('interface_name')[0])
 
@@ -726,7 +726,8 @@ class TacticalRetreatInterface(TypeDBInterface):
             measurement_interface = result.get('measurement_interface')
             for attribute in measurement_interface.get('attribute'):
                 attribute_label = attribute.get('type').get('label')
-                result_dict[attribute_label] = convert_query_type_to_py_type(attribute)
+                result_dict[attribute_label] = convert_query_type_to_py_type(
+                    attribute)
 
             qos_list = result.get('qos_sub_query')
             qos_dict = {}
@@ -734,7 +735,8 @@ class TacticalRetreatInterface(TypeDBInterface):
                 qos = qos_list[0].get('qos')
                 for attribute in qos.get('attribute'):
                     attribute_label = attribute.get('type').get('label')
-                    qos_dict[attribute_label] = convert_query_type_to_py_type(attribute)
+                    qos_dict[attribute_label] = convert_query_type_to_py_type(
+                        attribute)
 
             if qos_dict:
                 result_dict['qos'] = qos_dict
@@ -746,8 +748,11 @@ class TacticalRetreatInterface(TypeDBInterface):
 
     # TODO: support measurements of str, int, bool, array. THis is just for testing quickly
     # TODO: add tests for add_measurement
-    def add_measurement(
-            self, measure_name: str, value: Union[str, float, int]) -> Optional[Iterator[ConceptMap]]:
+    def add_measurement(self,
+                        measure_name: str,
+                        value: Union[str,
+                                     float,
+                                     int]) -> Optional[Iterator[ConceptMap]]:
         """
         Add new measurement.
 
@@ -756,15 +761,18 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: query result
         """
         if not isinstance(value, (str, float, int)):
-            self.logger.error('Unsupported type %s for Measure %s', type(value), measure_name)
+            self.logger.error(
+                'Unsupported type %s for Measure %s',
+                type(value),
+                measure_name)
             return None
         try:
             val = float(value)
         except (ValueError, TypeError):
             self.logger.error(
                 '[add_measurement] Invalid value: %r for Measure %s. Cannot convert to float!',
-                value, measure_name
-            )
+                value,
+                measure_name)
             return None
 
         if math.isinf(val) or math.isnan(val):

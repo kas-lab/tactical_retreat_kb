@@ -12,14 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pathlib import Path
-import sys
 import time
 import threading
-
-import launch
-import launch_pytest
-import launch_ros
 
 import pytest
 
@@ -59,6 +53,7 @@ def tactical_kb():
     yield tactical_kb
     tactical_kb.destroy_node()
 
+
 @pytest.fixture(scope='session', autouse=True)
 def rclpy_runtime():
     if not rclpy.ok():
@@ -68,6 +63,7 @@ def rclpy_runtime():
     finally:
         if rclpy.ok():
             rclpy.shutdown()
+
 
 @pytest.fixture
 def executor():
@@ -80,6 +76,7 @@ def executor():
         ex.shutdown()
         t.join(timeout=2.0)
 
+
 @pytest.fixture
 def test_node():
     node = HelperNode()
@@ -89,12 +86,11 @@ def test_node():
         node.delete_database()
         node.destroy_node()
 
+
 class HelperNode(Node):
 
     def __init__(self, name='test_node'):
         super().__init__(name)
-        # self.typedb_event = Event()
-        # self.typedb_event_data = None
 
         self.change_state_cli = self.create_client(
             ChangeState, '/tactical_kb/change_state'
@@ -104,31 +100,9 @@ class HelperNode(Node):
             GetState, '/tactical_kb/get_state'
         )
 
-        # self.query_cli = self.create_client(
-        #     Query, '/tactical_kb/query'
-        # )
-
         self.delete_db_cli = self.create_client(
             Empty, '/tactical_kb/delete_database'
         )
-
-        # self.event_sub = self.create_subscription(
-        #     String, '/ros_typedb/events', self.event_sub_cb, 10)
-
-    # def start_node(self):
-    #     self.ros_spin_thread = Thread(
-    #         target=lambda node: rclpy.spin(node),
-    #         args=(self,))
-    #     self.ros_spin_thread.start()
-
-    # def change_kb_state(self, transition_id):
-    #     change_state_req = ChangeState.Request()
-    #     change_state_req.transition.id = transition_id
-    #     return self.call_service(self.change_state_cli, change_state_req)
-
-    # def get_kb_state(self):
-    #     get_state_req = GetState.Request()
-    #     return self.call_service(self.get_state_cli, get_state_req)
 
     def call_service(self, cli, request):
         if cli.wait_for_service(timeout_sec=5.0) is False:
@@ -144,21 +118,11 @@ class HelperNode(Node):
 
         return future.result()
 
-    # def activate_kb(self):
-    #     self.change_kb_state(1)
-    #     self.change_kb_state(3)
-
-    # def event_sub_cb(self, msg):
-    #     self.typedb_event_data = msg.data
-    #     self.typedb_event.set()
-
     def delete_database(self):
         self.call_service(self.delete_db_cli, Empty.Request())
 
 
-# @pytest.mark.launch(fixture=generate_test_description)
 def test_create_measure_topic_interface(executor, tactical_kb, test_node):
-    # test_node.activate_kb()
     executor.add_node(test_node)
     executor.add_node(tactical_kb)
 
@@ -171,7 +135,7 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
         'measurement_function_lib': 'ros_monitors_functions.monitor_functions',
         'measurement_function_args': 'data',
         'qos': {
-            'reliability' : 'RELIABLE',
+            'reliability': 'RELIABLE',
             'history': 'KEEP_LAST',
             'depth': 10,
             'durability': 'TRANSIENT_LOCAL',
@@ -191,7 +155,7 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
         'measurement_function_lib': 'ros_monitors_functions.laser_scan_functions',
         'measurement_function_args': 'base_link',
         'qos': {
-            'reliability' : 'BEST_EFFORT',
+            'reliability': 'BEST_EFFORT',
             'history': 'KEEP_LAST',
             'depth': 5,
             'durability': 'VOLATILE',
@@ -199,8 +163,7 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
             'deadline': 0,
             'liveliness': 'SYSTEM_DEFAULT',
             'lease_duration': 0,
-        }
-    }
+        }}
 
     tactical_kb.create_measure_topic_interface(measure_test_topic_dict)
     assert 'measure_test_topic' in tactical_kb.measures_subscribers
@@ -236,5 +199,6 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
     while time.time() < t_end:
         time.sleep(0.1)
 
-    measurement = tactical_kb.typedb_interface.get_latest_measurement('measure_test_topic')
+    measurement = tactical_kb.typedb_interface.get_latest_measurement(
+        'measure_test_topic')
     assert measurement == 3.0

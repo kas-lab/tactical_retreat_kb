@@ -15,10 +15,6 @@
 import importlib
 
 from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
-from ros_typedb.ros_typedb_interface import set_query_result_value
-
-import diagnostic_msgs.msg
-from diagnostic_msgs.msg import DiagnosticArray
 
 from rclpy.duration import Duration
 
@@ -34,6 +30,7 @@ from std_srvs.srv import Trigger
 
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
+
 def publish_event(event_type: str):
     """Publish event (Decorator)."""
     def _publish_event(func):
@@ -43,10 +40,13 @@ def publish_event(event_type: str):
         return inner
     return _publish_event
 
+
 def get_ros_msg_type_from_string(message_type: str):
     msg_type_list = message_type.split('/')
-    msg_module = importlib.import_module(msg_type_list[0] + "." + msg_type_list[1])
+    msg_module = importlib.import_module(
+        msg_type_list[0] + "." + msg_type_list[1])
     return getattr(msg_module, msg_type_list[2])
+
 
 RELIABILITY_MAP = {
     "RELIABLE": QoSReliabilityPolicy.RELIABLE,
@@ -72,8 +72,10 @@ LIVELINESS_MAP = {
     "SYSTEM_DEFAULT": QoSLivelinessPolicy.SYSTEM_DEFAULT,
 }
 
+
 def _to_duration(v):
-    # Accept Duration, seconds as int/float, or a dict {"sec": int, "nanosec": int}
+    # Accept Duration, seconds as int/float, or a dict {"sec": int, "nanosec":
+    # int}
     if isinstance(v, Duration):
         return v
     if isinstance(v, (int, float)):
@@ -81,6 +83,7 @@ def _to_duration(v):
         nsec = int(round((v - secs) * 1_000_000_000))
         return Duration(seconds=secs, nanoseconds=nsec)
     raise TypeError(f"Unsupported duration value: {v!r}")
+
 
 def get_qos_from_qos_dict(qos_dict: dict) -> QoSProfile:
     # depth must be provided when KEEP_LAST; default to 10
@@ -123,6 +126,7 @@ def get_qos_from_qos_dict(qos_dict: dict) -> QoSProfile:
 
     return qos
 
+
 class TacticalRetreatKB(ROSTypeDBInterface):
     """ROS lifecycle node implementing TacticalRetreat's KB."""
 
@@ -147,11 +151,13 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 self.get_logger().info("Measures interfaces created.")
                 res.success = True
             except Exception as e:
-                self.get_logger().error(f"Error creating measures interfaces: {e}")
+                self.get_logger().error(
+                    f"Error creating measures interfaces: {e}")
                 res.success = False
             return res
 
-        # create service with a lambda calling the create_measures_interfaces function
+        # create service with a lambda calling the create_measures_interfaces
+        # function
         self.measures_service = self.create_service(
             Trigger,
             self.get_name() + '/create_measures',
@@ -205,12 +211,13 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         measurement_qos = get_qos_from_qos_dict(topic_interface.get('qos', {}))
 
         function_lib_name = (topic_interface.get('measurement_function_lib')
-                                or 'ros_monitors_functions.monitor_functions')
+                             or 'ros_monitors_functions.monitor_functions')
         function_name = (topic_interface.get('measurement_function_name')
-                            or 'get_data_field')
+                         or 'get_data_field')
 
         function_args_str = topic_interface.get('measurement_function_args')
-        function_args = [arg.strip() for arg in function_args_str.split(',')] if function_args_str else ['']
+        function_args = [arg.strip() for arg in function_args_str.split(
+            ',')] if function_args_str else ['']
 
         function_lib = importlib.import_module(function_lib_name)
         measure_function = getattr(function_lib, function_name)
@@ -219,7 +226,9 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 _measure_name=measure_name,
                 _measure_function=measure_function,
                 _function_args=function_args):
-            self.typedb_interface.add_measurement(_measure_name, _measure_function(self, msg, *_function_args))
+            self.typedb_interface.add_measurement(
+                _measure_name, _measure_function(
+                    self, msg, *_function_args))
 
         self.measures_subscribers[measure_name] = self.create_subscription(
             topic_type,
@@ -237,7 +246,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
             for interface in measures_interfaces:
                 # TODO: this is unsafe, use get instead.
-                self.get_logger().info(f"Creating measure interface: {interface}")
+                self.get_logger().info(
+                    f"Creating measure interface: {interface}")
                 if interface.get('source') == 'Publisher':
                     self.create_measure_topic_interface(interface)
 

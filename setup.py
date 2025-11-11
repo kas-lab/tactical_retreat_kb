@@ -5,12 +5,13 @@ from glob import glob
 package_name = 'typedb_tactics'
 
 data_files = [
-        ('share/ament_index/resource_index/packages',
-            ['resource/' + package_name]),
-        ('share/' + package_name, ['package.xml']),
-        (os.path.join('share', package_name, 'launch'),
-            glob('launch/*launch.[pxy][yma]*')),
-    ]
+    ('share/ament_index/resource_index/packages',
+     ['resource/' + package_name]),
+    ('share/' + package_name, ['package.xml']),
+    (os.path.join('share', package_name, 'launch'),
+     glob('launch/*launch.[pxy][yma]*')),
+]
+
 
 def package_files(data_files, directory_list):
 
@@ -35,6 +36,7 @@ def package_files(data_files, directory_list):
         data_files.append((key, paths_dict[key]))
 
     return data_files
+
 
 setup(
     name=package_name,

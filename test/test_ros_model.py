@@ -37,6 +37,7 @@ def test_ros_node_running(kb_interface):
     assert kb_interface.is_node_running('node_no_start_time') is False
     assert kb_interface.is_node_running('node_has_end_time') is False
 
+
 def test_get_measures_interfaces(kb_interface):
     measure_test_topic_dict = {
         'source': 'Publisher',
@@ -47,7 +48,7 @@ def test_get_measures_interfaces(kb_interface):
         'measurement_function_lib': 'ros_monitors_functions.monitor_functions',
         'measurement_function_args': 'data',
         'qos': {
-            'reliability' : 'RELIABLE',
+            'reliability': 'RELIABLE',
             'history': 'KEEP_LAST',
             'depth': 10,
             'durability': 'TRANSIENT_LOCAL',
@@ -67,7 +68,7 @@ def test_get_measures_interfaces(kb_interface):
         'measurement_function_lib': 'ros_monitors_functions.laser_scan_functions',
         'measurement_function_args': 'base_link',
         'qos': {
-            'reliability' : 'BEST_EFFORT',
+            'reliability': 'BEST_EFFORT',
             'history': 'KEEP_LAST',
             'depth': 5,
             'durability': 'VOLATILE',
@@ -75,8 +76,7 @@ def test_get_measures_interfaces(kb_interface):
             'deadline': 0,
             'liveliness': 'SYSTEM_DEFAULT',
             'lease_duration': 0,
-        }
-    }
+        }}
     measures_interfaces = kb_interface.get_measures_interfaces()
     assert measure_test_topic_dict in measures_interfaces
     assert laser_scan_dict in measures_interfaces
