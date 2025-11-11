@@ -1,0 +1,15 @@
+match
+    $measure isa Measure, has measure_name $measure_name;
+    $measurement_interface (measure: $measure, source: $source) isa measurement_interface;
+fetch
+    $measure_name;
+	$measurement_interface: attribute;
+    $source: interface_name, interface_type;
+    qos_sub_query: {
+        match
+            $source isa! Publisher;
+            (interface: $source, qos: $qos) isa has_qos;
+            $qos isa QoSProfile;
+        fetch
+            $qos: attribute;
+    };
