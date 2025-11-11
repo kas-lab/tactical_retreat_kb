@@ -708,7 +708,6 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
-    # TODO: The dictionary is different from what is expected within this function, it should be updated accordingly.
     def get_measures_interfaces(self):
         result_dict_list = []
         for result in self.fetch_measures_inferfaces():

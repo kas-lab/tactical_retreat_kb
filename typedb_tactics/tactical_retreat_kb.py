@@ -199,7 +199,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         """
         measure_name = topic_interface['measure_name']
         topic_name = topic_interface['interface_name']
-        ros_msg_type_str = topic_interface['source']['interface_type']['value']
+        ros_msg_type_str = topic_interface['interface_type']
 
         topic_type = get_ros_msg_type_from_string(ros_msg_type_str)
         measurement_qos = get_qos_from_qos_dict(topic_interface.get('qos', {}))
@@ -238,7 +238,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             for interface in measures_interfaces:
                 # TODO: this is unsafe, use get instead.
                 self.get_logger().info(f"Creating measure interface: {interface}")
-                if interface['source']['type']['label'] == 'Publisher':
+                if interface.get('source') == 'Publisher':
                     self.create_measure_topic_interface(interface)
 
         except Exception as e:
