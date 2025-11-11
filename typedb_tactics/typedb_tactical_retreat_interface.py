@@ -15,8 +15,11 @@
 from typing import Optional
 from typing import TypedDict
 from typing import List
+
+from ros_typedb.typedb_interface import convert_query_type_to_py_type
 from ros_typedb.typedb_interface import TypeDBInterface
 from ros_typedb.typedb_interface import MatchResultDict
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -674,3 +677,62 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_database(query)
         return query_result[0]['ra']['feasible'][0]['value']
+
+    def fetch_measures_inferfaces(self):
+        query = f"""
+            match
+                $measure isa Measure, has measure_name $measure_name;
+                $measurement_interface (measure: $measure, source: $source) isa measurement_interface;
+            fetch
+                $measure_name;
+                $measurement_interface: attribute;
+                $source: interface_name, interface_type;
+            qos_sub_query: {{
+                match
+                    $source isa! Publisher;
+                    (interface: $source, qos: $qos) isa has_qos;
+                    $qos isa QoSProfile;
+                fetch
+                    $qos: attribute;
+            }};
+        """
+        return self.fetch_database(query)
+
+    def get_measures_interfaces(self):
+        result_list_dict = []
+        for result in self.fetch_measures_inferfaces():
+            result_dict = {}
+            measure = result.get('measure_name')
+            if measure:
+                result_dict['measure_name'] = convert_query_type_to_py_type(measure)
+
+            result_dict['source'] = result.get('source').get('type').get('label')
+            result_dict['interface_name'] = convert_query_type_to_py_type(
+                result.get('source').get('interface_name')[0])
+
+            result_dict['interface_type'] = convert_query_type_to_py_type(
+                result.get('source').get('interface_type')[0])
+            print(result)
+            measurement_interface = result.get('measurement_interface')
+            for attribute in measurement_interface.get('attribute'):
+                attribute_label = attribute.get('type').get('label')
+                result_dict[attribute_label] = convert_query_type_to_py_type(attribute)
+
+            qos_list = result.get('qos_sub_query')
+            qos_dict = {}
+            if isinstance(qos_list, list) and qos_list:
+                qos = qos_list[0].get('qos')
+                for attribute in qos.get('attribute'):
+                    attribute_label = attribute.get('type').get('label')
+                    qos_dict[attribute_label] = convert_query_type_to_py_type(attribute)
+
+            if qos_dict:
+                result_dict['qos'] = qos_dict
+
+            if result_dict:
+                result_list_dict.append(result_dict)
+
+        return result_list_dict
+
+    def add_measurement(self, measure_name, value):
+        pass

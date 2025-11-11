@@ -36,3 +36,25 @@ def test_ros_node_running(kb_interface):
     assert kb_interface.is_node_running('node_has_start_time') is True
     assert kb_interface.is_node_running('node_no_start_time') is False
     assert kb_interface.is_node_running('node_has_end_time') is False
+
+def test_get_measures_interfaces(kb_interface):
+    laser_scan_dict = {
+        'source': 'Publisher',
+        'measure_name': 'measure_nearest_object',
+        'interface_name': '/scan_filtered',
+        'interface_type': 'sensor_msgs/msg/LaserScan',
+        'measurement_function_name': 'get_nearest_scan_distance_in_base',
+        'measurement_function_lib': 'ros_monitors_functions.laser_scan_functions',
+        'measurement_function_args': 'base_link',
+        'qos': {
+            'reliability' : 'BEST_EFFORT',
+            'history': 'KEEP_LAST',
+            'depth': 5,
+            'durability': 'VOLATILE',
+            'lifespan': 0,
+            'deadline': 0,
+            'liveliness': 'SYSTEM_DEFAULT',
+            'lease_duration': 0,
+        }
+    }
+    assert kb_interface.get_measures_interfaces()[0] == laser_scan_dict
