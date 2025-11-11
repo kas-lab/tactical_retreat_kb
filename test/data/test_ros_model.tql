@@ -11,6 +11,27 @@ $node_has_end_time isa ROSNode,
 	has end_time 2025-09-07T11:57:56.666;
 
 ## measurement interface
+$measure_test_topic isa Measure, has measure_name 'measure_test_topic';
+$measure_test_topic_pub isa Publisher,
+	has interface_name '/measure_test_topic',
+    has interface_type 'std_msgs/msg/Float64';
+$qos_test isa QoSProfile,
+	has reliability 'RELIABLE',
+	has history 'KEEP_LAST',
+	has depth 10,
+	has durability 'TRANSIENT_LOCAL',
+	has lifespan 2,
+	has deadline 2,
+	has liveliness 'MANUAL_BY_TOPIC',
+	has lease_duration 2;
+(interface: $measure_test_topic_pub, qos: $qos_test) isa has_qos;
+
+(measure: $measure_test_topic, source: $measure_test_topic_pub) isa measurement_interface,
+    has measurement_function_name 'get_data_field',
+    has measurement_function_lib 'ros_monitors_functions.monitor_functions',
+    has measurement_function_args 'data';
+
+### measure_nearest_object measurement interface
 $measure_nearest_object isa Measure, has measure_name "measure_nearest_object";
 
 $scan_filtered_pub isa Publisher,
@@ -35,3 +56,4 @@ $nearest_object_pub isa Publisher,
     has measurement_function_name 'get_nearest_scan_distance_in_base',
     has measurement_function_lib 'ros_monitors_functions.laser_scan_functions',
     has measurement_function_args 'base_link';
+

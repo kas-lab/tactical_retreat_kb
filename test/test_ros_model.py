@@ -38,6 +38,26 @@ def test_ros_node_running(kb_interface):
     assert kb_interface.is_node_running('node_has_end_time') is False
 
 def test_get_measures_interfaces(kb_interface):
+    measure_test_topic_dict = {
+        'source': 'Publisher',
+        'measure_name': 'measure_test_topic',
+        'interface_name': '/measure_test_topic',
+        'interface_type': 'std_msgs/msg/Float64',
+        'measurement_function_name': 'get_data_field',
+        'measurement_function_lib': 'ros_monitors_functions.monitor_functions',
+        'measurement_function_args': 'data',
+        'qos': {
+            'reliability' : 'RELIABLE',
+            'history': 'KEEP_LAST',
+            'depth': 10,
+            'durability': 'TRANSIENT_LOCAL',
+            'lifespan': 2,
+            'deadline': 2,
+            'liveliness': 'MANUAL_BY_TOPIC',
+            'lease_duration': 2,
+        }
+    }
+
     laser_scan_dict = {
         'source': 'Publisher',
         'measure_name': 'measure_nearest_object',
@@ -57,4 +77,6 @@ def test_get_measures_interfaces(kb_interface):
             'lease_duration': 0,
         }
     }
-    assert kb_interface.get_measures_interfaces()[0] == laser_scan_dict
+    measures_interfaces = kb_interface.get_measures_interfaces()
+    assert measure_test_topic_dict in measures_interfaces
+    assert laser_scan_dict in measures_interfaces
