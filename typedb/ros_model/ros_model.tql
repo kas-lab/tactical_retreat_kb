@@ -55,7 +55,7 @@ lifespan sub attribute,
     value long;  # 0 indicates infinite
 liveliness sub attribute,
     value string,
-    regex "^(AUTOMATIC|MANUAL|SYSTEM_DEFAULT)";
+    regex "^(AUTOMATIC|MANUAL_BY_TOPIC|SYSTEM_DEFAULT)";
 lease_duration sub attribute,
     value long;  # 0 indicates infinite
 
