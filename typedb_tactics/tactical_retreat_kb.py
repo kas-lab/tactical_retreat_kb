@@ -30,6 +30,7 @@ from rclpy.qos import QoSLivelinessPolicy
 from rclpy.qos import QoSHistoryPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import QoSReliabilityPolicy
+from std_srvs.srv import Trigger
 
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
@@ -138,13 +139,31 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         self.get_logger().info(
             self.get_name() + ': on_activate() is completed.')
 
-        self.create_measures_interfaces()
+        # self.create_measures_interfaces()
+        def _create_measures_cb(_, res):
+            try:
+                self.get_logger().info("Creating measures interfaces...")
+                self.create_measures_interfaces()
+                self.get_logger().info("Measures interfaces created.")
+                res.success = True
+            except Exception as e:
+                self.get_logger().error(f"Error creating measures interfaces: {e}")
+                res.success = False
+            return res
+
+        # create service with a lambda calling the create_measures_interfaces function
+        self.measures_service = self.create_service(
+            Trigger,
+            self.get_name() + '/create_measures',
+            _create_measures_cb
+        )
 
         return super().on_activate(state)
 
     def on_deactivate(self, state: State) -> TransitionCallbackReturn:
         self.get_logger().info("on_deactivate() is called.")
         self.active = False
+        self.destroy_service(self.measures_service)
         return super().on_deactivate(state)
 
     def on_configure(self, state: State) -> TransitionCallbackReturn:
@@ -180,7 +199,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         """
         measure_name = topic_interface['measure_name']
         topic_name = topic_interface['interface_name']
-        ros_msg_type_str = topic_interface['interface_type']
+        ros_msg_type_str = topic_interface['source']['interface_type']['value']
 
         topic_type = get_ros_msg_type_from_string(ros_msg_type_str)
         measurement_qos = get_qos_from_qos_dict(topic_interface.get('qos', {}))
@@ -211,7 +230,16 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         )
 
     def create_measures_interfaces(self):
-        measures_interfaces = self.typedb_interface.get_measures_inferfaces()
-        for interface in measures_interfaces:
-            if interface.get('source') == 'Publisher':
-                self.create_measure_topic_interface(interface)
+        try:
+            measures_interfaces = self.typedb_interface.get_measures_interfaces()
+            if (len(measures_interfaces) == 0):
+                raise Exception("No measures interfaces to create.")
+
+            for interface in measures_interfaces:
+                # TODO: this is unsafe, use get instead.
+                self.get_logger().info(f"Creating measure interface: {interface}")
+                if interface['source']['type']['label'] == 'Publisher':
+                    self.create_measure_topic_interface(interface)
+
+        except Exception as e:
+            raise e

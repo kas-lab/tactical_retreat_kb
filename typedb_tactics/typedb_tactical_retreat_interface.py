@@ -708,8 +708,9 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
+    # TODO: The dictionary is different from what is expected within this function, it should be updated accordingly.
     def get_measures_interfaces(self):
-        result_list_dict = []
+        result_dict_list = []
         for result in self.fetch_measures_inferfaces():
             result_dict = {}
             measure = result.get('measure_name')
@@ -740,10 +741,9 @@ class TacticalRetreatInterface(TypeDBInterface):
                 result_dict['qos'] = qos_dict
 
             if result_dict:
-                result_list_dict.append(result_dict)
+                result_dict_list.append(result_dict)
 
-        return result_list_dict
-
+        return result_dict_list
 
     # TODO: support measurements of str, int, bool, array. THis is just for testing quickly
     # TODO: add tests for add_measurement
@@ -752,12 +752,12 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         Add new measurement.
 
-        :param measure_nmae: measure name
+        :param measure_name: measure name
         :param value: measured value
         :return: query result
         """
         if not isinstance(value, (str, float, int)):
-            self.logger.error('Unsupported type %s for Measure %s', type(value), name)
+            self.logger.error('Unsupported type %s for Measure %s', type(value), measure_name)
             return None
         try:
             val = float(value)
