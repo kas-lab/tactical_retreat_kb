@@ -11,11 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import math
+from datetime import datetime
+
+from typedb.driver import ConceptMap
 
 from typing import Optional
 from typing import TypedDict
 from typing import List
+from typing import Iterator
+from typing import List
+from typing import Optional
+from typing import TypedDict
+from typing import Union
 
+from ros_typedb.typedb_interface import convert_py_type_to_query_type
 from ros_typedb.typedb_interface import convert_query_type_to_py_type
 from ros_typedb.typedb_interface import TypeDBInterface
 from ros_typedb.typedb_interface import MatchResultDict
@@ -712,7 +722,7 @@ class TacticalRetreatInterface(TypeDBInterface):
 
             result_dict['interface_type'] = convert_query_type_to_py_type(
                 result.get('source').get('interface_type')[0])
-            print(result)
+
             measurement_interface = result.get('measurement_interface')
             for attribute in measurement_interface.get('attribute'):
                 attribute_label = attribute.get('type').get('label')
@@ -734,5 +744,44 @@ class TacticalRetreatInterface(TypeDBInterface):
 
         return result_list_dict
 
-    def add_measurement(self, measure_name, value):
-        pass
+
+    # TODO: support measurements of str, int, bool, array. THis is just for testing quickly
+    # TODO: add tests for add_measurement
+    def add_measurement(
+            self, measure_name: str, value: Union[str, float, int]) -> Optional[Iterator[ConceptMap]]:
+        """
+        Add new measurement.
+
+        :param measure_nmae: measure name
+        :param value: measured value
+        :return: query result
+        """
+        if not isinstance(value, (str, float, int)):
+            self.logger.error('Unsupported type %s for Measure %s', type(value), name)
+            return None
+        try:
+            val = float(value)
+        except (ValueError, TypeError):
+            self.logger.error(
+                '[add_measurement] Invalid value: %r for Measure %s. Cannot convert to float!',
+                value, measure_name
+            )
+            return None
+
+        if math.isinf(val) or math.isnan(val):
+            self.logger.info(
+                '[add_measurement] Invalid value: %r for Measure %s',
+                val, measure_name
+            )
+            return None
+
+        time = convert_py_type_to_query_type(datetime.now())
+        query = f"""
+            match
+                $measure isa Measure, has measure_name "{measure_name}";
+            insert
+                $value isa ValueDouble, has double_value {val};
+                $measurement (measure: $measure, measurement_value: $value) isa measurement,
+                    has measurement_time {time};
+        """
+        return self.insert_database(query)
