@@ -21,7 +21,7 @@ def kb_interface():
     kb_interface = TacticalRetreatInterface(
         'localhost:1729',
         'test_feature_model',
-        ['typedb/feature_model/feature_model.tql'],
+        ['schemas/feature_model/feature_model.tql'],
         ['test/data/test_feature_model.tql'],
         force_database=True,
         force_data=True,

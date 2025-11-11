@@ -41,30 +41,6 @@ from std_srvs.srv import Empty
 from typedb_tactics.tactical_retreat_kb import TacticalRetreatKB
 from typedb_tactics.tactical_retreat_kb import _to_duration
 
-# @launch_pytest.fixture
-# def generate_test_description():
-#     path_to_pkg = Path(__file__).parents[1]
-#     path_models = path_to_pkg / 'typedb'
-#     path_test_data = path_to_pkg / 'test' / 'data'
-
-#     kb_node = launch_ros.actions.Node(
-#         executable=sys.executable,
-#         arguments=[
-#             str(path_to_pkg / 'typedb_tactics' / 'tactical_retreat_kb.py')],
-#         additional_env={'PYTHONUNBUFFERED': '1'},
-#         name='tactical_kb',
-#         output='screen',
-#         parameters=[{
-#             'schema_path': [str(path_models / 'data_structure/data_structure.tql'),
-#                             str(path_models / 'context_model/context_model.tql'),
-#                             str(path_models / 'ros_model/ros_model.tql')],
-#             'data_path': [str(path_test_data / 'test_ros_model.tql')]
-#         }]
-#     )
-
-#     return launch.LaunchDescription([
-#         kb_node,
-#     ])
 
 @pytest.fixture
 def tactical_kb():
@@ -72,18 +48,15 @@ def tactical_kb():
     tactical_kb.init_typedb_interface(
         'localhost:1729',
         'tactical_kb',
-        ['typedb/data_structure/data_structure.tql',
-            'typedb/context_model/context_model.tql',
-            'typedb/ros_model/ros_model.tql'],
+        ['schemas/data_structure/data_structure.tql',
+            'schemas/context_model/context_model.tql',
+            'schemas/ros_model/ros_model.tql'],
         ['test/data/test_ros_model.tql'],
         force_database=True,
         force_data=True,
         infer=True
     )
-    # try:
     yield tactical_kb
-    # finally:
-    # tactical_kb.typedb_interface.delete_database()
     tactical_kb.destroy_node()
 
 @pytest.fixture(scope='session', autouse=True)
