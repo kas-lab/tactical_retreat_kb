@@ -44,8 +44,8 @@ def publish_event(event_type: str):
 def get_ros_msg_type_from_string(message_type: str):
     msg_type_list = message_type.split('/')
     msg_module = importlib.import_module(
-        msg_type_list[0] + "." + msg_type_list[1])
-    return getattr(msg_module, msg_type_list[2])
+        msg_type_list[0] + "." + 'msg')
+    return getattr(msg_module, msg_type_list[1])
 
 
 RELIABILITY_MAP = {
