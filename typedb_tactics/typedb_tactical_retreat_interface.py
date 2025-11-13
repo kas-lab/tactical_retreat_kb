@@ -11,22 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import logging
 from datetime import datetime
+from typing import Iterator
+from typing import List
+from typing import Optional
+from typing import TypedDict
+from typing import Union
+
+from ros_typedb.typedb_interface import MatchResultDict
+from ros_typedb.typedb_interface import TypeDBInterface
+from ros_typedb.typedb_interface import convert_py_type_to_query_type
+from ros_typedb.typedb_interface import convert_query_type_to_py_type
 
 from typedb.driver import ConceptMap
 
-from typing import Optional
-from typing import TypedDict
-from typing import List
-from typing import Iterator
-from typing import Union
 
-from ros_typedb.typedb_interface import convert_py_type_to_query_type
-from ros_typedb.typedb_interface import convert_query_type_to_py_type
-from ros_typedb.typedb_interface import TypeDBInterface
-from ros_typedb.typedb_interface import MatchResultDict
-
-import logging
 logger = logging.getLogger(__name__)
 
 
