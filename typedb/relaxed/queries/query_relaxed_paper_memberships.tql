@@ -1,0 +1,39 @@
+match
+
+$smart_house isa System, has system_name "Smart House";
+
+$r1_1 (system: $smart_house, expression: $food_shall_expression) isa relaxed_requirement,
+    has requirement_name "R1.1 As many food as possible";
+$food_shall_expression (expression: $as_many_food_as_possible) isa shall_expression;
+$as_many_food_as_possible isa fuzzy_expression;
+
+fetch
+    $as_many_food_as_possible : membership;
+
+
+match
+$smart_house isa System, has system_name "Smart House";
+$r1_2 (system: $smart_house, expression: $calories_dietplan_shall_expression) isa relaxed_requirement,
+	has requirement_name "R1.2 Dietplan";
+$calories_dietplan_shall_expression (expression: $calories_as_close_expression) isa shall_expression;
+$calories_as_close_expression isa fuzzy_expression;
+fetch
+    $calories_as_close_expression : membership;
+
+match
+$smart_house isa System, has system_name "Smart House";
+$r1_3 (system: $smart_house, expression: $liquid_intake_shall_expression) isa relaxed_requirement,
+	has requirement_name "R1.3 Liquid intake";
+$liquid_intake_shall_expression (expression: $liquid_intake_as_close_expression) isa shall_expression;
+$liquid_intake_as_close_expression isa fuzzy_expression;
+fetch
+    $liquid_intake_as_close_expression : membership;
+
+match
+$smart_house isa System, has system_name "Smart House";
+$r1_4 (system: $smart_house, expression: $liquid_intake_shall_expression) isa relaxed_requirement,
+	has requirement_name "R1.4 Energy comsumption";
+$energy_shall_expression (expression: $as_few_energy_as_possible) isa shall_expression;
+$as_few_energy_as_possible isa fuzzy_expression;
+fetch
+    $as_few_energy_as_possible : membership;

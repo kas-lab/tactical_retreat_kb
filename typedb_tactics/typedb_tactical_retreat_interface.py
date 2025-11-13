@@ -524,6 +524,43 @@ class TacticalRetreatInterface(TypeDBInterface):
             for result in query_result
         )
 
+    def fetch_relaxed_requirement_fulfillment(
+            self,
+            system_name: str,
+            requirement_name: str) -> List[dict[str,
+                                                MatchResultDict]]:
+        """
+        Fetch relaxed requirement fulfillment.
+
+        :param system_name: system name
+        :param requirement_name: requirement name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $system isa System, has system_name '{system_name}';
+                (system: $system) isa relaxed_requirement,
+                    has requirement_name '{requirement_name}',
+                    has fulfillment $fulfillment;
+            fetch $fulfillment;
+        """
+        return self.fetch_database(query)
+
+    def get_relaxed_requirement_fulfillment(
+            self,
+            system_name: str,
+            requirement_name: str) -> List[dict[str,
+                                                MatchResultDict]]:
+        """
+        Fetch relaxed requirement fulfillment.
+
+        :param system_name: system name
+        :param requirement_name: requirement name
+        :return: fulfillment value
+        """
+        return self.fetch_relaxed_requirement_fulfillment(
+            system_name, requirement_name)[0]['fulfillment']['value']
+
     def fetch_latest_measurement(
             self, measure_name: str) -> List[dict[str, MatchResultDict]]:
         """

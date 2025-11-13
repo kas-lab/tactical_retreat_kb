@@ -1,0 +1,6 @@
+match
+    $system isa System, has system_name 'Mirte';
+    (system: $system) isa relaxed_requirement,
+        has requirement_name 'R1.1 Velocity',
+        has fulfillment $fulfillment;
+fetch $fulfillment;
