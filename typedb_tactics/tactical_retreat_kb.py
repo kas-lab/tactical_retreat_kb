@@ -154,6 +154,19 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                     f"Error creating measures interfaces: {e}")
                 res.success = False
             return res
+        
+        def _fetch_all_measurements_cb(_, res):
+            try:
+                self.get_logger().info("Creating measures interfaces...")
+                x = self.typedb_interface.fetch_all_measurements("current_velocity")
+                self.get_logger().info("Measures interfaces created.")
+                res.success = True
+                res.message = str(x)
+            except Exception as e:
+                self.get_logger().error(
+                    f"Error creating measures interfaces: {e}")
+                res.success = False
+            return res
 
         # create service with a lambda calling the create_measures_interfaces
         # function
@@ -161,6 +174,12 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             Trigger,
             self.get_name() + '/create_measures',
             _create_measures_cb
+        )
+
+        self.all_measurements_service = self.create_service(
+            Trigger,
+            self.get_name() + '/fetch_all_measurements',
+            _fetch_all_measurements_cb
         )
 
         return super().on_activate(state)

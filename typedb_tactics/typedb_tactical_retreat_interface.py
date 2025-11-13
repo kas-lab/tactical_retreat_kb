@@ -615,6 +615,59 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
+    def fetch_all_measurements(
+            self, measure_name: str) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch all measurements of a measure.
+
+        :param measure_name: measure name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $measure isa Measure, has measure_name '{measure_name}';
+                $measurement (measure: $measure,
+                              measurement_value: $measurement_val) isa measurement;
+            fetch
+                double_value: {{
+                    match
+                        $measurement_val isa ValueDouble, has double_value $value;
+                    fetch
+                        $value;
+                }};
+                integer_value: {{
+                    match
+                        $measurement_val isa ValueInteger, has integer_value $value;
+                    fetch
+                        $value;
+                }};
+                string_value: {{
+                    match
+                        $measurement_val isa ValueString, has string_value $value;
+                    fetch
+                        $value;
+                }};
+                bool_value: {{
+                    match
+                        $measurement_val isa ValueBool, has bool_value $value;
+                    fetch
+                        $value;
+                }};
+                array_values : {{
+                    match
+                        $measurement_val isa ValueArray;
+                        (array: $measurement_val, array_value: $value) isa at_index,
+                                has index $index;
+                        $singleton_types sub! ValueSingleton;
+                        $value isa $singleton_types;
+                    fetch
+                        $value: attribute;
+                        $index;
+                    sort $index asc;
+                }};
+        """
+        return self.fetch_database(query)
+
     def get_latest_measurement(self, measure_name: str) -> float:
         """
         Get all tactics that are applicable given an ROS action name and resolution model.
