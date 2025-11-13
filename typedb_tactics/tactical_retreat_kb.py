@@ -40,12 +40,11 @@ def publish_event(event_type: str):
         return inner
     return _publish_event
 
-
-def get_ros_msg_type_from_string(message_type: str):
+def get_ros_msg_type_from_string_topics(message_type: str):
     msg_type_list = message_type.split('/')
     msg_module = importlib.import_module(
-        msg_type_list[0] + "." + msg_type_list[1])
-    return getattr(msg_module, msg_type_list[2])
+        msg_type_list[0] + "." + 'msg')
+    return getattr(msg_module, msg_type_list[1])
 
 
 RELIABILITY_MAP = {
@@ -207,7 +206,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         topic_name = topic_interface['interface_name']
         ros_msg_type_str = topic_interface['interface_type']
 
-        topic_type = get_ros_msg_type_from_string(ros_msg_type_str)
+        topic_type = get_ros_msg_type_from_string_topics(ros_msg_type_str)
         measurement_qos = get_qos_from_qos_dict(topic_interface.get('qos', {}))
 
         function_lib_name = (topic_interface.get('measurement_function_lib')
@@ -217,7 +216,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
         function_args_str = topic_interface.get('measurement_function_args')
         function_args = [arg.strip() for arg in function_args_str.split(
-            ',')] if function_args_str else ['']
+            ',')] if function_args_str else []
 
         function_lib = importlib.import_module(function_lib_name)
         measure_function = getattr(function_lib, function_name)
