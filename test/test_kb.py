@@ -30,10 +30,20 @@ from rclpy.qos import QoSHistoryPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import QoSReliabilityPolicy
 
+from std_msgs.msg import Float64
 from std_srvs.srv import Empty
 
 from typedb_tactics.tactical_retreat_kb import TacticalRetreatKB
 from typedb_tactics.tactical_retreat_kb import _to_duration
+from typedb_tactics.tactical_retreat_kb import get_ros_msg_type_from_string
+
+
+def test_get_ros_msg_type_from_string():
+    assert get_ros_msg_type_from_string('std_msgs/msg/Float64') == Float64
+    assert get_ros_msg_type_from_string('std_msgs/Float64') == Float64
+
+    assert get_ros_msg_type_from_string('std_srvs/srv/Empty') == Empty
+    assert get_ros_msg_type_from_string('std_srvs/Empty', 'srv') == Empty
 
 
 @pytest.fixture

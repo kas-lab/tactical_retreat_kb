@@ -40,11 +40,22 @@ def publish_event(event_type: str):
         return inner
     return _publish_event
 
-def get_ros_msg_type_from_string_topics(message_type: str):
-    msg_type_list = message_type.split('/')
-    msg_module = importlib.import_module(
-        msg_type_list[0] + "." + 'msg')
-    return getattr(msg_module, msg_type_list[1])
+
+def get_ros_msg_type_from_string(msg_type_string: str, msg_type='msg'):
+    msg_type_list = [part for part in msg_type_string.split('/') if part]
+
+    if len(msg_type_list) == 2:
+        package_name, message_name = msg_type_list
+    elif len(msg_type_list) == 3:
+        package_name = msg_type_list[0]
+        msg_type = msg_type_list[1]
+        message_name = msg_type_list[2]
+    else:
+        raise ValueError(
+            f"Unsupported message type format: {msg_type_string}")
+
+    msg_module = importlib.import_module(f"{package_name}.{msg_type}")
+    return getattr(msg_module, message_name)
 
 
 RELIABILITY_MAP = {
@@ -154,7 +165,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                     f"Error creating measures interfaces: {e}")
                 res.success = False
             return res
-        
+
+        # TODO: pass the measure name as a string argument to fetch specific measurements
         def _fetch_all_measurements_cb(_, res):
             try:
                 self.get_logger().info("Creating measures interfaces...")
@@ -225,7 +237,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         topic_name = topic_interface['interface_name']
         ros_msg_type_str = topic_interface['interface_type']
 
-        topic_type = get_ros_msg_type_from_string_topics(ros_msg_type_str)
+        topic_type = get_ros_msg_type_from_string(ros_msg_type_str, 'msg')
         measurement_qos = get_qos_from_qos_dict(topic_interface.get('qos', {}))
 
         function_lib_name = (topic_interface.get('measurement_function_lib')
