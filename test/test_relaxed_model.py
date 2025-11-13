@@ -18,12 +18,12 @@ from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInte
 @pytest.fixture
 def kb_interface():
     kb_interface = TacticalRetreatInterface(
-        "localhost:1729",
-        "test_model_interface",
-        ["typedb/data_structure/data_structure.tql",
-            "typedb/context_model/context_model.tql",
-            "typedb/relaxed/relaxed_model.tql"],
-        ["typedb/relaxed/relaxed_mirte_example.tql"],
+        'localhost:1729',
+        'test_model_interface',
+        ['schemas/data_structure/data_structure.tql',
+            'schemas/context_model/context_model.tql',
+            'schemas/relaxed/relaxed_model.tql'],
+        ['schemas/relaxed/relaxed_mirte_example.tql'],
         force_database=True,
         force_data=True,
         infer=True)
