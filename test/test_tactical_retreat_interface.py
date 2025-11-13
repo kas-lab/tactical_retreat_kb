@@ -173,3 +173,59 @@ def test_get_applicable_tactics(kb_interface):
     tactics = kb_interface.get_applicable_tactics(
         'rebetmc', '/compute_path_to_pose', 'nav2_msgs/action/ComputePathToPose')
     assert len(tactics) == 0
+
+
+@pytest.fixture(scope="module")
+def kb_interface_test_model():
+    kb_interface_test_model = TacticalRetreatInterface(
+        'localhost:1729',
+        'test_model_interface',
+        ['schemas/data_structure/data_structure.tql',
+            'schemas/context_model/context_model.tql',
+            'schemas/ros_model/ros_model.tql',
+            'schemas/feature_model/feature_model.tql',
+            'schemas/tactics_model/tactics_model.tql',
+            'schemas/discover_tactics_model/discover_tactics_model.tql'],
+        ['test/data/test_tactical_retreat_interface.tql'],
+        force_database=True,
+        force_data=True,
+        infer=True)
+    yield kb_interface_test_model
+    kb_interface_test_model.delete_database()
+
+
+def test_add_measurement(kb_interface_test_model):
+    kb_interface_test_model.add_measurement('measure_string', 'iamstring')
+    assert kb_interface_test_model.get_latest_measurement(
+        'measure_string') == 'iamstring'
+
+    kb_interface_test_model.add_measurement('measure_double', 99.9)
+    assert kb_interface_test_model.get_latest_measurement(
+        'measure_double') == 99.9
+
+    kb_interface_test_model.add_measurement('measure_integer', 1)
+    assert kb_interface_test_model.get_latest_measurement(
+        'measure_integer') == 1
+
+    kb_interface_test_model.add_measurement('measure_bool', True)
+    assert kb_interface_test_model.get_latest_measurement('measure_bool')
+
+    kb_interface_test_model.add_measurement(
+        'measure_string_array', [
+            'iamstring', 'noiamnot'])
+    assert kb_interface_test_model.get_latest_measurement(
+        'measure_string_array') == ['iamstring', 'noiamnot']
+
+    kb_interface_test_model.add_measurement(
+        'measure_double_array', [99.9, 42.0])
+    assert kb_interface_test_model.get_latest_measurement(
+        'measure_double_array') == [99.9, 42.0]
+
+    kb_interface_test_model.add_measurement('measure_integer_array', [1, 2, 3])
+    assert kb_interface_test_model.get_latest_measurement(
+        'measure_integer_array') == [1, 2, 3]
+
+    kb_interface_test_model.add_measurement(
+        'measure_bool_array', [True, True, False])
+    assert kb_interface_test_model.get_latest_measurement(
+        'measure_bool_array') == [True, True, False]

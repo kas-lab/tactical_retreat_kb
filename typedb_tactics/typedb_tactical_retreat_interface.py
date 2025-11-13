@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import math
 from datetime import datetime
 
 from typedb.driver import ConceptMap
@@ -29,6 +28,29 @@ from ros_typedb.typedb_interface import MatchResultDict
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+def create_value_query(value, suffix=''):
+    if not isinstance(value, (str, float, int, bool, list)):
+        logger.error(
+            'Unsupported type %s for value %s',
+            type(value),
+            value)
+        return None
+
+    variable_name = f"$value{suffix}"
+
+    value_query = ''
+    if isinstance(value, str):
+        value_query = f"{variable_name} isa ValueString, has string_value '{value}';"
+    elif isinstance(value, float):
+        value_query = f"{variable_name} isa ValueDouble, has double_value {value};"
+    elif isinstance(value, bool):
+        value_query = f"""{variable_name} isa ValueBool,
+            has bool_value {convert_py_type_to_query_type(value)};"""
+    elif isinstance(value, int):
+        value_query = f"{variable_name} isa ValueInteger, has integer_value {value};"
+    return value_query, variable_name
 
 
 class ROSActionResultDict(TypedDict):
@@ -516,18 +538,43 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $measurement (measure: $measure,
                               measurement_value: $measurement_val) isa measurement,
                     has latest true;
-                {{
-                    $measurement_val isa ValueDouble, has double_value $value;
-                }} or {{
-                    $measurement_val isa ValueInteger, has integer_value $value;
-                }} or {{
-                    $measurement_val isa ValueString, has string_value $value;
-                }}
-                or {{
-                    $measurement_val isa ValueBool, has bool_value $value;
-                }};
             fetch
-                $value;
+                double_value: {{
+                    match
+                        $measurement_val isa ValueDouble, has double_value $value;
+                    fetch
+                        $value;
+                }};
+                integer_value: {{
+                    match
+                        $measurement_val isa ValueInteger, has integer_value $value;
+                    fetch
+                        $value;
+                }};
+                string_value: {{
+                    match
+                        $measurement_val isa ValueString, has string_value $value;
+                    fetch
+                        $value;
+                }};
+                bool_value: {{
+                    match
+                        $measurement_val isa ValueBool, has bool_value $value;
+                    fetch
+                        $value;
+                }};
+                array_values : {{
+                    match
+                        $measurement_val isa ValueArray;
+                        (array: $measurement_val, array_value: $value) isa at_index,
+                                has index $index;
+                        $singleton_types sub! ValueSingleton;
+                        $value isa $singleton_types;
+                    fetch
+                        $value: attribute;
+                        $index;
+                    sort $index asc;
+                }};
         """
         return self.fetch_database(query)
 
@@ -545,7 +592,21 @@ class TacticalRetreatInterface(TypeDBInterface):
 
         if len(query_result) == 0:
             return float('nan')
-        return query_result[0]['value']['value']
+
+        first = query_result[0]
+        for key in (
+            'double_value',
+            'integer_value',
+            'string_value',
+                'bool_value'):
+            values = first.get(key, [])
+            if values:
+                return values[0]['value']['value']
+
+        array_values = first.get('array_values', [])
+        if array_values:
+            return [entry['value']['attribute'][0]['value']
+                    for entry in array_values]
 
     def fetch_ineq_expression_valid(self,
                                     measure_name: str,
@@ -746,13 +807,20 @@ class TacticalRetreatInterface(TypeDBInterface):
 
         return result_dict_list
 
-    # TODO: support measurements of str, int, bool, array. THis is just for testing quickly
-    # TODO: add tests for add_measurement
-    def add_measurement(self,
-                        measure_name: str,
-                        value: Union[str,
-                                     float,
-                                     int]) -> Optional[Iterator[ConceptMap]]:
+    def add_measurement(
+        self,
+        measure_name: str,
+        value: Union[
+            str,
+            float,
+            int,
+            bool,
+            List[str],
+            List[float],
+            List[int],
+            List[bool],
+        ],
+    ) -> Optional[Iterator[ConceptMap]]:
         """
         Add new measurement.
 
@@ -760,35 +828,33 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param value: measured value
         :return: query result
         """
-        if not isinstance(value, (str, float, int)):
-            self.logger.error(
-                'Unsupported type %s for Measure %s',
-                type(value),
-                measure_name)
-            return None
-        try:
-            val = float(value)
-        except (ValueError, TypeError):
-            self.logger.error(
-                '[add_measurement] Invalid value: %r for Measure %s. Cannot convert to float!',
-                value,
-                measure_name)
-            return None
-
-        if math.isinf(val) or math.isnan(val):
-            self.logger.info(
-                '[add_measurement] Invalid value: %r for Measure %s',
-                val, measure_name
-            )
-            return None
+        value_query = ''
+        variable_name = ''
+        if(isinstance(value, list)):
+            query_fragments = []
+            query_fragments.append('$array isa ValueArray;')
+            variable_name = '$array'
+            for index, item in enumerate(value):
+                value_query_, variable_name_ = create_value_query(item, index)
+                query_fragments.append(
+                    f"""
+                        {value_query_}
+                        (array: $array, array_value: {variable_name_}) isa at_index,
+                            has index {index};
+                    """
+                )
+            value_query = '\n'.join(query_fragments)
+        else:
+            value_query, variable_name = create_value_query(value)
 
         time = convert_py_type_to_query_type(datetime.now())
         query = f"""
             match
-                $measure isa Measure, has measure_name "{measure_name}";
+                $measure isa Measure, has measure_name '{measure_name}';
             insert
-                $value isa ValueDouble, has double_value {val};
-                $measurement (measure: $measure, measurement_value: $value) isa measurement,
+                {value_query}
+                $measurement (measure: $measure, measurement_value: {variable_name})
+                    isa measurement,
                     has measurement_time {time};
         """
         return self.insert_database(query)
