@@ -104,3 +104,92 @@ $or_exp2 (expression: $exp1, expression:$exp13) isa or_expression; # true || tru
 $or_exp3 (expression: $exp2, expression:$exp3) isa or_expression; # false || false -> false
 (antecedent:$or_exp3) isa tactic_rule, has rule_name "tr7";
 
+### resolution actions
+$node_running isa ROSNode,
+	has node_name "node_running",
+	has start_time 2025-09-06T11:57:56.666;
+$node_not_running isa ROSNode,
+	has node_name "node_not_running",
+	has start_time 2025-09-06T11:57:56.666,
+	has end_time 2025-09-07T11:57:56.666;
+
+$parameter isa ParameterDouble, has parameter_name "parameter";
+$parameter_value isa ValueDouble, has double_value 0.10;
+$res_action_feasible (node: $node_running, parameter: $parameter, parameter_value: $parameter_value) isa set_nodes_parameters;
+$res_action_unfeasible (node: $node_not_running, parameter: $parameter, parameter_value: $parameter_value) isa set_nodes_parameters;
+
+$lifecycle_node_active isa LifeCycleNode,
+	has node_name "lifecycle_node_active",
+	has start_time 2025-09-06T11:57:56.666,
+    has lifecycle_state "active";
+
+$lifecycle_node_inactive isa LifeCycleNode,
+	has node_name "lifecycle_node_inactive",
+	has start_time 2025-09-06T11:57:56.666,
+    has lifecycle_state "inactive";
+
+$lifecycle_node_unconfigured isa LifeCycleNode,
+	has node_name "lifecycle_node_unconfigured",
+	has start_time 2025-09-06T11:57:56.666,
+    has lifecycle_state "unconfigured";
+
+$lifecycle_node_finalized isa LifeCycleNode,
+	has node_name "lifecycle_node_finalized",
+	has start_time 2025-09-06T11:57:56.666,
+    has lifecycle_state "finalized";
+
+(node: $lifecycle_node_active) isa set_lifecycle_state, has lifecycle_state "active";       # feasible is true
+(node: $lifecycle_node_active) isa set_lifecycle_state, has lifecycle_state "inactive";     # feasible is true
+(node: $lifecycle_node_active) isa set_lifecycle_state, has lifecycle_state "unconfigured"; # feasible is false
+(node: $lifecycle_node_active) isa set_lifecycle_state, has lifecycle_state "finalized";    # feasible is true
+
+(node: $lifecycle_node_inactive) isa set_lifecycle_state, has lifecycle_state "active";       # feasible is true
+(node: $lifecycle_node_inactive) isa set_lifecycle_state, has lifecycle_state "inactive";     # feasible is true
+(node: $lifecycle_node_inactive) isa set_lifecycle_state, has lifecycle_state "unconfigured"; # feasible is true
+(node: $lifecycle_node_inactive) isa set_lifecycle_state, has lifecycle_state "finalized";    # feasible is true
+
+(node: $lifecycle_node_unconfigured) isa set_lifecycle_state, has lifecycle_state "active";       # feasible is false
+(node: $lifecycle_node_unconfigured) isa set_lifecycle_state, has lifecycle_state "inactive";     # feasible is true
+(node: $lifecycle_node_unconfigured) isa set_lifecycle_state, has lifecycle_state "unconfigured"; # feasible is true
+(node: $lifecycle_node_unconfigured) isa set_lifecycle_state, has lifecycle_state "finalized";    # feasible is true
+
+(node: $lifecycle_node_finalized) isa set_lifecycle_state, has lifecycle_state "active";       # feasible is false
+(node: $lifecycle_node_finalized) isa set_lifecycle_state, has lifecycle_state "inactive";     # feasible is false
+(node: $lifecycle_node_finalized) isa set_lifecycle_state, has lifecycle_state "unconfigured"; # feasible is false
+(node: $lifecycle_node_finalized) isa set_lifecycle_state, has lifecycle_state "finalized";    # feasible is true
+
+## test tactic_rule_consequent_unfeasible
+$f_selectable isa Feature, has feature_name "f_selectable", has selectable true;
+$f_not_selectable isa Feature, has feature_name "f_not_selectable", has selectable false;
+
+$fa1 (activation: $f_selectable) isa feature_adaptation;
+$fa2 (activation: $f_not_selectable) isa feature_adaptation;
+
+(consequent: $fa1) isa tactic_rule, has rule_name "tr_consequent_feasible";   # rule_valid true
+(consequent: $fa2) isa tactic_rule, has rule_name "tr_consequent_unfeasible"; # rule_valid false
+
+## tactic_rule_consequent_variant_resolution_unfeasible
+$f_vr_1 isa Feature, has feature_name "f_vr_1";
+$f_vr_2 isa Feature, has feature_name "f_vr_2";
+$f_vr_3 isa Feature, has feature_name "f_vr_3";
+
+$vr1 (resolution_action: $res_action_feasible, variant: $f_vr_1) isa variant_activation;   # feasible true
+$vr2 (resolution_action: $res_action_unfeasible, variant: $f_vr_2) isa variant_activation; # feasible false
+$vr3 (resolution_action: $res_action_feasible, resolution_action: $res_action_unfeasible, variant: $f_vr_3) isa variant_activation; # feasible false
+
+$fa_vr_1 (activation: $f_vr_1) isa feature_adaptation;
+$fa_vr_2 (activation: $f_vr_2) isa feature_adaptation;
+$fa_vr_3 (activation: $f_vr_3) isa feature_adaptation;
+
+$t isa Tactic, has tactic_name "tactic";
+
+(tactic:$t, consequent: $fa_vr_1) isa tactic_rule, has rule_name "tr_variant_resolution_feasible";   # rule_valid true
+(tactic:$t, consequent: $fa_vr_2) isa tactic_rule, has rule_name "tr_variant_resolution_unfeasible_1"; # rule_valid false
+(tactic:$t, consequent: $fa_vr_3) isa tactic_rule, has rule_name "tr_variant_resolution_unfeasible_2"; # rule_valid false
+
+(
+	tactic: $t,
+	variant_resolution:$vr1,
+	variant_resolution:$vr2,
+	variant_resolution:$vr3) isa resolution_model,
+    has resolution_model_name "res_model", has ros_system "system";
