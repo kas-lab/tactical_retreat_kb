@@ -15,7 +15,9 @@ $velocity_set isa FuzzyTriangular,
 	has b 0.0,
 	has c 0.5;
 
-$velocity_as_close_expression (unimodal_membership: $velocity_set, term: $velocity_measure) isa as_close_as_possible_expression,
+$velocity_measure_expr (term: $velocity_measure) isa propositional_expression;
+
+$velocity_as_close_expression (unimodal_membership: $velocity_set, relaxed_expression: $velocity_measure_expr) isa as_close_as_possible_expression,
 	has required_value 0.26;
 
 $velocity_shall_expression (relaxed_expression: $velocity_as_close_expression) isa shall_expression;
@@ -26,3 +28,35 @@ $velocity_requirement (system: $mirte, relaxed_expression: $velocity_shall_expre
 	has requirement_name "R1.1 Velocity",
 	has in_effect true,
 	has description "The robot SHALL maintain its velocity AS CLOSE AS POSSIBLE TO 0.26 m/s.";
+
+
+##  The robot SHALL maintain its velocity AS CLOSE AS POSSIBLE TO 0.26 m/s until there are no objects too close.
+$objects_far isa MeasureBool,
+	has measure_name "objects_far",
+	has description "whether there is an object within the first 10% of the lidar range";
+$current_objects_far isa ValueBool, has bool_value true;
+(measure:$objects_far, measurement_value: $current_objects_far) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+
+$objects_far_expr (term: $objects_far) isa propositional_expression;
+$velocity_until_expr (relaxed_expression: $velocity_as_close_expression, after: $objects_far_expr) isa until_expression;
+$velocity_until_shall_expression (relaxed_expression: $velocity_until_expr) isa shall_expression;
+
+(system: $mirte, relaxed_expression: $velocity_until_shall_expression) isa relaxed_requirement,
+	has requirement_name "r_velocity_until_after_true",
+	has in_effect true,
+	has description "The robot SHALL maintain its velocity AS CLOSE AS POSSIBLE TO 0.26 m/s until there are no objects too close.";
+
+$objects_far_false isa MeasureBool,
+	has measure_name "objects_far_false",
+	has description "whether there is an object within the first 10% of the lidar range";
+$current_objects_far_false isa ValueBool, has bool_value false;
+(measure:$objects_far_false, measurement_value: $current_objects_far_false) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+
+$objects_far_false_expr (term: $objects_far_false) isa propositional_expression;
+$velocity_until_after_false_expr (relaxed_expression: $velocity_as_close_expression, after: $objects_far_false_expr) isa until_expression;
+$velocity_until_shall_expression_after_false (relaxed_expression: $velocity_until_after_false_expr) isa shall_expression;
+
+(system: $mirte, relaxed_expression: $velocity_until_shall_expression_after_false) isa relaxed_requirement,
+	has requirement_name "r_velocity_until_after_false",
+	has in_effect true,
+	has description "The robot SHALL maintain its velocity AS CLOSE AS POSSIBLE TO 0.26 m/s until there are no objects too close.";

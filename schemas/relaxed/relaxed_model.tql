@@ -125,21 +125,22 @@ relaxed_expression sub relation,
 	abstract,
 	owns fulfillment,
 	relates relaxed_expression,
-	relates term,
 	plays relaxed_requirement:relaxed_expression,
 	plays relaxed_expression:relaxed_expression,
 	plays until_expression:after;
+
+propositional_expression sub relaxed_expression,
+	relates term;
 
 shall_expression sub relaxed_expression;
 may_expression sub relaxed_expression;
 eventually_expression sub relaxed_expression;
 
 until_expression sub relaxed_expression,
-	relates before as relaxed_expression,
 	relates after;
 
 #### connection with context_model
-Measure plays relaxed_expression:term;
+Measure plays propositional_expression:term;
 
 ### Event expressions
 event_expression sub relaxed_expression,
@@ -182,7 +183,8 @@ as_late_as_possible_expression sub fuzzy_ascend_expression;
 ## Fuzzy membership rules
 rule fuzzy-unimodal-expression-membership-evaluation :
 	when {
-		$fuzzy_expression (unimodal_membership: $fuzzy_membership, term: $measure) isa fuzzy_unimodal_expression;
+		$fuzzy_expression (unimodal_membership: $fuzzy_membership, relaxed_expression: $prop_expr) isa fuzzy_unimodal_expression;
+		$prop_expr (term: $measure) isa propositional_expression;
 		(measure:$measure, measurement_value: $mv) isa measurement, has latest true;
 		{
 			$mv isa ValueDouble, has double_value $quantified_value;
@@ -221,7 +223,8 @@ rule fuzzy-unimodal-expression-membership-evaluation :
 
 rule fuzzy-expression-ascend-membership-evaluation :
 	when {
-		$fuzzy_expression (ascend_membership: $fuzzy_membership, term: $measure) isa fuzzy_ascend_expression;
+		$fuzzy_expression (ascend_membership: $fuzzy_membership, relaxed_expression: $prop_expr) isa fuzzy_ascend_expression;
+		$prop_expr (term: $measure) isa propositional_expression;
 		(measure:$measure, measurement_value: $mv) isa measurement, has latest true;
 		{
 			$mv isa ValueDouble, has double_value $quantified_value;
@@ -245,7 +248,8 @@ rule fuzzy-expression-ascend-membership-evaluation :
 
 rule fuzzy-expression-decay-membership-evaluation :
 	when {
-		$fuzzy_expression (decay_membership: $fuzzy_membership, term: $measure) isa fuzzy_decay_expression;
+		$fuzzy_expression (decay_membership: $fuzzy_membership, relaxed_expression: $prop_expr) isa fuzzy_decay_expression;
+		$prop_expr (term: $measure) isa propositional_expression;
 		(measure:$measure, measurement_value: $mv) isa measurement, has latest true;
 		{
 			$mv isa ValueDouble, has double_value $quantified_value;
@@ -282,7 +286,40 @@ rule fuzzy-expression-fulfillment :
 		$fuzzy_expression has fulfillment ?fulfillment;
 	};
 
-# ## requirement fulfillment
+## until expression fulfillment
+rule until-expression-fulfillment :
+	when {
+		$until_expression (relaxed_expression: $before_expression, after: $after_expression) isa until_expression;
+		$before_expression has fulfillment $before_fulfillment; # 0.0 or 1.0
+		$after_expression has fulfillment $after_fulfillment; # 0.0 or 1.0
+		?fulfillment = max($before_fulfillment, $after_fulfillment); # (0.0, 0.0)=0.0,  (1.0,0.0)=1.0, (0.0,1.0)=1.0, (1.0,1.0)=1.0
+	} then {
+		$until_expression has fulfillment ?fulfillment;
+	};
+
+rule propositional-expression-fulfillment :
+	when {
+		$propositional_expression (term: $measure) isa propositional_expression;
+		(measure:$measure, measurement_value: $mv) isa measurement, has latest true;
+		{
+			$mv isa ValueBool, has bool_value true;
+			?fulfillment_ = 1.0;
+		} or {
+			$mv isa ValueBool, has bool_value false;
+			?fulfillment_ = 0.0;
+		} or {
+			$mv isa ValueInteger, has integer_value $int_value;
+			?fulfillment_ = $int_value * 1.0;
+		} or {
+			$mv isa ValueDouble, has double_value $double_value;
+			?fulfillment_ = $double_value;
+		};
+		?fulfillment = ?fulfillment_;
+	} then {
+		$propositional_expression has fulfillment ?fulfillment;
+	};
+
+### requirement fulfillment
 rule requirement-fulfillment :
 	when {
 		$req (relaxed_expression: $relaxed_expression) isa relaxed_requirement;

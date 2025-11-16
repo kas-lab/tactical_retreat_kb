@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import pytest
+
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
@@ -23,7 +24,8 @@ def kb_interface():
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
             'schemas/relaxed/relaxed_model.tql'],
-        ['schemas/relaxed/relaxed_mirte_example.tql'],
+        ['schemas/relaxed/relaxed_mirte_example.tql',
+            'schemas/relaxed/relaxed_paper_example.tql'],
         force_database=True,
         force_data=True,
         infer=True)
@@ -33,4 +35,10 @@ def kb_interface():
 def test_get_requirement_fulfillment(kb_interface):
     fulfillment = kb_interface.get_relaxed_requirement_fulfillment(
         'Mirte', 'R1.1 Velocity')
+    assert fulfillment == pytest.approx(0.92442)
+    fulfillment = kb_interface.get_relaxed_requirement_fulfillment(
+        'Mirte', 'r_velocity_until_after_true')
+    assert fulfillment == 1.0
+    fulfillment = kb_interface.get_relaxed_requirement_fulfillment(
+        'Mirte', 'r_velocity_until_after_false')
     assert fulfillment == pytest.approx(0.92442)
