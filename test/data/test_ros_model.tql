@@ -57,3 +57,24 @@ $nearest_object_pub isa Publisher,
     has measurement_function_lib 'ros_monitors_functions.laser_scan_functions',
     has measurement_function_args 'base_link';
 
+### measure_mean_velocity measurement interface
+$measure_mean_velocity isa Measure, has measure_name "measure_mean_velocity";
+
+$odom_pub isa Publisher,
+	has interface_name '/odom',
+    has interface_type 'nav_msgs/msg/Odometry';
+$sensor_qos isa QoSProfile,
+	has reliability 'BEST_EFFORT',
+	has history 'KEEP_LAST',
+	has depth 5,
+	has durability 'VOLATILE',
+	has lifespan 0,
+	has deadline 0,
+	has liveliness 'SYSTEM_DEFAULT',
+	has lease_duration 0;
+(interface: $odom_pub, qos: $sensor_qos) isa has_qos;
+
+(measure: $measure_mean_velocity, source: $odom_pub) isa measurement_interface,
+    has measurement_function_name 'MeanLinearVelocity',
+    has measurement_function_lib 'ros_monitors_functions.odom_functions',
+	has measurement_function_args '5.0';
