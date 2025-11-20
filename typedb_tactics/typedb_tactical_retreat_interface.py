@@ -605,7 +605,8 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.insert_database(query)
 
-    def fetch_requirement_in_effect(self, requirement_name: str) -> List[dict[str, MatchResultDict]]:
+    def fetch_requirement_in_effect(self, requirement_name: str
+                                    ) -> List[dict[str, MatchResultDict]]:
         """
         Fetch relaxed requirement in effect attribute.
 
