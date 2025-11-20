@@ -16,7 +16,6 @@ Measure sub entity,
     owns description,
     plays measurement:measure,
     plays measurement_interface:measure;
-    # plays inequality_expression:lhs_value;
 
 MeasureBool sub Measure;
 MeasureInteger sub Measure;

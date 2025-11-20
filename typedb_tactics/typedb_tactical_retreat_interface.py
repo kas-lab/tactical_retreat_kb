@@ -11,14 +11,46 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import logging
+from datetime import datetime
+from typing import Iterator
+from typing import List
 from typing import Optional
 from typing import TypedDict
-from typing import List
-from ros_typedb.typedb_interface import TypeDBInterface
+from typing import Union
+
 from ros_typedb.typedb_interface import MatchResultDict
-import logging
+from ros_typedb.typedb_interface import TypeDBInterface
+from ros_typedb.typedb_interface import convert_py_type_to_query_type
+from ros_typedb.typedb_interface import convert_query_type_to_py_type
+
+from typedb.driver import ConceptMap
+
+
 logger = logging.getLogger(__name__)
+
+
+def create_value_query(value, suffix=''):
+    if not isinstance(value, (str, float, int, bool, list)):
+        logger.error(
+            'Unsupported type %s for value %s',
+            type(value),
+            value)
+        return None
+
+    variable_name = f"$value{suffix}"
+
+    value_query = ''
+    if isinstance(value, str):
+        value_query = f"{variable_name} isa ValueString, has string_value '{value}';"
+    elif isinstance(value, float):
+        value_query = f"{variable_name} isa ValueDouble, has double_value {value};"
+    elif isinstance(value, bool):
+        value_query = f"""{variable_name} isa ValueBool,
+            has bool_value {convert_py_type_to_query_type(value)};"""
+    elif isinstance(value, int):
+        value_query = f"{variable_name} isa ValueInteger, has integer_value {value};"
+    return value_query, variable_name
 
 
 class ROSActionResultDict(TypedDict):
@@ -362,17 +394,12 @@ class TacticalRetreatInterface(TypeDBInterface):
         query = f"""
             match
                 $tactic isa Tactic, has tactic_name '{tactic_name}';
-                (tactic: $tactic, consequent: $consequent) isa tactic_rule;
-                {{
-                    $consequent isa Feature;
-                    (variant: $consequent, resolution_action: $resolution_action) isa
-                        variant_resolution;
-                }} or {{
-                    $consequent (expression: $expression) isa and_expression;
-                    $expression isa Feature;
-                    (variant: $expression, resolution_action: $resolution_action) isa
-                        variant_resolution;
-                }};
+                (tactic: $tactic, consequent: $fa) isa tactic_rule;
+                $fa ($feature)
+                    isa feature_adaptation;
+                $feature isa Feature;
+                (variant: $feature, resolution_action: $resolution_action)
+                    isa variant_resolution;
                 $resolution_action (node: $node) isa resolution_action;
                 $node isa ROSNode, has node_name '{node_name}',
                     has namespace '{namespace}';
@@ -497,6 +524,43 @@ class TacticalRetreatInterface(TypeDBInterface):
             for result in query_result
         )
 
+    def fetch_relaxed_requirement_fulfillment(
+            self,
+            system_name: str,
+            requirement_name: str) -> List[dict[str,
+                                                MatchResultDict]]:
+        """
+        Fetch relaxed requirement fulfillment.
+
+        :param system_name: system name
+        :param requirement_name: requirement name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $system isa System, has system_name '{system_name}';
+                (system: $system) isa relaxed_requirement,
+                    has requirement_name '{requirement_name}',
+                    has fulfillment $fulfillment;
+            fetch $fulfillment;
+        """
+        return self.fetch_database(query)
+
+    def get_relaxed_requirement_fulfillment(
+            self,
+            system_name: str,
+            requirement_name: str) -> List[dict[str,
+                                                MatchResultDict]]:
+        """
+        Fetch relaxed requirement fulfillment.
+
+        :param system_name: system name
+        :param requirement_name: requirement name
+        :return: fulfillment value
+        """
+        return self.fetch_relaxed_requirement_fulfillment(
+            system_name, requirement_name)[0]['fulfillment']['value']
+
     def fetch_latest_measurement(
             self, measure_name: str) -> List[dict[str, MatchResultDict]]:
         """
@@ -511,18 +575,96 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $measurement (measure: $measure,
                               measurement_value: $measurement_val) isa measurement,
                     has latest true;
-                {{
-                    $measurement_val isa ValueDouble, has double_value $value;
-                }} or {{
-                    $measurement_val isa ValueInteger, has integer_value $value;
-                }} or {{
-                    $measurement_val isa ValueString, has string_value $value;
-                }}
-                or {{
-                    $measurement_val isa ValueBool, has bool_value $value;
-                }};
             fetch
-                $value;
+                double_value: {{
+                    match
+                        $measurement_val isa ValueDouble, has double_value $value;
+                    fetch
+                        $value;
+                }};
+                integer_value: {{
+                    match
+                        $measurement_val isa ValueInteger, has integer_value $value;
+                    fetch
+                        $value;
+                }};
+                string_value: {{
+                    match
+                        $measurement_val isa ValueString, has string_value $value;
+                    fetch
+                        $value;
+                }};
+                bool_value: {{
+                    match
+                        $measurement_val isa ValueBool, has bool_value $value;
+                    fetch
+                        $value;
+                }};
+                array_values : {{
+                    match
+                        $measurement_val isa ValueArray;
+                        (array: $measurement_val, array_value: $value) isa at_index,
+                                has index $index;
+                        $singleton_types sub! ValueSingleton;
+                        $value isa $singleton_types;
+                    fetch
+                        $value: attribute;
+                        $index;
+                    sort $index asc;
+                }};
+        """
+        return self.fetch_database(query)
+
+    def fetch_all_measurements(
+            self, measure_name: str) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch all measurements of a measure.
+
+        :param measure_name: measure name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $measure isa Measure, has measure_name '{measure_name}';
+                $measurement (measure: $measure,
+                              measurement_value: $measurement_val) isa measurement;
+            fetch
+                double_value: {{
+                    match
+                        $measurement_val isa ValueDouble, has double_value $value;
+                    fetch
+                        $value;
+                }};
+                integer_value: {{
+                    match
+                        $measurement_val isa ValueInteger, has integer_value $value;
+                    fetch
+                        $value;
+                }};
+                string_value: {{
+                    match
+                        $measurement_val isa ValueString, has string_value $value;
+                    fetch
+                        $value;
+                }};
+                bool_value: {{
+                    match
+                        $measurement_val isa ValueBool, has bool_value $value;
+                    fetch
+                        $value;
+                }};
+                array_values : {{
+                    match
+                        $measurement_val isa ValueArray;
+                        (array: $measurement_val, array_value: $value) isa at_index,
+                                has index $index;
+                        $singleton_types sub! ValueSingleton;
+                        $value isa $singleton_types;
+                    fetch
+                        $value: attribute;
+                        $index;
+                    sort $index asc;
+                }};
         """
         return self.fetch_database(query)
 
@@ -540,7 +682,21 @@ class TacticalRetreatInterface(TypeDBInterface):
 
         if len(query_result) == 0:
             return float('nan')
-        return query_result[0]['value']['value']
+
+        first = query_result[0]
+        for key in (
+            'double_value',
+            'integer_value',
+            'string_value',
+                'bool_value'):
+            values = first.get(key, [])
+            if values:
+                return values[0]['value']['value']
+
+        array_values = first.get('array_values', [])
+        if array_values:
+            return [entry['value']['attribute'][0]['value']
+                    for entry in array_values]
 
     def fetch_ineq_expression_valid(self,
                                     measure_name: str,
@@ -608,3 +764,187 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_tactic_rule_valid(tactic_rule)
         return query_result[0]['tr']['rule_valid'][0]['value']
+
+    def is_feature_selectable(self, feature_name: str) -> bool:
+        """
+        Return whether a feature is selectable.
+
+        :param feature_name: feature name
+        :return: true or false
+        """
+        query = f"""
+            match
+                $f isa Feature, has feature_name '{feature_name}';
+            fetch
+                $f: selectable;
+        """
+        query_result = self.fetch_database(query)
+        return query_result[0]['f']['selectable'][0]['value']
+
+    def is_node_running(self, node_name: str) -> bool:
+        """
+        Return whether a ROS node is running.
+
+        :param node_name: node name
+        :return: true or false
+        """
+        query = f"""
+            match
+                $node isa ROSNode, has node_name '{node_name}';
+            fetch
+                $node: running;
+        """
+        query_result = self.fetch_database(query)
+        return query_result[0]['node']['running'][0]['value']
+
+    def is_set_nodes_parameters_feasible(
+            self, node_name: str, parameter_name: str) -> bool:
+        """
+        Return whether a set_nodes_parameters action is feasible.
+
+        :param node_name: node name
+        :param parameter_name: parameter name
+        :return: true or false
+        """
+        query = f"""
+            match
+                $ra (node: $node, parameter: $parameter) isa set_nodes_parameters;
+                $node isa ROSNode, has node_name '{node_name}';
+                $parameter isa Parameter, has parameter_name '{parameter_name}';
+            fetch
+                $ra: feasible;
+        """
+        query_result = self.fetch_database(query)
+        return query_result[0]['ra']['feasible'][0]['value']
+
+    def is_set_lifecycle_state_feasible(
+            self, node_name: str, lifecycle_state: str) -> bool:
+        """
+        Return whether a set_lifecycle_state action is feasible.
+
+        :param node_name: node name
+        :param lifecycle_state: parameter name
+        :return: true or false
+        """
+        query = f"""
+            match
+                $ra (node: $node) isa set_lifecycle_state, has lifecycle_state '{lifecycle_state}';
+                $node isa LifeCycleNode, has node_name '{node_name}';
+            fetch
+                $ra: feasible;
+        """
+        query_result = self.fetch_database(query)
+        return query_result[0]['ra']['feasible'][0]['value']
+
+    def fetch_measures_inferfaces(self):
+        query = '''
+            match
+                $measure isa Measure, has measure_name $measure_name;
+                $measurement_interface (measure: $measure, source: $source)
+                    isa measurement_interface;
+            fetch
+                $measure_name;
+                $measurement_interface: attribute;
+                $source: interface_name, interface_type;
+            qos_sub_query: {
+                match
+                    $source isa! Publisher;
+                    (interface: $source, qos: $qos) isa has_qos;
+                    $qos isa QoSProfile;
+                fetch
+                    $qos: attribute;
+            };
+        '''
+        return self.fetch_database(query)
+
+    def get_measures_interfaces(self):
+        result_dict_list = []
+        for result in self.fetch_measures_inferfaces():
+            result_dict = {}
+            measure = result.get('measure_name')
+            if measure:
+                result_dict['measure_name'] = convert_query_type_to_py_type(
+                    measure)
+
+            result_dict['source'] = result.get(
+                'source').get('type').get('label')
+            result_dict['interface_name'] = convert_query_type_to_py_type(
+                result.get('source').get('interface_name')[0])
+
+            result_dict['interface_type'] = convert_query_type_to_py_type(
+                result.get('source').get('interface_type')[0])
+
+            measurement_interface = result.get('measurement_interface')
+            for attribute in measurement_interface.get('attribute'):
+                attribute_label = attribute.get('type').get('label')
+                result_dict[attribute_label] = convert_query_type_to_py_type(
+                    attribute)
+
+            qos_list = result.get('qos_sub_query')
+            qos_dict = {}
+            if isinstance(qos_list, list) and qos_list:
+                qos = qos_list[0].get('qos')
+                for attribute in qos.get('attribute'):
+                    attribute_label = attribute.get('type').get('label')
+                    qos_dict[attribute_label] = convert_query_type_to_py_type(
+                        attribute)
+
+            if qos_dict:
+                result_dict['qos'] = qos_dict
+
+            if result_dict:
+                result_dict_list.append(result_dict)
+
+        return result_dict_list
+
+    def add_measurement(
+        self,
+        measure_name: str,
+        value: Union[
+            str,
+            float,
+            int,
+            bool,
+            List[str],
+            List[float],
+            List[int],
+            List[bool],
+        ],
+    ) -> Optional[Iterator[ConceptMap]]:
+        """
+        Add new measurement.
+
+        :param measure_name: measure name
+        :param value: measured value
+        :return: query result
+        """
+        value_query = ''
+        variable_name = ''
+        if(isinstance(value, list)):
+            query_fragments = []
+            query_fragments.append('$array isa ValueArray;')
+            variable_name = '$array'
+            for index, item in enumerate(value):
+                value_query_, variable_name_ = create_value_query(item, index)
+                query_fragments.append(
+                    f"""
+                        {value_query_}
+                        (array: $array, array_value: {variable_name_}) isa at_index,
+                            has index {index};
+                    """
+                )
+            value_query = '\n'.join(query_fragments)
+        else:
+            value_query, variable_name = create_value_query(value)
+
+        time = convert_py_type_to_query_type(datetime.now())
+        query = f"""
+            match
+                $measure isa Measure, has measure_name '{measure_name}';
+            insert
+                {value_query}
+                $measurement (measure: $measure, measurement_value: {variable_name})
+                    isa measurement,
+                    has measurement_time {time};
+        """
+        return self.insert_database(query)

@@ -1,0 +1,10 @@
+match
+
+$mirte isa System, has system_name "Mirte";
+$velocity_requirement (system: $mirte, expression: $velocity_shall_expression) isa relaxed_requirement,
+	has requirement_name "R1.1 Velocity";
+$velocity_shall_expression (expression: $velocity_as_close_expression) isa shall_expression;
+$velocity_as_close_expression isa fuzzy_expression;
+
+fetch
+	$velocity_as_close_expression: membership;

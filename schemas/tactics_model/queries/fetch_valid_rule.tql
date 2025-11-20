@@ -1,0 +1,12 @@
+match
+    $r isa tactic_rule, has rule_valid true;
+fetch
+    $r: rule_name;
+
+match
+    $r (consequent: $fadp) isa tactic_rule, has rule_valid true;
+    $fadp (activation: $fa, deactivation: $fd) isa feature_adaptation;
+fetch
+    $r: rule_name;
+    $fa: feature_name;
+    $fd: feature_name;

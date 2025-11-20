@@ -24,9 +24,12 @@ RUN apt-get update && apt-get install -y \
     apt-transport-https \
     gpg \
     openjdk-11-jre \
+    ros-humble-tf2-ros \
+    ros-humble-tf2-ros-py \
+    ros-humble-tf-transformations \
     && rm -rf /var/lib/apt/lists/*
 
-RUN rosdep init 
+RUN rosdep init
 
 ## Install TypeDB
 RUN gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-key 17507562824cfdcc
@@ -73,7 +76,7 @@ RUN ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash \
     && sudo rm -rf /var/lib/apt/lists/"]
 
 ## There is a bug with the default setuptools and packaging versions
-RUN USER=ubuntu-user python3 -m pip install setuptools==75.8.2  packaging==24.1 empy==3.3.4 pandas==2.0.2 scipy==1.15.2 numpy==1.26.4
+RUN USER=ubuntu-user python3 -m pip install setuptools==75.8.2  packaging==24.1 empy==3.3.4 pandas==2.0.2 scipy==1.15.2 numpy==1.23.5
 RUN ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash \
     && colcon build --symlink-install \
     && echo 'source ~/rebet_ws/install/setup.bash' >> ~/.bashrc"]

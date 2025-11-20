@@ -10,6 +10,9 @@ executable sub attribute,
 lifecycle_state sub attribute,
     value string,
     regex "^(unconfigured|inactive|active|finalized)$";
+lifecycle_transition sub attribute,
+    value string,
+    regex "^(configure|shutdown|activate|deactivate|cleanup)$";
 
 #### Should only be used by is_node_active rule
 is_active sub attribute,
@@ -52,7 +55,7 @@ lifespan sub attribute,
     value long;  # 0 indicates infinite
 liveliness sub attribute,
     value string,
-    regex "^(AUTOMATIC|MANUAL|SYSTEM_DEFAULT)";
+    regex "^(AUTOMATIC|MANUAL_BY_TOPIC|SYSTEM_DEFAULT)";
 lease_duration sub attribute,
     value long;  # 0 indicates infinite
 
@@ -65,11 +68,15 @@ default_value sub attribute,
 
 ## Entities
 
+running sub attribute,
+    value boolean;
+
 ROSNode sub entity,
     owns node_name @key,
     owns namespace,
     owns start_time,
     owns end_time,
+    owns running,
     plays has_interface:node,
     plays has_parameter:node,
     plays has_parameter_value:node,
@@ -189,3 +196,28 @@ process_group sub relation,
 
 subnode sub process_group,
     relates subnode;
+
+
+## rules
+rule ros_node_not_running_has_end_time:
+    when {
+        $node isa ROSNode, has end_time $end_time;
+    } then {
+        $node has running false;
+    };
+
+rule ros_node_not_running_no_start_time:
+    when {
+        $node isa ROSNode;
+        not {$node has start_time $start_time;};
+    } then {
+        $node has running false;
+    };
+
+rule ros_node_running:
+    when {
+        $node isa ROSNode;
+        not {$node has running false;};
+    } then {
+        $node has running true;
+    };

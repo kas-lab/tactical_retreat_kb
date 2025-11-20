@@ -116,15 +116,10 @@ rule applicable_tactics:
 
         # Find nodes impacted by tactics
         $resolution_model (tactic: $tactic) isa resolution_model;
-        $tactic_rule (tactic: $tactic, consequent: $consequent) isa tactic_rule;
-        {
-            $consequent isa Feature;
-            (variant: $consequent, resolution_action: $resolution_action) isa variant_resolution;
-        } or {
-            $consequent (expression: $expression) isa and_expression;
-            $expression isa Feature;
-            (variant: $expression, resolution_action: $resolution_action) isa variant_resolution;
-        };
+        $tactic_rule (tactic: $tactic, consequent: $fa) isa tactic_rule;
+        $fa ($feature) isa feature_adaptation;
+        $feature isa Feature;
+        (variant: $feature, resolution_action: $resolution_action) isa variant_resolution;
         $resolution_action (node: $node) isa resolution_action;
 
         # match the connected nodes with the nodes impacted by a tactic

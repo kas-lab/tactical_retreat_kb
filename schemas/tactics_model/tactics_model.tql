@@ -10,11 +10,7 @@ name sub attribute,
 resolution_model_name sub name;
 tactic_name sub name;
 rule_name sub name;
-term_name sub name;
 variant_name sub name;
-
-tactic_period sub attribute,
-    value double;
 
 tactic_resolution_model sub attribute,
     value string;
@@ -31,10 +27,12 @@ operator sub attribute,
     value string,
     regex "^(<|<=|>|>=|==|!=)";
 
+feasible sub attribute,
+    value boolean;
+
 ### Tactic
 Tactic sub entity,
     owns tactic_name @key,
-    owns tactic_period,
     plays tactic_rule:tactic,
     plays resolution_model:tactic;
 
@@ -53,8 +51,7 @@ expression sub relation,
     plays tactic_rule:antecedent;
 
 and_expression sub expression,
-    relates expression,
-    plays tactic_rule:consequent;
+    relates expression;
 
 or_expression sub expression,
     relates expression;
@@ -70,6 +67,17 @@ inequality_expression sub expression,
 Measure plays inequality_expression:lhs_value;
 Value plays inequality_expression:rhs_value;
 
+feature_adaptation sub relation,
+    relates deactivation,
+    relates activation,
+    plays tactic_rule:consequent;
+
+# Connection with feature model
+Feature plays variant_resolution:variant;
+Feature plays feature_adaptation:activation;
+Feature plays feature_adaptation:deactivation;
+Feature plays and_expression:expression;
+
 #### resolution model
 resolution_model sub relation,
     owns resolution_model_name @key,
@@ -78,12 +86,18 @@ resolution_model sub relation,
     relates variant_resolution;
 
 variant_resolution sub relation,
+    abstract,
+    owns feasible,
     relates resolution_action,
     relates variant,
     plays resolution_model:variant_resolution;
 
+variant_activation sub variant_resolution;
+variant_deactivation sub variant_resolution;
+
 resolution_action sub relation,
     abstract,
+    owns feasible,
     relates node,
     plays variant_resolution:resolution_action;
 
@@ -114,15 +128,47 @@ absolute_effect sub effect;
 Measure plays effect:measure;
 Value plays effect:effect_value;
 
+## Rules to infer whether a tactic rule is valid
 rule tactic_rule_valid:
     when {
-        $tr (antecedent: $a) isa tactic_rule;
-        $a isa expression, has expression_valid $expression_valid;
-        ?rule_valid = $expression_valid;
+        $tr isa tactic_rule;
+        not {$tr has rule_valid false;};
     } then {
-        $tr has rule_valid ?rule_valid;
+        $tr has rule_valid true;
     };
 
+rule tactic_rule_antecedent_invalid:
+    when {
+        $tr (antecedent: $a) isa tactic_rule;
+        $a isa expression, has expression_valid false;
+    } then {
+        $tr has rule_valid false;
+    };
+
+rule tactic_rule_consequent_unfeasible:
+    when {
+        $tr (consequent: $fa) isa tactic_rule;
+        $fa ($feature) isa feature_adaptation;
+        $feature isa Feature;
+        $feature has selectable false;
+    } then {
+        $tr has rule_valid false;
+    };
+
+rule tactic_rule_consequent_variant_resolution_unfeasible:
+    when {
+        $t isa Tactic;
+        $tr (tactic: $t, consequent: $fa) isa tactic_rule;
+        $fa ($feature) isa feature_adaptation;
+        $feature isa Feature;
+        $rm (tactic: $t, variant_resolution: $vr) isa resolution_model;
+        $vr (variant: $feature) isa variant_resolution;
+        $vr has feasible false;
+    } then {
+        $tr has rule_valid false;
+    };
+
+## Rules to infer whether an expression is valid
 rule and_expression_valid:
     when {
         $and_exp (expression: $e) isa and_expression;
@@ -212,7 +258,6 @@ rule inequality_expression_valid:
         $ineq_exp has expression_valid true;
     };
 
-
 rule inequality_expression_invalid:
     when {
         $ineq_exp isa inequality_expression;
@@ -220,3 +265,103 @@ rule inequality_expression_invalid:
     } then {
         $ineq_exp has expression_valid false;
     };
+
+## Rules for infering whether a resolution action is feasible
+rule resolution_action_unfeasible_node_running:
+    when {
+        $ra (node: $node) isa resolution_action;
+        not {$node has running true;};
+    } then {
+        $ra has feasible false;
+    };
+
+rule resolution_action_feasible:
+    when {
+        $ra isa resolution_action;
+        not {$ra has feasible false;};
+    } then {
+        $ra has feasible true;
+    };
+
+### lifecyle state rules. Allows setting the same state
+rule set_lifecycle_state_active_unfeasible:
+    when {
+        $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "active";
+        not{
+            {
+                $node has lifecycle_state "active";
+            } or {
+                $node has lifecycle_state "inactive";
+            };
+        };
+    } then {
+        $ra has feasible false;
+    };
+
+rule set_lifecycle_state_inactive_unfeasible:
+    when {
+        $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "inactive";
+        not{
+            {
+                $node has lifecycle_state "active";
+            } or {
+                $node has lifecycle_state "unconfigured";
+            } or {
+                $node has lifecycle_state "inactive";
+            };
+        };
+    } then {
+        $ra has feasible false;
+    };
+
+rule set_lifecycle_state_unconfigured_unfeasible:
+    when {
+        $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "unconfigured";
+        not{
+            {
+                $node has lifecycle_state "inactive";
+            } or {
+                $node has lifecycle_state "unconfigured";
+            };
+        };
+    } then {
+        $ra has feasible false;
+    };
+
+rule set_lifecycle_state_finalized_unfeasible:
+    when {
+        $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "finalized";
+        not{
+            {
+                $node has lifecycle_state "active";
+            } or {
+                $node has lifecycle_state "unconfigured";
+            } or {
+                $node has lifecycle_state "inactive";
+            } or {
+                $node has lifecycle_state "finalized";
+            };
+        };
+    } then {
+        $ra has feasible false;
+    };
+
+### check whether the parameter types are correct?
+
+## Rules for inferring whether a variant resolution is feasible
+rule variant_resolution_unfeasible:
+    when {
+        $vr (resolution_action: $ra) isa variant_resolution;
+        $ra has feasible false;
+    } then {
+        $vr has feasible false;
+    };
+
+rule variant_resolution_feasible:
+    when {
+        $vr isa variant_resolution;
+        not{$vr has feasible false;};
+    } then {
+        $vr has feasible true;
+    };
+
