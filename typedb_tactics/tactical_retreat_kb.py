@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import importlib
+import inspect
 
 from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
 
@@ -252,12 +253,21 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         function_lib = importlib.import_module(function_lib_name)
         measure_function = getattr(function_lib, function_name)
 
+        # Support both stateless functions and stateful callables (classes with __call__).
+        if inspect.isclass(measure_function):
+            # Instantiate once so state is preserved across callbacks.
+            measure_callable = measure_function(*function_args)
+            callable_args = []
+        else:
+            measure_callable = measure_function
+            callable_args = function_args
+
         def _cb(msg,
                 _measure_name=measure_name,
-                _measure_function=measure_function,
-                _function_args=function_args):
+                _measure_callable=measure_callable,
+                _function_args=callable_args):
             self.typedb_interface.add_measurement(
-                _measure_name, _measure_function(
+                _measure_name, _measure_callable(
                     self, msg, *_function_args))
 
         self.measures_subscribers[measure_name] = self.create_subscription(

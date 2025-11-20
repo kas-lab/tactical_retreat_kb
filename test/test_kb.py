@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import time
+import math
 import threading
-
-import pytest
+import time
 
 from lifecycle_msgs.srv import ChangeState
 from lifecycle_msgs.srv import GetState
 
+import pytest
+
+from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
@@ -156,6 +158,9 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
         }
     }
 
+    tactical_kb.create_measure_topic_interface(measure_test_topic_dict)
+    assert 'measure_test_topic' in tactical_kb.measures_subscribers
+
     laser_scan_dict = {
         'source': 'Publisher',
         'measure_name': 'measure_nearest_object',
@@ -175,10 +180,30 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
             'lease_duration': 0,
         }}
 
-    tactical_kb.create_measure_topic_interface(measure_test_topic_dict)
-    assert 'measure_test_topic' in tactical_kb.measures_subscribers
     tactical_kb.create_measure_topic_interface(laser_scan_dict)
     assert 'measure_nearest_object' in tactical_kb.measures_subscribers
+
+    odom_dict = {
+        'source': 'Publisher',
+        'measure_name': 'measure_mean_velocity',
+        'interface_name': '/odom',
+        'interface_type': 'nav_msgs/msg/Odometry',
+        'measurement_function_name': 'MeanLinearVelocity',
+        'measurement_function_lib': 'ros_monitors_functions.odom_functions',
+        'measurement_function_args': '5.0',
+        'qos': {
+            'reliability': 'BEST_EFFORT',
+            'history': 'KEEP_LAST',
+            'depth': 5,
+            'durability': 'VOLATILE',
+            'lifespan': 0,
+            'deadline': 0,
+            'liveliness': 'SYSTEM_DEFAULT',
+            'lease_duration': 0,
+        }}
+
+    tactical_kb.create_measure_topic_interface(odom_dict)
+    assert 'measure_mean_velocity' in tactical_kb.measures_subscribers
 
     pub_qos = QoSProfile(
         reliability=QoSReliabilityPolicy.RELIABLE,
@@ -212,3 +237,47 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
     measurement = tactical_kb.typedb_interface.get_latest_measurement(
         'measure_test_topic')
     assert measurement == 3.0
+
+    odom_publisher = test_node.create_publisher(
+        Odometry,
+        '/odom',
+        pub_qos
+    )
+
+    # Wait for discovery
+    deadline = time.time() + 2.0
+    while time.time() < deadline and odom_publisher.get_subscription_count() == 0:
+        time.sleep(0.02)
+
+    # Simulate odom messages at different timestamps
+    timestamps = [1.0, 1.5, 2.0, 3.0, 4.0]  # in seconds
+    linear_x_values = [0.0, 0.01, 0.02, 0.03, 0.04]
+    linear_y_values = [0.0, 0.01, 0.02, 0.03, 0.04]
+    # mean_velocities = [0.0, 0.00707105, 0.014142136, 0.021213203, 0.028284271]
+
+    for ts, lx, ly in zip(timestamps, linear_x_values, linear_y_values):
+        odom_msg = Odometry()
+        odom_msg.header.stamp.sec = int(ts)
+        odom_msg.header.stamp.nanosec = int((ts - int(ts)) * 1e9)
+        odom_msg.twist.twist.linear.x = lx
+        odom_msg.twist.twist.linear.y = ly
+
+        # mean_velocity = mean_vel_monitor(None, odom_msg)
+        odom_publisher.publish(odom_msg)
+
+        t_end = time.time() + 0.5
+        while time.time() < t_end:
+            time.sleep(0.1)
+
+        # Manually compute expected mean velocity over the window
+        window_start = ts - 5.0
+        relevant_speeds = [
+            math.hypot(abs(lx_val), abs(ly_val))
+            for t, lx_val, ly_val in zip(timestamps, linear_x_values, linear_y_values)
+            if t >= window_start and t <= ts
+        ]
+        expected_mean = sum(relevant_speeds) / len(relevant_speeds) if relevant_speeds else 0.0
+        mean_velocity = tactical_kb.typedb_interface.get_latest_measurement(
+            'measure_mean_velocity')
+
+        assert mean_velocity == pytest.approx(expected_mean)
