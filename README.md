@@ -22,7 +22,6 @@ graph LR
 
 Arrows point from each prerequisite model to the model that depends on it.
 
-
 ## Docker
 
 ### Build

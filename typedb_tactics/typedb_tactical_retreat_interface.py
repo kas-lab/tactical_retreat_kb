@@ -978,3 +978,31 @@ class TacticalRetreatInterface(TypeDBInterface):
         return [result['measure']['measure_name'][0]['value']
                 for result in query_result]
 
+    def fetch_tactic_impacts_requirement(self, rule_name: str) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch which requirement is impacted by a tactic.
+
+        :param rule_name: tactic rule name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $tactic_rule isa tactic_rule, has rule_name '{rule_name}';
+                (tactic_rule: $tactic_rule, requirement: $req) isa tactic_impact;
+            fetch
+                $req: requirement_name;
+        """
+        return self.fetch_database(query)
+
+    def get_tactic_impacts_requirement(self, rule_name: str) -> List[str]:
+        """
+        Get which requirement is impacted by a tactic.
+
+        :param rule_name: tactic rule name
+        :return: fetch query result
+        """
+        query_result = self.fetch_tactic_impacts_requirement(
+            rule_name)
+        print(query_result)
+        return [result['req']['requirement_name'][0]['value']
+                for result in query_result]

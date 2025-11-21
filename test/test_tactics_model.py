@@ -190,3 +190,17 @@ def kb_interface_example():
 
 def test_tactic_min_valid(kb_interface_example):
     assert kb_interface_example.get_tactic_rule_valid('MIN')
+
+
+def test_tactic_impacts_requirement(kb_interface_example, kb_interface):
+    requirements = kb_interface_example.get_tactic_impacts_requirement('MIN')
+    assert 'R1.2 Movement Power' in requirements
+
+    requirements = kb_interface_example.get_tactic_impacts_requirement('MED')
+    assert 'R1.2 Movement Power' in requirements
+
+    requirements = kb_interface_example.get_tactic_impacts_requirement('MAX')
+    assert 'R1.2 Movement Power' in requirements
+
+    requirements = kb_interface.get_tactic_impacts_requirement('tr_variant_resolution_feasible')
+    assert len(requirements) == 0
