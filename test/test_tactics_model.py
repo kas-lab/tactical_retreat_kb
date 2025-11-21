@@ -13,11 +13,13 @@
 # limitations under the License.
 
 import math
+
 import pytest
+
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def kb_interface():
     kb_interface = TacticalRetreatInterface(
         'localhost:1729',
@@ -26,6 +28,7 @@ def kb_interface():
             'schemas/context_model/context_model.tql',
             'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
+            'schemas/relaxed/relaxed_model.tql',
             'schemas/tactics_model/tactics_model.tql'],
         ['test/data/test_tactics_model.tql'],
         force_database=True,
@@ -164,7 +167,7 @@ def test_set_lifecycle_state_feasible(kb_interface):
         'lifecycle_node_finalized', 'finalized') is True
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def kb_interface_example():
     kb_interface_example = TacticalRetreatInterface(
         'localhost:1729',
@@ -173,9 +176,11 @@ def kb_interface_example():
             'schemas/context_model/context_model.tql',
             'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
+            'schemas/relaxed/relaxed_model.tql',
             'schemas/tactics_model/tactics_model.tql'],
         ['schemas/ros_model/ros_model_example.tql',
-            'schemas/tactics_model/tactics_example.tql'],
+            'schemas/tactics_model/tactics_example.tql',
+            'schemas/relaxed/relaxed_mirte_example.tql'],
         force_database=True,
         force_data=True,
         infer=True)

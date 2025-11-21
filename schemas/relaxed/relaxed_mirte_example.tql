@@ -1,3 +1,8 @@
+match
+
+$qa_movement_power isa Measure,
+	has measure_name "qa_movement_power"; # watt?
+
 insert
 
 ## Examples Mirte's MVP use case
@@ -26,3 +31,15 @@ $velocity_requirement (system: $mirte, relaxed_expression: $velocity_shall_expre
 	has requirement_name "R1.1 Velocity",
 	has in_effect true,
 	has description "The robot SHALL maintain its velocity AS CLOSE AS POSSIBLE TO 0.26 m/s.";
+
+# fake mirte requirement
+$mv_pwr_fuzzy_set isa FuzzyExponentialDecay,
+	has exponent 0.2;
+
+$as_few_mv_pwr_as_possible (decay_membership: $mv_pwr_fuzzy_set, term: $qa_movement_power) isa as_few_as_possible_expression;
+$mv_pwr_shall_expression (relaxed_expression: $as_few_mv_pwr_as_possible) isa shall_expression;
+
+$mv_power_requirement (system: $mirte, relaxed_expression: $mv_pwr_shall_expression) isa relaxed_requirement,
+	has requirement_name "R1.2 Movement Power",
+	has in_effect true,
+	has description "The robot SHALL maintain its movement power AS FEW AS POSSIBLE.";

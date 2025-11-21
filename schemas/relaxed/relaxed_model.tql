@@ -110,10 +110,16 @@ FuzzyRationalDecay sub DecayMembership,
 	owns curvature;
 
 ## Relations
+measure_dependency sub relation,
+    relates dependent,
+    relates measure;
+Measure plays measure_dependency:measure;
+
 system_requirement sub relation,
 	abstract,
 	owns in_effect,
-	relates system;
+	relates system,
+	plays measure_dependency:dependent;
 
 relaxed_requirement sub system_requirement,
 	owns requirement_name @key,
@@ -128,7 +134,8 @@ relaxed_expression sub relation,
 	relates term,
 	plays relaxed_requirement:relaxed_expression,
 	plays relaxed_expression:relaxed_expression,
-	plays until_expression:after;
+	plays until_expression:after,
+	plays measure_dependency:dependent;
 
 shall_expression sub relaxed_expression;
 may_expression sub relaxed_expression;
@@ -282,7 +289,7 @@ rule fuzzy-expression-fulfillment :
 		$fuzzy_expression has fulfillment ?fulfillment;
 	};
 
-# ## requirement fulfillment
+## requirement fulfillment
 rule requirement-fulfillment :
 	when {
 		$req (relaxed_expression: $relaxed_expression) isa relaxed_requirement;
@@ -290,3 +297,27 @@ rule requirement-fulfillment :
 	} then {
 		$req has $fulfillment;
 	};
+
+# Rules for checking whether an expression depends on a Measure
+rule relaxed_expression_measure_dependency_reflection:
+    when {
+        $expression (term: $measure) isa relaxed_expression;
+    } then {
+        (dependent: $expression, measure: $measure) isa measure_dependency;
+    };
+
+rule relaxed_expression_measure_dependency_transitivity:
+    when {
+        $expression_parent (relaxed_expression: $expression_child) isa relaxed_expression;
+        (dependent: $expression_child, measure: $measure) isa measure_dependency;
+    } then {
+        (dependent: $expression_parent, measure: $measure) isa measure_dependency;
+    };
+
+rule requirement_measure_dependency:
+    when {
+		$requirement (relaxed_expression: $expression) isa relaxed_requirement;
+        (dependent: $expression, measure: $measure) isa measure_dependency;
+    } then {
+        (dependent: $requirement, measure: $measure) isa measure_dependency;
+    };
