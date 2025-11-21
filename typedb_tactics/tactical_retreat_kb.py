@@ -18,7 +18,7 @@ import inspect
 from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
 
 from rclpy.duration import Duration
-
+import rclpy
 from rclpy.lifecycle import State
 from rclpy.lifecycle import TransitionCallbackReturn
 
@@ -57,6 +57,22 @@ def get_ros_msg_type_from_string(msg_type_string: str, msg_type='msg'):
 
     msg_module = importlib.import_module(f"{package_name}.{msg_type}")
     return getattr(msg_module, message_name)
+
+
+def get_ros_srv_type_from_string(srv_type_string: str):
+    srv_type_list = [part for part in srv_type_string.split('/') if part]
+
+    if len(srv_type_list) == 2:
+        package_name, service_name = srv_type_list
+    elif len(srv_type_list) == 3:
+        package_name = srv_type_list[0]
+        service_name = srv_type_list[2]
+    else:
+        raise ValueError(
+            f"Unsupported service type format: {srv_type_string}")
+
+    srv_module = importlib.import_module(f"{package_name}.srv")
+    return getattr(srv_module, service_name)
 
 
 RELIABILITY_MAP = {
@@ -147,6 +163,9 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         super().__init__(node_name, **kwargs)
         self.typedb_interface_class = TacticalRetreatInterface
         self.measures_subscribers = {}
+        self.measures_clients = {}
+        self.measures_timers = {}
+        self.measures_services = {} # For proxies
 
     def on_activate(self, state: State) -> TransitionCallbackReturn:
         self.get_logger().info(self.get_name() + ': on_activate() is called.')
@@ -221,7 +240,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         self.active = False
         return super().on_cleanup(state)
 
-    def create_measure_topic_interface(self, topic_interface):
+    def create_measure_interface(self, interface):
         """
         Create a subscription for a measure topic using details in `topic_interface`.
 
@@ -234,19 +253,18 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         - optional: 'measurement_function_args' (str, comma-separated args)
         - optional: 'qos' (dict for QoSProfile construction)
         """
-        measure_name = topic_interface['measure_name']
-        topic_name = topic_interface['interface_name']
-        ros_msg_type_str = topic_interface['interface_type']
+        measure_name = interface['measure_name']
+        topic_name = interface['interface_name']
+        ros_msg_type_str = interface['interface_type']
 
-        topic_type = get_ros_msg_type_from_string(ros_msg_type_str, 'msg')
-        measurement_qos = get_qos_from_qos_dict(topic_interface.get('qos', {}))
+        measurement_qos = get_qos_from_qos_dict(interface.get('qos', {}))
 
-        function_lib_name = (topic_interface.get('measurement_function_lib')
+        function_lib_name = (interface.get('measurement_function_lib')
                              or 'ros_monitors_functions.monitor_functions')
-        function_name = (topic_interface.get('measurement_function_name')
+        function_name = (interface.get('measurement_function_name')
                          or 'get_data_field')
 
-        function_args_str = topic_interface.get('measurement_function_args')
+        function_args_str = interface.get('measurement_function_args')
         function_args = [arg.strip() for arg in function_args_str.split(
             ',')] if function_args_str else []
 
@@ -262,21 +280,81 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             measure_callable = measure_function
             callable_args = function_args
 
-        def _cb(msg,
-                _measure_name=measure_name,
-                _measure_callable=measure_callable,
-                _function_args=callable_args):
-            self.typedb_interface.add_measurement(
-                _measure_name, _measure_callable(
-                    self, msg, *_function_args))
+        if (interface.get('source') == "Publisher"):
+            topic_type = get_ros_msg_type_from_string(ros_msg_type_str, 'msg')
 
-        self.measures_subscribers[measure_name] = self.create_subscription(
-            topic_type,
-            topic_name,
-            _cb,
-            measurement_qos,
-            callback_group=self.query_cb_group
-        )
+            def _cb(msg,
+                    _measure_name=measure_name,
+                    _measure_callable=measure_callable,
+                    _function_args=callable_args):
+                self.typedb_interface.add_measurement(
+                    _measure_name, _measure_callable(
+                        self, msg, *_function_args))
+
+            self.measures_subscribers[measure_name] = self.create_subscription(
+                topic_type,
+                topic_name,
+                _cb,
+                measurement_qos,
+                callback_group=self.query_cb_group
+            )
+        if (interface.get('source') == "Service"):
+            service_type = get_ros_srv_type_from_string(ros_msg_type_str)
+            if (interface.get('measurement_proxy') is not True):
+                service_request_kwargs_str = interface.get('service_request_kwargs')
+                service_request_kwargs = {}
+                if service_request_kwargs_str:
+                    for kwarg in service_request_kwargs_str.split(','):
+                        key, value = kwarg.split('=')
+                        service_request_kwargs[key.strip()] = value.strip()
+                if (interface.get('measurement_period')):
+                    self.measures_clients[measure_name] = self.create_client(
+                        service_type,
+                        topic_name,
+                        callback_group=self.query_cb_group
+                    )
+
+                    def _cb(_measure_name=measure_name,
+                            _measure_callable=measure_callable,
+                            _function_args=callable_args):
+                        if (self.measures_clients[measure_name].wait_for_service(timeout_sec=10.0)):
+                            request = service_type.Request(**service_request_kwargs)
+                            self.measures_clients[measure_name].call_async(request).add_done_callback(
+                                lambda future, _measure_name=_measure_name,
+                                _measure_callable=_measure_callable,
+                                _function_args=_function_args:
+                                self.typedb_interface.add_measurement(
+                                    _measure_name,
+                                    _measure_callable(self, future.result(), *_function_args)))
+
+                    self.measures_timers[measure_name] = self.create_timer(
+                        interface['measurement_period'],
+                        _cb)
+            else:
+                self.measures_clients[measure_name] = self.create_client(
+                    service_type,
+                    topic_name,
+                    callback_group=self.query_cb_group
+                )
+
+                def _cb(request, response, _measure_name=measure_name,
+                        _measure_callable=measure_callable,
+                        _function_args=callable_args):
+                    if (self.measures_clients[measure_name].wait_for_service(timeout_sec=10.0)):
+                        future = self.measures_clients[measure_name].call_async(request)
+                        # wait for future
+                        rclpy.spin_until_future_complete(self, future)
+                        self.typedb_interface.add_measurement(_measure_name, _measure_callable(
+                            self,
+                            future.result(),
+                            *_function_args))
+                        response = future.result()
+                        return response
+
+                self.measures_services[measure_name] = self.create_service(
+                    service_type,
+                    "proxy_" + topic_name,
+                    _cb)  # The proxy service
 
     def create_measures_interfaces(self):
         try:
@@ -288,8 +366,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 # TODO: this is unsafe, use get instead.
                 self.get_logger().info(
                     f"Creating measure interface: {interface}")
-                if interface.get('source') == 'Publisher':
-                    self.create_measure_topic_interface(interface)
+                self.create_measure_interface(interface)
 
         except Exception as e:
             raise e

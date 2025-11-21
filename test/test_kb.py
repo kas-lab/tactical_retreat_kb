@@ -158,7 +158,7 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
         }
     }
 
-    tactical_kb.create_measure_topic_interface(measure_test_topic_dict)
+    tactical_kb.create_measure_interface(measure_test_topic_dict)
     assert 'measure_test_topic' in tactical_kb.measures_subscribers
 
     laser_scan_dict = {
@@ -180,7 +180,7 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
             'lease_duration': 0,
         }}
 
-    tactical_kb.create_measure_topic_interface(laser_scan_dict)
+    tactical_kb.create_measure_interface(laser_scan_dict)
     assert 'measure_nearest_object' in tactical_kb.measures_subscribers
 
     odom_dict = {
@@ -202,7 +202,7 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
             'lease_duration': 0,
         }}
 
-    tactical_kb.create_measure_topic_interface(odom_dict)
+    tactical_kb.create_measure_interface(odom_dict)
     assert 'measure_mean_velocity' in tactical_kb.measures_subscribers
 
     pub_qos = QoSProfile(
@@ -281,3 +281,111 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
             'measure_mean_velocity')
 
         assert mean_velocity == pytest.approx(expected_mean)
+
+
+def test_create_measure_interface_service(executor, tactical_kb, test_node):
+    executor.add_node(test_node)
+    executor.add_node(tactical_kb)
+
+    from std_srvs.srv import Trigger
+
+    def _cb(_, response):
+        response.success = True
+        response.message = "Test message"
+        return response
+
+    _ = test_node.create_service(
+        Trigger,
+        '/measure_test_service',
+        _cb
+    )
+
+    measure_test_service_dict = {
+        'source': 'Service',
+        'measure_name': 'measure_test_service',
+        'interface_name': '/measure_test_service',
+        'interface_type': 'std_srvs/srv/Trigger',
+        'measurement_function_name': 'get_data_field',
+        'measurement_function_lib': 'ros_monitors_functions.monitor_functions',
+        'measurement_function_args': 'success',
+        'measurement_proxy': False,
+        'measurement_period': 1,
+        'qos': {
+            'reliability': 'RELIABLE',
+            'history': 'KEEP_LAST',
+            'depth': 10,
+            'durability': 'TRANSIENT_LOCAL',
+            'lifespan': 2,
+            'deadline': 2,
+            'liveliness': 'MANUAL_BY_TOPIC',
+            'lease_duration': 2,
+        }
+    }
+
+    tactical_kb.create_measure_interface(measure_test_service_dict)
+    assert 'measure_test_service' in tactical_kb.measures_clients
+
+    deadline = time.time() + 2.0
+    while time.time() < deadline:
+        time.sleep(0.02)
+
+    service_result = tactical_kb.typedb_interface.get_latest_measurement('measure_test_service')
+    assert service_result is True
+
+
+def test_create_proxy(executor, tactical_kb, test_node):
+    executor.add_node(test_node)
+    executor.add_node(tactical_kb)
+
+    from std_srvs.srv import Trigger
+
+    def _cb(_, response):
+        response.success = True
+        response.message = "Test message"
+        return response
+
+    _ = test_node.create_service(
+        Trigger,
+        '/measure_test_service',
+        _cb
+    )  # this is the original service that will be proxied
+
+    measure_test_service_dict = {
+        'source': 'Service',
+        'measure_name': 'measure_test_service',
+        'interface_name': '/measure_test_service',
+        'interface_type': 'std_srvs/srv/Trigger',
+        'measurement_function_name': 'get_data_field',
+        'measurement_function_lib': 'ros_monitors_functions.monitor_functions',
+        'measurement_function_args': 'message',
+        'measurement_proxy': True,
+        'measurement_period': 1,
+        'qos': {
+            'reliability': 'RELIABLE',
+            'history': 'KEEP_LAST',
+            'depth': 10,
+            'durability': 'TRANSIENT_LOCAL',
+            'lifespan': 2,
+            'deadline': 2,
+            'liveliness': 'MANUAL_BY_TOPIC',
+            'lease_duration': 2,
+        }
+    }
+
+    tactical_kb.create_measure_interface(measure_test_service_dict)
+    assert 'measure_test_service' in tactical_kb.measures_clients
+
+    service_client = test_node.create_client(
+        Trigger,
+        'proxy_' + measure_test_service_dict['interface_name']
+    )
+
+    assert service_client.wait_for_service(timeout_sec=5.0)
+    request = Trigger.Request()
+    future = service_client.call_async(request)
+    rclpy.spin_until_future_complete(test_node, future, timeout_sec=5.0)
+    assert future.done()
+
+    service_result = tactical_kb.typedb_interface.get_latest_measurement('measure_test_service')
+
+    assert service_result == future.result().message

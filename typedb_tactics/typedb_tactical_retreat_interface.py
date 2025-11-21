@@ -668,7 +668,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
-    def get_latest_measurement(self, measure_name: str) -> float:
+    def get_latest_measurement(self, measure_name: str) -> Union[float, int, str, bool, List]:
         """
         Get all tactics that are applicable given an ROS action name and resolution model.
 
@@ -920,7 +920,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         value_query = ''
         variable_name = ''
-        if(isinstance(value, list)):
+        if (isinstance(value, list)):
             query_fragments = []
             query_fragments.append('$array isa ValueArray;')
             variable_name = '$array'

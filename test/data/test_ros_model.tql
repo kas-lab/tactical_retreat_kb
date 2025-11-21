@@ -78,3 +78,15 @@ $sensor_qos isa QoSProfile,
     has measurement_function_name 'MeanLinearVelocity',
     has measurement_function_lib 'ros_monitors_functions.odom_functions',
 	has measurement_function_args '5.0';
+	
+	
+$measure_test_service isa Measure, has measure_name "measure_test_service";
+
+$measure_test_service_server isa ServiceServer,
+	has interface_name '/measure_test_service',
+    has interface_type 'std_srvs/srv/Trigger';
+(measure: $measure_test_service, source: $measure_test_service_server) isa measurement_interface,
+    has measurement_function_name 'get_data_field',
+    has measurement_function_lib 'ros_monitors_functions.odom_functions',
+    has measurement_function_lib 'ros_monitors_functions.monitor_functions',
+    has measurement_function_args 'success';
