@@ -59,22 +59,6 @@ def get_ros_msg_type_from_string(msg_type_string: str, msg_type='msg'):
     return getattr(msg_module, message_name)
 
 
-def get_ros_srv_type_from_string(srv_type_string: str):
-    srv_type_list = [part for part in srv_type_string.split('/') if part]
-
-    if len(srv_type_list) == 2:
-        package_name, service_name = srv_type_list
-    elif len(srv_type_list) == 3:
-        package_name = srv_type_list[0]
-        service_name = srv_type_list[2]
-    else:
-        raise ValueError(
-            f"Unsupported service type format: {srv_type_string}")
-
-    srv_module = importlib.import_module(f"{package_name}.srv")
-    return getattr(srv_module, service_name)
-
-
 RELIABILITY_MAP = {
     "RELIABLE": QoSReliabilityPolicy.RELIABLE,
     "BEST_EFFORT": QoSReliabilityPolicy.BEST_EFFORT,
@@ -254,7 +238,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         - optional: 'qos' (dict for QoSProfile construction)
         """
         measure_name = interface['measure_name']
-        topic_name = interface['interface_name']
+        interface_name = interface['interface_name']
         ros_msg_type_str = interface['interface_type']
 
         measurement_qos = get_qos_from_qos_dict(interface.get('qos', {}))
@@ -293,13 +277,13 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
             self.measures_subscribers[measure_name] = self.create_subscription(
                 topic_type,
-                topic_name,
+                interface_name,
                 _cb,
                 measurement_qos,
                 callback_group=self.query_cb_group
             )
         if (interface.get('source') == "Service"):
-            service_type = get_ros_srv_type_from_string(ros_msg_type_str)
+            service_type = get_ros_msg_type_from_string(ros_msg_type_str, 'srv')
             if (interface.get('measurement_proxy') is not True):
                 service_request_kwargs_str = interface.get('service_request_kwargs')
                 service_request_kwargs = {}
@@ -310,7 +294,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 if (interface.get('measurement_period')):
                     self.measures_clients[measure_name] = self.create_client(
                         service_type,
-                        topic_name,
+                        interface_name,
                         callback_group=self.query_cb_group
                     )
 
@@ -333,7 +317,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             else:
                 self.measures_clients[measure_name] = self.create_client(
                     service_type,
-                    topic_name,
+                    interface_name,
                     callback_group=self.query_cb_group
                 )
 
@@ -353,7 +337,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
                 self.measures_services[measure_name] = self.create_service(
                     service_type,
-                    "proxy_" + topic_name,
+                    "proxy_" + interface_name,
                     _cb)  # The proxy service
 
     def create_measures_interfaces(self):
@@ -363,7 +347,6 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 raise Exception("No measures interfaces to create.")
 
             for interface in measures_interfaces:
-                # TODO: this is unsafe, use get instead.
                 self.get_logger().info(
                     f"Creating measure interface: {interface}")
                 self.create_measure_interface(interface)
