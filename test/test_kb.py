@@ -291,7 +291,7 @@ def test_create_measure_interface_service(executor, tactical_kb, test_node):
 
     def _cb(_, response):
         response.success = True
-        response.message = "Test message"
+        response.message = 'Test message'
         return response
 
     _ = test_node.create_service(
@@ -331,7 +331,7 @@ def test_create_proxy(executor, tactical_kb, test_node):
 
     def _cb(_, response):
         response.success = True
-        response.message = "Test message"
+        response.message = 'Test message'
         return response
 
     _ = test_node.create_service(
