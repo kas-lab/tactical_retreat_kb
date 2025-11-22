@@ -310,16 +310,6 @@ def test_create_measure_interface_service(executor, tactical_kb, test_node):
         'measurement_function_args': 'success',
         'measurement_proxy': False,
         'measurement_period': 1,
-        'qos': {
-            'reliability': 'RELIABLE',
-            'history': 'KEEP_LAST',
-            'depth': 10,
-            'durability': 'TRANSIENT_LOCAL',
-            'lifespan': 2,
-            'deadline': 2,
-            'liveliness': 'MANUAL_BY_TOPIC',
-            'lease_duration': 2,
-        }
     }
 
     tactical_kb.create_measure_interface(measure_test_service_dict)
@@ -360,16 +350,6 @@ def test_create_proxy(executor, tactical_kb, test_node):
         'measurement_function_args': 'message',
         'measurement_proxy': True,
         'measurement_period': 1,
-        'qos': {
-            'reliability': 'RELIABLE',
-            'history': 'KEEP_LAST',
-            'depth': 10,
-            'durability': 'TRANSIENT_LOCAL',
-            'lifespan': 2,
-            'deadline': 2,
-            'liveliness': 'MANUAL_BY_TOPIC',
-            'lease_duration': 2,
-        }
     }
 
     tactical_kb.create_measure_interface(measure_test_service_dict)
