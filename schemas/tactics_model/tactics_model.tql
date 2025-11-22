@@ -42,13 +42,7 @@ tactic_rule sub relation,
     relates tactic,
     relates antecedent,
     relates consequent,
-    relates effect,
-    plays tactic_impact:tactic_rule;
-
-tactic_impact sub relation,
-    relates tactic_rule,
-    relates requirement;
-relaxed_requirement plays tactic_impact:requirement;
+    relates effect;
 
 ### effect
 effect sub relation,
@@ -369,15 +363,4 @@ rule variant_resolution_feasible:
         not{$vr has feasible false;};
     } then {
         $vr has feasible true;
-    };
-
-## Rules for checking whether a tactic possibly impacts a requirement
-rule tactic_impacts_requirement:
-    when {
-        $tr (effect: $effect) isa tactic_rule;
-        $effect (measure: $measure) isa effect;
-        $requirement isa relaxed_requirement;
-        (dependent: $requirement, measure: $measure) isa measure_dependency;
-    } then {
-        (tactic_rule: $tr, requirement: $requirement) isa tactic_impact;
     };

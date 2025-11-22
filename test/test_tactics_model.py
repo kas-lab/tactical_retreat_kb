@@ -28,7 +28,6 @@ def kb_interface():
             'schemas/context_model/context_model.tql',
             'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
-            'schemas/relaxed/relaxed_model.tql',
             'schemas/tactics_model/tactics_model.tql'],
         ['test/data/test_tactics_model.tql'],
         force_database=True,
@@ -176,7 +175,6 @@ def kb_interface_example():
             'schemas/context_model/context_model.tql',
             'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
-            'schemas/relaxed/relaxed_model.tql',
             'schemas/tactics_model/tactics_model.tql'],
         ['schemas/ros_model/ros_model_example.tql',
             'schemas/tactics_model/tactics_example.tql',
@@ -190,17 +188,3 @@ def kb_interface_example():
 
 def test_tactic_min_valid(kb_interface_example):
     assert kb_interface_example.get_tactic_rule_valid('MIN')
-
-
-def test_tactic_impacts_requirement(kb_interface_example, kb_interface):
-    requirements = kb_interface_example.get_tactic_impacts_requirement('MIN')
-    assert 'R1.2 Movement Power' in requirements
-
-    requirements = kb_interface_example.get_tactic_impacts_requirement('MED')
-    assert 'R1.2 Movement Power' in requirements
-
-    requirements = kb_interface_example.get_tactic_impacts_requirement('MAX')
-    assert 'R1.2 Movement Power' in requirements
-
-    requirements = kb_interface.get_tactic_impacts_requirement('tr_variant_resolution_feasible')
-    assert len(requirements) == 0
