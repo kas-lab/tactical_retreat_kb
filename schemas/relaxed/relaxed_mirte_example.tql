@@ -1,26 +1,25 @@
 match
 
-$qa_movement_power isa Measure,
-	has measure_name "qa_movement_power"; # watt?
+$movement_power_measure isa Measure,
+	has measure_name "movement_power_measure";
+
+$current_linear_velocity_measure isa Measure,
+	has measure_name "current_linear_velocity_measure";
 
 insert
 
 ## Examples Mirte's MVP use case
 
-$velocity_measure isa Measure,
-	has measure_name "velocity_measure",
-	has description "The robot's velocity";
-
 # just an example, the measurement should be inserted at runtime
 $current_vel isa ValueDouble, has double_value 0.22221;
-(measure:$velocity_measure , measurement_value: $current_vel) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+(measure:$current_linear_velocity_measure , measurement_value: $current_vel) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
 $velocity_set isa FuzzyTriangular,
 	has a -0.5,
 	has b 0.0,
 	has c 0.5;
 
-$velocity_as_close_expression (unimodal_membership: $velocity_set, term: $velocity_measure) isa as_close_as_possible_expression,
+$velocity_as_close_expression (unimodal_membership: $velocity_set, term: $current_linear_velocity_measure) isa as_close_as_possible_expression,
 	has required_value 0.26;
 
 $velocity_shall_expression (relaxed_expression: $velocity_as_close_expression) isa shall_expression;
@@ -36,9 +35,11 @@ $velocity_requirement (system: $mirte, relaxed_expression: $velocity_shall_expre
 $mv_pwr_fuzzy_set isa FuzzyExponentialDecay,
 	has exponent 0.2;
 
-$as_few_mv_pwr_as_possible (decay_membership: $mv_pwr_fuzzy_set, term: $qa_movement_power) isa as_few_as_possible_expression;
+$as_few_mv_pwr_as_possible (decay_membership: $mv_pwr_fuzzy_set, term: $movement_power_measure) isa as_few_as_possible_expression;
 $mv_pwr_shall_expression (relaxed_expression: $as_few_mv_pwr_as_possible) isa shall_expression;
 
+$current_mv_pwer isa ValueDouble, has double_value 0.3;
+(measure:$movement_power_measure , measurement_value: $current_mv_pwer) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 $mv_power_requirement (system: $mirte, relaxed_expression: $mv_pwr_shall_expression) isa relaxed_requirement,
 	has requirement_name "R1.2 Movement Power",
 	has in_effect true,

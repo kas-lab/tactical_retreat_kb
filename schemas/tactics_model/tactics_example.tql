@@ -6,14 +6,15 @@ $velocity_smoother_node isa LifeCycleNode,
 insert
 
 # context model
-$ea_nearest_object isa Measure, has measure_name "ea_nearest_object"; # meter?
-$qa_movement_power isa Measure, has measure_name "qa_movement_power"; # watt?
+$nearest_object_measure isa Measure, has measure_name "nearest_object_measure"; # meter
+$movement_power_measure isa Measure, has measure_name "movement_power_measure"; # watt?
+$current_linear_velocity_measure isa Measure, has measure_name "current_linear_velocity_measure"; # m/s
 
 $mvalueonine isa  ValueDouble,
     has double_value 0.09;
 
 ## example measurement
-(measure: $ea_nearest_object, measurement_value:$mvalueonine) isa measurement,
+(measure: $nearest_object_measure, measurement_value:$mvalueonine) isa measurement,
         has measurement_time 2025-09-06T12:57:56.666;
 
 ## Nearest object
@@ -37,7 +38,7 @@ $nearest_object_pub isa Publisher,
 
 (interface: $scan_filtered_pub, qos: $sensor_qos) isa has_qos;
 
-(measure: $ea_nearest_object, source: $scan_filtered_pub, output: $nearest_object_pub) isa measurement_interface,
+(measure: $nearest_object_measure, source: $scan_filtered_pub, output: $nearest_object_pub) isa measurement_interface,
     has measurement_function_name 'get_nearest_scan_distance_in_base',
     has measurement_function_lib 'ros_monitors.laser_scan_functions',
     has measurement_function_args 'base_link';
@@ -48,6 +49,10 @@ $f_low_speed isa Feature, has feature_name "LOW_SPEED";
 $f_hi_speed isa Feature, has feature_name "HIGH_SPEED";
 $f_med_speed isa Feature, has feature_name "MED_SPEED";
 $alternative (parent: $f_max_speed, child: $f_low_speed, child: $f_med_speed, child: $f_hi_speed) isa alternative;
+
+$fa_min (activation: $f_low_speed) isa feature_adaptation;
+$fa_med (activation: $f_med_speed) isa feature_adaptation;
+$fa_max (activation: $f_hi_speed) isa feature_adaptation;
 
 # define MaxSpeedInternal Tactic
 $ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal";
@@ -66,54 +71,56 @@ $litdoublefifteen isa ValueDouble,
 $litdoublethreenine isa ValueDouble,
     has double_value 39.0;
 
-$ineq_nearest_lower_than_10 (lhs_value:$ea_nearest_object, rhs_value:$litdouble) isa inequality_expression,
+$ineq_nearest_lower_than_10 (lhs_value:$nearest_object_measure, rhs_value:$litdouble) isa inequality_expression,
 	has operator "<";
 # movement power > 40.0
-$ineq_mv_pwer_greater_than_40  (lhs_value:$qa_movement_power, rhs_value:$litdoublefoury) isa inequality_expression,
+$ineq_mv_pwer_greater_than_40  (lhs_value:$movement_power_measure, rhs_value:$litdoublefoury) isa inequality_expression,
 	has operator ">";
 # (nearest_object < 0.1) or (movement power > 40.0)
 $or_expression (expression:$ineq_nearest_lower_than_10, expression:$ineq_mv_pwer_greater_than_40) isa or_expression;
 
 # nearest_object > 0.15
-$ineq_nearest_greater_than_15 (lhs_value:$ea_nearest_object, rhs_value:$litdoublefifteen) isa inequality_expression,
+$ineq_nearest_greater_than_15 (lhs_value:$nearest_object_measure, rhs_value:$litdoublefifteen) isa inequality_expression,
 	has operator ">";
 # movement power < 40.0
-$ineq_mv_pwer_lower_than_39  (lhs_value:$qa_movement_power, rhs_value:$litdoublethreenine) isa inequality_expression,
+$ineq_mv_pwer_lower_than_39  (lhs_value:$movement_power_measure, rhs_value:$litdoublethreenine) isa inequality_expression,
 	has operator "<";
 # (nearest_object > 0.15) and (movement power < 40.0)
 $and_expression (expression:$ineq_nearest_greater_than_15, expression:$ineq_mv_pwer_lower_than_39) isa and_expression;
 
 ### tactic rules effects
-$double_5 isa ValueDouble,
-    has double_value 5.0;
-$double_7 isa ValueDouble,
-    has double_value 7.0;
-$double_10 isa ValueDouble,
-    has double_value 10.0;
+$double_0_05 isa ValueDouble,
+    has double_value 0.05;
+$double_0_07 isa ValueDouble,
+    has double_value 0.07;
+$double_0_10 isa ValueDouble,
+    has double_value 0.10;
+$effect_move_pwr_min_speed (measure: $movement_power_measure, effect_value: $double_0_05) isa relative_effect;
+$effect_move_pwr_med_speed (measure: $movement_power_measure, effect_value: $double_0_07) isa relative_effect;
+$effect_move_pwr_max_speed (measure: $movement_power_measure, effect_value: $double_0_10) isa relative_effect;
 
-$effect_move_pwr_min_speed (measure: $qa_movement_power, effect_value: $double_5) isa positive_effect;
-$effect_move_pwr_med_speed (measure: $qa_movement_power, effect_value: $double_7) isa positive_effect;
-$effect_move_pwr_max_speed (measure: $qa_movement_power, effect_value: $double_10) isa positive_effect;
-
-$fa_min (activation: $f_low_speed) isa feature_adaptation;
-$fa_med (activation: $f_med_speed) isa feature_adaptation;
-$fa_max (activation: $f_hi_speed) isa feature_adaptation;
+$effect_linear_vel_min_speed (measure: $current_linear_velocity_measure, effect_value: $p_max_velocity_x_low) isa absolute_effect;
+$effect_linear_vel_med_speed (measure: $current_linear_velocity_measure, effect_value: $p_max_velocity_x_med) isa absolute_effect;
+$effect_linear_vel_max_speed (measure: $current_linear_velocity_measure, effect_value: $p_max_velocity_x_high) isa absolute_effect;
 
 ### tactic rules
 (tactic:$ta_max_speed,
 	antecedent:$or_expression,
 	consequent:$fa_min,
-	effect: $effect_move_pwr_min_speed )
+	effect: $effect_move_pwr_min_speed,
+	effect: $effect_linear_vel_min_speed)
 	isa tactic_rule, has rule_name "MIN";
 (tactic:$ta_max_speed,
 	antecedent:$ineq_nearest_greater_than_15,
 	consequent:$fa_med,
-	effect: $effect_move_pwr_med_speed)
+	effect: $effect_move_pwr_med_speed,
+	effect: $effect_linear_vel_med_speed)
 	isa tactic_rule, has rule_name "MED";
 (tactic:$ta_max_speed,
 	antecedent:$and_expression,
 	consequent:$fa_max,
-	effect: $effect_move_pwr_max_speed )
+	effect: $effect_move_pwr_max_speed,
+	effect: $effect_linear_vel_max_speed)
 	isa tactic_rule, has rule_name "MAX";
 
 # define parameter max_speed
