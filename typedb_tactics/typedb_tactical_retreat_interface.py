@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterator
 from typing import List
@@ -28,6 +29,16 @@ from typedb.driver import ConceptMap
 
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class RequirementImpactDict():
+    """Dataclass for requirement impact information."""
+
+    action_name: str  #: name of the action
+    requirement_name: str  #: name of the requirement
+    tactic_rule: str  #: name of the tactic rule
+    fulfillment: float  #: fulfillment value
 
 
 def create_value_query(value, suffix=''):
@@ -561,6 +572,44 @@ class TacticalRetreatInterface(TypeDBInterface):
         return self.fetch_relaxed_requirement_fulfillment(
             system_name, requirement_name)[0]['fulfillment']['value']
 
+    def fetch_relaxed_requirement_hypothetical_fulfillment(
+            self, system_name: str, requirement_name: str, tactic_rule: str
+            ) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch hypothetical fulfillment of a relaxed requirement after applying a tactic rule.
+
+        :param system_name: system name
+        :param requirement_name: requirement name
+        :param tactic_rule: tactic rule name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $system isa System, has system_name '{system_name}';
+                $requirement (system: $system) isa relaxed_requirement,
+                    has requirement_name '{requirement_name}';
+                $tr isa tactic_rule, has rule_name '{tactic_rule}';
+                $tactic_impact (tactic_rule: $tr, requirement: $requirement) isa tactic_impact;
+            fetch
+                $tactic_impact : fulfillment;
+        """
+        return self.fetch_database(query)
+
+    def get_relaxed_requirement_hypothetical_fulfillment(
+            self, system_name: str, requirement_name: str, tactic_rule: str
+            ) -> List[dict[str, MatchResultDict]]:
+        """
+        Get hypothetical fulfillment of a relaxed requirement after applying a tactic rule.
+
+        :param system_name: system name
+        :param requirement_name: requirement name
+        :param tactic_rule: tactic rule name
+        :return: fulfillment value
+        """
+        query_result = self.fetch_relaxed_requirement_hypothetical_fulfillment(
+            system_name, requirement_name, tactic_rule)
+        return query_result[0]['tactic_impact']['fulfillment'][0]['value']
+
     def fetch_latest_measurement(
             self, measure_name: str) -> List[dict[str, MatchResultDict]]:
         """
@@ -1003,6 +1052,77 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_tactic_impacts_requirement(
             rule_name)
-        print(query_result)
         return [result['req']['requirement_name'][0]['value']
                 for result in query_result]
+
+    def fetch_resulting_effect_value(self, tactic_rule: str, measure_name: str
+                                     ) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch resulting effect value of a tactic on a measure.
+
+        :param tactic_rule: tactic rule name
+        :param measure_name: measure name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $tactic_rule (effect: $effect) isa tactic_rule, has rule_name '{tactic_rule}';
+                $measure isa Measure, has measure_name '{measure_name}';
+                $effect (measure: $measure, effect_value: $effect_value) isa relative_effect;
+            fetch
+                $effect: resulting_effect_value;
+        """
+        return self.fetch_database(query)
+
+    def get_resulting_effect_value(self, tactic_rule: str, measure_name: str) -> float:
+        """
+        Get resulting effect value of a tactic on a measure.
+
+        :param tactic_rule: tactic rule name
+        :param measure_name: measure name
+        :return: resulting effect value
+        """
+        query_result = self.fetch_resulting_effect_value(
+            tactic_rule, measure_name)
+        return query_result[0]['effect']['resulting_effect_value'][0]['value']
+
+    def fetch_potential_requirements_fulfillment(
+            self, action_name: str) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch all potential relaxed requirement fulfillments per applicable tactic.
+
+        :param system_name: system name
+        :param requirement_name: requirement name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $ros_interface isa ROSInterface, has interface_name '{action_name}';
+                (action: $ros_interface, tactic_rule: $tactic_rule)
+                    isa applicable_tactics;
+                $tactic_impact (requirement: $req, tactic_rule: $tactic_rule) isa tactic_impact;
+                $req isa relaxed_requirement, has in_effect true;
+            fetch
+                $tactic_rule: rule_name;
+                $tactic_impact: fulfillment;
+                $req: requirement_name;
+        """
+        return self.fetch_database(query)
+
+    def get_potential_requirements_fulfillment(
+            self, action_name: str) -> List[RequirementImpactDict]:
+        """
+        Get all potential relaxed requirement fulfillments per applicable tactic.
+
+        :return: list of RequirementImpactDict
+        """
+        query_result = self.fetch_potential_requirements_fulfillment(action_name)
+        result_list = []
+        for result in query_result:
+            result_list.append(RequirementImpactDict(
+                action_name=action_name,
+                tactic_rule=result['tactic_rule']['rule_name'][0]['value'],
+                requirement_name=result['req']['requirement_name'][0]['value'],
+                fulfillment=result['tactic_impact']['fulfillment'][0]['value']
+            ))
+        return result_list

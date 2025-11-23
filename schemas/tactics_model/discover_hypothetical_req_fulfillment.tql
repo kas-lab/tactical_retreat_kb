@@ -1,18 +1,238 @@
 define
 
+hypothetical_fulfillment sub relation,
+    owns fulfillment,
+    relates effect,
+    relates relaxed_expression;
+relaxed_expression plays hypothetical_fulfillment:relaxed_expression;
+effect plays hypothetical_fulfillment:effect;
+
 tactic_impact sub relation,
+    owns fulfillment,
     relates tactic_rule,
     relates requirement;
 relaxed_requirement plays tactic_impact:requirement;
 tactic_rule plays tactic_impact:tactic_rule;
 
-## Rules for checking whether a tactic possibly impacts a requirement
+# ## TODO: move to tactics_model.tql
+rule relative_effect_eval:
+    when {
+        $tr (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure, effect_value: $effect_value) isa relative_effect;
+        {
+            $effect_value isa ValueDouble, has double_value $effect_double_value;
+            ?effect_value_ = $effect_double_value;
+        } or {
+            $effect_value isa ValueInteger, has integer_value $effect_integer_value;
+            ?effect_value_ = $effect_integer_value;
+        };
+
+        $measurement (measure: $measure, measurement_value: $value) isa! measurement, has latest true;
+        {
+            $value isa ValueDouble, has double_value $measured_double_value;
+            ?measured_value_ = $measured_double_value;
+        } or {
+            $value isa ValueInteger, has integer_value $measured_integer_value;
+            ?measured_value_ = $measured_integer_value;
+        };
+
+        ?hypothetical_value = ?measured_value_ + ?effect_value_ ;
+    } then {
+        $effect has resulting_effect_value ?hypothetical_value;
+    };
+
+rule absolute_effect_double_result_value:
+    when {
+        $tr (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure, effect_value: $effect_value) isa absolute_effect;
+        $effect_value isa ValueDouble, has double_value $effect_double_value;
+        ?hypothetical_value = $effect_double_value;
+    } then {
+        $effect has resulting_effect_value ?hypothetical_value;
+    };
+
+rule absolute_effect_integer_result_value:
+    when {
+        $tr (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure, effect_value: $effect_value) isa absolute_effect;
+        $effect_value isa ValueInteger, has integer_value $effect_integer_value;
+        ?hypothetical_value = $effect_integer_value;
+    } then {
+        $effect has resulting_effect_value ?hypothetical_value;
+    };
+
+## rules for inferring hypothetical_fulfillment relation
+rule relaxed_expression_hypothetical_fulfillment_relation_reflection:
+    when {
+        $expression (term: $measure) isa relaxed_expression;
+        $effect (measure: $measure) isa effect;
+    } then {
+        (relaxed_expression: $expression, effect: $effect) isa hypothetical_fulfillment;
+    };
+
+rule relaxed_expression_hypothetical_fulfillment_relation_transitivity:
+    when {
+        $expression_parent (relaxed_expression: $expression_child) isa relaxed_expression;
+        (relaxed_expression: $expression_child, effect: $effect) isa hypothetical_fulfillment;
+    } then {
+        (relaxed_expression: $expression_parent, effect: $effect) isa hypothetical_fulfillment;
+    };
+
+
+# ## Rules for checking whether a tactic possibly impacts a requirement
 rule tactic_impacts_requirement:
     when {
         $tr (effect: $effect) isa tactic_rule;
         $effect (measure: $measure) isa effect;
-        $requirement isa relaxed_requirement;
-        (dependent: $requirement, measure: $measure) isa measure_dependency;
+        $requirement (relaxed_expression: $relaxed_expression) isa relaxed_requirement;
+        (relaxed_expression: $relaxed_expression, effect: $effect) isa hypothetical_fulfillment;
     } then {
         (tactic_rule: $tr, requirement: $requirement) isa tactic_impact;
+    };
+
+rule fuzzy-unimodal-expression-membership-hypothetical-evaluation-fuzzy-triangular :
+	when {
+		$fuzzy_expression (unimodal_membership: $fuzzy_membership, term: $measure) isa fuzzy_unimodal_expression;
+        $hypothetical_fulfillment (relaxed_expression: $fuzzy_expression, effect: $effect) isa hypothetical_fulfillment;
+
+        $effect (measure: $measure) isa effect, has resulting_effect_value $quantified_value;
+
+		{
+			$fuzzy_expression has required_period $period;
+            ?q0 = $quantified_value % $period;
+			?quantified_value__ = min(?q0, $period - (?q0));
+		} or {
+			$fuzzy_expression has required_value $value;
+			?quantified_value__ = $quantified_value - $value;
+		};
+		?quantified_value_ = ?quantified_value__;
+
+        $fuzzy_membership isa! FuzzyTriangular, has a $a, has b $b, has c $c;
+
+        ?quantified_value_ >= $a;
+        ?quantified_value_ <= $c;
+        {
+            ?quantified_value_ <= $b;
+            ?membership_ = (?quantified_value_ - $a) / ($b - $a);
+        } or {
+            ?quantified_value_ > $b;
+            ?membership_ = ($c - ?quantified_value_) / ($c - $b);
+        };
+		?membership = ?membership_;
+	} then {
+        $hypothetical_fulfillment has fulfillment ?membership;
+	};
+
+rule fuzzy-unimodal-expression-membership-hypothetical-evaluation-fuzzy-guassian :
+	when {
+		$fuzzy_expression (unimodal_membership: $fuzzy_membership, term: $measure) isa fuzzy_unimodal_expression;
+        $hypothetical_fulfillment (relaxed_expression: $fuzzy_expression, effect: $effect) isa hypothetical_fulfillment;
+
+        $effect (measure: $measure) isa effect, has resulting_effect_value $quantified_value;
+
+		{
+			$fuzzy_expression has required_period $period;
+			?quantified_value__ = min($quantified_value % $period, $period - ($quantified_value % $period));
+		} or {
+			$fuzzy_expression has required_value $value;
+			?quantified_value__ = $quantified_value - $value;
+		};
+		?quantified_value_ = ?quantified_value__;
+
+        $fuzzy_membership isa! FuzzyGuassian, has sigma $sigma, has center $center;
+        ?membership = 2.71828 ^ (-0.5 * ((?quantified_value_ - $center) / $sigma));
+	} then {
+        $hypothetical_fulfillment has fulfillment ?membership;
+	};
+
+rule fuzzy-expression-ascend-membership-hypothetical-evaluation-FuzzyExponentialSaturation :
+	when {
+
+        $fuzzy_expression (ascend_membership: $fuzzy_membership, term: $measure) isa fuzzy_ascend_expression;
+
+        $hypothetical_fulfillment (relaxed_expression: $fuzzy_expression, effect: $effect) isa hypothetical_fulfillment;
+
+        $effect (measure: $measure) isa effect, has resulting_effect_value $quantified_value;
+
+        $fuzzy_membership isa FuzzyExponentialSaturation, has exponent $exponent;
+        ?membership = 1.0 - 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
+	} then {
+		$hypothetical_fulfillment has fulfillment ?membership;
+	};
+
+rule fuzzy-expression-ascend-membership-hypothetical-evaluation-FuzzySigmoid :
+	when {
+
+        $fuzzy_expression (ascend_membership: $fuzzy_membership, term: $measure) isa fuzzy_ascend_expression;
+
+        $hypothetical_fulfillment (relaxed_expression: $fuzzy_expression, effect: $effect) isa hypothetical_fulfillment;
+
+        $effect (measure: $measure) isa effect, has resulting_effect_value $quantified_value;
+
+        $fuzzy_membership isa FuzzySigmoid, has inflection_point $inflection_point, has exponent $exponent;
+        ?membership = 1.0 / ( 1.0 + 2.71828 ^ ( -1.0 * $exponent * ($quantified_value - $inflection_point)));
+	} then {
+		$hypothetical_fulfillment has fulfillment ?membership;
+	};
+
+rule fuzzy-expression-ascend-membership-hypothetical-evaluation-FuzzyBoundedLinearFraction :
+	when {
+
+        $fuzzy_expression (ascend_membership: $fuzzy_membership, term: $measure) isa fuzzy_ascend_expression;
+
+        $hypothetical_fulfillment (relaxed_expression: $fuzzy_expression, effect: $effect) isa hypothetical_fulfillment;
+
+        $effect (measure: $measure) isa effect, has resulting_effect_value $quantified_value;
+
+        $fuzzy_membership isa FuzzyBoundedLinearFraction, has curvature $curvature;
+        ?membership = $quantified_value / ($quantified_value + $curvature);
+	} then {
+		$hypothetical_fulfillment has fulfillment ?membership;
+	};
+
+rule fuzzy-expression-decay-membership-hypothetical-evaluation-FuzzyExponentialDecay :
+	when {
+		$fuzzy_expression (decay_membership: $fuzzy_membership, term: $measure) isa fuzzy_decay_expression;
+		$hypothetical_fulfillment (relaxed_expression: $fuzzy_expression, effect: $effect) isa hypothetical_fulfillment;
+        $effect (measure: $measure) isa effect, has resulting_effect_value $quantified_value;
+
+        $fuzzy_variable isa FuzzyExponentialDecay, has exponent $exponent;
+        ?membership = 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
+	} then {
+		$hypothetical_fulfillment has fulfillment ?membership;
+	};
+
+rule fuzzy-expression-decay-membership-hypothetical-evaluation-FuzzyRationalDecay :
+	when {
+		$fuzzy_expression (decay_membership: $fuzzy_membership, term: $measure) isa fuzzy_decay_expression;
+		$hypothetical_fulfillment (relaxed_expression: $fuzzy_expression, effect: $effect) isa hypothetical_fulfillment;
+        $effect (measure: $measure) isa effect, has resulting_effect_value $quantified_value;
+
+        $fuzzy_variable isa FuzzyRationalDecay, has curvature $curvature;
+        ?membership = $curvature / ($quantified_value + $curvature);
+	} then {
+		$hypothetical_fulfillment has fulfillment ?membership;
+	};
+
+## expressions fulfillment rules
+rule shall-expression-hypothetical-fulfillment :
+	when {
+        $shall_expression_hf (relaxed_expression: $shall_expression, effect: $effect) isa hypothetical_fulfillment;
+		$shall_expression (relaxed_expression: $relaxed_expression) isa shall_expression;
+
+        $hypothetical_fulfillment (relaxed_expression: $relaxed_expression, effect: $effect) isa hypothetical_fulfillment,
+            has fulfillment $fulfillment;
+	} then {
+		$shall_expression_hf has $fulfillment;
+	};
+
+rule requirement_hypothetical_fulfillment:
+    when {
+        $tactic_impact (tactic_rule: $tr, requirement: $requirement) isa tactic_impact;
+        $tr (effect: $effect) isa tactic_rule;
+        $requirement (relaxed_expression: $relaxed_expression) isa relaxed_requirement;
+        (relaxed_expression: $relaxed_expression, effect: $effect) isa hypothetical_fulfillment,
+            has fulfillment $fulfillment;
+    } then {
+        $tactic_impact has $fulfillment;
     };

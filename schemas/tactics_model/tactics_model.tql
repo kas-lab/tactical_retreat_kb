@@ -45,18 +45,25 @@ tactic_rule sub relation,
     relates effect;
 
 ### effect
+
+resulting_effect_value sub attribute,
+    value double;
 effect sub relation,
     abstract,
+    owns resulting_effect_value,
     relates measure,
-    relates effect_value,
     plays tactic_rule:effect;
 
-positive_effect sub effect;
-negative_effect sub effect;
-absolute_effect sub effect;
+absolute_effect sub effect,
+    relates effect_value;
+
+relative_effect sub effect,
+    relates effect_value;
 
 Measure plays effect:measure;
-Value plays effect:effect_value;
+Value plays absolute_effect:effect_value;
+ValueDouble plays relative_effect:effect_value;
+ValueInteger plays relative_effect:effect_value;
 
 #### expressions
 expression sub relation,

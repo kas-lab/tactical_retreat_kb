@@ -43,13 +43,17 @@ def test_get_requirement_fulfillment(kb_interface):
         'Mirte', 'R1.1 Velocity')
     assert fulfillment == pytest.approx(0.92442)
 
+    fulfillment = kb_interface.get_relaxed_requirement_fulfillment(
+        'Mirte', 'R1.2 Movement Power')
+    assert fulfillment == pytest.approx(0.941764572)
+
 
 def test_get_requirement_measure_dependency(kb_interface):
     measures = kb_interface.get_requirement_measure_dependency('R1.1 Velocity')
-    assert 'velocity_measure' in measures
+    assert 'current_linear_velocity_measure' in measures
 
     measures = kb_interface.get_requirement_measure_dependency('R1.2 Movement Power')
-    assert 'qa_movement_power' in measures
+    assert 'movement_power_measure' in measures
 
     measures = kb_interface.get_requirement_measure_dependency('R1.3 Liquid intake')
     assert 'liquid_intake_measure' in measures
