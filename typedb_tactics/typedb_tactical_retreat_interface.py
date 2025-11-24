@@ -561,6 +561,84 @@ class TacticalRetreatInterface(TypeDBInterface):
         return self.fetch_relaxed_requirement_fulfillment(
             system_name, requirement_name)[0]['fulfillment']['value']
 
+    def fetch_in_effect_requirement_fulfillment(self) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch all relaxed requirement in effect fulfillment.
+
+        :return: fetch query result
+        """
+        query = """
+            match
+                $req isa relaxed_requirement,
+                    has in_effect true;
+            fetch
+                $req: requirement_name, fulfillment;
+        """
+        return self.fetch_database(query)
+
+    def get_in_effect_requirement_fulfillment(self) -> List[dict]:
+        """
+        Fetch all relaxed requirement in effect fulfillment.
+
+        :return: fetch query result
+        """
+        query_result = self.fetch_in_effect_requirement_fulfillment()
+        return [
+            {'requirement_name': result['req']['requirement_name'][0]['value'],
+             'fulfillment': result['req']['fulfillment'][0]['value']} for result in query_result]
+
+    def set_requirement_in_effect(self, requirement_name: str, in_effect: bool
+                                  ) -> Optional[Iterator[ConceptMap]]:
+        """
+        Set the in_effect status of a relaxed requirement.
+
+        :param requirement_name: requirement name
+        :param in_effect: boolean indicating if the requirement is in effect
+        """
+        in_effect_tql_type = convert_py_type_to_query_type(in_effect)
+        query = f"""
+            match
+                $req isa relaxed_requirement,
+                    has requirement_name '{requirement_name}';
+            insert
+                $req has in_effect {in_effect_tql_type};
+        """
+        return self.insert_database(query)
+
+    def fetch_requirement_in_effect(self, requirement_name: str
+                                    ) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch relaxed requirement in effect attribute.
+
+        :param requirement_name: requirement name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $req isa relaxed_requirement,
+                    has requirement_name '{requirement_name}';
+            fetch
+                $req: in_effect;
+        """
+        return self.fetch_database(query)
+
+    def get_requirement_in_effect(self, requirement_name: str) -> bool:
+        """
+        Get relaxed requirement in effect attribute.
+
+        :param requirement_name: requirement name
+        :return: boolean indicating if the requirement is in effect
+        """
+        query_result = self.fetch_requirement_in_effect(requirement_name)
+        if query_result is None or len(query_result) == 0:
+            self.logger.warning(
+                'Requirement %s not found in the knowledge base.',
+                requirement_name)
+            return False
+        if len(query_result[0]['req']['in_effect']) == 0:
+            return False
+        return query_result[0]['req']['in_effect'][0]['value']
+
     def fetch_latest_measurement(
             self, measure_name: str) -> List[dict[str, MatchResultDict]]:
         """

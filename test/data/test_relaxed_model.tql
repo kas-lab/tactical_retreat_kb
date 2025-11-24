@@ -1,0 +1,5 @@
+insert
+
+$fake_system isa System, has system_name 'system';
+$fake_req (system: $fake_system) isa relaxed_requirement,
+    has requirement_name 'fake_req';
