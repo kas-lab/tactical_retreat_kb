@@ -14,20 +14,23 @@
 
 import importlib
 import inspect
+from dataclasses import asdict
+
+from rclpy.duration import Duration
+from rclpy.lifecycle import State
+from rclpy.lifecycle import TransitionCallbackReturn
+from rclpy.qos import QoSDurabilityPolicy
+from rclpy.qos import QoSHistoryPolicy
+from rclpy.qos import QoSLivelinessPolicy
+from rclpy.qos import QoSProfile
+from rclpy.qos import QoSReliabilityPolicy
 
 from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
 
-from rclpy.duration import Duration
-
-from rclpy.lifecycle import State
-from rclpy.lifecycle import TransitionCallbackReturn
-
-from rclpy.qos import QoSDurabilityPolicy
-from rclpy.qos import QoSLivelinessPolicy
-from rclpy.qos import QoSHistoryPolicy
-from rclpy.qos import QoSProfile
-from rclpy.qos import QoSReliabilityPolicy
 from std_srvs.srv import Trigger
+
+from tactical_msgs.msg import RequirementImpact
+from tactical_msgs.srv import PotentialRequirementFulfillment
 
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
@@ -195,6 +198,12 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             _fetch_all_measurements_cb
         )
 
+        self.potential_requirements_fulfillment = self.create_service(
+            PotentialRequirementFulfillment,
+            self.get_name() + '/potential_requirements_fulfillment',
+            self.cb_potential_requirements_fulfillment
+        )
+
         return super().on_activate(state)
 
     def on_deactivate(self, state: State) -> TransitionCallbackReturn:
@@ -209,8 +218,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
         :return: transition result
         """
-        config_res = super().on_configure(state)
-        return config_res
+        self.get_logger().info('on_configure() is called.')
+        return super().on_configure(state)
 
     def on_cleanup(self, state: State) -> TransitionCallbackReturn:
         """
@@ -293,3 +302,11 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
         except Exception as e:
             raise e
+
+    def cb_potential_requirements_fulfillment(self, request, response):
+        hypothetical_fulfillment = self.typedb_interface.get_potential_requirements_fulfillment(
+            request.action_name)
+        response.requirements_impact = [
+            RequirementImpact(**asdict(dc)) for dc in hypothetical_fulfillment
+        ]
+        return response

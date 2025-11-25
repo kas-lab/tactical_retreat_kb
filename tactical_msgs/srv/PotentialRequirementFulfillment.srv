@@ -1,0 +1,3 @@
+string action_name  # name of the action
+---
+tactical_msgs/RequirementImpact[] requirements_impact
