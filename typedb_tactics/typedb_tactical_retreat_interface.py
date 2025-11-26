@@ -480,24 +480,21 @@ class TacticalRetreatInterface(TypeDBInterface):
 
     def fetch_applicable_tactics(self,
                                  resolution_model: str,
-                                 action_name: str,
-                                 action_type: str) -> List[dict[str,
-                                                                MatchResultDict]]:
+                                 interface_name: str) -> List[dict[str, MatchResultDict]]:
         """
         Fetch all tactics that are applicable given an ROS action name and resolution model.
 
         :param resolution_model: name of the resolution model to check
-        :param action_name: name of the ROS action
-        :param action_name: type of the ROS action
+        :param interface_name: name of the ROS interface
         :return: fetch query result
         """
         query = f"""
             match
-                $action isa ActionServer, has interface_name '{action_name}',
-                    has interface_type '{action_type}';
+                $interface isa ROSInterface, has interface_name '{interface_name}';
                 $resolution_model isa resolution_model,
                     has resolution_model_name '{resolution_model}';
-                (action: $action, resolution_model: $resolution_model, tactic_rule: $tactic_rule)
+                (interface: $interface,
+                    resolution_model: $resolution_model, tactic_rule: $tactic_rule)
                     isa applicable_tactics;
             fetch
                 $tactic_rule: rule_name;
@@ -507,18 +504,16 @@ class TacticalRetreatInterface(TypeDBInterface):
     def get_applicable_tactics(
             self,
             resolution_model: str,
-            action_name: str,
-            action_type: str) -> List[str]:
+            interface_name: str) -> List[str]:
         """
         Get all tactics that are applicable given an ROS action name and resolution model.
 
         :param resolution_model: name of the resolution model to check
-        :param action_name: name of the ROS action
-        :param action_name: type of the ROS action
+        :param interface_name: name of the ROS interface
         :return: list containing all tactic's names that are applicable
         """
         query_result = self.fetch_applicable_tactics(
-            resolution_model, action_name, action_type)
+            resolution_model, interface_name)
         return sorted(
             result['tactic_rule']['rule_name'][0]['value']
             for result in query_result
