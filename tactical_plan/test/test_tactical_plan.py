@@ -21,16 +21,14 @@ import launch_pytest
 
 import launch_ros
 
-import pytest
-
 from lifecycle_msgs.srv import ChangeState
 from lifecycle_msgs.srv import GetState
+
+import pytest
 
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
-
-from std_srvs.srv import Empty
 
 from tactical_plan.tactical_retreat_plan import TacticalPlan
 
@@ -39,10 +37,6 @@ class HelperNode(Node):
 
     def __init__(self, name='test_node'):
         super().__init__(name)
-
-        # self.delete_db_cli = self.create_client(
-        #     Empty, '/tactical_kb/delete_database'
-        # )
 
     def call_service(self, cli, request, timeout_sec=5.0):
         if cli.wait_for_service(timeout_sec=5.0) is False:
@@ -72,6 +66,8 @@ class HelperNode(Node):
         return self.call_service(cli, get_state_req)
 
     def activate_lc_node(self, node_name='tactical_kb'):
+        if self.get_node_state().current_state.id == 3:
+            return
         state_req = 1
         res = self.change_node_state(state_req, node_name)
         if res.success is True:
@@ -86,20 +82,8 @@ TACTICAL_PLAN_NODE_NAME = 'tactical_plan'
 TACTICAL_KB_NODE_NAME = 'tactical_kb'
 
 
-@launch_pytest.fixture
+@launch_pytest.fixture(scope='module')
 def generate_test_description():
-    # path_to_test = Path(__file__).parents[1]
-
-    # tactical_plan_node = launch_ros.actions.Node(
-    #     executable=sys.executable,
-    #     arguments=[
-    #         str(path_to_test / 'tactical_plan' /
-    #             'tactical_plan_node.py')],
-    #     additional_env={'PYTHONUNBUFFERED': '1'},
-    #     name='tactical_plan',
-    #     output='screen',
-    # )
-
     path_to_pkg = Path(__file__).parents[2] / 'typedb_tactics'
     path_schemas = path_to_pkg / 'schemas'
     path_test_data = path_to_pkg / 'test' / 'data'
@@ -176,7 +160,6 @@ def tactical_plan():
     tactical_plan.destroy_node()
 
 
-# @pytest.mark.launch(fixture=generate_test_description)
 def test_tactical_plan_lc_states(test_node, tactical_plan, executor):
     executor.add_node(test_node)
     executor.add_node(tactical_plan)

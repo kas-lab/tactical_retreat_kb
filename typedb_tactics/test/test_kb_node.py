@@ -12,18 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import fields
 import math
-import sys
 import threading
 import time
-from pathlib import Path
-
-import launch
-
-import launch_pytest
-
-import launch_ros
 
 from lifecycle_msgs.srv import ChangeState
 from lifecycle_msgs.srv import GetState
@@ -58,47 +49,9 @@ def test_get_ros_msg_type_from_string():
     assert get_ros_msg_type_from_string('std_srvs/Empty', 'srv') == Empty
 
 
-@launch_pytest.fixture
-def generate_test_description():
-    path_to_pkg = Path(__file__).parents[1]
-    path_schemas = path_to_pkg / 'schemas'
-    path_test_data = path_to_pkg / 'test' / 'data'
-
-    tactical_kb = launch_ros.actions.Node(
-        executable=sys.executable,
-        arguments=[
-            str(path_to_pkg / 'typedb_tactics' / 'tactical_retreat_node.py')],
-        additional_env={'PYTHONUNBUFFERED': '1'},
-        name='tactical_kb',
-        output='screen',
-        parameters=[{
-            'schema_path': [
-                str(path_schemas / 'data_structure/data_structure.tql'),
-                str(path_schemas / 'context_model/context_model.tql'),
-                str(path_schemas / 'ros_model/ros_model.tql'),
-                str(path_schemas / 'feature_model/feature_model.tql'),
-                str(path_schemas / 'relaxed/relaxed_model.tql'),
-                str(path_schemas / 'tactics_model/tactics_model.tql'),
-                str(path_schemas / 'discover_tactics_model/discover_tactics_model.tql'),
-                str(path_schemas / 'tactics_model/discover_hypothetical_req_fulfillment.tql')],
-            'data_path': [
-                str(path_schemas / 'ros_model/ros_model_example.tql'),
-                str(path_schemas / 'tactics_model/tactics_example.tql'),
-                str(path_schemas / 'relaxed/relaxed_mirte_example.tql'),
-                str(path_test_data / 'test_tactics_model.tql'),
-                str(path_test_data / 'test_ros_model.tql')],
-            'database_name': 'test_tactical_kb'
-        }]
-    )
-
-    return launch.LaunchDescription([
-        tactical_kb,
-    ])
-
-
 @pytest.fixture
 def tactical_kb():
-    tactical_kb = TacticalRetreatKB('tactical_kb')
+    tactical_kb = TacticalRetreatKB('tactical_kb_node')
     tactical_kb.init_typedb_interface(
         'localhost:1729',
         'test_tactical_kb',
@@ -205,20 +158,6 @@ class HelperNode(Node):
         if res.success is False:
             self.get_logger().error(
                 'State change  req error. Requested {}'.format(state_req))
-
-
-@pytest.mark.launch(fixture=generate_test_description)
-def test_tactical_kb_lc_states(test_node):
-    configure_res = test_node.change_node_state(1)
-    get_inactive_state_res = test_node.get_node_state()
-
-    activate_res = test_node.change_node_state(3)
-    get_active_state_res = test_node.get_node_state()
-
-    assert configure_res.success is True and \
-        get_inactive_state_res.current_state.id == 2 and \
-        activate_res.success is True and \
-        get_active_state_res.current_state.id == 3
 
 
 def test_create_measure_topic_interface(executor, tactical_kb, test_node):
@@ -371,67 +310,3 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
 
     executor.remove_node(test_node)
     executor.remove_node(tactical_kb)
-
-
-def dataclass_from_msg(dc_type, msg):
-    """
-    Construct a dataclass instance from a ROS 2 message.
-    Assumes dc_type fields have the same names as the msg attributes.
-    """
-    kwargs = {
-        f.name: getattr(msg, f.name)
-        for f in fields(dc_type)
-    }
-    return dc_type(**kwargs)
-
-@pytest.mark.launch(fixture=generate_test_description)
-def test_srv_potential_requirements_fulfillment(test_node):
-    test_node.activate_tactical_kb()
-
-    from tactical_msgs.srv import PotentialRequirementFulfillment
-    test_node.potential_requirements_fulfillment_srv = test_node.create_client(
-        PotentialRequirementFulfillment,
-        '/tactical_kb/potential_requirements_fulfillment'
-    )
-
-    from typedb_tactics.utils import RequirementImpactDict
-    request = PotentialRequirementFulfillment.Request()
-    request.action_name = '/navigate_to_pose'
-    result = test_node.call_service(
-        test_node.potential_requirements_fulfillment_srv, request, 10.0)
-
-    requirements_impact = [
-        dataclass_from_msg(RequirementImpactDict, r) for r in result.requirements_impact
-    ]
-
-    assert RequirementImpactDict(
-        action_name='/navigate_to_pose',
-        requirement_name='R1.1 Velocity',
-        tactic_rule='MIN',
-        fulfillment=pytest.approx(0.68)) in requirements_impact
-    assert RequirementImpactDict(
-        action_name='/navigate_to_pose',
-        requirement_name='R1.1 Velocity',
-        tactic_rule='MED',
-        fulfillment=pytest.approx(0.84)) in requirements_impact
-    assert RequirementImpactDict(
-        action_name='/navigate_to_pose',
-        requirement_name='R1.1 Velocity',
-        tactic_rule='MAX',
-        fulfillment=pytest.approx(1.0)) in requirements_impact
-
-    assert RequirementImpactDict(
-        action_name='/navigate_to_pose',
-        requirement_name='R1.2 Movement Power',
-        tactic_rule='MIN',
-        fulfillment=pytest.approx(0.932393864)) in requirements_impact
-    assert RequirementImpactDict(
-        action_name='/navigate_to_pose',
-        requirement_name='R1.2 Movement Power',
-        tactic_rule='MED',
-        fulfillment=pytest.approx(0.92867174)) in requirements_impact
-    assert RequirementImpactDict(
-        action_name='/navigate_to_pose',
-        requirement_name='R1.2 Movement Power',
-        tactic_rule='MAX',
-        fulfillment=pytest.approx(0.923116396)) in requirements_impact

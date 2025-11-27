@@ -19,7 +19,8 @@ from tactical_msgs.msg import RequirementImpact
 
 def select_tactic_max_avg_fulfillment(
         requirement_impact_list: List[RequirementImpact]) -> str:
-    """Select tactic to be executed by calculatin the avg fullfillment.
+    """
+    Select tactic to be executed by calculatin the avg fullfillment.
 
     :param requirement_impact_list: List of RequirementImpact.
     :return: tactic rule name to be executed.
