@@ -13,11 +13,13 @@
 # limitations under the License.
 
 import math
+
 import pytest
+
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def kb_interface():
     kb_interface = TacticalRetreatInterface(
         'localhost:1729',
@@ -26,7 +28,8 @@ def kb_interface():
             'schemas/context_model/context_model.tql',
             'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
-            'schemas/tactics_model/tactics_model.tql'],
+            'schemas/tactics_model/tactics_model.tql',
+            'test/data/test_schema.tql'],
         ['test/data/test_tactics_model.tql'],
         force_database=True,
         force_data=True,
@@ -100,6 +103,34 @@ def test_ineq_expression_valid(kb_interface):
         'measure_no_measurement', '!=', 1.0) is False
     assert kb_interface.get_ineq_expression_valid(
         'measure_no_valid_measurement', '!=', 1.0) is False
+
+
+def test_or_expression(kb_interface):
+    assert kb_interface.fetch_attribute_from_thing(
+        'expression', [('expression_name', 'or_expression_1')], 'expression_valid')[0] is True
+    assert kb_interface.fetch_attribute_from_thing(
+        'expression', [('expression_name', 'or_expression_2')], 'expression_valid')[0] is True
+    assert kb_interface.fetch_attribute_from_thing(
+        'expression', [('expression_name', 'or_expression_3')], 'expression_valid')[0] is False
+
+
+def test_and_expression(kb_interface):
+    def get_expression_valid(self, expression_name):
+        query = f"""
+            match
+                $expr isa expression,
+                    has expression_name '{expression_name}';
+            fetch
+                $expr: expression_valid;
+        """
+        query_result = self.fetch_database(query)
+        return query_result[0]['expr']['expression_valid'][0]['value']
+
+    kb_interface.register_method('get_expression_valid', get_expression_valid)
+
+    assert kb_interface.get_expression_valid('and_expression_1') is True
+    assert kb_interface.get_expression_valid('and_expression_2') is False
+    assert kb_interface.get_expression_valid('and_expression_3') is True
 
 
 def test_get_tactic_rule_valid(kb_interface):

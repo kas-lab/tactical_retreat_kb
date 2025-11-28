@@ -51,11 +51,11 @@ $exp1 (lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operat
 $exp2 (lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator "<"; # False
 $exp3 (lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator "<"; # False
 
-$exp4 (lhs_value:$m_no_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "<";
-$exp5 (lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "<";
+$exp4 (lhs_value:$m_no_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "<"; # False
+$exp5 (lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "<"; # False
 
-$exp6 (lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operator "<=";
-$exp7 (lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator "<=";
+$exp6 (lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operator "<="; # True
+$exp7 (lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator "<="; # True
 $exp8 (lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator "<=";
 $exp9 (lhs_value:$m_no_measurement,  rhs_value:$litdoublethree) isa inequality_expression, has operator "<=";
 $exp10 (lhs_value:$m_no_valid_measurement,  rhs_value:$litdoublethree) isa inequality_expression, has operator "<=";
@@ -83,6 +83,24 @@ $exp15 (lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequa
 (lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator "!=";
 (lhs_value:$m_no_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "!=";
 (lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "!=";
+
+### or & and expressions
+
+$or_expression_1 (expression:$exp1, expression:$exp2, expression: $exp3) isa or_expression; # True
+$or_expression_1 has expression_name 'or_expression_1'; # expression_name only exists for testing
+
+$or_expression_2 (expression:$exp2, expression:$exp13, expression:$exp6) isa or_expression; # True
+$or_expression_2 has expression_name 'or_expression_2'; # expression_name only exists for testing
+
+$or_expression_3 (expression:$exp2, expression:$exp3, expression:$exp4) isa or_expression; # False
+$or_expression_3 has expression_name 'or_expression_3'; # expression_name only exists for testing
+
+$and_expression_1 (expression:$or_expression_1, expression:$or_expression_2) isa and_expression; # True
+$and_expression_1 has expression_name 'and_expression_1'; # expression_name only exists for testing
+$and_expression_2 (expression:$or_expression_1, expression:$or_expression_2, expression:$or_expression_3) isa and_expression; # False
+$and_expression_2 has expression_name 'and_expression_2'; # expression_name only exists for testing
+$and_expression_3 (expression:$or_expression_1, expression:$or_expression_2, expression:$exp7) isa and_expression; # True
+$and_expression_3 has expression_name 'and_expression_3'; # expression_name only exists for testing
 
 ### tactic rules
 
@@ -193,3 +211,4 @@ $t isa Tactic, has tactic_name "tactic";
 	variant_resolution:$vr2,
 	variant_resolution:$vr3) isa resolution_model,
     has resolution_model_name "res_model", has ros_system "system";
+

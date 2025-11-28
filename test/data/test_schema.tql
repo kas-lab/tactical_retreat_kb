@@ -1,0 +1,6 @@
+define
+
+expression_name sub attribute,
+    value string;
+
+expression owns expression_name;

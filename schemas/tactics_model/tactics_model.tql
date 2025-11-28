@@ -48,7 +48,8 @@ and_expression sub expression,
     relates expression;
 
 or_expression sub expression,
-    relates expression;
+    relates expression,
+    plays and_expression:expression;
 
 inequality_expression sub expression,
     owns operator,
