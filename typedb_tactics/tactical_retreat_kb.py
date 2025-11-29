@@ -18,7 +18,7 @@ import inspect
 from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
 
 from rclpy.duration import Duration
-
+import rclpy
 from rclpy.lifecycle import State
 from rclpy.lifecycle import TransitionCallbackReturn
 
@@ -53,34 +53,34 @@ def get_ros_msg_type_from_string(msg_type_string: str, msg_type='msg'):
         message_name = msg_type_list[2]
     else:
         raise ValueError(
-            f"Unsupported message type format: {msg_type_string}")
+            f'Unsupported message type format: {msg_type_string}')
 
-    msg_module = importlib.import_module(f"{package_name}.{msg_type}")
+    msg_module = importlib.import_module(f'{package_name}.{msg_type}')
     return getattr(msg_module, message_name)
 
 
 RELIABILITY_MAP = {
-    "RELIABLE": QoSReliabilityPolicy.RELIABLE,
-    "BEST_EFFORT": QoSReliabilityPolicy.BEST_EFFORT,
-    "SYSTEM_DEFAULT": QoSReliabilityPolicy.SYSTEM_DEFAULT,
+    'RELIABLE': QoSReliabilityPolicy.RELIABLE,
+    'BEST_EFFORT': QoSReliabilityPolicy.BEST_EFFORT,
+    'SYSTEM_DEFAULT': QoSReliabilityPolicy.SYSTEM_DEFAULT,
 }
 
 HISTORY_MAP = {
-    "KEEP_LAST": QoSHistoryPolicy.KEEP_LAST,
-    "KEEP_ALL": QoSHistoryPolicy.KEEP_ALL,
-    "SYSTEM_DEFAULT": QoSHistoryPolicy.SYSTEM_DEFAULT,
+    'KEEP_LAST': QoSHistoryPolicy.KEEP_LAST,
+    'KEEP_ALL': QoSHistoryPolicy.KEEP_ALL,
+    'SYSTEM_DEFAULT': QoSHistoryPolicy.SYSTEM_DEFAULT,
 }
 
 DURABILITY_MAP = {
-    "VOLATILE": QoSDurabilityPolicy.VOLATILE,
-    "TRANSIENT_LOCAL": QoSDurabilityPolicy.TRANSIENT_LOCAL,
-    "SYSTEM_DEFAULT": QoSDurabilityPolicy.SYSTEM_DEFAULT,
+    'VOLATILE': QoSDurabilityPolicy.VOLATILE,
+    'TRANSIENT_LOCAL': QoSDurabilityPolicy.TRANSIENT_LOCAL,
+    'SYSTEM_DEFAULT': QoSDurabilityPolicy.SYSTEM_DEFAULT,
 }
 
 LIVELINESS_MAP = {
-    "AUTOMATIC": QoSLivelinessPolicy.AUTOMATIC,
-    "MANUAL_BY_TOPIC": QoSLivelinessPolicy.MANUAL_BY_TOPIC,
-    "SYSTEM_DEFAULT": QoSLivelinessPolicy.SYSTEM_DEFAULT,
+    'AUTOMATIC': QoSLivelinessPolicy.AUTOMATIC,
+    'MANUAL_BY_TOPIC': QoSLivelinessPolicy.MANUAL_BY_TOPIC,
+    'SYSTEM_DEFAULT': QoSLivelinessPolicy.SYSTEM_DEFAULT,
 }
 
 
@@ -93,7 +93,7 @@ def _to_duration(v):
         secs = int(v)
         nsec = int(round((v - secs) * 1_000_000_000))
         return Duration(seconds=secs, nanoseconds=nsec)
-    raise TypeError(f"Unsupported duration value: {v!r}")
+    raise TypeError(f'Unsupported duration value: {v!r}')
 
 
 def get_qos_from_qos_dict(qos_dict: dict) -> QoSProfile:
@@ -147,6 +147,9 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         super().__init__(node_name, **kwargs)
         self.typedb_interface_class = TacticalRetreatInterface
         self.measures_subscribers = {}
+        self.measures_clients = {}
+        self.measures_timers = {}
+        self.measures_services = {}  # For proxies
 
     def on_activate(self, state: State) -> TransitionCallbackReturn:
         self.get_logger().info(self.get_name() + ': on_activate() is called.')
@@ -157,27 +160,27 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         # self.create_measures_interfaces()
         def _create_measures_cb(_, res):
             try:
-                self.get_logger().info("Creating measures interfaces...")
+                self.get_logger().info('Creating measures interfaces...')
                 self.create_measures_interfaces()
-                self.get_logger().info("Measures interfaces created.")
+                self.get_logger().info('Measures interfaces created.')
                 res.success = True
             except Exception as e:
                 self.get_logger().error(
-                    f"Error creating measures interfaces: {e}")
+                    f'Error creating measures interfaces: {e}')
                 res.success = False
             return res
 
         # TODO: pass the measure name as a string argument to fetch specific measurements
         def _fetch_all_measurements_cb(_, res):
             try:
-                self.get_logger().info("Creating measures interfaces...")
-                x = self.typedb_interface.fetch_all_measurements("current_velocity")
-                self.get_logger().info("Measures interfaces created.")
+                self.get_logger().info('Creating measures interfaces...')
+                x = self.typedb_interface.fetch_all_measurements('current_velocity')
+                self.get_logger().info('Measures interfaces created.')
                 res.success = True
                 res.message = str(x)
             except Exception as e:
                 self.get_logger().error(
-                    f"Error creating measures interfaces: {e}")
+                    f'Error creating measures interfaces: {e}')
                 res.success = False
             return res
 
@@ -198,7 +201,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         return super().on_activate(state)
 
     def on_deactivate(self, state: State) -> TransitionCallbackReturn:
-        self.get_logger().info("on_deactivate() is called.")
+        self.get_logger().info('on_deactivate() is called.')
         self.active = False
         self.destroy_service(self.measures_service)
         return super().on_deactivate(state)
@@ -221,7 +224,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         self.active = False
         return super().on_cleanup(state)
 
-    def create_measure_topic_interface(self, topic_interface):
+    def create_measure_interface(self, interface):
         """
         Create a subscription for a measure topic using details in `topic_interface`.
 
@@ -234,19 +237,18 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         - optional: 'measurement_function_args' (str, comma-separated args)
         - optional: 'qos' (dict for QoSProfile construction)
         """
-        measure_name = topic_interface['measure_name']
-        topic_name = topic_interface['interface_name']
-        ros_msg_type_str = topic_interface['interface_type']
+        measure_name = interface['measure_name']
+        interface_name = interface['interface_name']
+        ros_msg_type_str = interface['interface_type']
 
-        topic_type = get_ros_msg_type_from_string(ros_msg_type_str, 'msg')
-        measurement_qos = get_qos_from_qos_dict(topic_interface.get('qos', {}))
+        measurement_qos = get_qos_from_qos_dict(interface.get('qos', {}))
 
-        function_lib_name = (topic_interface.get('measurement_function_lib')
+        function_lib_name = (interface.get('measurement_function_lib')
                              or 'ros_monitors_functions.monitor_functions')
-        function_name = (topic_interface.get('measurement_function_name')
+        function_name = (interface.get('measurement_function_name')
                          or 'get_data_field')
 
-        function_args_str = topic_interface.get('measurement_function_args')
+        function_args_str = interface.get('measurement_function_args')
         function_args = [arg.strip() for arg in function_args_str.split(
             ',')] if function_args_str else []
 
@@ -262,34 +264,94 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             measure_callable = measure_function
             callable_args = function_args
 
-        def _cb(msg,
-                _measure_name=measure_name,
-                _measure_callable=measure_callable,
-                _function_args=callable_args):
-            self.typedb_interface.add_measurement(
-                _measure_name, _measure_callable(
-                    self, msg, *_function_args))
+        if (interface.get('source') == 'Publisher'):
+            topic_type = get_ros_msg_type_from_string(ros_msg_type_str, 'msg')
 
-        self.measures_subscribers[measure_name] = self.create_subscription(
-            topic_type,
-            topic_name,
-            _cb,
-            measurement_qos,
-            callback_group=self.query_cb_group
-        )
+            def _cb(msg,
+                    _measure_name=measure_name,
+                    _measure_callable=measure_callable,
+                    _function_args=callable_args):
+                self.typedb_interface.add_measurement(
+                    _measure_name, _measure_callable(
+                        self, msg, *_function_args))
+
+            self.measures_subscribers[measure_name] = self.create_subscription(
+                topic_type,
+                interface_name,
+                _cb,
+                measurement_qos,
+                callback_group=self.query_cb_group
+            )
+        if (interface.get('source') == 'Service'):
+            service_type = get_ros_msg_type_from_string(ros_msg_type_str, 'srv')
+            if (interface.get('measurement_proxy') is not True):
+                service_request_kwargs_str = interface.get('service_request_kwargs')
+                service_request_kwargs = {}
+                if service_request_kwargs_str:
+                    for kwarg in service_request_kwargs_str.split(','):
+                        key, value = kwarg.split('=')
+                        service_request_kwargs[key.strip()] = value.strip()
+                if (interface.get('measurement_period')):
+                    self.measures_clients[measure_name] = self.create_client(
+                        service_type,
+                        interface_name,
+                        callback_group=self.query_cb_group
+                    )
+
+                    def _cb(_measure_name=measure_name,
+                            _measure_callable=measure_callable,
+                            _function_args=callable_args):
+                        if (self.measures_clients[measure_name].wait_for_service(
+                           timeout_sec=10.0)):
+                            request = service_type.Request(**service_request_kwargs)
+                            self.measures_clients[measure_name].call_async(
+                                request).add_done_callback(
+                                    lambda future, _measure_name=_measure_name,
+                                    _measure_callable=_measure_callable,
+                                    _function_args=_function_args:
+                                    self.typedb_interface.add_measurement(
+                                        _measure_name,
+                                        _measure_callable(self, future.result(), *_function_args)))
+
+                    self.measures_timers[measure_name] = self.create_timer(
+                        interface['measurement_period'],
+                        _cb)
+            else:
+                self.measures_clients[measure_name] = self.create_client(
+                    service_type,
+                    interface_name,
+                    callback_group=self.query_cb_group
+                )
+
+                def _cb(request, response, _measure_name=measure_name,
+                        _measure_callable=measure_callable,
+                        _function_args=callable_args):
+                    if (self.measures_clients[measure_name].wait_for_service(timeout_sec=10.0)):
+                        future = self.measures_clients[measure_name].call_async(request)
+                        # wait for future
+                        rclpy.spin_until_future_complete(self, future)
+                        self.typedb_interface.add_measurement(_measure_name, _measure_callable(
+                            self,
+                            future.result(),
+                            *_function_args))
+                        response = future.result()
+                        return response
+
+                self.measures_services[measure_name] = self.create_service(
+                    service_type,
+                    'proxy_' + interface_name,
+                    _cb)  # The proxy service
 
     def create_measures_interfaces(self):
         try:
             measures_interfaces = self.typedb_interface.get_measures_interfaces()
             if (len(measures_interfaces) == 0):
-                raise Exception("No measures interfaces to create.")
+                raise Exception('No measures interfaces to create.')
 
             for interface in measures_interfaces:
-                # TODO: this is unsafe, use get instead.
                 self.get_logger().info(
-                    f"Creating measure interface: {interface}")
-                if interface.get('source') == 'Publisher':
-                    self.create_measure_topic_interface(interface)
+                    f'Creating measure interface: {interface}')
+                self.create_measure_interface(interface)
 
         except Exception as e:
             raise e

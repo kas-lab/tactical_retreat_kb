@@ -4,3 +4,11 @@ match
         has requirement_name 'R1.1 Velocity',
         has fulfillment $fulfillment;
 fetch $fulfillment;
+
+
+# Fetch the fulfillment of all requirements in effect
+match
+    $req isa relaxed_requirement,
+        has in_effect true;
+fetch
+    $req: requirement_name, fulfillment;

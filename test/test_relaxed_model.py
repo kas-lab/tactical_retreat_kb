@@ -30,7 +30,8 @@ def kb_interface():
         ['schemas/ros_model/ros_model_example.tql',
             'schemas/tactics_model/tactics_example.tql',
             'schemas/relaxed/relaxed_mirte_example.tql',
-            'schemas/relaxed/relaxed_paper_example.tql'],
+            'schemas/relaxed/relaxed_paper_example.tql',
+            'test/data/test_relaxed_model.tql'],
         force_database=True,
         force_data=True,
         infer=True)
@@ -58,3 +59,17 @@ def test_get_requirement_measure_dependency(kb_interface):
     measures = kb_interface.get_requirement_measure_dependency('R1.3 Liquid intake')
     assert 'liquid_intake_measure' in measures
     assert 'minimum_liquid_intake_measure' in measures
+
+
+def test_get_in_effect_requirement_fulfillment(kb_interface):
+    req_fulfillment_array = kb_interface.get_in_effect_requirement_fulfillment()
+    assert req_fulfillment_array[0]['requirement_name'] == 'R1.1 Velocity'
+    assert req_fulfillment_array[0]['fulfillment'] == pytest.approx(0.92442)
+
+
+def test_set_requirement_in_effect(kb_interface):
+    assert kb_interface.get_requirement_in_effect('fake_req') is False
+    kb_interface.set_requirement_in_effect('fake_req', True)
+    assert kb_interface.get_requirement_in_effect('fake_req') is True
+    kb_interface.set_requirement_in_effect('fake_req', False)
+    assert kb_interface.get_requirement_in_effect('fake_req') is False

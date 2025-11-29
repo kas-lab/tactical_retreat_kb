@@ -258,3 +258,56 @@ $velocity_smoother_cmd_vel_nav_sub isa Subscriber,
 	has interface_type "geometry_msgs/msg/Twist";
 (interface: $velocity_smoother_cmd_vel_nav_sub, qos: $cmd_vel_qos) isa has_qos;
 (node: $velocity_smoother_node, subscriber: $velocity_smoother_cmd_vel_nav_sub) isa has_topic;
+
+
+## bt_navigator node (from generated.tql)
+
+$bt_navigator_node_sub isa Subscriber,
+has interface_name "goal_pose",
+has interface_type "geometry_msgs/PoseStamped";
+(node: $bt_navigator_node, subscriber: $bt_navigator_node_sub) isa has_topic;
+
+$bt_navigator_node_sub_1 isa Subscriber,
+has interface_name "odom",
+has interface_type "nav_msgs/Odometry";
+(node: $bt_navigator_node, subscriber: $bt_navigator_node_sub_1) isa has_topic;
+
+$bt_navigator_node_sub_2 isa Subscriber,
+has interface_name "tf",
+has interface_type "tf2_msgs/TFMessage";
+(node: $bt_navigator_node, subscriber: $bt_navigator_node_sub_2) isa has_topic;
+
+$bt_navigator_node_sub_3 isa Subscriber,
+has interface_name "tf_static",
+has interface_type "tf2_msgs/TFMessage";
+(node: $bt_navigator_node, subscriber: $bt_navigator_node_sub_3) isa has_topic;
+
+$bt_navigator_node_pub isa Publisher,
+has interface_name "~/transition_event",
+has interface_type "lifecycle_msgs/TransitionEvent";
+(node: $bt_navigator_node, publisher: $bt_navigator_node_pub) isa has_topic;
+
+$bt_navigator_node_service_server isa ServiceServer,
+has interface_name "~/change_state",
+has interface_type "lifecycle_msgs/ChangeState";
+(node: $bt_navigator_node, server: $bt_navigator_node_service_server) isa has_service;
+
+$bt_navigator_node_service_server_1 isa ServiceServer,
+has interface_name "~/get_available_states",
+has interface_type "lifecycle_msgs/GetAvailableStates";
+(node: $bt_navigator_node, server: $bt_navigator_node_service_server_1) isa has_service;
+
+$bt_navigator_node_service_server_2 isa ServiceServer,
+has interface_name "~/get_available_transitions",
+has interface_type "lifecycle_msgs/GetAvailableTransitions";
+(node: $bt_navigator_node, server: $bt_navigator_node_service_server_2) isa has_service;
+
+$bt_navigator_node_service_server_3 isa ServiceServer,
+has interface_name "~/get_state",
+has interface_type "lifecycle_msgs/GetState";
+(node: $bt_navigator_node, server: $bt_navigator_node_service_server_3) isa has_service;
+
+$bt_navigator_node_service_server_4 isa ServiceServer,
+has interface_name "~/get_transition_graph",
+has interface_type "lifecycle_msgs/GetAvailableTransitions";
+(node: $bt_navigator_node, server: $bt_navigator_node_service_server_4) isa has_service;

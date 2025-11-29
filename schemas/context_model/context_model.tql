@@ -42,11 +42,20 @@ measurement_function_lib sub attribute,
     value string;
 measurement_function_args sub attribute,
     value string;
+measurement_proxy sub attribute,
+    value boolean;
+measurement_period sub attribute,
+   value long;
+service_request_kwargs sub attribute,
+   value string;
 
 measurement_interface sub relation,
     owns measurement_function_name,
     owns measurement_function_lib,
     owns measurement_function_args,
+    owns measurement_proxy,
+    owns measurement_period,
+    owns service_request_kwargs,
     relates measure,
     relates source,
     relates output;
