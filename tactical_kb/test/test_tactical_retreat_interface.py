@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import pytest
-from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+from tactical_kb.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
 @pytest.fixture(scope="module")

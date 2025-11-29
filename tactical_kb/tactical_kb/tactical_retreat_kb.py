@@ -29,7 +29,7 @@ from rclpy.qos import QoSProfile
 from rclpy.qos import QoSReliabilityPolicy
 from std_srvs.srv import Trigger
 
-from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+from tactical_kb.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
 def publish_event(event_type: str):

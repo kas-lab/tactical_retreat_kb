@@ -75,7 +75,7 @@ def generate_launch_description():
     )
 
     ros_typedb_node = LifecycleNode(
-        package='typedb_tactics',
+        package='tactical_kb',
         executable='tactical_retreat',
         name='tactical_retreat_kb_node',
         namespace='',

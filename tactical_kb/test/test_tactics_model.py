@@ -14,7 +14,7 @@
 
 import math
 import pytest
-from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+from tactical_kb.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
 @pytest.fixture(scope="module")
