@@ -771,47 +771,6 @@ class TacticalRetreatInterface(TypeDBInterface):
             return [entry['value']['attribute'][0]['value']
                     for entry in array_values]
 
-    def fetch_ineq_expression_valid(self,
-                                    measure_name: str,
-                                    operator: str,
-                                    value: float) -> List[dict[str,
-                                                               MatchResultDict]]:
-        """
-        Fetch whether a inequality expression is valid.
-
-        :param measure_name: measure name
-        :param operator: ineq operator
-        :param value: value
-        :return: fetch query result
-        """
-        query = f"""
-            match
-                $measure isa Measure, has measure_name '{measure_name}';
-                $litdouble isa ValueDouble, has double_value {value};
-                $expr (lhs_value: $measure, rhs_value:$litdouble) isa inequality_expression,
-                    has operator '{operator}';
-            fetch
-                $expr: expression_valid;
-        """
-        return self.fetch_database(query)
-
-    def get_ineq_expression_valid(
-            self,
-            measure_name: str,
-            operator: str,
-            value: float) -> bool:
-        """
-        Get whether a inequality expression is valid.
-
-        :param measure_name: measure name
-        :param operator: ineq operator
-        :param value: value
-        :return: true or false
-        """
-        query_result = self.fetch_ineq_expression_valid(
-            measure_name, operator, value)
-        return query_result[0]['expr']['expression_valid'][0]['value']
-
     def fetch_tactic_rule_valid(
             self, tactic_rule: str) -> List[dict[str, MatchResultDict]]:
         """

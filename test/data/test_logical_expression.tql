@@ -68,15 +68,15 @@ $measure_bool_true isa Measure, has measure_name 'measure_bool_true';
 $bool_false_prop_exp (proposition: $bool_false) isa propositional_expression, has expression_name 'bool_false_prop_exp';
 $bool_true_prop_exp (proposition: $bool_true) isa propositional_expression, has expression_name 'bool_true_prop_exp';
 
-(proposition: $measure_bool_false) isa propositional_expression, has expression_name 'false_measure_prop_exp';
-(proposition: $measure_bool_true) isa propositional_expression, has expression_name 'true_measure_prop_exp';
+$false_measure_prop_exp (proposition: $measure_bool_false) isa propositional_expression, has expression_name 'false_measure_prop_exp';
+$true_measure_prop_exp (proposition: $measure_bool_true) isa propositional_expression, has expression_name 'true_measure_prop_exp';
 
 $measure_no_measurement isa Measure, has measure_name 'measure_no_measurement';
 (proposition: $measure_no_measurement) isa propositional_expression, has expression_name 'no_measure_prop_exp';
 
 # not expressions
-(expression: $bool_false_prop_exp) isa not_expression, has expression_name 'not_false_expr';
-(expression: $bool_true_prop_exp) isa not_expression, has expression_name 'not_true_expr';
+$not_false_expr (expression: $bool_false_prop_exp) isa not_expression, has expression_name 'not_false_expr';
+$not_true_expr (expression: $bool_true_prop_exp) isa not_expression, has expression_name 'not_true_expr';
 
 # comparison expressions
 ## less_than expressions
@@ -325,3 +325,21 @@ $mb_false_not_equal_vb_false (lhs_value:$measure_bool_false, rhs_value:$bool_fal
 
 $vb_true_not_equal_mb_false (lhs_value:$bool_true, rhs_value:$measure_bool_false) isa not_equal, has expression_name 'vb_true_not_equal_mb_false';
 $vb_false_not_equal_mb_false (lhs_value:$bool_false, rhs_value:$measure_bool_false) isa not_equal, has expression_name 'vb_false_not_equal_mb_false';
+
+# or & and expressions
+
+$or_expression_1 (expression:$vb_false_not_equal_vb_true, expression:$true_measure_prop_exp, expression: $not_false_expr)
+    isa or_expression, has expression_name 'or_expression_1'; # True | True | True -> True
+
+$or_expression_2 (expression:$vb_false_not_equal_vb_true, expression:$not_true_expr, expression:$not_false_expr) isa or_expression,
+    has expression_name 'or_expression_2'; # True | False | True -> True
+
+$or_expression_3 (expression:$not_true_expr, expression:$false_measure_prop_exp, expression:$bool_false_prop_exp) isa or_expression,
+    has expression_name 'or_expression_3'; # False | False | False -> False
+
+$and_expression_1 (expression:$or_expression_1, expression:$or_expression_2) isa and_expression,
+    has expression_name 'and_expression_1'; # True
+$and_expression_2 (expression:$or_expression_1, expression:$or_expression_2, expression:$or_expression_3) isa and_expression,
+    has expression_name 'and_expression_2'; # False
+$and_expression_3 (expression:$or_expression_1, expression:$true_measure_prop_exp, expression:$not_false_expr) isa and_expression,
+    has expression_name 'and_expression_3'; # True

@@ -791,3 +791,59 @@ def test_not_equal_satisfied(kb_interface):
         'not_equal',
         [('expression_name', 'vb_false_not_equal_mb_false')],
         'expression_satisfied')[0] is False
+
+
+def test_or_expression(kb_interface):
+    def fetch_expression_satisfied(self, expression_name):
+        query = f"""
+            match
+                $expr isa or_expression,
+                    has expression_name '{expression_name}';
+            fetch
+                $expr: expression_satisfied;
+        """
+        query_result = self.fetch_database(query)
+        return query_result
+
+    kb_interface.register_method('fetch_expression_satisfied', fetch_expression_satisfied)
+
+    or_expression_1 = kb_interface.fetch_expression_satisfied('or_expression_1')
+    or_expression_2 = kb_interface.fetch_expression_satisfied('or_expression_2')
+    or_expression_3 = kb_interface.fetch_expression_satisfied('or_expression_3')
+
+    assert len(or_expression_1[0]['expr']['expression_satisfied']) == 1
+    assert or_expression_1[0]['expr']['expression_satisfied'][0]['value'] is True
+
+    assert len(or_expression_2[0]['expr']['expression_satisfied']) == 1
+    assert or_expression_2[0]['expr']['expression_satisfied'][0]['value'] is True
+
+    assert len(or_expression_3[0]['expr']['expression_satisfied']) == 1
+    assert or_expression_3[0]['expr']['expression_satisfied'][0]['value'] is False
+
+
+def test_and_expression(kb_interface):
+    def fetch_expression_satisfied(self, expression_name):
+        query = f"""
+            match
+                $expr isa and_expression,
+                    has expression_name '{expression_name}';
+            fetch
+                $expr: expression_satisfied;
+        """
+        query_result = self.fetch_database(query)
+        return query_result
+
+    kb_interface.register_method('fetch_expression_satisfied', fetch_expression_satisfied)
+
+    and_expression_1 = kb_interface.fetch_expression_satisfied('and_expression_1')
+    and_expression_2 = kb_interface.fetch_expression_satisfied('and_expression_2')
+    and_expression_3 = kb_interface.fetch_expression_satisfied('and_expression_3')
+
+    assert len(and_expression_1[0]['expr']['expression_satisfied']) == 1
+    assert and_expression_1[0]['expr']['expression_satisfied'][0]['value'] is True
+
+    assert len(and_expression_2[0]['expr']['expression_satisfied']) == 1
+    assert and_expression_2[0]['expr']['expression_satisfied'][0]['value'] is False
+
+    assert len(and_expression_3[0]['expr']['expression_satisfied']) == 1
+    assert and_expression_3[0]['expr']['expression_satisfied'][0]['value'] is True

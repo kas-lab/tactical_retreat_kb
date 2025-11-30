@@ -8,25 +8,24 @@ expression_satisfied sub attribute,
 # logical expressions
 logical_expression sub relation,
     abstract,
-    owns expression_name,  # to make it possible to query the expression
-    owns expression_satisfied,
-    plays not_expression:expression;
+    owns expression_name @unique,  # to make it possible to query the expression
+    owns expression_satisfied;
 
 ## negation expression
 not_expression sub logical_expression,
     relates expression,
-    plays compound_expression:expression;
+    plays and_expression:expression,
+    plays or_expression:expression;
 
 ## atomic expressions
 atomic_expression sub logical_expression,
     abstract,
-    plays compound_expression:expression;
-    # plays or_expression:expression;
+    plays not_expression:expression,
+    plays and_expression:expression,
+    plays or_expression:expression;
 
 propositional_expression sub atomic_expression,
 	relates proposition;
-    # plays equal:lhs_value,
-    # plays equal:rhs_value;
 
 comparison_expression sub atomic_expression,
     abstract,
@@ -42,14 +41,16 @@ not_equal sub comparison_expression;
 
 ## compound expression
 compound_expression sub logical_expression,
-    abstract,
-    relates expression,
-    plays compound_expression:expression;
+    abstract;
+    # relates expression;
+    # plays compound_expression:expression;
 
-and_expression sub compound_expression;
-    # relates expression;
-or_expression sub compound_expression;
-    # relates expression;
+and_expression sub compound_expression,
+    relates expression;
+
+or_expression sub compound_expression,
+    relates expression,
+    plays and_expression:expression;
 
 #### connection with the context model
 ##### The measure entity can be intepreted as a Variable
@@ -63,25 +64,24 @@ ValueBool plays propositional_expression:proposition;
 Measure plays propositional_expression:proposition;
 
 ## Rules to infer whether an expression is satisfied
-
-rule atomic_expression_not_satisfied :
+rule propositional_expression_not_satisfied :
 	when {
-		$atomic_expression isa atomic_expression;
+		$propositional_expression isa propositional_expression;
         not {
-            $atomic_expression has expression_satisfied true;
+            $propositional_expression has expression_satisfied true;
         };
     } then {
-		$atomic_expression has expression_satisfied false;
+		$propositional_expression has expression_satisfied false;
 	};
 
-rule compound_expression_not_satisfied :
+rule comparison_expression_not_satisfied :
 	when {
-		$compound_expression isa compound_expression;
+		$comparison_expression isa comparison_expression;
         not {
-            $compound_expression has expression_satisfied true;
+            $comparison_expression has expression_satisfied true;
         };
     } then {
-		$compound_expression has expression_satisfied false;
+		$comparison_expression has expression_satisfied false;
 	};
 
 ### Rules for propositional_expression
@@ -119,951 +119,181 @@ rule not_expression_false:
     $not has expression_satisfied false;
   };
 
-### Rules for comparison expressions
-#### less than rules
-rule less_than_double_values_satisfied:
+## Rules and expression
+rule and_expression_not_satisfied:
     when {
-        $lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa ValueDouble, has double_value $value_rhs;
-
-        $less_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than;
-        $value_lhs < $value_rhs;
+        $and_exp (expression: $e) isa and_expression;
+        $e has expression_satisfied false;
     } then {
-        $less_than_expr has expression_satisfied true;
-    };
-
-rule less_than_integer_values_satisfied:
-    when {
-        $lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $less_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than;
-        $value_lhs < $value_rhs;
-    } then {
-        $less_than_expr has expression_satisfied true;
-    };
-
-rule less_than_double_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueDouble, has double_value $value_rhs;
-
-        $less_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than;
-        $value_lhs < $value_rhs;
-    } then {
-        $less_than_expr has expression_satisfied true;
-    };
-
-rule less_than_integer_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $less_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than;
-        $value_lhs < $value_rhs;
-    } then {
-        $less_than_expr has expression_satisfied true;
-    };
-
-rule less_than_lhs_double_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueDouble, has double_value $value_rhs;
-
-        $less_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than;
-        $value_lhs < $value_rhs;
-    } then {
-        $less_than_expr has expression_satisfied true;
-    };
-
-rule less_than_lhs_measure_rhs_double_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueDouble, has double_value $value_lhs;
-        $rhs isa ValueDouble, has double_value $value_rhs;
-
-        $less_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than;
-        $value_lhs < $value_rhs;
-    } then {
-        $less_than_expr has expression_satisfied true;
-    };
-
-rule less_than_lhs_integer_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueInteger, has integer_value $value_rhs;
-
-        $less_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than;
-        $value_lhs < $value_rhs;
-    } then {
-        $less_than_expr has expression_satisfied true;
-    };
-
-rule less_than_lhs_measure_rhs_integer_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $less_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than;
-        $value_lhs < $value_rhs;
-    } then {
-        $less_than_expr has expression_satisfied true;
-    };
-
-### less_than_equal rules
-
-rule less_than_equal_double_values_satisfied:
-    when {
-        $lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa ValueDouble, has double_value $value_rhs;
-
-        $less_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than_equal;
-        $value_lhs <= $value_rhs;
-    } then {
-        $less_than_equal_expr has expression_satisfied true;
-    };
-
-rule less_than_equal_integer_values_satisfied:
-    when {
-        $lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $less_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than_equal;
-        $value_lhs <= $value_rhs;
-    } then {
-        $less_than_equal_expr has expression_satisfied true;
-    };
-
-rule less_than_equal_double_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueDouble, has double_value $value_rhs;
-
-        $less_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than_equal;
-        $value_lhs <= $value_rhs;
-    } then {
-        $less_than_equal_expr has expression_satisfied true;
-    };
-
-rule less_than_equal_integer_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $less_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than_equal;
-        $value_lhs <= $value_rhs;
-    } then {
-        $less_than_equal_expr has expression_satisfied true;
-    };
-
-rule less_than_equal_lhs_double_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueDouble, has double_value $value_rhs;
-
-        $less_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than_equal;
-        $value_lhs <= $value_rhs;
-    } then {
-        $less_than_equal_expr has expression_satisfied true;
-    };
-
-rule less_than_equal_lhs_measure_rhs_double_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueDouble, has double_value $value_lhs;
-        $rhs isa ValueDouble, has double_value $value_rhs;
-
-        $less_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than_equal;
-        $value_lhs <= $value_rhs;
-    } then {
-        $less_than_equal_expr has expression_satisfied true;
-    };
-
-rule less_than_equal_lhs_integer_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueInteger, has integer_value $value_rhs;
-
-        $less_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than_equal;
-        $value_lhs <= $value_rhs;
-    } then {
-        $less_than_equal_expr has expression_satisfied true;
-    };
-
-rule less_than_equal_lhs_measure_rhs_integer_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $less_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa less_than_equal;
-        $value_lhs <= $value_rhs;
-    } then {
-        $less_than_equal_expr has expression_satisfied true;
-    };
-
-#### greater than rules
-rule greater_than_double_values_satisfied:
-    when {
-        $lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa ValueDouble, has double_value $value_rhs;
-
-        $greater_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than;
-        $value_lhs > $value_rhs;
-    } then {
-        $greater_than_expr has expression_satisfied true;
-    };
-
-rule greater_than_integer_values_satisfied:
-    when {
-        $lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $greater_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than;
-        $value_lhs > $value_rhs;
-    } then {
-        $greater_than_expr has expression_satisfied true;
-    };
-
-rule greater_than_double_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueDouble, has double_value $value_rhs;
-
-        $greater_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than;
-        $value_lhs > $value_rhs;
-    } then {
-        $greater_than_expr has expression_satisfied true;
-    };
-
-rule greater_than_integer_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $greater_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than;
-        $value_lhs > $value_rhs;
-    } then {
-        $greater_than_expr has expression_satisfied true;
-    };
-
-rule greater_than_lhs_double_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueDouble, has double_value $value_rhs;
-
-        $greater_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than;
-        $value_lhs > $value_rhs;
-    } then {
-        $greater_than_expr has expression_satisfied true;
-    };
-
-rule greater_than_lhs_measure_rhs_double_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueDouble, has double_value $value_lhs;
-        $rhs isa ValueDouble, has double_value $value_rhs;
-
-        $greater_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than;
-        $value_lhs > $value_rhs;
-    } then {
-        $greater_than_expr has expression_satisfied true;
-    };
-
-rule greater_than_lhs_integer_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueInteger, has integer_value $value_rhs;
-
-        $greater_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than;
-        $value_lhs > $value_rhs;
-    } then {
-        $greater_than_expr has expression_satisfied true;
-    };
-
-rule greater_than_lhs_measure_rhs_integer_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $greater_than_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than;
-        $value_lhs > $value_rhs;
-    } then {
-        $greater_than_expr has expression_satisfied true;
-    };
-
-#### greater than equal rules
-rule greater_than_equal_double_values_satisfied:
-    when {
-        $lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa ValueDouble, has double_value $value_rhs;
-
-        $greater_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than_equal;
-        $value_lhs >= $value_rhs;
-    } then {
-        $greater_than_equal_expr has expression_satisfied true;
-    };
-
-rule greater_than_equal_integer_values_satisfied:
-    when {
-        $lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $greater_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than_equal;
-        $value_lhs >= $value_rhs;
-    } then {
-        $greater_than_equal_expr has expression_satisfied true;
-    };
-
-rule greater_than_equal_double_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueDouble, has double_value $value_rhs;
-
-        $greater_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than_equal;
-        $value_lhs >= $value_rhs;
-    } then {
-        $greater_than_equal_expr has expression_satisfied true;
-    };
-
-rule greater_than_equal_integer_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $greater_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than_equal;
-        $value_lhs >= $value_rhs;
-    } then {
-        $greater_than_equal_expr has expression_satisfied true;
-    };
-
-rule greater_than_equal_lhs_double_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueDouble, has double_value $value_rhs;
-
-        $greater_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than_equal;
-        $value_lhs >= $value_rhs;
-    } then {
-        $greater_than_equal_expr has expression_satisfied true;
-    };
-
-rule greater_than_equal_lhs_measure_rhs_double_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueDouble, has double_value $value_lhs;
-        $rhs isa ValueDouble, has double_value $value_rhs;
-
-        $greater_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than_equal;
-        $value_lhs >= $value_rhs;
-    } then {
-        $greater_than_equal_expr has expression_satisfied true;
-    };
-
-rule greater_than_equal_lhs_integer_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueInteger, has integer_value $value_rhs;
-
-        $greater_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than_equal;
-        $value_lhs >= $value_rhs;
-    } then {
-        $greater_than_equal_expr has expression_satisfied true;
-    };
-
-rule greater_than_equal_lhs_measure_rhs_integer_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $greater_than_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa greater_than_equal;
-        $value_lhs >= $value_rhs;
-    } then {
-        $greater_than_equal_expr has expression_satisfied true;
-    };
-
-#### equal rules
-rule equal_double_values_satisfied:
-    when {
-        $lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa ValueDouble, has double_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_integer_values_satisfied:
-    when {
-        $lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_string_values_satisfied:
-    when {
-        $lhs isa ValueString, has string_value $value_lhs;
-        $rhs isa ValueString, has string_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_bool_values_satisfied:
-    when {
-        $lhs isa ValueBool, has bool_value $value_lhs;
-        $rhs isa ValueBool, has bool_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_double_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueDouble, has double_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_integer_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_string_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueString, has string_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueString, has string_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_bool_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueBool, has bool_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueBool, has bool_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_lhs_double_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueDouble, has double_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_lhs_measure_rhs_double_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueDouble, has double_value $value_lhs;
-        $rhs isa ValueDouble, has double_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_lhs_integer_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueInteger, has integer_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_lhs_measure_rhs_integer_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_lhs_string_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueString, has string_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueString, has string_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_lhs_measure_rhs_string_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueString, has string_value $value_lhs;
-        $rhs isa ValueString, has string_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_lhs_bool_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueBool, has bool_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueBool, has bool_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-rule equal_lhs_measure_rhs_bool_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueBool, has bool_value $value_lhs;
-        $rhs isa ValueBool, has bool_value $value_rhs;
-
-        $equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa equal;
-        $value_lhs == $value_rhs;
-    } then {
-        $equal_expr has expression_satisfied true;
-    };
-
-### not equal rules
-rule not_equal_double_values_satisfied:
-    when {
-        $lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa ValueDouble, has double_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_integer_values_satisfied:
-    when {
-        $lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_string_values_satisfied:
-    when {
-        $lhs isa ValueString, has string_value $value_lhs;
-        $rhs isa ValueString, has string_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_bool_values_satisfied:
-    when {
-        $lhs isa ValueBool, has bool_value $value_lhs;
-        $rhs isa ValueBool, has bool_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_double_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueDouble, has double_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_integer_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_string_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueString, has string_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueString, has string_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_bool_measure_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
-            has latest true;
-        $mv_lhs isa ValueBool, has bool_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
-            has latest true;
-        $mv_rhs isa ValueBool, has bool_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_lhs_double_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueDouble, has double_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueDouble, has double_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_lhs_measure_rhs_double_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueDouble, has double_value $value_lhs;
-        $rhs isa ValueDouble, has double_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_lhs_integer_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueInteger, has integer_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_lhs_measure_rhs_integer_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueInteger, has integer_value $value_lhs;
-        $rhs isa ValueInteger, has integer_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_lhs_string_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueString, has string_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueString, has string_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_lhs_measure_rhs_string_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueString, has string_value $value_lhs;
-        $rhs isa ValueString, has string_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_lhs_bool_value_rhs_measure_satisfied:
-    when {
-        $lhs isa ValueBool, has bool_value $value_lhs;
-        $rhs isa Measure;
-        (measure: $rhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueBool, has bool_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
-    };
-
-rule not_equal_lhs_measure_rhs_bool_value_satisfied:
-    when {
-        $lhs isa Measure;
-        (measure: $lhs, measurement_value: $mv) isa measurement,
-            has latest true;
-        $mv isa ValueBool, has bool_value $value_lhs;
-        $rhs isa ValueBool, has bool_value $value_rhs;
-
-        $not_equal_expr (lhs_value: $lhs, rhs_value: $rhs) isa not_equal;
-        $value_lhs != $value_rhs;
-    } then {
-        $not_equal_expr has expression_satisfied true;
+        $and_exp has expression_satisfied false;
     };
 
 rule and_expression_satisfied:
     when {
-        $and_exp (expression: $e) isa and_expression;
-        not {$e is $and_exp;};
-        $e has expression_satisfied true;
-
-        $invalid_e isa logical_expression;
-        not {
-            $invalid_e is $and_exp;
-            $e is $invalid_e;
-        };
-
-        not {
-            # $e is not $and_exp;
-            $and_exp (expression: $invalid_e) isa and_expression;
-            $invalid_e has expression_satisfied false;
-        };
+        $and_exp isa and_expression;
+        not {$and_exp  has expression_satisfied false;};
     } then {
         $and_exp has expression_satisfied true;
     };
 
-# rule and_expression_invalid:
-#     when {
-#         $and_exp isa and_expression;
-#         not {$and_exp has expression_satisfied true;};
-#     } then {
-#         $and_exp has expression_satisfied false;
-#     };
+## or rules
+rule or_expression_satisfied:
+    when {
+        $or_exp (expression: $e) isa or_expression;
+        $e has expression_satisfied true;
+    } then {
+        $or_exp has expression_satisfied true;
+    };
 
-# rule or_expression_satisfied:
-#     when {
-#         $or_exp (expression: $e) isa or_expression;
-#         $e has expression_satisfied true;
-#     } then {
-#         $or_exp has expression_satisfied true;
-#     };
+rule or_expression_not_satisfied:
+    when {
+        $or_exp isa or_expression;
+        not {$or_exp has expression_satisfied true;};
+    } then {
+        $or_exp has expression_satisfied false;
+    };
 
-# rule or_expression_invalid:
-#     when {
-#         $or_exp isa or_expression;
-#         not {$or_exp has expression_satisfied true;};
-#     } then {
-#         $or_exp has expression_satisfied false;
-#     };
+### Rules for comparison expressions
+
+rule comparison_expression_double_and_integers_satisfied:
+    when {
+        {
+            $lhs isa ValueDouble, has double_value $value_lhs;
+            $rhs isa ValueDouble, has double_value $value_rhs;
+        } or {
+            $lhs isa ValueInteger, has integer_value $value_lhs;
+            $rhs isa ValueInteger, has integer_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
+                has latest true;
+            $mv_lhs isa ValueDouble, has double_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
+                has latest true;
+            $mv_rhs isa ValueDouble, has double_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
+                has latest true;
+            $mv_lhs isa ValueInteger, has integer_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
+                has latest true;
+            $mv_rhs isa ValueInteger, has integer_value $value_rhs;
+        } or {
+            $lhs isa ValueDouble, has double_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueDouble, has double_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueDouble, has double_value $value_lhs;
+            $rhs isa ValueDouble, has double_value $value_rhs;
+        } or {
+            $lhs isa ValueInteger, has integer_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueInteger, has integer_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueInteger, has integer_value $value_lhs;
+            $rhs isa ValueInteger, has integer_value $value_rhs;
+        };
+
+        $expr (lhs_value: $lhs, rhs_value: $rhs) isa $comparsion_type;
+        {
+            $comparsion_type sub less_than;
+            $value_lhs < $value_rhs;
+        } or {
+            $comparsion_type sub less_than_equal;
+            $value_lhs <= $value_rhs;
+        } or {
+            $comparsion_type sub greater_than;
+            $value_lhs > $value_rhs;
+        } or {
+            $comparsion_type sub greater_than_equal;
+            $value_lhs >= $value_rhs;
+        } or {
+            $comparsion_type sub equal;
+            $value_lhs == $value_rhs;
+        } or {
+            $comparsion_type sub not_equal;
+            $value_lhs != $value_rhs;
+        };
+    } then {
+        $expr has expression_satisfied true;
+    };
+
+
+rule comparison_expression_string_and_boolean_satisfied:
+    when {
+        {
+            $lhs isa ValueString, has string_value $value_lhs;
+            $rhs isa ValueString, has string_value $value_rhs;
+        } or {
+            $lhs isa ValueBool, has bool_value $value_lhs;
+            $rhs isa ValueBool, has bool_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
+                has latest true;
+            $mv_lhs isa ValueString, has string_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
+                has latest true;
+            $mv_rhs isa ValueString, has string_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
+                has latest true;
+            $mv_lhs isa ValueBool, has bool_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
+                has latest true;
+            $mv_rhs isa ValueBool, has bool_value $value_rhs;
+        } or {
+            $lhs isa ValueString, has string_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueString, has string_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueString, has string_value $value_lhs;
+            $rhs isa ValueString, has string_value $value_rhs;
+        } or {
+            $lhs isa ValueBool, has bool_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueBool, has bool_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueBool, has bool_value $value_lhs;
+            $rhs isa ValueBool, has bool_value $value_rhs;
+        };
+
+        $expr (lhs_value: $lhs, rhs_value: $rhs) isa! $comparsion_type;
+        {
+            $comparsion_type sub equal;
+            $value_lhs == $value_rhs;
+        } or {
+            $comparsion_type sub not_equal;
+            $value_lhs != $value_rhs;
+        };
+    } then {
+        $expr has expression_satisfied true;
+    };
+
+
