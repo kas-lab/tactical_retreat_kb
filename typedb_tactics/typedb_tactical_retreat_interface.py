@@ -932,6 +932,43 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.fetch_database(query)
         return query_result[0]['f']['selectable'][0]['value']
 
+    def is_feature_selected(self, feature_name: str) -> bool:
+        """
+        Return whether a feature is selected.
+
+        :param feature_name: feature name
+        :return: true or false
+        """
+        query = f"""
+            match
+                $f isa Feature, has feature_name '{feature_name}';
+            fetch
+                $f: selected;
+        """
+        query_result = self.fetch_database(query)
+        return query_result[0]['f']['selected'][0]['value']
+
+    def update_feature_selected_by_param_value(self, feature_name: str):
+        """
+        Update whether a feature is selected based on its parameter value.
+
+        :param feature_name: feature name
+        """
+        query = f"""
+        match
+            $f isa Feature, has feature_name "{feature_name}";
+            $vr (variant: $f, resolution_action: $ra) isa variant_resolution;
+            $ra (node: $n, parameter: $p, parameter_value: $pv) isa set_nodes_parameters;
+            $old_hpv (node: $n, parameter: $p) isa has_parameter_value;
+        delete
+            $old_hpv isa has_parameter_value;
+        insert
+            $hpv (node: $n, parameter: $p, parameter_value: $pv) isa has_parameter_value;
+
+        """
+        query_result = self.update_database(query)
+        return query_result
+
     def is_node_running(self, node_name: str) -> bool:
         """
         Return whether a ROS node is running.
