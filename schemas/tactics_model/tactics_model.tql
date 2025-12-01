@@ -357,7 +357,7 @@ rule feature_selected_by_parameter_match:
         $f isa Feature;
         # find a variant_resolution that targets this feature and has a set_nodes_parameters action
         $vr (variant: $f, resolution_action: $ra) isa variant_resolution;
-        $ra (parameter: $p, parameter_value: $pv) isa set_nodes_parameters;
+        $ra (node: $n, parameter: $p, parameter_value: $pv) isa set_nodes_parameters;
         # find a node with the same current parameter value
         $hpv (node: $n, parameter: $p, parameter_value: $pv) isa has_parameter_value;
     } then {
@@ -371,7 +371,7 @@ rule feature_not_selected_by_parameter_match:
         not {
             $fa ($f) isa feature_adaptation;
             $vr (variant: $f, resolution_action: $ra) isa variant_resolution;
-            $ra (parameter: $p, parameter_value: $pv) isa set_nodes_parameters;
+            $ra (node: $n, parameter: $p, parameter_value: $pv) isa set_nodes_parameters;
             $hpv (node: $n, parameter: $p, parameter_value: $pv) isa has_parameter_value;
         };
         not { $f has selected true; };  # don't overwrite an explicit/derived true
