@@ -1,0 +1,136 @@
+define
+
+action_index sub attribute,
+    value long;
+
+feature_adaptation_plan sub relation,
+    relates feature_adaptation,
+    plays plan_action_indexed:plan;
+
+plan_action_indexed sub relation,
+    owns action_index,
+    relates plan,
+    relates action;
+
+root_feature_resolution sub attribute,
+    value boolean;
+feature_resolution_dependency sub relation,
+    owns root_feature_resolution,
+    relates feature_adaptation,
+    relates dependent,
+    relates dependency;
+
+feature_adaptation plays feature_resolution_dependency:feature_adaptation;
+resolution_action plays feature_resolution_dependency:dependent;
+resolution_action plays feature_resolution_dependency:dependency;
+
+feature_adaptation plays feature_adaptation_plan:feature_adaptation;
+
+feature_adaptation_plan plays plan_action_indexed:plan;
+resolution_action plays plan_action_indexed:action;
+
+rule feature_resolution_dependency_alternative:
+    when {
+        $fa (activation: $feature) isa feature_adaptation;
+
+        (parent: $f_parent, child: $feature) isa alternative;
+        (parent: $f_parent, child: $f_alternative) isa alternative;
+        not {$feature is $f_alternative;};
+        $f_alternative has selected true;
+
+        (variant: $feature, resolution_action: $action_dependent) isa variant_activation;
+        (variant: $f_alternative, resolution_action: $action_dependency) isa variant_deactivation;
+    } then {
+        (feature_adaptation:$fa, dependent: $action_dependent, dependency: $action_dependency)
+            isa feature_resolution_dependency;
+    };
+
+rule feature_resolution_dependency_requirement:
+    when {
+        $fa (activation: $feature) isa feature_adaptation;
+
+        (constraint: $f_constraint, constrained: $feature) isa requires_constraint;
+
+        not {$feature is $f_constraint;};
+        not {$f_constraint has selected true;};
+
+        (variant: $feature, resolution_action: $action_dependent) isa variant_activation;
+        (variant: $f_constraint, resolution_action: $action_dependency) isa variant_activation;
+    } then {
+        (feature_adaptation:$fa, dependent: $action_dependent, dependency: $action_dependency)
+            isa feature_resolution_dependency;
+    };
+
+rule feature_resolution_dependency_excludes:
+    when {
+        $fa (activation: $feature) isa feature_adaptation;
+
+        (constraint: $f_constraint, constrained: $feature) isa excludes_constraint;
+
+        not {$feature is $f_constraint;};
+        $f_constraint has selected true;
+
+        (variant: $feature, resolution_action: $action_dependent) isa variant_activation;
+        (variant: $f_constraint, resolution_action: $action_dependency) isa variant_deactivation;
+    } then {
+        (feature_adaptation:$fa, dependent: $action_dependent, dependency: $action_dependency)
+            isa feature_resolution_dependency;
+    };
+
+# Infer that exists a adaptation plan for a feature adaptation
+rule feature_adaptation_plan:
+    when {
+        $fa isa feature_adaptation;
+    } then {
+        (feature_adaptation: $fa) isa feature_adaptation_plan;
+    };
+
+rule feature_adaptation_populate_actions:
+    when {
+        $plan (feature_adaptation: $fa) isa feature_adaptation_plan;
+        $fa ($feature) isa feature_adaptation;
+        (resolution_action: $action, variant: $feature) isa variant_resolution;
+    } then {
+        (plan:$plan, action: $action) isa plan_action_indexed;
+    };
+
+rule feature_adaptation_populate_depencies:
+    when {
+        $plan (feature_adaptation: $fa) isa feature_adaptation_plan;
+        $fa ($feature) isa feature_adaptation;
+        (resolution_action: $action, variant: $feature) isa variant_resolution;
+        (feature_adaptation:$fa, dependent: $action, dependency: $action_dependency)
+            isa feature_resolution_dependency;
+        not {$action is $action_dependency;};
+        # not {(plan:$plan, action: $action_dependency) isa plan_action_indexed;};
+    } then {
+        (plan:$plan, action: $action_dependency) isa plan_action_indexed;
+    };
+
+
+# order actions
+rule feature_resolution_root:
+    when {
+        $plan (feature_adaptation: $fa) isa feature_adaptation_plan;
+        $f_res_dependency (feature_adaptation:$fa, dependent: $action_dependent, dependency: $action_dependency)
+            isa feature_resolution_dependency;
+        not {
+            $f_res_dependency_2 (feature_adaptation:$fa, dependent: $action_dependency)
+                isa feature_resolution_dependency;
+        };
+        $plan_index (plan:$plan, action: $action_dependency) isa plan_action_indexed;
+    } then {
+        $plan_index has action_index 0;
+    };
+
+rule feature_resolution_order:
+    when {
+        $plan (feature_adaptation: $fa) isa feature_adaptation_plan;
+        $f_res_dependency (feature_adaptation:$fa, dependent: $action_dependent, dependency: $action_dependency)
+            isa feature_resolution_dependency;
+        (plan:$plan, action: $action_dependency) isa plan_action_indexed, has action_index $index;
+        ?dependent_index = $index + 1;
+        $plan_index (plan:$plan, action: $action_dependent) isa plan_action_indexed;
+    } then {
+        $plan_index has action_index ?dependent_index;
+    };
