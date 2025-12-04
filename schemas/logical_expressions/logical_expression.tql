@@ -1,0 +1,299 @@
+define
+
+expression_name sub attribute,
+    value string;
+expression_satisfied sub attribute,
+    value boolean;
+
+# logical expressions
+logical_expression sub relation,
+    abstract,
+    owns expression_name @unique,  # to make it possible to query the expression
+    owns expression_satisfied;
+
+## negation expression
+not_expression sub logical_expression,
+    relates expression,
+    plays and_expression:expression,
+    plays or_expression:expression;
+
+## atomic expressions
+atomic_expression sub logical_expression,
+    abstract,
+    plays not_expression:expression,
+    plays and_expression:expression,
+    plays or_expression:expression;
+
+propositional_expression sub atomic_expression,
+	relates proposition;
+
+comparison_expression sub atomic_expression,
+    abstract,
+    relates lhs_value,
+    relates rhs_value;
+
+less_than sub comparison_expression;
+less_than_equal sub comparison_expression;
+greater_than sub comparison_expression;
+greater_than_equal sub comparison_expression;
+equal sub comparison_expression;
+not_equal sub comparison_expression;
+
+## compound expression
+compound_expression sub logical_expression,
+    abstract;
+    # relates expression;
+    # plays compound_expression:expression;
+
+and_expression sub compound_expression,
+    relates expression;
+
+or_expression sub compound_expression,
+    relates expression,
+    plays and_expression:expression;
+
+#### connection with the context model
+##### The measure entity can be intepreted as a Variable
+Measure plays comparison_expression:lhs_value;
+Measure plays comparison_expression:rhs_value;
+
+Value plays comparison_expression:lhs_value;
+Value plays comparison_expression:rhs_value;
+
+ValueBool plays propositional_expression:proposition;
+Measure plays propositional_expression:proposition;
+
+## Rules to infer whether an expression is satisfied
+rule propositional_expression_not_satisfied :
+	when {
+		$propositional_expression isa propositional_expression;
+        not {
+            $propositional_expression has expression_satisfied true;
+        };
+    } then {
+		$propositional_expression has expression_satisfied false;
+	};
+
+rule comparison_expression_not_satisfied :
+	when {
+		$comparison_expression isa comparison_expression;
+        not {
+            $comparison_expression has expression_satisfied true;
+        };
+    } then {
+		$comparison_expression has expression_satisfied false;
+	};
+
+### Rules for propositional_expression
+rule propositional_expression_value_satisfied :
+	when {
+		$propositional_expression (proposition: $value) isa propositional_expression;
+        $value isa ValueBool, has bool_value true;
+	} then {
+		$propositional_expression has expression_satisfied true;
+	};
+
+rule propositional_expression_measure_satisfied :
+	when {
+		$propositional_expression (proposition: $measure) isa propositional_expression;
+		(measure:$measure, measurement_value: $mv) isa measurement, has latest true;
+        $mv isa ValueBool, has bool_value true;
+	} then {
+		$propositional_expression has expression_satisfied true;
+	};
+
+### Rules for negation_expression
+rule not_expression_true:
+  when {
+    $not (expression: $e) isa not_expression;
+    $e has expression_satisfied false;
+  } then {
+    $not has expression_satisfied true;
+  };
+
+rule not_expression_false:
+  when {
+    $not (expression: $e) isa not_expression;
+    $e has expression_satisfied true;
+  } then {
+    $not has expression_satisfied false;
+  };
+
+## Rules and expression
+rule and_expression_not_satisfied:
+    when {
+        $and_exp (expression: $e) isa and_expression;
+        $e has expression_satisfied false;
+    } then {
+        $and_exp has expression_satisfied false;
+    };
+
+rule and_expression_satisfied:
+    when {
+        $and_exp isa and_expression;
+        not {$and_exp  has expression_satisfied false;};
+    } then {
+        $and_exp has expression_satisfied true;
+    };
+
+## or rules
+rule or_expression_satisfied:
+    when {
+        $or_exp (expression: $e) isa or_expression;
+        $e has expression_satisfied true;
+    } then {
+        $or_exp has expression_satisfied true;
+    };
+
+rule or_expression_not_satisfied:
+    when {
+        $or_exp isa or_expression;
+        not {$or_exp has expression_satisfied true;};
+    } then {
+        $or_exp has expression_satisfied false;
+    };
+
+### Rules for comparison expressions
+
+rule comparison_expression_double_and_integers_satisfied:
+    when {
+        {
+            $lhs isa ValueDouble, has double_value $value_lhs;
+            $rhs isa ValueDouble, has double_value $value_rhs;
+        } or {
+            $lhs isa ValueInteger, has integer_value $value_lhs;
+            $rhs isa ValueInteger, has integer_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
+                has latest true;
+            $mv_lhs isa ValueDouble, has double_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
+                has latest true;
+            $mv_rhs isa ValueDouble, has double_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
+                has latest true;
+            $mv_lhs isa ValueInteger, has integer_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
+                has latest true;
+            $mv_rhs isa ValueInteger, has integer_value $value_rhs;
+        } or {
+            $lhs isa ValueDouble, has double_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueDouble, has double_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueDouble, has double_value $value_lhs;
+            $rhs isa ValueDouble, has double_value $value_rhs;
+        } or {
+            $lhs isa ValueInteger, has integer_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueInteger, has integer_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueInteger, has integer_value $value_lhs;
+            $rhs isa ValueInteger, has integer_value $value_rhs;
+        };
+
+        $expr (lhs_value: $lhs, rhs_value: $rhs) isa $comparsion_type;
+        {
+            $comparsion_type sub less_than;
+            $value_lhs < $value_rhs;
+        } or {
+            $comparsion_type sub less_than_equal;
+            $value_lhs <= $value_rhs;
+        } or {
+            $comparsion_type sub greater_than;
+            $value_lhs > $value_rhs;
+        } or {
+            $comparsion_type sub greater_than_equal;
+            $value_lhs >= $value_rhs;
+        } or {
+            $comparsion_type sub equal;
+            $value_lhs == $value_rhs;
+        } or {
+            $comparsion_type sub not_equal;
+            $value_lhs != $value_rhs;
+        };
+    } then {
+        $expr has expression_satisfied true;
+    };
+
+
+rule comparison_expression_string_and_boolean_satisfied:
+    when {
+        {
+            $lhs isa ValueString, has string_value $value_lhs;
+            $rhs isa ValueString, has string_value $value_rhs;
+        } or {
+            $lhs isa ValueBool, has bool_value $value_lhs;
+            $rhs isa ValueBool, has bool_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
+                has latest true;
+            $mv_lhs isa ValueString, has string_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
+                has latest true;
+            $mv_rhs isa ValueString, has string_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
+                has latest true;
+            $mv_lhs isa ValueBool, has bool_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
+                has latest true;
+            $mv_rhs isa ValueBool, has bool_value $value_rhs;
+        } or {
+            $lhs isa ValueString, has string_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueString, has string_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueString, has string_value $value_lhs;
+            $rhs isa ValueString, has string_value $value_rhs;
+        } or {
+            $lhs isa ValueBool, has bool_value $value_lhs;
+            $rhs isa Measure;
+            (measure: $rhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueBool, has bool_value $value_rhs;
+        } or {
+            $lhs isa Measure;
+            (measure: $lhs, measurement_value: $mv) isa measurement,
+                has latest true;
+            $mv isa ValueBool, has bool_value $value_lhs;
+            $rhs isa ValueBool, has bool_value $value_rhs;
+        };
+
+        $expr (lhs_value: $lhs, rhs_value: $rhs) isa! $comparsion_type;
+        {
+            $comparsion_type sub equal;
+            $value_lhs == $value_rhs;
+        } or {
+            $comparsion_type sub not_equal;
+            $value_lhs != $value_rhs;
+        };
+    } then {
+        $expr has expression_satisfied true;
+    };
+
+
