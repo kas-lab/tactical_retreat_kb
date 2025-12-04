@@ -489,32 +489,19 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param interface_name: name of the ROS interface
         :return: fetch query result
         """
-
-        if (action_type == ""):
-            query = f"""
+        query = f"""
             match
-                $action isa ActionServer, has interface_name '{action_name}';
+                $interface isa ROSInterface, has interface_name '{interface_name}';
                 $resolution_model isa resolution_model,
                     has resolution_model_name '{resolution_model}';
-                (action: $action, resolution_model: $resolution_model, tactic_rule: $tactic_rule)
+                (interface: $interface,
+                    resolution_model: $resolution_model, tactic_rule: $tactic_rule)
                     isa applicable_tactics;
             fetch
                 $tactic_rule: rule_name;
         """
-        else:
-            query = f"""
-                match
-                    $action isa ActionServer, has interface_name '{action_name}',
-                        has interface_type '{action_type}';
-                    $resolution_model isa resolution_model,
-                        has resolution_model_name '{resolution_model}';
-                    (action: $action, resolution_model: $resolution_model, tactic_rule: $tactic_rule)
-                        isa applicable_tactics;
-                fetch
-                    $tactic_rule: rule_name;
-            """
         return self.fetch_database(query)
-    
+
     def fetch_applicable_valid_tactics(self,
                                  resolution_model: str,
                                  action_name: str) -> List[dict[str,
