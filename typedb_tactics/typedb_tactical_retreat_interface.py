@@ -26,6 +26,8 @@ from ros_typedb.typedb_interface import convert_query_type_to_py_type
 
 from typedb.driver import ConceptMap
 
+from typedb_tactics.utils import AdaptationPlan
+
 
 logger = logging.getLogger(__name__)
 
@@ -1021,3 +1023,58 @@ class TacticalRetreatInterface(TypeDBInterface):
                     has measurement_time {time};
         """
         return self.insert_database(query)
+
+    def fetch_reconfiguration_plan(self, rule_name: str):
+        """
+        Fetch adaptation plan for a rule.
+
+        :param rule_name: rule name
+        :param value: measured value
+        :return: query result
+        """
+        query = f"""
+            match
+                (tactic:$t, consequent:$fa) isa tactic_rule, has rule_name '{rule_name}';
+                $plan (feature_adaptation: $fa) isa reconfiguration_plan;
+                (plan:$plan, action: $res_action) isa plan_action_indexed, has action_index $index;
+            fetch
+                $index;
+                set_parameter_action: {{
+                    match
+                        $res_action (
+                            node: $node,
+                            parameter: $parameter,
+                            parameter_value: $parameter_value) isa! set_nodes_parameters;
+                    fetch
+                        $node: node_name;
+                        $parameter: parameter_name;
+                        param_value_array: {{
+                            match
+                                $parameter_value isa ValueArray;
+                                $param_index (array: $parameter_value, array_value: $value) isa at_index;
+                            fetch
+                                $param_index: index;
+                                $value: attribute;
+                        }};
+                        param_value_singleton: {{
+                            match
+                                $parameter_value isa $value_type;
+                                $value_type sub! ValueSingleton;
+                            fetch
+                                $parameter_value: attribute;
+                        }};
+                }};
+                set_lifecycle_action: {{
+                    match
+                        $res_action (node: $node) isa! set_lifecycle_state;
+                    fetch
+                        $node: node_name;
+                        $res_action: lifecycle_state;
+                }};
+            sort $index;
+        """
+        return self.fetch_database(query)
+
+    def get_reconfiguration_plan(self, tactic_rule: str) -> AdaptationPlan:
+        query_result = self.fetch_reconfiguration_plan(tactic_rule)
+        return AdaptationPlan.from_typedb_results(query_result)

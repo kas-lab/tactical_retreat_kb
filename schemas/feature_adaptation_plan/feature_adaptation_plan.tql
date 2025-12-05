@@ -3,7 +3,7 @@ define
 action_index sub attribute,
     value long;
 
-feature_adaptation_plan sub relation,
+reconfiguration_plan sub relation,
     relates feature_adaptation,
     plays plan_action_indexed:plan;
 
@@ -24,9 +24,9 @@ feature_adaptation plays feature_resolution_dependency:feature_adaptation;
 resolution_action plays feature_resolution_dependency:dependent;
 resolution_action plays feature_resolution_dependency:dependency;
 
-feature_adaptation plays feature_adaptation_plan:feature_adaptation;
+feature_adaptation plays reconfiguration_plan:feature_adaptation;
 
-feature_adaptation_plan plays plan_action_indexed:plan;
+reconfiguration_plan plays plan_action_indexed:plan;
 resolution_action plays plan_action_indexed:action;
 
 rule feature_resolution_dependency_alternative:
@@ -45,7 +45,7 @@ rule feature_resolution_dependency_alternative:
             isa feature_resolution_dependency;
     };
 
-rule feature_resolution_dependency_requirement:
+rule feature_resolution_dependency_requirement_activation:
     when {
         $fa (activation: $feature) isa feature_adaptation;
 
@@ -56,6 +56,23 @@ rule feature_resolution_dependency_requirement:
 
         (variant: $feature, resolution_action: $action_dependent) isa variant_activation;
         (variant: $f_constraint, resolution_action: $action_dependency) isa variant_activation;
+    } then {
+        (feature_adaptation:$fa, dependent: $action_dependent, dependency: $action_dependency)
+            isa feature_resolution_dependency;
+    };
+
+rule feature_resolution_dependency_requirement_deactivation:
+    when {
+        $fa (deactivation: $feature) isa feature_adaptation;
+
+        (constraint: $feature, constrained: $f_constrained) isa requires_constraint;
+
+        not {$feature is $f_constrained;};
+        $feature has selected true;
+        $f_constrained has selected true;
+
+        (variant: $feature, resolution_action: $action_dependency) isa variant_deactivation;
+        (variant: $f_constrained, resolution_action: $action_dependent) isa variant_deactivation;
     } then {
         (feature_adaptation:$fa, dependent: $action_dependent, dependency: $action_dependency)
             isa feature_resolution_dependency;
@@ -78,40 +95,47 @@ rule feature_resolution_dependency_excludes:
     };
 
 # Infer that exists a adaptation plan for a feature adaptation
-rule feature_adaptation_plan:
+rule reconfiguration_plan:
     when {
         $fa isa feature_adaptation;
     } then {
-        (feature_adaptation: $fa) isa feature_adaptation_plan;
+        (feature_adaptation: $fa) isa reconfiguration_plan;
     };
 
-rule feature_adaptation_populate_actions:
+rule feature_adaptation_populate_activation_actions:
     when {
-        $plan (feature_adaptation: $fa) isa feature_adaptation_plan;
-        $fa ($feature) isa feature_adaptation;
-        (resolution_action: $action, variant: $feature) isa variant_resolution;
+        $plan (feature_adaptation: $fa) isa reconfiguration_plan;
+        $fa (activation: $feature) isa feature_adaptation;
+        (resolution_action: $action, variant: $feature) isa variant_activation;
     } then {
         (plan:$plan, action: $action) isa plan_action_indexed;
     };
 
-rule feature_adaptation_populate_depencies:
+rule feature_adaptation_populate_deactivation_actions:
     when {
-        $plan (feature_adaptation: $fa) isa feature_adaptation_plan;
+        $plan (feature_adaptation: $fa) isa reconfiguration_plan;
+        $fa (deactivation: $feature) isa feature_adaptation;
+        (resolution_action: $action, variant: $feature) isa variant_deactivation;
+    } then {
+        (plan:$plan, action: $action) isa plan_action_indexed;
+    };
+
+rule feature_adaptation_populate_dependencies:
+    when {
+        $plan (feature_adaptation: $fa) isa reconfiguration_plan;
         $fa ($feature) isa feature_adaptation;
         (resolution_action: $action, variant: $feature) isa variant_resolution;
-        (feature_adaptation:$fa, dependent: $action, dependency: $action_dependency)
-            isa feature_resolution_dependency;
-        not {$action is $action_dependency;};
-        # not {(plan:$plan, action: $action_dependency) isa plan_action_indexed;};
+        (feature_adaptation:$fa, $action, $action_dependency) isa feature_resolution_dependency;
+        $action_dependency isa resolution_action;
     } then {
         (plan:$plan, action: $action_dependency) isa plan_action_indexed;
     };
 
 
 # order actions
-rule feature_resolution_root:
+rule feature_resolution_top_dependency:
     when {
-        $plan (feature_adaptation: $fa) isa feature_adaptation_plan;
+        $plan (feature_adaptation: $fa) isa reconfiguration_plan;
         $f_res_dependency (feature_adaptation:$fa, dependent: $action_dependent, dependency: $action_dependency)
             isa feature_resolution_dependency;
         not {
@@ -123,9 +147,23 @@ rule feature_resolution_root:
         $plan_index has action_index 0;
     };
 
+rule feature_resolution_root_no_dependency:
+    when {
+        $plan (feature_adaptation: $fa) isa reconfiguration_plan;
+        $fa ($feature) isa feature_adaptation;
+        (resolution_action: $action, variant: $feature) isa variant_resolution;
+        not {
+            (feature_adaptation:$fa, $action)
+                isa feature_resolution_dependency;
+        };
+        $plan_index (plan:$plan, action: $action) isa plan_action_indexed;
+    } then {
+        $plan_index has action_index 0;
+    };
+
 rule feature_resolution_order:
     when {
-        $plan (feature_adaptation: $fa) isa feature_adaptation_plan;
+        $plan (feature_adaptation: $fa) isa reconfiguration_plan;
         $f_res_dependency (feature_adaptation:$fa, dependent: $action_dependent, dependency: $action_dependency)
             isa feature_resolution_dependency;
         (plan:$plan, action: $action_dependency) isa plan_action_indexed, has action_index $index;

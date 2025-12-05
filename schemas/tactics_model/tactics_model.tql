@@ -11,6 +11,7 @@ resolution_model_name sub name;
 tactic_name sub name;
 rule_name sub name;
 variant_name sub name;
+feature_adaptation_name sub name;
 
 tactic_resolution_model sub attribute,
     value string;
@@ -62,6 +63,7 @@ Measure plays inequality_expression:lhs_value;
 Value plays inequality_expression:rhs_value;
 
 feature_adaptation sub relation,
+    owns feature_adaptation_name,
     relates deactivation,
     relates activation,
     plays tactic_rule:consequent;
@@ -80,7 +82,7 @@ resolution_model sub relation,
 
 variant_resolution sub relation,
     abstract,
-    # owns feasible,
+    owns feasible,
     relates resolution_action,
     relates variant,
     plays resolution_model:variant_resolution;
@@ -93,6 +95,7 @@ action_name sub attribute,
 resolution_action sub relation,
     abstract,
     owns action_name,
+    owns feasible,
     relates node,
     plays variant_resolution:resolution_action;
 
@@ -132,28 +135,18 @@ rule tactic_rule_antecedent_invalid:
         $tr has rule_valid false;
     };
 
-# rule tactic_rule_consequent_unfeasible:
-#     when {
-#         $tr (consequent: $fa) isa tactic_rule;
-#         $fa ($feature) isa feature_adaptation;
-#         $feature isa Feature;
-#         $feature has selectable false;
-#     } then {
-#         $tr has rule_valid false;
-#     };
-
-# rule tactic_rule_consequent_variant_resolution_unfeasible:
-#     when {
-#         $t isa Tactic;
-#         $tr (tactic: $t, consequent: $fa) isa tactic_rule;
-#         $fa ($feature) isa feature_adaptation;
-#         $feature isa Feature;
-#         $rm (tactic: $t, variant_resolution: $vr) isa resolution_model;
-#         $vr (variant: $feature) isa variant_resolution;
-#         $vr has feasible false;
-#     } then {
-#         $tr has rule_valid false;
-#     };
+rule tactic_rule_consequent_variant_resolution_unfeasible:
+    when {
+        $t isa Tactic;
+        $tr (tactic: $t, consequent: $fa) isa tactic_rule;
+        $fa ($feature) isa feature_adaptation;
+        $feature isa Feature;
+        $rm (tactic: $t, variant_resolution: $vr) isa resolution_model;
+        $vr (variant: $feature) isa variant_resolution;
+        $vr has feasible false;
+    } then {
+        $tr has rule_valid false;
+    };
 
 ## Rules to infer whether an expression is valid
 rule and_expression_valid:
@@ -254,101 +247,101 @@ rule inequality_expression_invalid:
     };
 
 ## Rules for infering whether a resolution action is feasible
-# rule resolution_action_unfeasible_node_running:
-#     when {
-#         $ra (node: $node) isa resolution_action;
-#         not {$node has running true;};
-#     } then {
-#         $ra has feasible false;
-#     };
+rule resolution_action_unfeasible_node_running:
+    when {
+        $ra (node: $node) isa resolution_action;
+        not {$node has running true;};
+    } then {
+        $ra has feasible false;
+    };
 
-# rule resolution_action_feasible:
-#     when {
-#         $ra isa resolution_action;
-#         not {$ra has feasible false;};
-#     } then {
-#         $ra has feasible true;
-#     };
+rule resolution_action_feasible:
+    when {
+        $ra isa resolution_action;
+        not {$ra has feasible false;};
+    } then {
+        $ra has feasible true;
+    };
 
-# ### lifecyle state rules. Allows setting the same state
-# rule set_lifecycle_state_active_unfeasible:
-#     when {
-#         $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "active";
-#         not{
-#             {
-#                 $node has lifecycle_state "active";
-#             } or {
-#                 $node has lifecycle_state "inactive";
-#             };
-#         };
-#     } then {
-#         $ra has feasible false;
-#     };
+### lifecyle state rules. Allows setting the same state
+rule set_lifecycle_state_active_unfeasible:
+    when {
+        $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "active";
+        not{
+            {
+                $node has lifecycle_state "active";
+            } or {
+                $node has lifecycle_state "inactive";
+            };
+        };
+    } then {
+        $ra has feasible false;
+    };
 
-# rule set_lifecycle_state_inactive_unfeasible:
-#     when {
-#         $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "inactive";
-#         not{
-#             {
-#                 $node has lifecycle_state "active";
-#             } or {
-#                 $node has lifecycle_state "unconfigured";
-#             } or {
-#                 $node has lifecycle_state "inactive";
-#             };
-#         };
-#     } then {
-#         $ra has feasible false;
-#     };
+rule set_lifecycle_state_inactive_unfeasible:
+    when {
+        $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "inactive";
+        not{
+            {
+                $node has lifecycle_state "active";
+            } or {
+                $node has lifecycle_state "unconfigured";
+            } or {
+                $node has lifecycle_state "inactive";
+            };
+        };
+    } then {
+        $ra has feasible false;
+    };
 
-# rule set_lifecycle_state_unconfigured_unfeasible:
-#     when {
-#         $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "unconfigured";
-#         not{
-#             {
-#                 $node has lifecycle_state "inactive";
-#             } or {
-#                 $node has lifecycle_state "unconfigured";
-#             };
-#         };
-#     } then {
-#         $ra has feasible false;
-#     };
+rule set_lifecycle_state_unconfigured_unfeasible:
+    when {
+        $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "unconfigured";
+        not{
+            {
+                $node has lifecycle_state "inactive";
+            } or {
+                $node has lifecycle_state "unconfigured";
+            };
+        };
+    } then {
+        $ra has feasible false;
+    };
 
-# rule set_lifecycle_state_finalized_unfeasible:
-#     when {
-#         $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "finalized";
-#         not{
-#             {
-#                 $node has lifecycle_state "active";
-#             } or {
-#                 $node has lifecycle_state "unconfigured";
-#             } or {
-#                 $node has lifecycle_state "inactive";
-#             } or {
-#                 $node has lifecycle_state "finalized";
-#             };
-#         };
-#     } then {
-#         $ra has feasible false;
-#     };
+rule set_lifecycle_state_finalized_unfeasible:
+    when {
+        $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "finalized";
+        not{
+            {
+                $node has lifecycle_state "active";
+            } or {
+                $node has lifecycle_state "unconfigured";
+            } or {
+                $node has lifecycle_state "inactive";
+            } or {
+                $node has lifecycle_state "finalized";
+            };
+        };
+    } then {
+        $ra has feasible false;
+    };
 
 ### check whether the parameter types are correct?
 
 ## Rules for inferring whether a variant resolution is feasible
-# rule variant_resolution_unfeasible:
-#     when {
-#         $vr (resolution_action: $ra) isa variant_resolution;
-#         $ra has feasible false;
-#     } then {
-#         $vr has feasible false;
-#     };
+rule variant_resolution_unfeasible:
+    when {
+        $vr (resolution_action: $ra) isa variant_resolution;
+        $ra has feasible false;
+    } then {
+        $vr has feasible false;
+    };
 
-# rule variant_resolution_feasible:
-#     when {
-#         $vr isa variant_resolution;
-#         not{$vr has feasible false;};
-#     } then {
-#         $vr has feasible true;
-#     };
+rule variant_resolution_feasible:
+    when {
+        $vr isa variant_resolution;
+        not{$vr has feasible false;};
+    } then {
+        $vr has feasible true;
+    };
 

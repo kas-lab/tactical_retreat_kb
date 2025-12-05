@@ -11,13 +11,9 @@ $node_3 isa ROSNode,
 	has node_name "node_3",
 	has start_time 2025-09-06T11:57:56.666;
 
-# $node_not_running isa ROSNode,
-# 	has node_name "node_not_running",
-# 	has start_time 2025-09-06T11:57:56.666,
-# 	has end_time 2025-09-07T11:57:56.666;
-
-# $parameter isa ParameterDouble, has parameter_name "parameter";
-# $parameter_value isa ValueDouble, has double_value 0.10;
+$parameter isa ParameterDouble, has parameter_name "parameter";
+$parameter_value isa ValueDouble, has double_value 0.10;
+(node: $node_1, parameter:$parameter) isa has_parameter;
 
 ### Resolution actions
 
@@ -36,6 +32,8 @@ $res_action_set_node_3_lc_active (node: $node_3) isa set_lifecycle_state,
 $res_action_set_node_3_lc_inactive (node: $node_3) isa set_lifecycle_state,
 	has lifecycle_state 'inactive', has action_name 'res_action_set_node_3_lc_inactive';
 
+$res_action_set_param_node_1 (node: $node_1, parameter: $parameter, parameter_value: $parameter_value) isa set_nodes_parameters;
+
 ### Feature hierarchy
 
 $feature_parent_alternative isa Feature, has feature_name "feature_parent_alternative", has mandatory true;
@@ -44,19 +42,20 @@ $f_alternative_child_2 isa Feature, has feature_name "f_alternative_child_2";
 $f_alternative_child_3 isa Feature, has feature_name "f_alternative_child_3", has selected true;
 (parent: $feature_parent_alternative, child: $f_alternative_child_1, child: $f_alternative_child_2, child: $f_alternative_child_3) isa alternative;
 
-# $feature_parent_or_group isa Feature, has feature_name "feature_parent_or_group", has mandatory true;
-# $f_or_group_child_1 isa Feature, has feature_name "f_or_group_child_1";
-# $f_or_group_child_2 isa Feature, has feature_name "f_or_group_child_2";
-# $f_or_group_child_3 isa Feature, has feature_name "f_or_group_child_3", has selected true;
-# (parent: $feature_parent_or_group, child: $f_or_group_child_1, child: $f_or_group_child_2, child: $f_or_group_child_3) isa or_group;
-
 $f_req_constraint isa Feature, has feature_name "f_req_constraint";
 $f_req_constrained isa Feature, has feature_name "f_req_constrained";
 (constrained: $f_req_constrained, constraint: $f_req_constraint) isa requires_constraint;
 
+$f_req_constraint_2 isa Feature, has feature_name "f_req_constraint_2", has selected true;
+$f_req_constrained_2 isa Feature, has feature_name "f_req_constrained_2", has selected true;
+(constrained: $f_req_constrained_2, constraint: $f_req_constraint_2) isa requires_constraint;
+
 $f_exc_constraint isa Feature, has feature_name "f_exc_constraint", has selected true;
 $f_exc_constrained isa Feature, has feature_name "f_exc_constrained";
 (constrained: $f_exc_constrained, constraint: $f_exc_constraint) isa excludes_constraint;
+
+$f_node_1_param isa Feature, has feature_name "f_node_1_param";
+(constrained: $f_node_1_param, constraint: $f_alternative_child_1) isa requires_constraint;
 
 ### Variant resolutions
 $vr_ac_1_act (resolution_action: $res_action_set_node_1_lc_active, variant: $f_alternative_child_1) isa variant_activation;
@@ -71,91 +70,30 @@ $vr_ac_3_deact (resolution_action: $res_action_set_node_3_lc_inactive, variant: 
 $vr_req_constraint_act (resolution_action: $res_action_set_node_1_lc_active, variant: $f_req_constraint) isa variant_activation;
 $vr_req_constrained_act (resolution_action: $res_action_set_node_2_lc_active, variant: $f_req_constrained) isa variant_activation;
 
+$vr_req_constraint_deact (resolution_action: $res_action_set_node_1_lc_inactive, variant: $f_req_constraint_2) isa variant_deactivation;
+$vr_req_constrained_deact (resolution_action: $res_action_set_node_2_lc_inactive, variant: $f_req_constrained_2) isa variant_deactivation;
+
 $vr_exc_constraint_act (resolution_action: $res_action_set_node_1_lc_inactive, variant: $f_exc_constraint) isa variant_deactivation;
 $vr_exc_constrained_act (resolution_action: $res_action_set_node_2_lc_active, variant: $f_exc_constrained) isa variant_activation;
 
+$vr_set_param_1 (resolution_action: $res_action_set_param_node_1, variant: $f_node_1_param) isa variant_activation;
+
 ### Feature adaptations
+$fa0 (deactivation: $f_alternative_child_3, activation: $f_alternative_child_1) isa feature_adaptation, has feature_adaptation_name 'fa0';
 $fa1 (activation: $f_alternative_child_1) isa feature_adaptation, has feature_adaptation_name 'fa1';
 
 $fa2 (activation: $f_req_constrained) isa feature_adaptation, has feature_adaptation_name 'fa2';
 $fa3 (activation: $f_exc_constrained) isa feature_adaptation, has feature_adaptation_name 'fa3';
+$fa4 (deactivation: $f_req_constraint_2) isa feature_adaptation, has feature_adaptation_name 'fa4';
 
+$fa5 (activation: $f_alternative_child_1, activation: $f_node_1_param) isa feature_adaptation, has feature_adaptation_name 'fa5';
+
+### Tactics
 $t isa Tactic, has tactic_name "tactic";
 
+(tactic:$t, consequent: $fa0) isa tactic_rule, has rule_name "tactic_rule_0";
 (tactic:$t, consequent: $fa1) isa tactic_rule, has rule_name "tactic_rule_1";
 (tactic:$t, consequent: $fa2) isa tactic_rule, has rule_name "tr_activate_req_constrained";
 (tactic:$t, consequent: $fa3) isa tactic_rule, has rule_name "tr_activate_exc_constrained";
-# (tactic:$t, consequent: $fa_vr_2) isa tactic_rule, has rule_name "tr_variant_resolution_unfeasible_1"; # rule_valid false
-# (tactic:$t, consequent: $fa_vr_3) isa tactic_rule, has rule_name "tr_variant_resolution_unfeasible_2"; # rule_valid false
-
-# $vr2 (resolution_action: $res_action_unfeasible, variant: $f_vr_2) isa variant_activation; # feasible false
-# $vr3 (resolution_action: $res_action_set_node_1_param_1, resolution_action: $res_action_unfeasible, variant: $f_vr_3) isa variant_activation; # feasible false
-
-
-# $f_selected_1 isa Feature, has feature_name "f_selected_1", has selected true;
-# $f_selected_2 isa Feature, has feature_name "f_selected_2", has selected true;
-
-# $f_not_selected_1 isa Feature, has feature_name "f_not_selected_1", has selected false;
-# $f_not_selected_2 isa Feature, has feature_name "f_not_selected_2";
-
-# $f_req_constrained_1 isa Feature, has feature_name "f_req_constrained_1";
-# $f_req_constrained_2 isa Feature, has feature_name "f_req_constrained_2";
-# $f_req_constrained_3 isa Feature, has feature_name "f_req_constrained_3";
-# $f_req_constrained_4 isa Feature, has feature_name "f_req_constrained_4";
-# $f_req_constrained_5 isa Feature, has feature_name "f_req_constrained_5";
-
-# (constrained: $f_req_constrained_1, constraint: $f_selected_1) isa requires_constraint;      # selectable true
-# (constrained: $f_req_constrained_2, constraint: $f_not_selected_1) isa requires_constraint;  # selectable false
-
-# (constrained: $f_req_constrained_3, constraint: $f_selected_1, constraint: $f_selected_2) isa requires_constraint;          # selectable true
-# (constrained: $f_req_constrained_4, constraint: $f_not_selected_1, constraint: $f_not_selected_2) isa requires_constraint;  # selectable false
-# (constrained: $f_req_constrained_5, constraint: $f_selected_1, constraint: $f_not_selected_1) isa requires_constraint;      # selectable false
-
-# $f_excl_constrained_1 isa Feature, has feature_name "f_excl_constrained_1";
-# $f_excl_constrained_2 isa Feature, has feature_name "f_excl_constrained_2";
-# $f_excl_constrained_3 isa Feature, has feature_name "f_excl_constrained_3";
-# $f_excl_constrained_4 isa Feature, has feature_name "f_excl_constrained_4";
-# $f_excl_constrained_5 isa Feature, has feature_name "f_excl_constrained_5";
-
-# (constrained: $f_excl_constrained_1, constraint: $f_selected_1) isa excludes_constraint;      # selectable false
-# (constrained: $f_excl_constrained_2, constraint: $f_not_selected_1) isa excludes_constraint;  # selectable true
-
-# (constrained: $f_excl_constrained_3, constraint: $f_selected_1, constraint: $f_selected_2) isa excludes_constraint;          # selectable false
-# (constrained: $f_excl_constrained_4, constraint: $f_not_selected_1, constraint: $f_not_selected_2) isa excludes_constraint;  # selectable true
-# (constrained: $f_excl_constrained_5, constraint: $f_selected_1, constraint: $f_not_selected_1) isa excludes_constraint;      # selectable false
-
-# ## test tactic_rule_consequent_unfeasible
-# $f_selectable isa Feature, has feature_name "f_selectable";
-# $f_not_selectable isa Feature, has feature_name "f_not_selectable";
-
-# $fa1 (activation: $f_selectable) isa feature_adaptation;
-# $fa2 (activation: $f_not_selectable) isa feature_adaptation;
-
-# (consequent: $fa1) isa tactic_rule, has rule_name "tr_consequent_feasible";   # rule_valid true
-# (consequent: $fa2) isa tactic_rule, has rule_name "tr_consequent_unfeasible"; # rule_valid false
-
-# ## tactic_rule_consequent_variant_resolution_unfeasible
-# $f_vr_1 isa Feature, has feature_name "f_vr_1";
-# $f_vr_2 isa Feature, has feature_name "f_vr_2";
-# $f_vr_3 isa Feature, has feature_name "f_vr_3";
-
-# $vr1 (resolution_action: $res_action_feasible, variant: $f_vr_1) isa variant_activation;   # feasible true
-# $vr2 (resolution_action: $res_action_unfeasible, variant: $f_vr_2) isa variant_activation; # feasible false
-# $vr3 (resolution_action: $res_action_feasible, resolution_action: $res_action_unfeasible, variant: $f_vr_3) isa variant_activation; # feasible false
-
-# $fa_vr_1 (activation: $f_vr_1) isa feature_adaptation;
-# $fa_vr_2 (activation: $f_vr_2) isa feature_adaptation;
-# $fa_vr_3 (activation: $f_vr_3) isa feature_adaptation;
-
-# $t isa Tactic, has tactic_name "tactic";
-
-# (tactic:$t, consequent: $fa_vr_1) isa tactic_rule, has rule_name "tr_variant_resolution_feasible";   # rule_valid true
-# (tactic:$t, consequent: $fa_vr_2) isa tactic_rule, has rule_name "tr_variant_resolution_unfeasible_1"; # rule_valid false
-# (tactic:$t, consequent: $fa_vr_3) isa tactic_rule, has rule_name "tr_variant_resolution_unfeasible_2"; # rule_valid false
-
-# (
-# 	tactic: $t,
-# 	variant_resolution:$vr1,
-# 	variant_resolution:$vr2,
-# 	variant_resolution:$vr3) isa resolution_model,
-#     has resolution_model_name "res_model", has ros_system "system";
+(tactic:$t, consequent: $fa4) isa tactic_rule, has rule_name "tr_deactivate_req_constrained";
+(tactic:$t, consequent: $fa5) isa tactic_rule, has rule_name "tactic_rule_2";
