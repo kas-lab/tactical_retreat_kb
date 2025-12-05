@@ -1051,7 +1051,8 @@ class TacticalRetreatInterface(TypeDBInterface):
                         param_value_array: {{
                             match
                                 $parameter_value isa ValueArray;
-                                $param_index (array: $parameter_value, array_value: $value) isa at_index;
+                                $param_index
+                                 (array: $parameter_value, array_value: $value) isa at_index;
                             fetch
                                 $param_index: index;
                                 $value: attribute;

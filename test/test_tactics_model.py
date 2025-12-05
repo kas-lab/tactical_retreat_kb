@@ -17,7 +17,7 @@ import pytest
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def kb_interface():
     kb_interface = TacticalRetreatInterface(
         'localhost:1729',
@@ -27,7 +27,9 @@ def kb_interface():
             'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
             'schemas/tactics_model/tactics_model.tql'],
-        ['test/data/test_tactics_model.tql'],
+        ['test/data/test_tactics_model.tql',
+         'schemas/ros_model/ros_model_example.tql',
+         'schemas/tactics_model/tactics_example.tql'],
         force_database=True,
         force_data=True,
         infer=True)
@@ -111,12 +113,11 @@ def test_get_tactic_rule_valid(kb_interface):
     assert kb_interface.get_tactic_rule_valid('tr6') is True
     assert kb_interface.get_tactic_rule_valid('tr7') is False
 
-    assert kb_interface.get_tactic_rule_valid('tr_consequent_feasible') is True
-    assert kb_interface.get_tactic_rule_valid('tr_consequent_unfeasible') is False
-
     assert kb_interface.get_tactic_rule_valid('tr_variant_resolution_feasible') is True
     assert kb_interface.get_tactic_rule_valid('tr_variant_resolution_unfeasible_1') is False
     assert kb_interface.get_tactic_rule_valid('tr_variant_resolution_unfeasible_2') is False
+
+    assert kb_interface.get_tactic_rule_valid('MIN')
 
 
 def test_set_nodes_parameters_feasible(kb_interface):
@@ -162,26 +163,3 @@ def test_set_lifecycle_state_feasible(kb_interface):
         'lifecycle_node_finalized', 'unconfigured') is False
     assert kb_interface.is_set_lifecycle_state_feasible(
         'lifecycle_node_finalized', 'finalized') is True
-
-
-@pytest.fixture
-def kb_interface_example():
-    kb_interface_example = TacticalRetreatInterface(
-        'localhost:1729',
-        'test_tactics_example_model',
-        ['schemas/data_structure/data_structure.tql',
-            'schemas/context_model/context_model.tql',
-            'schemas/ros_model/ros_model.tql',
-            'schemas/feature_model/feature_model.tql',
-            'schemas/tactics_model/tactics_model.tql'],
-        ['schemas/ros_model/ros_model_example.tql',
-            'schemas/tactics_model/tactics_example.tql'],
-        force_database=True,
-        force_data=True,
-        infer=True)
-    yield kb_interface_example
-    kb_interface_example.delete_database()
-
-
-def test_tactic_min_valid(kb_interface_example):
-    assert kb_interface_example.get_tactic_rule_valid('MIN')

@@ -15,7 +15,7 @@ import pytest
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def kb_interface():
     kb_interface = TacticalRetreatInterface(
         'localhost:1729',
@@ -196,7 +196,7 @@ def test_get_applicable_tactics(kb_interface):
     assert len(tactics) == 0
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def kb_interface_test_model():
     kb_interface_test_model = TacticalRetreatInterface(
         'localhost:1729',

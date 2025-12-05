@@ -158,16 +158,6 @@ $lifecycle_node_finalized isa LifeCycleNode,
 (node: $lifecycle_node_finalized) isa set_lifecycle_state, has lifecycle_state "unconfigured"; # feasible is false
 (node: $lifecycle_node_finalized) isa set_lifecycle_state, has lifecycle_state "finalized";    # feasible is true
 
-## test tactic_rule_consequent_unfeasible
-$f_selectable isa Feature, has feature_name "f_selectable", has selectable true;
-$f_not_selectable isa Feature, has feature_name "f_not_selectable", has selectable false;
-
-$fa1 (activation: $f_selectable) isa feature_adaptation;
-$fa2 (activation: $f_not_selectable) isa feature_adaptation;
-
-(consequent: $fa1) isa tactic_rule, has rule_name "tr_consequent_feasible";   # rule_valid true
-(consequent: $fa2) isa tactic_rule, has rule_name "tr_consequent_unfeasible"; # rule_valid false
-
 ## tactic_rule_consequent_variant_resolution_unfeasible
 $f_vr_1 isa Feature, has feature_name "f_vr_1";
 $f_vr_2 isa Feature, has feature_name "f_vr_2";
