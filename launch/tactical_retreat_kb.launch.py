@@ -17,9 +17,11 @@ from launch.actions import EmitEvent
 from launch.actions import RegisterEventHandler
 from launch.events import matches_action
 from launch.substitutions import LaunchConfiguration
+
 from launch_ros.actions import LifecycleNode
-from launch_ros.events.lifecycle import ChangeState
 from launch_ros.event_handlers import OnStateTransition
+from launch_ros.events.lifecycle import ChangeState
+
 import lifecycle_msgs
 
 
@@ -101,7 +103,7 @@ def generate_launch_description():
     ros_typedb_node_activate_event = RegisterEventHandler(
         OnStateTransition(
             target_lifecycle_node=ros_typedb_node,
-            goal_state="inactive",
+            goal_state='inactive',
             entities=[
                 EmitEvent(event=ChangeState(
                     lifecycle_node_matcher=matches_action(ros_typedb_node),

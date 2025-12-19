@@ -19,25 +19,26 @@ import time
 from lifecycle_msgs.srv import ChangeState
 from lifecycle_msgs.srv import GetState
 
+from nav_msgs.msg import Odometry
+
 import pytest
 
-from nav_msgs.msg import Odometry
 import rclpy
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node
-
 from rclpy.qos import QoSDurabilityPolicy
-from rclpy.qos import QoSLivelinessPolicy
 from rclpy.qos import QoSHistoryPolicy
+from rclpy.qos import QoSLivelinessPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import QoSReliabilityPolicy
 
 from std_msgs.msg import Float64
+
 from std_srvs.srv import Empty
 
-from typedb_tactics.tactical_retreat_kb import TacticalRetreatKB
 from typedb_tactics.tactical_retreat_kb import _to_duration
 from typedb_tactics.tactical_retreat_kb import get_ros_msg_type_from_string
+from typedb_tactics.tactical_retreat_kb import TacticalRetreatKB
 
 
 def test_get_ros_msg_type_from_string():
