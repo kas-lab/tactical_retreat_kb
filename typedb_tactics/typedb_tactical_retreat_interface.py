@@ -70,7 +70,7 @@ class RuntimeNodeDict(TypedDict):
 def node_query_to_node_dict(
         query_result: List[dict[str, MatchResultDict]],
         node_variable: str = 'node') -> List[RuntimeNodeDict]:
-    node_dict = list()
+    node_dict = []
     for result in query_result:
         node = result.get(node_variable)
         if len(node['namespace']) > 1:
@@ -235,7 +235,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param namespace: namespace of the running node
         :return: list of dictionaries with the action_name and action_type of the action clients
         """
-        ros_action_result_dict = list()
+        ros_action_result_dict = []
         for result in self.fetch_action_clients_names(node_name, namespace):
             action = result.get('action_client')
             if len(action['interface_name']) == 0:
