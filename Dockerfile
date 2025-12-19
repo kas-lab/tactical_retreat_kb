@@ -61,6 +61,7 @@ WORKDIR $HOME
 ## Create alias for TypeDB studio
 RUN echo 'alias typedb-studio="/opt/typedb-studio/bin/TypeDB\ Studio"' >> ~/.bashrc
 
+ARG DEPS_CACHE_BUSTER
 ## Create, install deps, and build Rebet workspace
 RUN mkdir -p rebet_ws/src
 WORKDIR $HOME/rebet_ws/src
@@ -68,6 +69,18 @@ COPY dependencies.repos $HOME/rebet_ws/dependencies.repos
 
 WORKDIR $HOME/rebet_ws
 RUN vcs import src < dependencies.repos --recursive
+
+COPY fuzzy $HOME/rebet_ws/src/typedb_tactics/fuzzy
+COPY launch $HOME/rebet_ws/src/typedb_tactics/launch
+COPY resource $HOME/rebet_ws/src/typedb_tactics/resource
+COPY schemas $HOME/rebet_ws/src/typedb_tactics/schemas
+COPY test $HOME/rebet_ws/src/typedb_tactics/test
+COPY typedb_tactics $HOME/rebet_ws/src/typedb_tactics/typedb_tactics
+COPY LICENSE $HOME/rebet_ws/src/typedb_tactics/LICENSE
+COPY package.xml $HOME/rebet_ws/src/typedb_tactics/package.xml
+COPY setup.cfg $HOME/rebet_ws/src/typedb_tactics/setup.cfg
+COPY setup.py $HOME/rebet_ws/src/typedb_tactics/setup.py
+
 
 RUN ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash \
     && sudo apt update \

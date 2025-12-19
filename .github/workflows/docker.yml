@@ -1,0 +1,94 @@
+name: docker
+on:
+  schedule:
+    - cron: '39 20 * * *'
+  push:
+    branches: [ "main", "dev" ]
+    tags: [ 'v*.*.*' ]
+  pull_request:
+    branches: [ "main", "dev" ]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-ref: ${{ steps.choose-tag.outputs.image_ref }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      # Compute lowercase repo path once: ghcr.io/<owner>/<repo>
+      - name: Compute image name (lowercase)
+        id: image
+        run: |
+          echo "name=${{ env.REGISTRY }}/$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      # GitHub App token (for private clone during docker build as a secret)
+      - id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: 2502254
+          private-key: ${{ secrets.AC_KASLAB_KEY }}
+          owner: kas-lab
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Produce all tags we want to attach
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            # always attach ci-<sha>
+            type=raw,value=ci-${{ github.sha }}
+            # branch pushes
+            type=raw,value=latest,enable=${{ github.event_name == 'push' && github.ref_name == 'main' }}
+            type=raw,value=dev,enable=${{ github.event_name == 'push' && github.ref_name == 'dev' }}
+            # tag pushes (optional: full semver + major)
+            type=ref,event=tag
+            type=semver,pattern={{major}},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            # pull requests
+            type=raw,value=pr-${{ github.event.pull_request.number }}-${{ github.sha }},enable=${{ github.event_name == 'pull_request' }}
+
+      # Choose ONE primary tag for downstream 'container:' use
+      - name: Choose primary tag
+        id: choose-tag
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            TAG="pr-${{ github.event.pull_request.number }}-${{ github.sha }}"
+          elif [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_type }}" = "branch" ]; then
+            if [ "${{ github.ref_name }}" = "main" ]; then TAG=latest
+            elif [ "${{ github.ref_name }}" = "dev" ]; then TAG=dev
+            else TAG="ci-${{ github.sha }}"; fi
+          elif [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            TAG="ci-${{ github.sha }}"
+          fi
+          echo "image_ref=${{ steps.image.outputs.name }}:${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev' || startsWith(github.ref, 'refs/tags/v')) }}
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            DEPS_CACHE_BUSTER=${{ github.run_id }}-${{ github.run_attempt }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          secrets: |
+            "gh_token=${{ steps.app-token.outputs.token }}"
