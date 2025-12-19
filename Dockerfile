@@ -27,6 +27,9 @@ RUN apt-get update && apt-get install -y \
     ros-humble-tf2-ros \
     ros-humble-tf2-ros-py \
     ros-humble-tf-transformations \
+    flake8 \
+    python3-flake8-import-order \
+    python3-ament-flake8 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN rosdep init
