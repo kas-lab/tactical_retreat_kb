@@ -38,18 +38,18 @@ def create_value_query(value, suffix=''):
             value)
         return None
 
-    variable_name = f"$value{suffix}"
+    variable_name = f'$value{suffix}'
 
     value_query = ''
     if isinstance(value, str):
         value_query = f"{variable_name} isa ValueString, has string_value '{value}';"
     elif isinstance(value, float):
-        value_query = f"{variable_name} isa ValueDouble, has double_value {value};"
+        value_query = f'{variable_name} isa ValueDouble, has double_value {value};'
     elif isinstance(value, bool):
         value_query = f"""{variable_name} isa ValueBool,
             has bool_value {convert_py_type_to_query_type(value)};"""
     elif isinstance(value, int):
-        value_query = f"{variable_name} isa ValueInteger, has integer_value {value};"
+        value_query = f'{variable_name} isa ValueInteger, has integer_value {value};'
     return value_query, variable_name
 
 
@@ -117,7 +117,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         )
 
     def fetch_subnodes(self, node_name: str,
-                       namespace: str = "") -> List[dict[str, MatchResultDict]]:
+                       namespace: str = '') -> List[dict[str, MatchResultDict]]:
         """
         Fetch subnodes of a running node and returns it as a typedb fetch query result.
 
@@ -138,7 +138,7 @@ class TacticalRetreatInterface(TypeDBInterface):
     def get_subnodes(
             self,
             node_name: str,
-            namespace: str = "") -> List[RuntimeNodeDict]:
+            namespace: str = '') -> List[RuntimeNodeDict]:
         """
         Get the subnodes of a running node and returns it as a list of dicts.
 
@@ -910,7 +910,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         return query_result[0]['ra']['feasible'][0]['value']
 
     def fetch_measures_inferfaces(self):
-        query = '''
+        query = """
             match
                 $measure isa Measure, has measure_name $measure_name;
                 $measurement_interface (measure: $measure, source: $source)
@@ -927,7 +927,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                 fetch
                     $qos: attribute;
             };
-        '''
+        """
         return self.fetch_database(query)
 
     def get_measures_interfaces(self):
