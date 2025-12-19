@@ -61,14 +61,22 @@ WORKDIR $HOME
 ## Create alias for TypeDB studio
 RUN echo 'alias typedb-studio="/opt/typedb-studio/bin/TypeDB\ Studio"' >> ~/.bashrc
 
-ARG DEPS_CACHE_BUSTER
 ## Create, install deps, and build Rebet workspace
 RUN mkdir -p rebet_ws/src
 WORKDIR $HOME/rebet_ws/src
 COPY dependencies.repos $HOME/rebet_ws/dependencies.repos
 
 WORKDIR $HOME/rebet_ws
-RUN vcs import src < dependencies.repos --recursive
+
+ARG DEPS_CACHE_BUSTER
+RUN --mount=type=secret,id=gh_token,uid=1000,gid=1000,mode=0400 bash -lc '\
+  echo "deps-buster=${DEPS_CACHE_BUSTER}" > /dev/null; \
+  tok=$(tr -d "\r\n" < /run/secrets/gh_token); \
+  export GIT_TERMINAL_PROMPT=0; \
+  git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "https://github.com/"; \
+  vcs import --input $HOME/rebet_ws/dependencies.repos . ; \
+'
+
 
 COPY fuzzy $HOME/rebet_ws/src/typedb_tactics/fuzzy
 COPY launch $HOME/rebet_ws/src/typedb_tactics/launch

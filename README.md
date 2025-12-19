@@ -27,8 +27,16 @@ Arrows point from each prerequisite model to the model that depends on it.
 
 ### Build
 
+To build the img you need to create a github personal access token to read access to private repos, then log in to gh with gh cli
+
 ```Bash
-docker build -t rebet .
+gh auth login         # if not logged in
+```
+
+Build:
+
+```Bash
+docker build --secret id=gh_token,src=<(gh auth token) --build-arg DEPS_CACHE_BUSTER=${date} -t rebet .
 ```
 
 ### Run
