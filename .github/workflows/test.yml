@@ -1,0 +1,39 @@
+name: test
+on:
+  schedule:
+    - cron: '39 20 * * *'
+  push:
+    branches: [ "main", "dev" ]
+    tags: [ 'v*.*.*' ]
+  pull_request:
+
+jobs:
+  test:
+    name: build and test
+    runs-on: ubuntu-latest
+    container:
+      image: rostooling/setup-ros-docker:ubuntu-jammy-latest
+    steps:
+      - uses: actions/checkout@v5
+      - id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: 2502254
+          private-key: ${{ secrets.AC_KASLAB_KEY }}
+          owner: kas-lab
+      - name: install typedb
+        shell: bash
+        run: .github/workflows/install_typedb.sh
+      - name: run typedb
+        shell: bash
+        run: typedb server &
+      - uses: ros-tooling/setup-ros@0.7.1
+        with:
+          required-ros-distributions: humble
+      - uses: ros-tooling/action-ros-ci@0.4.5
+        with:
+          package-name: typedb_tactics
+          target-ros2-distro: humble
+          skip-tests: false
+          vcs-repo-file-url: dependencies.repos
+          import-token: ${{ steps.app-token.outputs.token }}

@@ -15,18 +15,18 @@
 import importlib
 import inspect
 
-from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
-
-from rclpy.duration import Duration
 import rclpy
+from rclpy.duration import Duration
 from rclpy.lifecycle import State
 from rclpy.lifecycle import TransitionCallbackReturn
-
 from rclpy.qos import QoSDurabilityPolicy
-from rclpy.qos import QoSLivelinessPolicy
 from rclpy.qos import QoSHistoryPolicy
+from rclpy.qos import QoSLivelinessPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import QoSReliabilityPolicy
+
+from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
+
 from std_srvs.srv import Trigger
 
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
@@ -101,7 +101,7 @@ def get_qos_from_qos_dict(qos_dict: dict) -> QoSProfile:
     if qos_dict is None:
         return QoSProfile(depth=10)
 
-    qos = QoSProfile(depth=int(qos_dict.get("depth", 10)))
+    qos = QoSProfile(depth=int(qos_dict.get('depth', 10)))
 
     # Policies
     if 'reliability' in qos_dict:
