@@ -77,9 +77,8 @@ RUN --mount=type=secret,id=gh_token,uid=1000,gid=1000,mode=0400 bash -lc '\
   tok=$(tr -d "\r\n" < /run/secrets/gh_token); \
   export GIT_TERMINAL_PROMPT=0; \
   git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "https://github.com/"; \
-  vcs import --input $HOME/rebet_ws/dependencies.repos . ; \
+  vcs import --input $HOME/rebet_ws/dependencies.repos src ; \
 '
-
 
 COPY fuzzy $HOME/rebet_ws/src/typedb_tactics/fuzzy
 COPY launch $HOME/rebet_ws/src/typedb_tactics/launch
@@ -93,6 +92,7 @@ COPY setup.cfg $HOME/rebet_ws/src/typedb_tactics/setup.cfg
 COPY setup.py $HOME/rebet_ws/src/typedb_tactics/setup.py
 
 
+WORKDIR $HOME/rebet_ws/
 RUN ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash \
     && sudo apt update \
     && rosdep update \

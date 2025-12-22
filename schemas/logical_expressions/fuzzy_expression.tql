@@ -1,0 +1,98 @@
+fuzzy_expression_name sub attribute,
+    value string;
+
+membership_degree sub attribute,
+    value double;
+
+### Fuzzy expressions
+fuzzy_expression sub relation,
+	abstract,
+    owns fuzzy_expression_name @unique, # to make it possible to query the expression
+	owns membership_degree;
+
+fuzzy_decay_expression sub fuzzy_expression,
+	relates decay_membership;
+fuzzy_ascend_expression sub fuzzy_expression,
+	relates ascend_membership;
+fuzzy_unimodal_expression sub fuzzy_expression,
+	relates unimodal_membership;
+
+## compound expression
+fuzzy_compound_expression sub fuzzy_expression,
+    abstract;
+    # relates expression;
+    # plays compound_expression:expression;
+
+fuzzy_and sub fuzzy_expression,
+    relates expression;
+
+fuzzy_or sub fuzzy_expression,
+    relates expression,
+    plays fuzzy_and:expression;
+
+# Fuzzy memberships
+FuzzyMembership sub entity,
+	abstract;
+
+AscendMembership sub FuzzyMembership,
+	plays fuzzy_ascend_expression:ascend_membership;
+DecayMembership sub FuzzyMembership,
+	plays fuzzy_decay_expression:decay_membership;
+UnimodalMembership sub FuzzyMembership,
+	plays fuzzy_unimodal_expression:unimodal_membership;
+
+### Triangular, guassian etc membership functions (not necessarly descend or ascend)
+
+# μ(x) =  (x – a) / (b – a), a ≤ x ≤ b
+# μ(x) = (c – x) / (c – b), b ≤ x ≤ c
+FuzzyTriangular sub UnimodalMembership,
+	owns a,
+	owns b,
+	owns c;
+
+FuzzyGuassian sub UnimodalMembership,
+	owns sigma,
+	owns center;
+
+### Ascend fuzzy membership functions
+
+## exponential saturation membership function
+## m(x) = 1 - e^(-exponent * x), exponent > 0
+FuzzyExponentialSaturation sub AscendMembership,
+	owns exponent; # speed of saturation
+
+## sigmoid membership function
+## m(x) = 1 / (1 + e ^ -exponent*(x - x0))
+FuzzySigmoid sub AscendMembership,
+	owns exponent,
+	owns inflection_point; # where m(inflection_point) = 0.5
+
+## bounded linear fraction membership function (monotonic)
+## m(x) = x / (x + curvature), curvature > 0
+FuzzyBoundedLinearFraction sub AscendMembership,
+	owns curvature; # controls the curvature
+
+### Decay fuzzy membership functions
+
+## exponential decay membership function
+## m(x) = e^(-exponent * x), exponent > 0
+FuzzyExponentialDecay sub DecayMembership,
+	owns exponent;
+
+## rational decay membership function
+## m(x) = curvature / (x + curvature), curvature > 0
+FuzzyRationalDecay sub DecayMembership,
+	owns curvature;
+
+### Triangular, guassian etc membership functions (not necessarly descend or ascend)
+
+# μ(x) =  (x – a) / (b – a), a ≤ x ≤ b
+# μ(x) = (c – x) / (c – b), b ≤ x ≤ c
+FuzzyTriangular sub UnimodalMembership,
+	owns a,
+	owns b,
+	owns c;
+
+FuzzyGuassian sub UnimodalMembership,
+	owns sigma,
+	owns center;

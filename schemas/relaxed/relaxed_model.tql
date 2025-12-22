@@ -125,7 +125,7 @@ relaxed_expression sub relation,
 	abstract,
 	owns fulfillment,
 	relates relaxed_expression,
-	relates term,
+	# relates proposition,
 	plays relaxed_requirement:relaxed_expression,
 	plays relaxed_expression:relaxed_expression,
 	plays until_expression:after;
@@ -137,9 +137,6 @@ eventually_expression sub relaxed_expression;
 until_expression sub relaxed_expression,
 	relates before as relaxed_expression,
 	relates after;
-
-#### connection with context_model
-Measure plays relaxed_expression:term;
 
 ### Event expressions
 event_expression sub relaxed_expression,
@@ -154,6 +151,7 @@ in_expression sub event_expression,
 ### Fuzzy expressions
 fuzzy_expression sub relaxed_expression,
 	abstract,
+	relates proposition,
 	owns membership;
 
 fuzzy_decay_expression sub fuzzy_expression,
@@ -162,6 +160,62 @@ fuzzy_ascend_expression sub fuzzy_expression,
 	relates ascend_membership;
 fuzzy_unimodal_expression sub fuzzy_expression,
 	relates unimodal_membership;
+
+## compound expression
+fuzzy_operators sub relation,
+    abstract,
+	relates proposition;
+    # relates expression;
+    # plays compound_expression:expression;
+
+fuzzy_and sub fuzzy_operators,
+    relates expression;
+
+fuzzy_or sub fuzzy_operators,
+    relates expression,
+    plays fuzzy_and:expression;
+
+fuzzy_not sub fuzzy_operators,
+    relates expression,
+	plays fuzzy_and:expression,
+    plays fuzzy_or:expression;
+
+#### connection with logical_expression model
+# Measure plays relaxed_expression:proposition;
+# propositional_expression owns membership;
+quantified_value sub attribute,
+	value double;
+propositional_expression owns quantified_value;
+propositional_expression plays fuzzy_expression:proposition;
+propositional_expression plays fuzzy_not:expression;
+propositional_expression plays fuzzy_and:expression;
+propositional_expression plays fuzzy_or:expression;
+
+rule quantified_value_bool_true:
+	when {
+		$propositional_expression (proposition: $value) isa propositional_expression;
+        $value isa ValueBool, has bool_value true;
+	} then {
+		$propositional_expression has quantified_value 1.0;
+	};
+
+rule quantified_value_bool_false:
+	when {
+		$propositional_expression (proposition: $value) isa propositional_expression;
+        $value isa ValueBool, has bool_value true;
+	} then {
+		$propositional_expression has quantified_value 0.0;
+	};
+
+rule quantified_value_measure_double:
+	when {
+		$propositional_expression (proposition: $measure) isa propositional_expression;
+        (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
+        $mv isa ValueDouble, has double_value $measure_double_value;
+		?double_value = $measure_double_value;
+	} then {
+		$propositional_expression has quantified_value ?double_value;
+	};
 
 #### Fuzzy set expression
 
@@ -182,13 +236,8 @@ as_late_as_possible_expression sub fuzzy_ascend_expression;
 ## Fuzzy membership rules
 rule fuzzy-unimodal-expression-membership-evaluation :
 	when {
-		$fuzzy_expression (unimodal_membership: $fuzzy_membership, term: $measure) isa fuzzy_unimodal_expression;
-		(measure:$measure, measurement_value: $mv) isa measurement, has latest true;
-		{
-			$mv isa ValueDouble, has double_value $quantified_value;
-		} or {
-			$mv isa ValueInteger, has integer_value $quantified_value;
-		};
+		$fuzzy_expression (unimodal_membership: $fuzzy_membership, proposition: $proposition) isa fuzzy_unimodal_expression;
+		$proposition has quantified_value $quantified_value;
 
 		{
 			$fuzzy_expression has required_period $period;
@@ -221,13 +270,9 @@ rule fuzzy-unimodal-expression-membership-evaluation :
 
 rule fuzzy-expression-ascend-membership-evaluation :
 	when {
-		$fuzzy_expression (ascend_membership: $fuzzy_membership, term: $measure) isa fuzzy_ascend_expression;
-		(measure:$measure, measurement_value: $mv) isa measurement, has latest true;
-		{
-			$mv isa ValueDouble, has double_value $quantified_value;
-		} or {
-			$mv isa ValueInteger, has integer_value $quantified_value;
-		};
+		$fuzzy_expression (ascend_membership: $fuzzy_membership, proposition: $proposition) isa fuzzy_ascend_expression;
+		$proposition has quantified_value $quantified_value;
+
 		{
 			$fuzzy_membership isa FuzzyExponentialSaturation, has exponent $exponent;
 			?membership_ = 1.0 - 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
@@ -245,13 +290,9 @@ rule fuzzy-expression-ascend-membership-evaluation :
 
 rule fuzzy-expression-decay-membership-evaluation :
 	when {
-		$fuzzy_expression (decay_membership: $fuzzy_membership, term: $measure) isa fuzzy_decay_expression;
-		(measure:$measure, measurement_value: $mv) isa measurement, has latest true;
-		{
-			$mv isa ValueDouble, has double_value $quantified_value;
-		} or {
-			$mv isa ValueInteger, has integer_value $quantified_value;
-		};
+		$fuzzy_expression (decay_membership: $fuzzy_membership, proposition: $proposition) isa fuzzy_decay_expression;
+		$proposition has quantified_value $quantified_value;
+
 		{
 			$fuzzy_variable isa FuzzyExponentialDecay, has exponent $exponent;
 			?membership_ = 2.71828 ^ ( -1.0 * $exponent * $quantified_value);

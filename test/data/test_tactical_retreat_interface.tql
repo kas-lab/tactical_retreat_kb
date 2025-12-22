@@ -27,13 +27,13 @@ $double_0_25 isa ValueDouble,
     has double_value 0.25;
 
 ## define expression
-$ineq (lhs_value:$measure_mock, rhs_value: $double_0_25) isa inequality_expression, has operator "<";
+$less_than (lhs_value:$measure_mock, rhs_value: $double_0_25) isa less_than;
 
 ## define feature adaptation
 $fa (deactivation: $f1, activation: $f2, activation: $f3) isa feature_adaptation;
 
 ## define tactic rule
-(tactic:$tactic1, antecedent:$ineq, consequent:$fa ) isa tactic_rule, has rule_name "rule1";
+(tactic:$tactic1, antecedent:$less_than, consequent:$fa ) isa tactic_rule, has rule_name "rule1";
 
 ## define mock node
 $mock_node1 isa ROSNode,

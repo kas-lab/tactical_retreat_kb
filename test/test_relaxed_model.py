@@ -23,6 +23,7 @@ def kb_interface():
         'test_model_interface',
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
+            'schemas/logical_expressions/logical_expression.tql',
             'schemas/relaxed/relaxed_model.tql'],
         ['schemas/relaxed/relaxed_mirte_example.tql',
          'test/data/test_relaxed_model.tql'],

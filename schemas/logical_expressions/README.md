@@ -22,3 +22,10 @@ C   ::= ℓ | C ∨ ℓ
 * x is a (typed) state variable, c is a (typed) constant
 * q is a boolean state variable (propositional atom)
 * α are atomic formulas, ℓ are literals, C are clauses, and φ are formulas
+
+## Fuzzy Branching Temporal Logic
+
+Semantically, an FBTL atomic formula is a function
+
+p:State→[0,1]
+p:State→[0,1]

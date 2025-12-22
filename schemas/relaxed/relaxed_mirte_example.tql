@@ -5,6 +5,7 @@ insert
 $velocity_measure isa Measure,
 	has measure_name "velocity_measure",
 	has description "The robot's velocity";
+$velocity_measure_expr (proposition: $velocity_measure) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_vel isa ValueDouble, has double_value 0.22221;
@@ -15,7 +16,7 @@ $velocity_set isa FuzzyTriangular,
 	has b 0.0,
 	has c 0.5;
 
-$velocity_as_close_expression (unimodal_membership: $velocity_set, term: $velocity_measure) isa as_close_as_possible_expression,
+$velocity_as_close_expression (unimodal_membership: $velocity_set, proposition: $velocity_measure_expr) isa as_close_as_possible_expression,
 	has required_value 0.26;
 
 $velocity_shall_expression (relaxed_expression: $velocity_as_close_expression) isa shall_expression;
