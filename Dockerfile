@@ -77,7 +77,7 @@ RUN --mount=type=secret,id=gh_token,uid=1000,gid=1000,mode=0400 bash -lc '\
   tok=$(tr -d "\r\n" < /run/secrets/gh_token); \
   export GIT_TERMINAL_PROMPT=0; \
   git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "https://github.com/"; \
-  vcs import --input $HOME/rebet_ws/dependencies.repos . ; \
+  vcs import --input $HOME/rebet_ws/dependencies.repos src ; \
 '
 
 
