@@ -75,7 +75,8 @@ FuzzyTriangular sub UnimodalMembership,
 	owns b,
 	owns c;
 
-FuzzyGuassian sub UnimodalMembership,
+# μ(x) = e^(-0.5*( ( (x - center) / sigma)^2 ) )
+FuzzyGaussian sub UnimodalMembership,
 	owns sigma,
 	owns center;
 
@@ -121,11 +122,15 @@ relaxed_requirement sub system_requirement,
 	owns fulfillment,
 	relates relaxed_expression;
 
+relaxed_expression_name sub attribute,
+    value string;
+
 relaxed_expression sub relation,
 	abstract,
 	owns fulfillment,
+	owns relaxed_expression_name @unique, # to make it possible to query the expression
 	relates relaxed_expression,
-	# relates proposition,
+	relates proposition,
 	plays relaxed_requirement:relaxed_expression,
 	plays relaxed_expression:relaxed_expression,
 	plays until_expression:after;
@@ -141,6 +146,7 @@ until_expression sub relaxed_expression,
 ### Event expressions
 event_expression sub relaxed_expression,
 	abstract,
+	# relates proposition,
 	owns event_duration;
 
 after_expression sub event_expression;
@@ -151,7 +157,7 @@ in_expression sub event_expression,
 ### Fuzzy expressions
 fuzzy_expression sub relaxed_expression,
 	abstract,
-	relates proposition,
+	# relates proposition,
 	owns membership;
 
 fuzzy_decay_expression sub fuzzy_expression,
@@ -164,6 +170,7 @@ fuzzy_unimodal_expression sub fuzzy_expression,
 ## compound expression
 fuzzy_operators sub relation,
     abstract,
+	owns membership,
 	relates proposition;
     # relates expression;
     # plays compound_expression:expression;
@@ -186,10 +193,12 @@ fuzzy_not sub fuzzy_operators,
 quantified_value sub attribute,
 	value double;
 propositional_expression owns quantified_value;
-propositional_expression plays fuzzy_expression:proposition;
+# propositional_expression plays fuzzy_expression:proposition;
 propositional_expression plays fuzzy_not:expression;
 propositional_expression plays fuzzy_and:expression;
 propositional_expression plays fuzzy_or:expression;
+
+propositional_expression plays relaxed_expression:proposition;
 
 rule quantified_value_bool_true:
 	when {
@@ -245,6 +254,10 @@ rule fuzzy-unimodal-expression-membership-evaluation :
 		} or {
 			$fuzzy_expression has required_value $value;
 			?quantified_value__ = $quantified_value - $value;
+		} or {
+			not { $fuzzy_expression has required_period $period; };
+			not { $fuzzy_expression has required_value $value; };
+			?quantified_value__ = $quantified_value;
 		};
 		?quantified_value_ = ?quantified_value__;
 
@@ -260,8 +273,8 @@ rule fuzzy-unimodal-expression-membership-evaluation :
 				?membership_ = ($c - ?quantified_value_) / ($c - $b);
 			};
 		} or {
-			$fuzzy_membership isa FuzzyGuassian, has sigma $sigma, has center $center;
-			?membership_ = 2.71828 ^ (-0.5 * ((?quantified_value_ - $center) / $sigma));
+			$fuzzy_membership isa FuzzyGaussian, has sigma $sigma, has center $center;
+			?membership_ = 2.71828 ^ (-0.5 * ((?quantified_value_ - $center) / $sigma)^2 );
 		};
 		?membership = ?membership_;
 	} then {
@@ -323,7 +336,7 @@ rule fuzzy-expression-fulfillment :
 		$fuzzy_expression has fulfillment ?fulfillment;
 	};
 
-# ## requirement fulfillment
+## requirement fulfillment
 rule requirement-fulfillment :
 	when {
 		$req (relaxed_expression: $relaxed_expression) isa relaxed_requirement;
@@ -331,3 +344,4 @@ rule requirement-fulfillment :
 	} then {
 		$req has $fulfillment;
 	};
+
