@@ -160,18 +160,26 @@ fuzzy_expression sub relaxed_expression,
 	# relates proposition,
 	owns membership;
 
-fuzzy_decay_expression sub fuzzy_expression,
+fuzzy_comparison_expression sub fuzzy_expression,
+	plays fuzzy_and:expression,
+	plays fuzzy_or:expression,
+	plays fuzzy_not:expression;
+
+fuzzy_decay_expression sub fuzzy_comparison_expression,
 	relates decay_membership;
-fuzzy_ascend_expression sub fuzzy_expression,
+fuzzy_ascend_expression sub fuzzy_comparison_expression,
 	relates ascend_membership;
-fuzzy_unimodal_expression sub fuzzy_expression,
+fuzzy_unimodal_expression sub fuzzy_comparison_expression,
 	relates unimodal_membership;
 
+# fuzzy_operator_name sub attribute,
+# 	value string;
 ## compound expression
-fuzzy_operators sub relation,
-    abstract,
-	owns membership,
-	relates proposition;
+fuzzy_operators sub fuzzy_expression,
+    abstract;
+	# owns fuzzy_operator_name @unique, # to allow querying in tests
+	# owns membership,
+	# relates proposition;
     # relates expression;
     # plays compound_expression:expression;
 
@@ -186,6 +194,10 @@ fuzzy_not sub fuzzy_operators,
     relates expression,
 	plays fuzzy_and:expression,
     plays fuzzy_or:expression;
+
+
+# fuzzy_ascend_expression plays fuzzy_and:expression;
+# fuzzy_unimodal_expression plays fuzzy_and:expression;
 
 #### connection with logical_expression model
 # Measure plays relaxed_expression:proposition;
@@ -316,6 +328,44 @@ rule fuzzy-expression-decay-membership-evaluation :
 		?membership = ?membership_;
 	} then {
 		$fuzzy_expression has membership ?membership;
+	};
+
+# Fuzzy operators
+rule fuzzy_not_operator :
+	when {
+		$fuzzy_not (expression: $e) isa fuzzy_not;
+		$e has membership $membership;
+		?negated_membership = 1.0 - $membership;
+	} then {
+		$fuzzy_not has membership ?negated_membership;
+	};
+
+rule fuzzy_or_operator :
+	when {
+		$or_expr (expression: $a) isa fuzzy_or;
+		$a has membership $a_membership;
+
+		not {
+			$or_expr (expression: $b) isa fuzzy_or;
+			$b has membership $b_membership;
+			$b_membership > $a_membership;
+		};
+	} then {
+		$or_expr has $a_membership;
+	};
+
+rule fuzzy_and_operator :
+	when {
+		$and_expr (expression: $a) isa fuzzy_and;
+		$a has membership $a_membership;
+
+		not {
+			$and_expr (expression: $b) isa fuzzy_and;
+			$b has membership $b_membership;
+			$b_membership < $a_membership;
+		};
+	} then {
+		$and_expr has $a_membership;
 	};
 
 ## expressions fulfillment rules

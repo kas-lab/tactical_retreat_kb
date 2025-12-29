@@ -90,3 +90,73 @@ $fuzzy_decay_expr_1 (decay_membership: $fuzzy_decay_exp_set, proposition: $fuzzy
 # expected membership 0.8
 $fuzzy_decay_expr_2 (decay_membership: $fuzzy_decay_rational_set, proposition: $fuzzy_decay_measure_expr) isa fuzzy_decay_expression,
     has relaxed_expression_name 'fuzzy_decay_rational_expression';
+
+
+## Fuzzy operators
+
+### fuzzy not
+
+# expected membership (1 - 0.913378192) = 0.086621808
+$fuzzy_not_0 (expression: $fuzzy_ascend_expression_1) isa fuzzy_not, has relaxed_expression_name 'fuzzy_not_0';
+
+# expected membership (1 - 0.8) = 0.2
+$fuzzy_not_1 (expression: $fuzzy_decay_expr_2) isa fuzzy_not, has relaxed_expression_name 'fuzzy_not_1';
+
+### fuzzy or
+# expected membership 0.931085511
+$fuzzy_or_0 (expression: $fuzzy_unimodal_expr_2) isa fuzzy_or,
+    has relaxed_expression_name 'fuzzy_or_0';
+
+# expected membership 0.931085511
+$fuzzy_or_1 (expression: $fuzzy_unimodal_expr_1, expression: $fuzzy_unimodal_expr_2) isa fuzzy_or,
+    has relaxed_expression_name 'fuzzy_or_1';
+
+# expected membership 0.947368421
+$fuzzy_or_2 (
+        expression: $fuzzy_ascend_expression_1,
+        expression: $fuzzy_ascend_expression_2,
+        expression: $fuzzy_ascend_expression_3,
+        expression: $fuzzy_unimodal_expr_1,
+        expression: $fuzzy_unimodal_expr_2,
+        expression: $fuzzy_decay_expr_1,
+        expression: $fuzzy_decay_expr_2
+    ) isa fuzzy_or,
+    has relaxed_expression_name 'fuzzy_or_2';
+
+# expected membership 0.2
+$fuzzy_or_3 (expression: $fuzzy_not_0, expression: $fuzzy_not_1) isa fuzzy_or,
+    has relaxed_expression_name 'fuzzy_or_3';
+
+### fuzzy and
+
+# expected membership 0.931085511
+$fuzzy_and_0 (expression: $fuzzy_unimodal_expr_2) isa fuzzy_and,
+    has relaxed_expression_name 'fuzzy_and_0';
+
+# expected membership 0.92442
+$fuzzy_and_1 (expression: $fuzzy_unimodal_expr_1, expression: $fuzzy_unimodal_expr_2) isa fuzzy_and,
+    has relaxed_expression_name 'fuzzy_and_1';
+
+# expected membership 0.8
+$fuzzy_and_2 (
+        expression: $fuzzy_ascend_expression_1,
+        expression: $fuzzy_ascend_expression_2,
+        expression: $fuzzy_ascend_expression_3,
+        expression: $fuzzy_unimodal_expr_1,
+        expression: $fuzzy_unimodal_expr_2,
+        expression: $fuzzy_decay_expr_1,
+        expression: $fuzzy_decay_expr_2
+    ) isa fuzzy_and,
+    has relaxed_expression_name 'fuzzy_and_2';
+
+# expected membership 0.086621808
+$fuzzy_and_3 (expression: $fuzzy_not_0, expression: $fuzzy_not_1) isa fuzzy_and,
+    has relaxed_expression_name 'fuzzy_and_3';
+
+# expected membership 0.92442
+$fuzzy_and_4 (expression: $fuzzy_unimodal_expr_1, expression: $fuzzy_or_1) isa fuzzy_and,
+    has relaxed_expression_name 'fuzzy_and_4';
+
+# expected membership 0.2
+$fuzzy_and_5 (expression: $fuzzy_or_0, expression: $fuzzy_or_3) isa fuzzy_and,
+    has relaxed_expression_name 'fuzzy_and_5';
