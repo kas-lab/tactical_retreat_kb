@@ -307,10 +307,10 @@ rule fuzzy-expression-decay-membership-evaluation :
 		$proposition has quantified_value $quantified_value;
 
 		{
-			$fuzzy_variable isa FuzzyExponentialDecay, has exponent $exponent;
+			$fuzzy_membership isa FuzzyExponentialDecay, has exponent $exponent;
 			?membership_ = 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
 		} or {
-			$fuzzy_variable isa FuzzyRationalDecay, has curvature $curvature;
+			$fuzzy_membership isa FuzzyRationalDecay, has curvature $curvature;
 			?membership_ = $curvature / ($quantified_value + $curvature);
 		};
 		?membership = ?membership_;
