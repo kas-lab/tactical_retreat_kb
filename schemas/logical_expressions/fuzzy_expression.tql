@@ -1,36 +1,10 @@
-fuzzy_expression_name sub attribute,
-    value string;
+define
 
-membership_degree sub attribute,
-    value double;
+### fuzzy membership attribute
+membership sub attribute,
+	value double;
 
-### Fuzzy expressions
-fuzzy_expression sub relation,
-	abstract,
-    owns fuzzy_expression_name @unique, # to make it possible to query the expression
-	owns membership_degree;
-
-fuzzy_decay_expression sub fuzzy_expression,
-	relates decay_membership;
-fuzzy_ascend_expression sub fuzzy_expression,
-	relates ascend_membership;
-fuzzy_unimodal_expression sub fuzzy_expression,
-	relates unimodal_membership;
-
-## compound expression
-fuzzy_compound_expression sub fuzzy_expression,
-    abstract;
-    # relates expression;
-    # plays compound_expression:expression;
-
-fuzzy_and sub fuzzy_expression,
-    relates expression;
-
-fuzzy_or sub fuzzy_expression,
-    relates expression,
-    plays fuzzy_and:expression;
-
-# Fuzzy memberships
+### fuzzy membership entity ("functions")
 FuzzyMembership sub entity,
 	abstract;
 
@@ -41,6 +15,26 @@ DecayMembership sub FuzzyMembership,
 UnimodalMembership sub FuzzyMembership,
 	plays fuzzy_unimodal_expression:unimodal_membership;
 
+### fuzzy membership attributes
+exponent sub attribute,
+	value double;
+inflection_point sub attribute,
+	value double;
+curvature sub attribute,
+	value double;
+
+a sub attribute,
+	value double;
+b sub attribute,
+	value double;
+c sub attribute,
+	value double;
+
+sigma sub attribute,
+	value double;
+center sub attribute,
+	value double;
+
 ### Triangular, guassian etc membership functions (not necessarly descend or ascend)
 
 # μ(x) =  (x – a) / (b – a), a ≤ x ≤ b
@@ -50,7 +44,8 @@ FuzzyTriangular sub UnimodalMembership,
 	owns b,
 	owns c;
 
-FuzzyGuassian sub UnimodalMembership,
+# μ(x) = e^(-0.5*( ( (x - center) / sigma)^2 ) )
+FuzzyGaussian sub UnimodalMembership,
 	owns sigma,
 	owns center;
 
@@ -84,15 +79,233 @@ FuzzyExponentialDecay sub DecayMembership,
 FuzzyRationalDecay sub DecayMembership,
 	owns curvature;
 
-### Triangular, guassian etc membership functions (not necessarly descend or ascend)
+### Fuzzy expressions
+fuzzy_expression_name sub attribute,
+	value string;
 
-# μ(x) =  (x – a) / (b – a), a ≤ x ≤ b
-# μ(x) = (c – x) / (c – b), b ≤ x ≤ c
-FuzzyTriangular sub UnimodalMembership,
-	owns a,
-	owns b,
-	owns c;
+fuzzy_expression sub relation,
+	abstract,
+	owns fuzzy_expression_name @unique, # to enable querying (good for tests)
+	owns membership,
+	relates proposition;
 
-FuzzyGuassian sub UnimodalMembership,
-	owns sigma,
-	owns center;
+fuzzy_comparison_expression sub fuzzy_expression,
+	plays fuzzy_and:expression,
+	plays fuzzy_or:expression,
+	plays fuzzy_not:expression;
+
+fuzzy_decay_expression sub fuzzy_comparison_expression,
+	relates decay_membership;
+fuzzy_ascend_expression sub fuzzy_comparison_expression,
+	relates ascend_membership;
+fuzzy_unimodal_expression sub fuzzy_comparison_expression,
+	relates unimodal_membership;
+
+## compound expression
+fuzzy_operators sub fuzzy_expression,
+    abstract;
+
+fuzzy_and sub fuzzy_operators,
+    relates expression;
+
+fuzzy_or sub fuzzy_operators,
+    relates expression,
+    plays fuzzy_and:expression;
+
+fuzzy_not sub fuzzy_operators,
+    relates expression,
+	plays fuzzy_and:expression,
+    plays fuzzy_or:expression;
+
+
+#### connection with logical_expression model
+propositional_expression owns membership;
+propositional_expression plays fuzzy_not:expression;
+propositional_expression plays fuzzy_and:expression;
+propositional_expression plays fuzzy_or:expression;
+
+propositional_expression plays fuzzy_expression:proposition;
+
+quantified_value sub attribute,
+	value double;
+propositional_expression owns quantified_value;
+
+# rule quantified_value_double:
+# 	when {
+# 		$propositional_expression (proposition: $proposition) isa propositional_expression;
+#         $proposition isa ValueDouble, has double_value $double_value;
+# 		?double_value_ = $double_value;
+# 	} then {
+# 		$propositional_expression has quantified_value ?double_value_;
+# 	};
+
+rule quantified_value_measure_double:
+	when {
+		$propositional_expression (proposition: $measure) isa! propositional_expression;
+        (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
+        $mv isa! ValueDouble, has double_value $measure_double_value;
+		?double_value_ = $measure_double_value;
+	} then {
+		$propositional_expression has quantified_value ?double_value_;
+	};
+
+rule crisp_proposition_membership_measure_bool_true:
+	when {
+		$propositional_expression (proposition: $measure) isa! propositional_expression;
+        (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
+        $mv isa! ValueBool, has bool_value true;
+	} then {
+		$propositional_expression has membership 1.0;
+	};
+
+rule crisp_proposition_membership_measure_bool_false:
+	when {
+		$propositional_expression (proposition: $measure) isa! propositional_expression;
+        (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
+        $mv isa! ValueBool, has bool_value false;
+	} then {
+		$propositional_expression has membership 0.0;
+	};
+
+rule crisp_proposition_membership_true:
+   when {
+    $propositional_expression (proposition: $value) isa! propositional_expression;
+	$value isa! ValueBool, has bool_value true;
+  } then {
+    $propositional_expression has membership 1.0;
+  };
+
+rule crisp_proposition_membership_false:
+  when {
+    $propositional_expression (proposition: $value) isa! propositional_expression;
+	$value isa! ValueBool, has bool_value false;
+  } then {
+    $propositional_expression has membership 0.0;
+  };
+
+## Fuzzy membership rules
+rule fuzzy_unimodal_triangular_membership_evaluation :
+	when {
+		$proposition isa! propositional_expression;
+		$fuzzy_expression (unimodal_membership: $fuzzy_membership, proposition: $proposition) isa! fuzzy_unimodal_expression;
+		$proposition has quantified_value $quantified_value;
+
+		$fuzzy_membership isa! FuzzyTriangular, has a $a, has b $b, has c $c;
+		{
+			$quantified_value >= $a;
+			$quantified_value <= $b;
+			?membership_ = ($quantified_value - $a) / ($b - $a);
+		} or {
+			$quantified_value > $b;
+			$quantified_value <= $c;
+			?membership_ = ($c - $quantified_value) / ($c - $b);
+		};
+		?membership = ?membership_;
+	} then {
+		$fuzzy_expression has membership ?membership;
+	};
+
+rule fuzzy_unimodal_gaussian_membership_evaluation :
+	when {
+		$proposition isa! propositional_expression, has quantified_value $quantified_value;
+		$fuzzy_expression (unimodal_membership: $fuzzy_membership, proposition: $proposition) isa! fuzzy_unimodal_expression;
+
+		$fuzzy_membership isa! FuzzyGaussian, has sigma $sigma, has center $center;
+		?membership = 2.71828 ^ (-0.5 * (($quantified_value - $center) / $sigma)^2 );
+	} then {
+		$fuzzy_expression has membership ?membership;
+	};
+
+rule fuzzy_ascend_exponential_membership_evaluation :
+	when {
+		$fuzzy_membership isa! FuzzyExponentialSaturation, has exponent $exponent;
+		$fuzzy_expression (ascend_membership: $fuzzy_membership, proposition: $proposition) isa! fuzzy_ascend_expression;
+		$proposition isa! propositional_expression, has quantified_value $quantified_value;
+
+		?membership = 1.0 - 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
+	} then {
+		$fuzzy_expression has membership ?membership;
+	};
+
+rule fuzzy_ascend_sigmoid_membership_evaluation :
+	when {
+		$fuzzy_membership isa! FuzzySigmoid, has inflection_point $inflection_point, has exponent $exponent;
+		$proposition isa! propositional_expression, has quantified_value $quantified_value;
+		$fuzzy_expression (ascend_membership: $fuzzy_membership, proposition: $proposition) isa! fuzzy_ascend_expression;
+
+		?membership = 1.0 / ( 1.0 + 2.71828 ^ ( -1.0 * $exponent * ($quantified_value - $inflection_point)));
+	} then {
+		$fuzzy_expression has membership ?membership;
+	};
+
+rule fuzzy_ascend_blf_membership_evaluation :
+	when {
+		$fuzzy_membership isa! FuzzyBoundedLinearFraction, has curvature $curvature;
+		$proposition isa! propositional_expression, has quantified_value $quantified_value;
+		$fuzzy_expression (ascend_membership: $fuzzy_membership, proposition: $proposition) isa! fuzzy_ascend_expression;
+
+		?membership = $quantified_value / ($quantified_value + $curvature);
+	} then {
+		$fuzzy_expression has membership ?membership;
+	};
+
+rule fuzzy_decay_exponential_membership_evaluation :
+	when {
+		$proposition isa! propositional_expression, has quantified_value $quantified_value;
+		$fuzzy_expression (decay_membership: $fuzzy_membership, proposition: $proposition) isa! fuzzy_decay_expression;
+
+		$fuzzy_membership isa! FuzzyExponentialDecay, has exponent $exponent;
+		?membership = 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
+	} then {
+		$fuzzy_expression has membership ?membership;
+	};
+
+rule fuzzy_decay_rational_membership_evaluation :
+	when {
+		$proposition isa! propositional_expression, has quantified_value $quantified_value;
+		$fuzzy_expression (decay_membership: $fuzzy_membership, proposition: $proposition) isa! fuzzy_decay_expression;
+
+		$fuzzy_membership isa! FuzzyRationalDecay, has curvature $curvature;
+		?membership = $curvature / ($quantified_value + $curvature);
+	} then {
+		$fuzzy_expression has membership ?membership;
+	};
+
+
+# Fuzzy operators
+rule fuzzy_not_operator :
+	when {
+		$fuzzy_not (expression: $e) isa! fuzzy_not;
+		$e has membership $membership;
+		?negated_membership = 1.0 - $membership;
+	} then {
+		$fuzzy_not has membership ?negated_membership;
+	};
+
+rule fuzzy_or_operator :
+	when {
+		$or_expr (expression: $a) isa! fuzzy_or;
+		$a has membership $a_membership;
+
+		not {
+			$or_expr (expression: $b) isa! fuzzy_or;
+			$b has membership $b_membership;
+			$b_membership > $a_membership;
+		};
+	} then {
+		$or_expr has $a_membership;
+	};
+
+rule fuzzy_and_operator :
+	when {
+		$and_expr (expression: $a) isa! fuzzy_and;
+		$a has membership $a_membership;
+
+		not {
+			$and_expr (expression: $b) isa! fuzzy_and;
+			$b has membership $b_membership;
+			$b_membership < $a_membership;
+		};
+	} then {
+		$and_expr has $a_membership;
+	};

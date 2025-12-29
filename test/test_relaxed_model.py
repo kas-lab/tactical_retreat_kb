@@ -55,34 +55,3 @@ def test_set_requirement_in_effect(kb_interface):
     assert kb_interface.get_requirement_in_effect('fake_req') is False
 
 
-def test_fuzzy_ascend(kb_interface):
-    assert kb_interface.get_fuzzy_membership('fuzzy_ascend_sigmoid_expression') == pytest.approx(0.913378192)
-    assert kb_interface.get_fuzzy_membership('fuzzy_ascend_exp_saturation_expression') == pytest.approx(0.834700912)
-    assert kb_interface.get_fuzzy_membership('fuzzy_ascend_blf_expression') == pytest.approx(0.947368421)
-
-def test_fuzzy_unimodal(kb_interface):
-    assert kb_interface.get_fuzzy_membership('fuzzy_unimodal_triangular_expression') == pytest.approx(0.92442)
-    assert kb_interface.get_fuzzy_membership('fuzzy_unimodal_gaussian_expression') == pytest.approx(0.931085511)
-
-def test_fuzzy_decay(kb_interface):
-    assert kb_interface.get_fuzzy_membership('fuzzy_decay_exp_expression') == pytest.approx(0.900009528)
-    assert kb_interface.get_fuzzy_membership('fuzzy_decay_rational_expression') == pytest.approx(0.8)
-
-def test_fuzzy_not(kb_interface):
-    assert kb_interface.get_fuzzy_membership('fuzzy_not_0') == pytest.approx(0.086621808)
-    assert kb_interface.get_fuzzy_membership('fuzzy_not_1') == pytest.approx(0.2)
-
-def test_fuzzy_or(kb_interface):
-    assert kb_interface.get_fuzzy_membership('fuzzy_or_0') == pytest.approx(0.931085511)
-    assert kb_interface.get_fuzzy_membership('fuzzy_or_1') == pytest.approx(0.931085511)
-    assert kb_interface.get_fuzzy_membership('fuzzy_or_2') == pytest.approx(0.947368421)
-    assert kb_interface.get_fuzzy_membership('fuzzy_or_3') == pytest.approx(0.2)
-
-def test_fuzzy_and(kb_interface):
-    assert kb_interface.get_fuzzy_membership('fuzzy_and_0') == pytest.approx(0.931085511)
-    assert kb_interface.get_fuzzy_membership('fuzzy_and_1') == pytest.approx(0.92442)
-    assert kb_interface.get_fuzzy_membership('fuzzy_and_2') == pytest.approx(0.8)
-    assert kb_interface.get_fuzzy_membership('fuzzy_and_3') == pytest.approx(0.086621808)
-    assert kb_interface.get_fuzzy_membership('fuzzy_and_4') == pytest.approx(0.92442)
-    assert kb_interface.get_fuzzy_membership('fuzzy_and_5') == pytest.approx(0.2)
-

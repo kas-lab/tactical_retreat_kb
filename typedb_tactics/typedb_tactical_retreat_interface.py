@@ -990,7 +990,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query = f"""
             match
-                $fe isa fuzzy_expression, has relaxed_expression_name '{expression_name}';
+                $fe isa fuzzy_expression, has fuzzy_expression_name '{expression_name}';
             fetch
                 $fe: membership;
         """
@@ -1004,5 +1004,4 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: membership type
         """
         query_result = self.fetch_fuzzy_membership(expression_name)
-        print(query_result)
         return query_result[0]['fe']['membership'][0]['value']
