@@ -79,6 +79,7 @@ Mount ros_monitors as well:
 ```Bash
 docker run -d --rm --name rebet --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/rebet_ws/src/typedb_tactics:/home/ubuntu-user/rebet_ws/src/typedb_tactics -v $HOME/ros_workspaces/rebet_ws/src/ros_monitors:/home/ubuntu-user/rebet_ws/src/ros_monitors rebet typedb server
 ```
+
 **Note:** Use the correct image name, if you got the img from the github registry use `ghcr.io/kas-lab/typedb_tactics:latest` instead of `rebet`
 
 Start new terminal in the container:

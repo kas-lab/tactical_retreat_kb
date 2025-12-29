@@ -980,3 +980,29 @@ class TacticalRetreatInterface(TypeDBInterface):
                     has measurement_time {time};
         """
         return self.insert_database(query)
+
+    def fetch_fuzzy_membership(self, expression_name: str) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch fuzzy membership of a fuzzy expression.
+
+        :param expression_name: fuzzy expression name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $fe isa fuzzy_expression, has relaxed_expression_name '{expression_name}';
+            fetch
+                $fe: membership;
+        """
+        return self.fetch_database(query)
+
+    def get_fuzzy_membership(self, expression_name: str) -> str:
+        """
+        Get fuzzy membership of a fuzzy expression.
+
+        :param expression_name: fuzzy expression name
+        :return: membership type
+        """
+        query_result = self.fetch_fuzzy_membership(expression_name)
+        print(query_result)
+        return query_result[0]['fe']['membership'][0]['value']
