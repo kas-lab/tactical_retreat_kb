@@ -16,7 +16,7 @@ import pytest
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def kb_interface():
     kb_interface = TacticalRetreatInterface(
         'localhost:1729',
@@ -24,6 +24,7 @@ def kb_interface():
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
             'schemas/logical_expressions/logical_expression.tql',
+            'schemas/logical_expressions/fuzzy_expression.tql',
             'schemas/relaxed/relaxed_model.tql'],
         ['schemas/relaxed/relaxed_mirte_example.tql',
          'schemas/relaxed/relaxed_paper_example.tql',
@@ -35,14 +36,38 @@ def kb_interface():
     kb_interface.delete_database()
 
 
-def test_get_requirement_fulfillment(kb_interface):
+def test_get_requirement_fulfillment_mirte(kb_interface):
+    # Mirte example model
     fulfillment = kb_interface.get_relaxed_requirement_fulfillment(
         'Mirte', 'R1.1 Velocity')
     assert fulfillment == pytest.approx(0.92442)
 
+    fulfillment = kb_interface.get_relaxed_requirement_fulfillment(
+        'Mirte', 'R1.2 Velocity with obstacles')
+    assert fulfillment == pytest.approx(0.91558)
+
+def test_get_requirement_fulfillment_relax_paper(kb_interface):
+    # RELAX paper example model
+    fulfillment = kb_interface.get_relaxed_requirement_fulfillment(
+        'Smart House', 'R1.1 As many food as possible')
+    assert fulfillment == pytest.approx(0.913378192)
+
+    fulfillment = kb_interface.get_relaxed_requirement_fulfillment(
+        'Smart House', 'R1.2 Dietplan')
+    assert fulfillment == pytest.approx(0.980198686)
+
+    # fulfillment = kb_interface.get_relaxed_requirement_fulfillment(
+    #     'Smart House', 'R1.3 Liquid intake')
+    # assert fulfillment == pytest.approx(0.980198686)
+
+    fulfillment = kb_interface.get_relaxed_requirement_fulfillment(
+        'Smart House', 'R1.4 Energy comsumption')
+    assert fulfillment == pytest.approx(0.900009528)
+
 
 def test_get_in_effect_requirement_fulfillment(kb_interface):
     req_fulfillment_array = kb_interface.get_in_effect_requirement_fulfillment()
+
     assert req_fulfillment_array[0]['requirement_name'] == 'R1.1 Velocity'
     assert req_fulfillment_array[0]['fulfillment'] == pytest.approx(0.92442)
 

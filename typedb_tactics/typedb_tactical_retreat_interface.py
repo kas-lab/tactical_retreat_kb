@@ -578,9 +578,10 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: fetch query result
         """
         query_result = self.fetch_in_effect_requirement_fulfillment()
-        return [
+        query_dict = [
             {'requirement_name': result['req']['requirement_name'][0]['value'],
              'fulfillment': result['req']['fulfillment'][0]['value']} for result in query_result]
+        return sorted(query_dict, key=lambda item: item['requirement_name'])
 
     def set_requirement_in_effect(self, requirement_name: str, in_effect: bool
                                   ) -> Optional[Iterator[ConceptMap]]:
