@@ -46,6 +46,7 @@ def test_get_requirement_fulfillment_mirte(kb_interface):
         'Mirte', 'R1.2 Velocity with obstacles')
     assert fulfillment == pytest.approx(0.91558)
 
+
 def test_get_requirement_fulfillment_relax_paper(kb_interface):
     # RELAX paper example model
     fulfillment = kb_interface.get_relaxed_requirement_fulfillment(
@@ -78,5 +79,3 @@ def test_set_requirement_in_effect(kb_interface):
     assert kb_interface.get_requirement_in_effect('fake_req') is True
     kb_interface.set_requirement_in_effect('fake_req', False)
     assert kb_interface.get_requirement_in_effect('fake_req') is False
-
-
