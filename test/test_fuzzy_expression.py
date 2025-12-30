@@ -45,6 +45,9 @@ def test_fuzzy_decay(kb_interface):
     assert kb_interface.get_fuzzy_membership('fuzzy_decay_exp_expression') == pytest.approx(0.900009528)
     assert kb_interface.get_fuzzy_membership('fuzzy_decay_rational_expression') == pytest.approx(0.8)
 
+def test_fuzzy_membership_offset(kb_interface):
+    assert kb_interface.get_fuzzy_membership('fuzzy_unimodal_offset_triangular_expression') == pytest.approx(0.92442)
+
 def test_fuzzy_not(kb_interface):
     assert kb_interface.get_fuzzy_membership('fuzzy_not_0') == pytest.approx(0.086621808)
     assert kb_interface.get_fuzzy_membership('fuzzy_not_1') == pytest.approx(0.2)

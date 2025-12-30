@@ -16,7 +16,7 @@ $velocity_set isa FuzzyTriangular,
 	has b 0.0,
 	has c 0.5;
 
-$velocity_as_close_expression (unimodal_membership: $velocity_set, proposition: $velocity_measure_expr) isa as_close_as_possible_expression,
+$velocity_as_close_expression (membership: $velocity_set, proposition: $velocity_measure_expr) isa as_close_as_possible_expression,
 	has required_value 0.26;
 
 $velocity_shall_expression (relaxed_expression: $velocity_as_close_expression) isa shall_expression;
