@@ -104,8 +104,7 @@ relaxed_fuzzy_expression sub relaxed_expression,
 # can have any membership function
 as_close_as_possible_expression sub relaxed_fuzzy_expression,
 	owns required_value,
-	relates fuzzy_set,
-	relates fuzzy_expression;
+	relates fuzzy_set;
 
 as_many_as_possible_expression sub relaxed_fuzzy_expression,
 	relates fuzzy_set;
