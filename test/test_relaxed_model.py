@@ -36,6 +36,56 @@ def kb_interface():
     kb_interface.delete_database()
 
 
+def test_get_relaxed_expr_fulfillment(kb_interface):
+    fulfillment_array = kb_interface.fetch_relaxed_expression_fulfillment(
+        'fake_may_expression')
+    assert len(fulfillment_array[0]['relaxed_expression']['expression_fulfillment']) == 1
+
+    fulfillment = kb_interface.get_relaxed_expression_fulfillment(
+        'fake_may_expression')
+    assert fulfillment == pytest.approx(0.92442)
+
+    fulfillment_array = kb_interface.fetch_relaxed_expression_fulfillment(
+        'fake_shall_expression')
+    assert len(fulfillment_array[0]['relaxed_expression']['expression_fulfillment']) == 1
+
+    fulfillment = kb_interface.get_relaxed_expression_fulfillment(
+        'fake_shall_expression')
+    assert fulfillment == pytest.approx(0.900009528)
+
+    # Mirte model
+    fulfillment_array = kb_interface.fetch_relaxed_expression_fulfillment(
+        'velocity_shall_expression')
+    assert len(fulfillment_array[0]['relaxed_expression']['expression_fulfillment']) == 1
+
+    fulfillment = kb_interface.get_relaxed_expression_fulfillment(
+        'velocity_shall_expression')
+    assert fulfillment == pytest.approx(0.92442)
+
+    fulfillment_array = kb_interface.fetch_relaxed_expression_fulfillment(
+        'velocity_as_close_expression_2')
+    assert len(fulfillment_array[0]['relaxed_expression']['expression_fulfillment']) == 1
+
+    fulfillment = kb_interface.get_relaxed_expression_fulfillment(
+        'velocity_as_close_expression_2')
+    assert fulfillment == pytest.approx(0.91558)
+
+    fulfillment_array = kb_interface.fetch_relaxed_expression_fulfillment(
+        'velocity_shall_expression_2')
+    assert len(fulfillment_array[0]['relaxed_expression']['expression_fulfillment']) == 1
+
+    fulfillment = kb_interface.get_relaxed_expression_fulfillment(
+        'velocity_shall_expression_2')
+    assert fulfillment == pytest.approx(0.91558)
+
+
+def test_get_requirement_fulfillment_test_model(kb_interface):
+
+    fulfillment = kb_interface.get_relaxed_requirement_fulfillment(
+        'system', 'req_1')
+    assert fulfillment == pytest.approx(0.92442)
+
+
 def test_get_requirement_fulfillment_mirte(kb_interface):
     # Mirte example model
     fulfillment = kb_interface.get_relaxed_requirement_fulfillment(

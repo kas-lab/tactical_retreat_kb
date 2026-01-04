@@ -110,7 +110,7 @@ $energy_comsumption_set isa FuzzyExponentialDecay,
 $as_few_energy_as_possible (fuzzy_set: $energy_comsumption_set, proposition: $energy_comsumption_measure_expr) isa as_few_as_possible_expression;
 $energy_shall_expression (expression: $as_few_energy_as_possible) isa shall_expression;
 
-# expected fulfillment 0.9
+# expected fulfillment 0.900009528
 $r1_4 (system: $smart_house, expression: $energy_shall_expression) isa relaxed_requirement,
 	has requirement_name "R1.4 Energy comsumption",
 	has description "The system SHALL consume AS FEW units of energy AS POSSIBLE during normal operation.";

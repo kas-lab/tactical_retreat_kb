@@ -536,7 +536,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $system isa System, has system_name '{system_name}';
                 (system: $system) isa relaxed_requirement,
                     has requirement_name '{requirement_name}',
-                    has fulfillment $fulfillment;
+                    has requirement_fulfillment $fulfillment;
             fetch $fulfillment;
         """
         return self.fetch_database(query)
@@ -567,7 +567,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $req isa relaxed_requirement,
                     has in_effect true;
             fetch
-                $req: requirement_name, fulfillment;
+                $req: requirement_name, requirement_fulfillment;
         """
         return self.fetch_database(query)
 
@@ -580,7 +580,8 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.fetch_in_effect_requirement_fulfillment()
         query_dict = [
             {'requirement_name': result['req']['requirement_name'][0]['value'],
-             'fulfillment': result['req']['fulfillment'][0]['value']} for result in query_result]
+             'fulfillment': result['req']['requirement_fulfillment'][0]['value']}
+            for result in query_result]
         return sorted(query_dict, key=lambda item: item['requirement_name'])
 
     def set_requirement_in_effect(self, requirement_name: str, in_effect: bool
@@ -1006,3 +1007,30 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_fuzzy_membership(expression_name)
         return query_result[0]['fe']['membership'][0]['value']
+
+    def fetch_relaxed_expression_fulfillment(self, expression_name: str
+                                             ) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch fuzzy fulfillment of a fuzzy expression.
+
+        :param expression_name: fuzzy expression name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $relaxed_expression isa relaxed_expression,
+                has relaxed_expression_name '{expression_name}';
+            fetch
+                $relaxed_expression: expression_fulfillment;
+        """
+        return self.fetch_database(query)
+
+    def get_relaxed_expression_fulfillment(self, expression_name: str) -> str:
+        """
+        Get fuzzy fulfillment of a fuzzy expression.
+
+        :param expression_name: fuzzy expression name
+        :return: fulfillment type
+        """
+        query_result = self.fetch_relaxed_expression_fulfillment(expression_name)
+        return query_result[0]['relaxed_expression']['expression_fulfillment'][0]['value']
