@@ -983,7 +983,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.insert_database(query)
 
-    def fetch_fuzzy_membership(self, expression_name: str) -> List[dict[str, MatchResultDict]]:
+    def fetch_fuzzy_membership_degree(self, expression_name: str) -> List[dict[str, MatchResultDict]]:
         """
         Fetch fuzzy membership of a fuzzy expression.
 
@@ -994,19 +994,19 @@ class TacticalRetreatInterface(TypeDBInterface):
             match
                 $fe isa fuzzy_expression, has fuzzy_expression_name '{expression_name}';
             fetch
-                $fe: membership;
+                $fe: membership_degree;
         """
         return self.fetch_database(query)
 
-    def get_fuzzy_membership(self, expression_name: str) -> str:
+    def get_fuzzy_membership_degree(self, expression_name: str) -> str:
         """
         Get fuzzy membership of a fuzzy expression.
 
         :param expression_name: fuzzy expression name
         :return: membership type
         """
-        query_result = self.fetch_fuzzy_membership(expression_name)
-        return query_result[0]['fe']['membership'][0]['value']
+        query_result = self.fetch_fuzzy_membership_degree(expression_name)
+        return query_result[0]['fe']['membership_degree'][0]['value']
 
     def fetch_relaxed_expression_fulfillment(self, expression_name: str
                                              ) -> List[dict[str, MatchResultDict]]:

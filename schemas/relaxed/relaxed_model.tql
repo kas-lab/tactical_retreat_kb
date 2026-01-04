@@ -95,7 +95,7 @@ until_expression sub relaxed_expression,
 
 relaxed_fuzzy_expression sub relaxed_expression,
 	abstract,
-	owns membership,
+	owns membership_degree,
 	relates proposition,
 	plays shall_expression:expression,
 	plays may_expression:expression,
@@ -181,9 +181,9 @@ rule as_close_as_possible_membership:
 	when {
 		$expr isa as_close_as_possible_expression;
 		(relaxed_expression: $expr) isa fuzzy_unimodal_expression,
-			has membership $membership;
+			has membership_degree $membership_degree;
 	} then {
-		$expr has $membership;
+		$expr has $membership_degree;
 	};
 
 ### as_many_as_possible_fuzzy_expression rules
@@ -198,9 +198,9 @@ rule as_many_as_possible_membership:
 	when {
 		$expr isa as_many_as_possible_expression;
 		(relaxed_expression: $expr) isa fuzzy_ascend_expression,
-			has membership $membership;
+			has membership_degree $membership_degree;
 	} then {
-		$expr has $membership;
+		$expr has $membership_degree;
 	};
 
 ### as_few_as_possible_fuzzy_expression rules
@@ -215,9 +215,9 @@ rule as_few_as_possible_membership:
 	when {
 		$expr isa as_few_as_possible_expression;
 		(relaxed_expression: $expr) isa fuzzy_decay_expression,
-			has membership $membership;
+			has membership_degree $membership_degree;
 	} then {
-		$expr has $membership;
+		$expr has $membership_degree;
 	};
 
 ### TODO: freq_as_close_as_possible_expression rules
@@ -229,8 +229,8 @@ rule as_few_as_possible_membership:
 rule fuzzy_expression_fulfillment:
 	when {
 		$fuzzy_expression isa fuzzy_expression,
-			has membership $membership;
-		?fulfillment_ = $membership;
+			has membership_degree $membership_degree;
+		?fulfillment_ = $membership_degree;
 	} then {
 		$fuzzy_expression has expression_fulfillment ?fulfillment_;
 	};

@@ -1,7 +1,7 @@
 define
 
 ### fuzzy membership attribute
-membership sub attribute,
+membership_degree sub attribute,
 	value double;
 
 offset_value sub attribute,
@@ -94,15 +94,15 @@ propositional_expression owns quantified_value;
 fuzzy_expression sub relation,
 	abstract,
 	owns fuzzy_expression_name @unique, # to enable querying (good for tests)
-	owns membership,
+	owns membership_degree,
 	owns quantified_value,
-	owns offset_value,
-	relates proposition;
+	owns offset_value;
 
 fuzzy_comparison_expression sub fuzzy_expression,
 	plays fuzzy_and:expression,
 	plays fuzzy_or:expression,
-	plays fuzzy_not:expression;
+	plays fuzzy_not:expression,
+	relates proposition;
 
 fuzzy_decay_expression sub fuzzy_comparison_expression,
 	relates membership;
@@ -112,29 +112,29 @@ fuzzy_unimodal_expression sub fuzzy_comparison_expression,
 	relates membership;
 
 ## compound expression
-fuzzy_operators sub fuzzy_expression,
+fuzzy_operator sub fuzzy_expression,
     abstract;
 
-fuzzy_and sub fuzzy_operators,
+fuzzy_and sub fuzzy_operator,
     relates expression;
 
-fuzzy_or sub fuzzy_operators,
+fuzzy_or sub fuzzy_operator,
     relates expression,
     plays fuzzy_and:expression;
 
-fuzzy_not sub fuzzy_operators,
+fuzzy_not sub fuzzy_operator,
     relates expression,
 	plays fuzzy_and:expression,
     plays fuzzy_or:expression;
 
 
 #### connection with logical_expression model
-propositional_expression owns membership;
+propositional_expression owns membership_degree;
 propositional_expression plays fuzzy_not:expression;
 propositional_expression plays fuzzy_and:expression;
 propositional_expression plays fuzzy_or:expression;
 
-propositional_expression plays fuzzy_expression:proposition;
+propositional_expression plays fuzzy_comparison_expression:proposition;
 
 rule quantified_value_measure_double:
 	when {
@@ -152,7 +152,7 @@ rule crisp_proposition_membership_measure_bool_true:
         (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
         $mv isa! ValueBool, has bool_value true;
 	} then {
-		$propositional_expression has membership 1.0;
+		$propositional_expression has membership_degree 1.0;
 	};
 
 rule crisp_proposition_membership_measure_bool_false:
@@ -161,7 +161,7 @@ rule crisp_proposition_membership_measure_bool_false:
         (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
         $mv isa! ValueBool, has bool_value false;
 	} then {
-		$propositional_expression has membership 0.0;
+		$propositional_expression has membership_degree 0.0;
 	};
 
 rule crisp_proposition_membership_true:
@@ -169,7 +169,7 @@ rule crisp_proposition_membership_true:
     $propositional_expression (proposition: $value) isa! propositional_expression;
 	$value isa! ValueBool, has bool_value true;
   } then {
-    $propositional_expression has membership 1.0;
+    $propositional_expression has membership_degree 1.0;
   };
 
 rule crisp_proposition_membership_false:
@@ -177,7 +177,7 @@ rule crisp_proposition_membership_false:
     $propositional_expression (proposition: $value) isa! propositional_expression;
 	$value isa! ValueBool, has bool_value false;
   } then {
-    $propositional_expression has membership 0.0;
+    $propositional_expression has membership_degree 0.0;
   };
 
 # This rule made the system slower
@@ -208,15 +208,15 @@ rule fuzzy_unimodal_triangular_membership_evaluation :
 		{
 			$quantified_value >= $a;
 			$quantified_value <= $b;
-			?membership_ = ($quantified_value - $a) / ($b - $a);
+			?membership_degree_ = ($quantified_value - $a) / ($b - $a);
 		} or {
 			$quantified_value > $b;
 			$quantified_value <= $c;
-			?membership_ = ($c - $quantified_value) / ($c - $b);
+			?membership_degree_ = ($c - $quantified_value) / ($c - $b);
 		};
-		?membership = ?membership_;
+		?membership_degree = ?membership_degree_;
 	} then {
-		$fuzzy_expression has membership ?membership;
+		$fuzzy_expression has membership_degree ?membership_degree;
 	};
 
 rule fuzzy_unimodal_gaussian_membership_evaluation :
@@ -225,9 +225,9 @@ rule fuzzy_unimodal_gaussian_membership_evaluation :
 		$fuzzy_expression (membership: $fuzzy_membership) isa! fuzzy_unimodal_expression,
 			has quantified_value $quantified_value;
 
-		?membership = 2.71828 ^ (-0.5 * (($quantified_value - $center) / $sigma)^2 );
+		?membership_degree = 2.71828 ^ (-0.5 * (($quantified_value - $center) / $sigma)^2 );
 	} then {
-		$fuzzy_expression has membership ?membership;
+		$fuzzy_expression has membership_degree ?membership_degree;
 	};
 
 rule fuzzy_ascend_exponential_membership_evaluation :
@@ -236,9 +236,9 @@ rule fuzzy_ascend_exponential_membership_evaluation :
 		$fuzzy_expression (membership: $fuzzy_membership) isa! fuzzy_ascend_expression,
 			has quantified_value $quantified_value;
 
-		?membership = 1.0 - 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
+		?membership_degree = 1.0 - 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
 	} then {
-		$fuzzy_expression has membership ?membership;
+		$fuzzy_expression has membership_degree ?membership_degree;
 	};
 
 rule fuzzy_ascend_sigmoid_membership_evaluation :
@@ -247,9 +247,9 @@ rule fuzzy_ascend_sigmoid_membership_evaluation :
 		$fuzzy_expression (membership: $fuzzy_membership) isa! fuzzy_ascend_expression,
 			has quantified_value $quantified_value;
 
-		?membership = 1.0 / ( 1.0 + 2.71828 ^ ( -1.0 * $exponent * ($quantified_value - $inflection_point)));
+		?membership_degree = 1.0 / ( 1.0 + 2.71828 ^ ( -1.0 * $exponent * ($quantified_value - $inflection_point)));
 	} then {
-		$fuzzy_expression has membership ?membership;
+		$fuzzy_expression has membership_degree ?membership_degree;
 	};
 
 rule fuzzy_ascend_blf_membership_evaluation :
@@ -258,9 +258,9 @@ rule fuzzy_ascend_blf_membership_evaluation :
 		$fuzzy_expression (membership: $fuzzy_membership) isa! fuzzy_ascend_expression,
 			has quantified_value $quantified_value;
 
-		?membership = $quantified_value / ($quantified_value + $curvature);
+		?membership_degree = $quantified_value / ($quantified_value + $curvature);
 	} then {
-		$fuzzy_expression has membership ?membership;
+		$fuzzy_expression has membership_degree ?membership_degree;
 	};
 
 rule fuzzy_decay_exponential_membership_evaluation :
@@ -269,9 +269,9 @@ rule fuzzy_decay_exponential_membership_evaluation :
 			has quantified_value $quantified_value;
 
 		$fuzzy_membership isa! FuzzyExponentialDecay, has exponent $exponent;
-		?membership = 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
+		?membership_degree = 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
 	} then {
-		$fuzzy_expression has membership ?membership;
+		$fuzzy_expression has membership_degree ?membership_degree;
 	};
 
 rule fuzzy_decay_rational_membership_evaluation :
@@ -280,9 +280,9 @@ rule fuzzy_decay_rational_membership_evaluation :
 		$fuzzy_expression (membership: $fuzzy_membership) isa! fuzzy_decay_expression,
 			has quantified_value $quantified_value;
 
-		?membership = $curvature / ($quantified_value + $curvature);
+		?membership_degree = $curvature / ($quantified_value + $curvature);
 	} then {
-		$fuzzy_expression has membership ?membership;
+		$fuzzy_expression has membership_degree ?membership_degree;
 	};
 
 
@@ -290,20 +290,20 @@ rule fuzzy_decay_rational_membership_evaluation :
 rule fuzzy_not_operator :
 	when {
 		$fuzzy_not (expression: $e) isa! fuzzy_not;
-		$e has membership $membership;
+		$e has membership_degree $membership;
 		?negated_membership = 1.0 - $membership;
 	} then {
-		$fuzzy_not has membership ?negated_membership;
+		$fuzzy_not has membership_degree ?negated_membership;
 	};
 
 rule fuzzy_or_operator :
 	when {
 		$or_expr (expression: $a) isa! fuzzy_or;
-		$a has membership $a_membership;
+		$a has membership_degree $a_membership;
 
 		not {
 			$or_expr (expression: $b) isa! fuzzy_or;
-			$b has membership $b_membership;
+			$b has membership_degree $b_membership;
 			$b_membership > $a_membership;
 		};
 	} then {
