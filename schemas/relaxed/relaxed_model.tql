@@ -128,14 +128,14 @@ relaxed_fuzzy_expression plays fuzzy_and:expression;
 relaxed_fuzzy_expression plays fuzzy_or:expression;
 relaxed_fuzzy_expression plays fuzzy_not:expression;
 
-AscendMembership plays as_many_as_possible_expression:fuzzy_set;
-AscendMembership plays as_late_as_possible_expression:fuzzy_set;
+AscendSet plays as_many_as_possible_expression:fuzzy_set;
+AscendSet plays as_late_as_possible_expression:fuzzy_set;
 
-DecayMembership plays as_few_as_possible_expression:fuzzy_set;
-DecayMembership plays as_early_as_possible_expression:fuzzy_set;
+DecaySet plays as_few_as_possible_expression:fuzzy_set;
+DecaySet plays as_early_as_possible_expression:fuzzy_set;
 
-UnimodalMembership plays as_close_as_possible_expression:fuzzy_set;
-UnimodalMembership plays freq_as_close_as_possible_expression:fuzzy_set;
+UnimodalSet plays as_close_as_possible_expression:fuzzy_set;
+UnimodalSet plays freq_as_close_as_possible_expression:fuzzy_set;
 
 # connection to logical_expression model
 propositional_expression plays atomic_relaxed_expression:expression;
@@ -164,12 +164,12 @@ rule as_close_as_possible_fuzzy_expression:
 	when {
 		$expr (proposition: $proposition, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression;
 	} then {
-		(proposition: $proposition, membership:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_unimodal_expression;
+		(proposition: $proposition, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_unimodal_expression;
 	};
 
 rule as_close_as_possible_fuzzy_expression_offset:
 	when {
-		$fuzzy_expr (proposition: $proposition, membership:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_unimodal_expression;
+		$fuzzy_expr (proposition: $proposition, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_unimodal_expression;
 		$expr (proposition: $proposition, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression,
 			has required_value $required_value;
 		?offset_value_ = -1.0 * $required_value;
@@ -191,7 +191,7 @@ rule as_many_as_possible_fuzzy_expression:
 	when {
 		$expr (proposition: $proposition, fuzzy_set: $fuzzy_set) isa as_many_as_possible_expression;
 	} then {
-		(proposition: $proposition, membership:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_ascend_expression;
+		(proposition: $proposition, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_ascend_expression;
 	};
 
 rule as_many_as_possible_membership:
@@ -208,7 +208,7 @@ rule as_few_as_possible_fuzzy_expression:
 	when {
 		$expr (proposition: $proposition, fuzzy_set: $fuzzy_set) isa as_few_as_possible_expression;
 	} then {
-		(proposition: $proposition, membership:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_decay_expression;
+		(proposition: $proposition, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_decay_expression;
 	};
 
 rule as_few_as_possible_membership:

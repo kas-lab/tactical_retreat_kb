@@ -983,7 +983,8 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.insert_database(query)
 
-    def fetch_fuzzy_membership_degree(self, expression_name: str) -> List[dict[str, MatchResultDict]]:
+    def fetch_fuzzy_membership_degree(self, expression_name: str
+                                      ) -> List[dict[str, MatchResultDict]]:
         """
         Fetch fuzzy membership of a fuzzy expression.
 

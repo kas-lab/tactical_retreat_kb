@@ -44,15 +44,15 @@ $fuzzy_ascend_blf_set isa FuzzyBoundedLinearFraction,
 	has curvature 0.5;
 
 # expected membership 0.913378192
-$fuzzy_ascend_expression_1 (membership: $fuzzy_ascend_sigmoid_set, proposition: $fuzzy_ascend_measure_expr) isa fuzzy_ascend_expression,
+$fuzzy_ascend_expression_1 (fuzzy_set: $fuzzy_ascend_sigmoid_set, proposition: $fuzzy_ascend_measure_expr) isa fuzzy_ascend_expression,
     has fuzzy_expression_name 'fuzzy_ascend_sigmoid_expression';
 
 # expected memberhsip 0.834700912
-$fuzzy_ascend_expression_2 (membership: $fuzzy_ascend_exponential_saturation_set, proposition: $fuzzy_ascend_measure_expr) isa fuzzy_ascend_expression,
+$fuzzy_ascend_expression_2 (fuzzy_set: $fuzzy_ascend_exponential_saturation_set, proposition: $fuzzy_ascend_measure_expr) isa fuzzy_ascend_expression,
     has fuzzy_expression_name 'fuzzy_ascend_exp_saturation_expression';
 
 # expected memberhsip 0.947368421
-$fuzzy_ascend_expression_3 (membership: $fuzzy_ascend_blf_set, proposition: $fuzzy_ascend_measure_expr) isa fuzzy_ascend_expression,
+$fuzzy_ascend_expression_3 (fuzzy_set: $fuzzy_ascend_blf_set, proposition: $fuzzy_ascend_measure_expr) isa fuzzy_ascend_expression,
     has fuzzy_expression_name 'fuzzy_ascend_blf_expression';
 
 ## fuzzy unimodal
@@ -76,11 +76,11 @@ $fuzzy_unimodal_gaussian_set isa FuzzyGaussian,
     has sigma 0.1;
 
 # expected membership 0.92442
-$fuzzy_unimodal_expr_1 (membership: $fuzzy_unimodal_triangular_set, proposition: $fuzzy_unimodal_measure_expr) isa fuzzy_unimodal_expression,
+$fuzzy_unimodal_expr_1 (fuzzy_set: $fuzzy_unimodal_triangular_set, proposition: $fuzzy_unimodal_measure_expr) isa fuzzy_unimodal_expression,
     has fuzzy_expression_name 'fuzzy_unimodal_triangular_expression';
 
 # expected membership 0.931085511
-$fuzzy_unimodal_expr_2 (membership: $fuzzy_unimodal_gaussian_set, proposition: $fuzzy_unimodal_measure_expr) isa fuzzy_unimodal_expression,
+$fuzzy_unimodal_expr_2 (fuzzy_set: $fuzzy_unimodal_gaussian_set, proposition: $fuzzy_unimodal_measure_expr) isa fuzzy_unimodal_expression,
     has fuzzy_expression_name 'fuzzy_unimodal_gaussian_expression';
 
 ## fuzzy decay
@@ -99,11 +99,11 @@ $fuzzy_decay_rational_set isa FuzzyRationalDecay,
 	has curvature 2000;
 
 # expected membership 0.9
-$fuzzy_decay_expr_1 (membership: $fuzzy_decay_exp_set, proposition: $fuzzy_decay_measure_expr) isa fuzzy_decay_expression,
+$fuzzy_decay_expr_1 (fuzzy_set: $fuzzy_decay_exp_set, proposition: $fuzzy_decay_measure_expr) isa fuzzy_decay_expression,
     has fuzzy_expression_name 'fuzzy_decay_exp_expression';
 
 # expected membership 0.8
-$fuzzy_decay_expr_2 (membership: $fuzzy_decay_rational_set, proposition: $fuzzy_decay_measure_expr) isa fuzzy_decay_expression,
+$fuzzy_decay_expr_2 (fuzzy_set: $fuzzy_decay_rational_set, proposition: $fuzzy_decay_measure_expr) isa fuzzy_decay_expression,
     has fuzzy_expression_name 'fuzzy_decay_rational_expression';
 
 
@@ -239,7 +239,7 @@ $fuzzy_unimodal_triangular_set_offset isa FuzzyTriangular,
 	has c 0.5;
 
 # expected membership 0.92442
-$fuzzy_unimodal_offset_expr_1 (membership: $fuzzy_unimodal_triangular_set_offset, proposition: $fuzzy_unimodal_offset_measure_expr) isa fuzzy_unimodal_expression,
+$fuzzy_unimodal_offset_expr_1 (fuzzy_set: $fuzzy_unimodal_triangular_set_offset, proposition: $fuzzy_unimodal_offset_measure_expr) isa fuzzy_unimodal_expression,
     has fuzzy_expression_name 'fuzzy_unimodal_offset_triangular_expression',
     has offset_value -0.26;
 

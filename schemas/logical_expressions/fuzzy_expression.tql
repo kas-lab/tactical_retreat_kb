@@ -8,16 +8,16 @@ offset_value sub attribute,
 	value double;
 
 ### fuzzy membership entity ("functions")
-FuzzyMembership sub entity,
+FuzzySet sub entity,
 	abstract,
 	owns offset_value;
 
-AscendMembership sub FuzzyMembership,
-	plays fuzzy_ascend_expression:membership;
-DecayMembership sub FuzzyMembership,
-	plays fuzzy_decay_expression:membership;
-UnimodalMembership sub FuzzyMembership,
-	plays fuzzy_unimodal_expression:membership;
+AscendSet sub FuzzySet,
+	plays fuzzy_ascend_expression:fuzzy_set;
+DecaySet sub FuzzySet,
+	plays fuzzy_decay_expression:fuzzy_set;
+UnimodalSet sub FuzzySet,
+	plays fuzzy_unimodal_expression:fuzzy_set;
 
 ### fuzzy membership attributes
 exponent sub attribute,
@@ -43,13 +43,13 @@ center sub attribute,
 
 # μ(x) =  (x – a) / (b – a), a ≤ x ≤ b
 # μ(x) = (c – x) / (c – b), b ≤ x ≤ c
-FuzzyTriangular sub UnimodalMembership,
+FuzzyTriangular sub UnimodalSet,
 	owns a,
 	owns b,
 	owns c;
 
 # μ(x) = e^(-0.5*( ( (x - center) / sigma)^2 ) )
-FuzzyGaussian sub UnimodalMembership,
+FuzzyGaussian sub UnimodalSet,
 	owns sigma,
 	owns center;
 
@@ -57,30 +57,30 @@ FuzzyGaussian sub UnimodalMembership,
 
 ## exponential saturation membership function
 ## m(x) = 1 - e^(-exponent * x), exponent > 0
-FuzzyExponentialSaturation sub AscendMembership,
+FuzzyExponentialSaturation sub AscendSet,
 	owns exponent; # speed of saturation
 
 ## sigmoid membership function
 ## m(x) = 1 / (1 + e ^ -exponent*(x - x0))
-FuzzySigmoid sub AscendMembership,
+FuzzySigmoid sub AscendSet,
 	owns exponent,
 	owns inflection_point; # where m(inflection_point) = 0.5
 
 ## bounded linear fraction membership function (monotonic)
 ## m(x) = x / (x + curvature), curvature > 0
-FuzzyBoundedLinearFraction sub AscendMembership,
+FuzzyBoundedLinearFraction sub AscendSet,
 	owns curvature; # controls the curvature
 
 ### Decay fuzzy membership functions
 
 ## exponential decay membership function
 ## m(x) = e^(-exponent * x), exponent > 0
-FuzzyExponentialDecay sub DecayMembership,
+FuzzyExponentialDecay sub DecaySet,
 	owns exponent;
 
 ## rational decay membership function
 ## m(x) = curvature / (x + curvature), curvature > 0
-FuzzyRationalDecay sub DecayMembership,
+FuzzyRationalDecay sub DecaySet,
 	owns curvature;
 
 ### Fuzzy expressions
@@ -105,11 +105,11 @@ fuzzy_comparison_expression sub fuzzy_expression,
 	relates proposition;
 
 fuzzy_decay_expression sub fuzzy_comparison_expression,
-	relates membership;
+	relates fuzzy_set;
 fuzzy_ascend_expression sub fuzzy_comparison_expression,
-	relates membership;
+	relates fuzzy_set;
 fuzzy_unimodal_expression sub fuzzy_comparison_expression,
-	relates membership;
+	relates fuzzy_set;
 
 ## compound expression
 fuzzy_operator sub fuzzy_expression,
@@ -202,7 +202,7 @@ rule fuzzy_expression_quantified_value :
 rule fuzzy_unimodal_triangular_membership_evaluation :
 	when {
 		$fuzzy_membership isa! FuzzyTriangular, has a $a, has b $b, has c $c;
-		$fuzzy_expression (membership: $fuzzy_membership) isa! fuzzy_unimodal_expression,
+		$fuzzy_expression (fuzzy_set: $fuzzy_membership) isa! fuzzy_unimodal_expression,
 			has quantified_value $quantified_value;
 
 		{
@@ -222,7 +222,7 @@ rule fuzzy_unimodal_triangular_membership_evaluation :
 rule fuzzy_unimodal_gaussian_membership_evaluation :
 	when {
 		$fuzzy_membership isa! FuzzyGaussian, has sigma $sigma, has center $center;
-		$fuzzy_expression (membership: $fuzzy_membership) isa! fuzzy_unimodal_expression,
+		$fuzzy_expression (fuzzy_set: $fuzzy_membership) isa! fuzzy_unimodal_expression,
 			has quantified_value $quantified_value;
 
 		?membership_degree = 2.71828 ^ (-0.5 * (($quantified_value - $center) / $sigma)^2 );
@@ -233,7 +233,7 @@ rule fuzzy_unimodal_gaussian_membership_evaluation :
 rule fuzzy_ascend_exponential_membership_evaluation :
 	when {
 		$fuzzy_membership isa! FuzzyExponentialSaturation, has exponent $exponent;
-		$fuzzy_expression (membership: $fuzzy_membership) isa! fuzzy_ascend_expression,
+		$fuzzy_expression (fuzzy_set: $fuzzy_membership) isa! fuzzy_ascend_expression,
 			has quantified_value $quantified_value;
 
 		?membership_degree = 1.0 - 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
@@ -244,7 +244,7 @@ rule fuzzy_ascend_exponential_membership_evaluation :
 rule fuzzy_ascend_sigmoid_membership_evaluation :
 	when {
 		$fuzzy_membership isa! FuzzySigmoid, has inflection_point $inflection_point, has exponent $exponent;
-		$fuzzy_expression (membership: $fuzzy_membership) isa! fuzzy_ascend_expression,
+		$fuzzy_expression (fuzzy_set: $fuzzy_membership) isa! fuzzy_ascend_expression,
 			has quantified_value $quantified_value;
 
 		?membership_degree = 1.0 / ( 1.0 + 2.71828 ^ ( -1.0 * $exponent * ($quantified_value - $inflection_point)));
@@ -255,7 +255,7 @@ rule fuzzy_ascend_sigmoid_membership_evaluation :
 rule fuzzy_ascend_blf_membership_evaluation :
 	when {
 		$fuzzy_membership isa! FuzzyBoundedLinearFraction, has curvature $curvature;
-		$fuzzy_expression (membership: $fuzzy_membership) isa! fuzzy_ascend_expression,
+		$fuzzy_expression (fuzzy_set: $fuzzy_membership) isa! fuzzy_ascend_expression,
 			has quantified_value $quantified_value;
 
 		?membership_degree = $quantified_value / ($quantified_value + $curvature);
@@ -265,7 +265,7 @@ rule fuzzy_ascend_blf_membership_evaluation :
 
 rule fuzzy_decay_exponential_membership_evaluation :
 	when {
-		$fuzzy_expression (membership: $fuzzy_membership) isa! fuzzy_decay_expression,
+		$fuzzy_expression (fuzzy_set: $fuzzy_membership) isa! fuzzy_decay_expression,
 			has quantified_value $quantified_value;
 
 		$fuzzy_membership isa! FuzzyExponentialDecay, has exponent $exponent;
@@ -277,7 +277,7 @@ rule fuzzy_decay_exponential_membership_evaluation :
 rule fuzzy_decay_rational_membership_evaluation :
 	when {
 		$fuzzy_membership isa! FuzzyRationalDecay, has curvature $curvature;
-		$fuzzy_expression (membership: $fuzzy_membership) isa! fuzzy_decay_expression,
+		$fuzzy_expression (fuzzy_set: $fuzzy_membership) isa! fuzzy_decay_expression,
 			has quantified_value $quantified_value;
 
 		?membership_degree = $curvature / ($quantified_value + $curvature);
