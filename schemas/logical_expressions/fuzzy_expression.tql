@@ -1,0 +1,325 @@
+define
+
+### fuzzy membership attribute
+membership_degree sub attribute,
+	value double;
+
+offset_value sub attribute,
+	value double;
+
+### fuzzy membership entity ("functions")
+FuzzySet sub entity,
+	abstract,
+	owns offset_value;
+
+AscendSet sub FuzzySet,
+	plays fuzzy_ascend_expression:fuzzy_set;
+DecaySet sub FuzzySet,
+	plays fuzzy_decay_expression:fuzzy_set;
+UnimodalSet sub FuzzySet,
+	plays fuzzy_unimodal_expression:fuzzy_set;
+
+### fuzzy membership attributes
+exponent sub attribute,
+	value double;
+inflection_point sub attribute,
+	value double;
+curvature sub attribute,
+	value double;
+
+a sub attribute,
+	value double;
+b sub attribute,
+	value double;
+c sub attribute,
+	value double;
+
+sigma sub attribute,
+	value double;
+center sub attribute,
+	value double;
+
+### Triangular, guassian etc membership functions (not necessarly descend or ascend)
+
+# μ(x) =  (x – a) / (b – a), a ≤ x ≤ b
+# μ(x) = (c – x) / (c – b), b ≤ x ≤ c
+FuzzyTriangular sub UnimodalSet,
+	owns a,
+	owns b,
+	owns c;
+
+# μ(x) = e^(-0.5*( ( (x - center) / sigma)^2 ) )
+FuzzyGaussian sub UnimodalSet,
+	owns sigma,
+	owns center;
+
+### Ascend fuzzy membership functions
+
+## exponential saturation membership function
+## m(x) = 1 - e^(-exponent * x), exponent > 0
+FuzzyExponentialSaturation sub AscendSet,
+	owns exponent; # speed of saturation
+
+## sigmoid membership function
+## m(x) = 1 / (1 + e ^ -exponent*(x - x0))
+FuzzySigmoid sub AscendSet,
+	owns exponent,
+	owns inflection_point; # where m(inflection_point) = 0.5
+
+## bounded linear fraction membership function (monotonic)
+## m(x) = x / (x + curvature), curvature > 0
+FuzzyBoundedLinearFraction sub AscendSet,
+	owns curvature; # controls the curvature
+
+### Decay fuzzy membership functions
+
+## exponential decay membership function
+## m(x) = e^(-exponent * x), exponent > 0
+FuzzyExponentialDecay sub DecaySet,
+	owns exponent;
+
+## rational decay membership function
+## m(x) = curvature / (x + curvature), curvature > 0
+FuzzyRationalDecay sub DecaySet,
+	owns curvature;
+
+### Fuzzy expressions
+fuzzy_expression_name sub attribute,
+	value string;
+
+quantified_value sub attribute,
+	value double;
+propositional_expression owns quantified_value;
+
+fuzzy_expression sub relation,
+	abstract,
+	owns fuzzy_expression_name @unique, # to enable querying (good for tests)
+	owns membership_degree,
+	owns quantified_value,
+	owns offset_value;
+
+fuzzy_comparison_expression sub fuzzy_expression,
+	plays fuzzy_and:expression,
+	plays fuzzy_or:expression,
+	plays fuzzy_not:expression,
+	relates proposition;
+
+fuzzy_decay_expression sub fuzzy_comparison_expression,
+	relates fuzzy_set;
+fuzzy_ascend_expression sub fuzzy_comparison_expression,
+	relates fuzzy_set;
+fuzzy_unimodal_expression sub fuzzy_comparison_expression,
+	relates fuzzy_set;
+
+## compound expression
+fuzzy_operator sub fuzzy_expression,
+    abstract;
+
+fuzzy_and sub fuzzy_operator,
+    relates expression;
+
+fuzzy_or sub fuzzy_operator,
+    relates expression,
+    plays fuzzy_and:expression;
+
+fuzzy_not sub fuzzy_operator,
+    relates expression,
+	plays fuzzy_and:expression,
+    plays fuzzy_or:expression;
+
+
+#### connection with logical_expression model
+propositional_expression owns membership_degree;
+propositional_expression plays fuzzy_not:expression;
+propositional_expression plays fuzzy_and:expression;
+propositional_expression plays fuzzy_or:expression;
+
+propositional_expression plays fuzzy_comparison_expression:proposition;
+
+rule quantified_value_measure_double:
+	when {
+		$propositional_expression (proposition: $measure) isa! propositional_expression;
+        (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
+        $mv isa! ValueDouble, has double_value $measure_double_value;
+		?double_value_ = $measure_double_value;
+	} then {
+		$propositional_expression has quantified_value ?double_value_;
+	};
+
+rule crisp_proposition_membership_measure_bool_true:
+	when {
+		$propositional_expression (proposition: $measure) isa! propositional_expression;
+        (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
+        $mv isa! ValueBool, has bool_value true;
+	} then {
+		$propositional_expression has membership_degree 1.0;
+	};
+
+rule crisp_proposition_membership_measure_bool_false:
+	when {
+		$propositional_expression (proposition: $measure) isa! propositional_expression;
+        (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
+        $mv isa! ValueBool, has bool_value false;
+	} then {
+		$propositional_expression has membership_degree 0.0;
+	};
+
+rule crisp_proposition_membership_true:
+   when {
+    $propositional_expression (proposition: $value) isa! propositional_expression;
+	$value isa! ValueBool, has bool_value true;
+  } then {
+    $propositional_expression has membership_degree 1.0;
+  };
+
+rule crisp_proposition_membership_false:
+  when {
+    $propositional_expression (proposition: $value) isa! propositional_expression;
+	$value isa! ValueBool, has bool_value false;
+  } then {
+    $propositional_expression has membership_degree 0.0;
+  };
+
+# This rule made the system slower
+rule fuzzy_expression_quantified_value :
+	when {
+		$fuzzy_expression (proposition: $proposition) isa fuzzy_expression;
+		$proposition isa! propositional_expression, has quantified_value $quantified_value;
+
+		{
+			$fuzzy_expression  has offset_value $offest;
+			?quantified_value_ = $quantified_value + $offest;
+		} or {
+			not {$fuzzy_expression has offset_value $offest;};
+			?quantified_value_ = $quantified_value;
+		};
+		?quantified_value__ = ?quantified_value_;
+	} then {
+		$fuzzy_expression has quantified_value ?quantified_value__;
+	};
+
+## Fuzzy membership rules
+rule fuzzy_unimodal_triangular_membership_evaluation :
+	when {
+		$fuzzy_membership isa! FuzzyTriangular, has a $a, has b $b, has c $c;
+		$fuzzy_expression (fuzzy_set: $fuzzy_membership) isa! fuzzy_unimodal_expression,
+			has quantified_value $quantified_value;
+
+		{
+			$quantified_value >= $a;
+			$quantified_value <= $b;
+			?membership_degree_ = ($quantified_value - $a) / ($b - $a);
+		} or {
+			$quantified_value > $b;
+			$quantified_value <= $c;
+			?membership_degree_ = ($c - $quantified_value) / ($c - $b);
+		};
+		?membership_degree = ?membership_degree_;
+	} then {
+		$fuzzy_expression has membership_degree ?membership_degree;
+	};
+
+rule fuzzy_unimodal_gaussian_membership_evaluation :
+	when {
+		$fuzzy_membership isa! FuzzyGaussian, has sigma $sigma, has center $center;
+		$fuzzy_expression (fuzzy_set: $fuzzy_membership) isa! fuzzy_unimodal_expression,
+			has quantified_value $quantified_value;
+
+		?membership_degree = 2.71828 ^ (-0.5 * (($quantified_value - $center) / $sigma)^2 );
+	} then {
+		$fuzzy_expression has membership_degree ?membership_degree;
+	};
+
+rule fuzzy_ascend_exponential_membership_evaluation :
+	when {
+		$fuzzy_membership isa! FuzzyExponentialSaturation, has exponent $exponent;
+		$fuzzy_expression (fuzzy_set: $fuzzy_membership) isa! fuzzy_ascend_expression,
+			has quantified_value $quantified_value;
+
+		?membership_degree = 1.0 - 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
+	} then {
+		$fuzzy_expression has membership_degree ?membership_degree;
+	};
+
+rule fuzzy_ascend_sigmoid_membership_evaluation :
+	when {
+		$fuzzy_membership isa! FuzzySigmoid, has inflection_point $inflection_point, has exponent $exponent;
+		$fuzzy_expression (fuzzy_set: $fuzzy_membership) isa! fuzzy_ascend_expression,
+			has quantified_value $quantified_value;
+
+		?membership_degree = 1.0 / ( 1.0 + 2.71828 ^ ( -1.0 * $exponent * ($quantified_value - $inflection_point)));
+	} then {
+		$fuzzy_expression has membership_degree ?membership_degree;
+	};
+
+rule fuzzy_ascend_blf_membership_evaluation :
+	when {
+		$fuzzy_membership isa! FuzzyBoundedLinearFraction, has curvature $curvature;
+		$fuzzy_expression (fuzzy_set: $fuzzy_membership) isa! fuzzy_ascend_expression,
+			has quantified_value $quantified_value;
+
+		?membership_degree = $quantified_value / ($quantified_value + $curvature);
+	} then {
+		$fuzzy_expression has membership_degree ?membership_degree;
+	};
+
+rule fuzzy_decay_exponential_membership_evaluation :
+	when {
+		$fuzzy_expression (fuzzy_set: $fuzzy_membership) isa! fuzzy_decay_expression,
+			has quantified_value $quantified_value;
+
+		$fuzzy_membership isa! FuzzyExponentialDecay, has exponent $exponent;
+		?membership_degree = 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
+	} then {
+		$fuzzy_expression has membership_degree ?membership_degree;
+	};
+
+rule fuzzy_decay_rational_membership_evaluation :
+	when {
+		$fuzzy_membership isa! FuzzyRationalDecay, has curvature $curvature;
+		$fuzzy_expression (fuzzy_set: $fuzzy_membership) isa! fuzzy_decay_expression,
+			has quantified_value $quantified_value;
+
+		?membership_degree = $curvature / ($quantified_value + $curvature);
+	} then {
+		$fuzzy_expression has membership_degree ?membership_degree;
+	};
+
+
+# Fuzzy operators
+rule fuzzy_not_operator :
+	when {
+		$fuzzy_not (expression: $e) isa! fuzzy_not;
+		$e has membership_degree $membership;
+		?negated_membership = 1.0 - $membership;
+	} then {
+		$fuzzy_not has membership_degree ?negated_membership;
+	};
+
+rule fuzzy_or_operator :
+	when {
+		$or_expr (expression: $a) isa! fuzzy_or;
+		$a has membership_degree $a_membership;
+
+		not {
+			$or_expr (expression: $b) isa! fuzzy_or;
+			$b has membership_degree $b_membership;
+			$b_membership > $a_membership;
+		};
+	} then {
+		$or_expr has $a_membership;
+	};
+
+rule fuzzy_and_operator :
+	when {
+		$and_expr (expression: $a) isa! fuzzy_and;
+		$a has membership $a_membership;
+
+		not {
+			$and_expr (expression: $b) isa! fuzzy_and;
+			$b has membership $b_membership;
+			$b_membership < $a_membership;
+		};
+	} then {
+		$and_expr has $a_membership;
+	};

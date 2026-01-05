@@ -12,16 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import pytest
+
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def kb_interface():
     kb_interface = TacticalRetreatInterface(
         'localhost:1729',
         'test_model_interface',
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
+            'schemas/logical_expressions/logical_expression.tql',
             'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
             'schemas/tactics_model/tactics_model.tql',
@@ -196,13 +198,14 @@ def test_get_applicable_tactics(kb_interface):
     assert len(tactics) == 0
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def kb_interface_test_model():
     kb_interface_test_model = TacticalRetreatInterface(
         'localhost:1729',
         'test_model_interface',
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
+            'schemas/logical_expressions/logical_expression.tql',
             'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
             'schemas/tactics_model/tactics_model.tql',

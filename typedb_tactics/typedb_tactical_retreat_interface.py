@@ -11,18 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
 from datetime import datetime
+import logging
 from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import TypedDict
 from typing import Union
 
-from ros_typedb.typedb_interface import MatchResultDict
-from ros_typedb.typedb_interface import TypeDBInterface
 from ros_typedb.typedb_interface import convert_py_type_to_query_type
 from ros_typedb.typedb_interface import convert_query_type_to_py_type
+from ros_typedb.typedb_interface import MatchResultDict
+from ros_typedb.typedb_interface import TypeDBInterface
 
 from typedb.driver import ConceptMap
 
@@ -38,7 +38,7 @@ def create_value_query(value, suffix=''):
             value)
         return None
 
-    variable_name = f"$value{suffix}"
+    variable_name = f'$value{suffix}'
 
     value_query = ''
     if isinstance(value, str):
@@ -50,7 +50,7 @@ def create_value_query(value, suffix=''):
         value_query = f"""{variable_name} isa ValueBool,
             has bool_value {convert_py_type_to_query_type(value)};"""
     elif isinstance(value, int):
-        value_query = f"{variable_name} isa ValueInteger, has integer_value {value};"
+        value_query = f'{variable_name} isa ValueInteger, has integer_value {value};'
     return value_query, variable_name
 
 
@@ -71,7 +71,7 @@ class RuntimeNodeDict(TypedDict):
 def node_query_to_node_dict(
         query_result: List[dict[str, MatchResultDict]],
         node_variable: str = 'node') -> List[RuntimeNodeDict]:
-    node_dict = list()
+    node_dict = []
     for result in query_result:
         node = result.get(node_variable)
         if len(node['namespace']) > 1:
@@ -118,7 +118,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         )
 
     def fetch_subnodes(self, node_name: str,
-                       namespace: str = "") -> List[dict[str, MatchResultDict]]:
+                       namespace: str = '') -> List[dict[str, MatchResultDict]]:
         """
         Fetch subnodes of a running node and returns it as a typedb fetch query result.
 
@@ -139,7 +139,7 @@ class TacticalRetreatInterface(TypeDBInterface):
     def get_subnodes(
             self,
             node_name: str,
-            namespace: str = "") -> List[RuntimeNodeDict]:
+            namespace: str = '') -> List[RuntimeNodeDict]:
         """
         Get the subnodes of a running node and returns it as a list of dicts.
 
@@ -236,7 +236,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param namespace: namespace of the running node
         :return: list of dictionaries with the action_name and action_type of the action clients
         """
-        ros_action_result_dict = list()
+        ros_action_result_dict = []
         for result in self.fetch_action_clients_names(node_name, namespace):
             action = result.get('action_client')
             if len(action['interface_name']) == 0:
@@ -563,7 +563,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $system isa System, has system_name '{system_name}';
                 (system: $system) isa relaxed_requirement,
                     has requirement_name '{requirement_name}',
-                    has fulfillment $fulfillment;
+                    has requirement_fulfillment $fulfillment;
             fetch $fulfillment;
         """
         return self.fetch_database(query)
@@ -594,7 +594,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $req isa relaxed_requirement,
                     has in_effect true;
             fetch
-                $req: requirement_name, fulfillment;
+                $req: requirement_name, requirement_fulfillment;
         """
         return self.fetch_database(query)
 
@@ -605,9 +605,11 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: fetch query result
         """
         query_result = self.fetch_in_effect_requirement_fulfillment()
-        return [
+        query_dict = [
             {'requirement_name': result['req']['requirement_name'][0]['value'],
-             'fulfillment': result['req']['fulfillment'][0]['value']} for result in query_result]
+             'fulfillment': result['req']['requirement_fulfillment'][0]['value']}
+            for result in query_result]
+        return sorted(query_dict, key=lambda item: item['requirement_name'])
 
     def set_requirement_in_effect(self, requirement_name: str, in_effect: bool
                                   ) -> Optional[Iterator[ConceptMap]]:
@@ -971,7 +973,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         return query_result[0]['ra']['feasible'][0]['value']
 
     def fetch_measures_inferfaces(self):
-        query = '''
+        query = """
             match
                 $measure isa Measure, has measure_name $measure_name;
                 $measurement_interface (measure: $measure, source: $source)
@@ -988,7 +990,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                 fetch
                     $qos: attribute;
             };
-        '''
+        """
         return self.fetch_database(query)
 
     def get_measures_interfaces(self):
@@ -1082,3 +1084,56 @@ class TacticalRetreatInterface(TypeDBInterface):
                     has measurement_time {time};
         """
         return self.insert_database(query)
+
+    def fetch_fuzzy_membership_degree(self, expression_name: str
+                                      ) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch fuzzy membership of a fuzzy expression.
+
+        :param expression_name: fuzzy expression name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $fe isa fuzzy_expression, has fuzzy_expression_name '{expression_name}';
+            fetch
+                $fe: membership_degree;
+        """
+        return self.fetch_database(query)
+
+    def get_fuzzy_membership_degree(self, expression_name: str) -> str:
+        """
+        Get fuzzy membership of a fuzzy expression.
+
+        :param expression_name: fuzzy expression name
+        :return: membership type
+        """
+        query_result = self.fetch_fuzzy_membership_degree(expression_name)
+        return query_result[0]['fe']['membership_degree'][0]['value']
+
+    def fetch_relaxed_expression_fulfillment(self, expression_name: str
+                                             ) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch fuzzy fulfillment of a fuzzy expression.
+
+        :param expression_name: fuzzy expression name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $relaxed_expression isa relaxed_expression,
+                has relaxed_expression_name '{expression_name}';
+            fetch
+                $relaxed_expression: expression_fulfillment;
+        """
+        return self.fetch_database(query)
+
+    def get_relaxed_expression_fulfillment(self, expression_name: str) -> str:
+        """
+        Get fuzzy fulfillment of a fuzzy expression.
+
+        :param expression_name: fuzzy expression name
+        :return: fulfillment type
+        """
+        query_result = self.fetch_relaxed_expression_fulfillment(expression_name)
+        return query_result[0]['relaxed_expression']['expression_fulfillment'][0]['value']
