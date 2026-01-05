@@ -17,6 +17,8 @@
   <exec_depend>ros_typedb_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>ros_monitors_functions</exec_depend>
+  <exec_depend>rebet_monitors</exec_depend>
+  <!-- <exec_depend>rosa_msgs</exec_depend> -->
 
   <export>
     <build_type>ament_python</build_type>

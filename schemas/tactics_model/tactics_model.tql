@@ -228,3 +228,30 @@ rule variant_resolution_feasible:
         $vr has feasible true;
     };
 
+rule feature_selected_by_parameter_match:
+    when {
+        $fa ($f) isa feature_adaptation;
+        $f isa Feature;
+        # find a variant_resolution that targets this feature and has a set_nodes_parameters action
+        $vr (variant: $f, resolution_action: $ra) isa variant_resolution;
+        $ra (node: $n, parameter: $p, parameter_value: $pv) isa set_nodes_parameters;
+        # find a node with the same current parameter value
+        $hpv (node: $n, parameter: $p, parameter_value: $pv) isa has_parameter_value;
+    } then {
+        $f has selected true;
+    };
+
+rule feature_not_selected_by_parameter_match:
+    when {
+        $f isa Feature;
+        # no matching parameter-value path that would select this feature
+        not {
+            $fa ($f) isa feature_adaptation;
+            $vr (variant: $f, resolution_action: $ra) isa variant_resolution;
+            $ra (node: $n, parameter: $p, parameter_value: $pv) isa set_nodes_parameters;
+            $hpv (node: $n, parameter: $p, parameter_value: $pv) isa has_parameter_value;
+        };
+        not { $f has selected true; };  # don't overwrite an explicit/derived true
+    } then {
+        $f has selected false;
+    };
