@@ -15,13 +15,20 @@ $current_vel isa ValueDouble, has double_value 0.22221;
 (measure:$velocity_measure , measurement_value: $current_vel) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
 
-$objects_close_measure isa Measure,
-	has measure_name "objects_close_measure",
-	has description "Whether there are objects too close";
-$objects_close_measure_expr (proposition: $objects_close_measure) isa propositional_expression;
-$objects_close isa ValueBool, has bool_value true;
-(measure:$objects_close_measure, measurement_value: $objects_close) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+$double_0_10 isa ValueDouble,
+    has double_value 0.10;
+$double_0_18 isa ValueDouble,
+    has double_value 0.18;
 
+$nearest_object_measure isa Measure,
+	has measure_name "nearest_object_measure",
+	has description "Nearest object distance in meters";
+(measure: $nearest_object_measure, measurement_value: $double_0_10) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666;
+
+
+# object is too close if nearest_object < 0.18
+$objects_close_measure_expr (lhs_value:$nearest_object_measure, rhs_value:$double_0_18) isa less_than;
 
 # R1.1 Velocity
 

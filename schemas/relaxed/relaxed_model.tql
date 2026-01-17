@@ -138,6 +138,8 @@ UnimodalSet plays as_close_as_possible_expression:fuzzy_set;
 UnimodalSet plays freq_as_close_as_possible_expression:fuzzy_set;
 
 # connection to logical_expression model
+# TODO: check if we can just make proposition_expression play the role of a proposition in relaxed_expression
+# instead of one by one
 propositional_expression plays atomic_relaxed_expression:expression;
 
 propositional_expression plays shall_expression:expression;

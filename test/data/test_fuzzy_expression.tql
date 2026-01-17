@@ -243,3 +243,24 @@ $fuzzy_unimodal_offset_expr_1 (fuzzy_set: $fuzzy_unimodal_triangular_set_offset,
     has fuzzy_expression_name 'fuzzy_unimodal_offset_triangular_expression',
     has offset_value -0.26;
 
+
+## fuzzy expression with inequality
+$double_0_10 isa ValueDouble,
+    has double_value 0.10;
+$double_0_18 isa ValueDouble,
+    has double_value 0.18;
+$double_0_20 isa ValueDouble,
+    has double_value 0.20;
+
+$measure_double_0_10 isa Measure, has measure_name 'measure_double_0_10';
+(measure: $measure_double_0_10, measurement_value: $double_0_10) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666;
+$measure_double_0_20 isa Measure, has measure_name 'measure_double_0_20';
+(measure: $measure_double_0_20, measurement_value: $double_0_20) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666;
+
+$md_0_10_less_v_0_18 (lhs_value:$measure_double_0_10, rhs_value:$double_0_18) isa less_than, has expression_name 'md_0_10_less_v_0_18';
+$md_0_20_less_v_0_18 (lhs_value:$measure_double_0_20, rhs_value:$double_0_18) isa less_than, has expression_name 'md_0_20_less_v_0_18';
+
+(expression: $md_0_10_less_v_0_18) isa fuzzy_not, has fuzzy_expression_name 'fuzzy_not_less_than_negated_true';
+(expression: $md_0_20_less_v_0_18) isa fuzzy_not, has fuzzy_expression_name 'fuzzy_not_less_than_negated_false';
