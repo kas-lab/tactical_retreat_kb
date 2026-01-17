@@ -70,8 +70,10 @@ def test_fuzzy_not(kb_interface):
     assert kb_interface.get_fuzzy_membership_degree('fuzzy_not_4') == pytest.approx(0.0)
     assert kb_interface.get_fuzzy_membership_degree('fuzzy_not_5') == pytest.approx(1.0)
 
-    assert kb_interface.get_fuzzy_membership_degree('fuzzy_not_less_than_negated_true') == pytest.approx(0.0)
-    assert kb_interface.get_fuzzy_membership_degree('fuzzy_not_less_than_negated_false') == pytest.approx(1.0)
+    assert kb_interface.get_fuzzy_membership_degree(
+        'fuzzy_not_less_than_negated_true') == pytest.approx(0.0)
+    assert kb_interface.get_fuzzy_membership_degree(
+        'fuzzy_not_less_than_negated_false') == pytest.approx(1.0)
 
 
 def test_fuzzy_or(kb_interface):
