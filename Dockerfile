@@ -27,6 +27,9 @@ RUN apt-get update && apt-get install -y \
     ros-humble-tf2-ros \
     ros-humble-tf2-ros-py \
     ros-humble-tf-transformations \
+    flake8 \
+    python3-flake8-* \
+    python3-ament-flake8 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN rosdep init
@@ -67,7 +70,28 @@ WORKDIR $HOME/rebet_ws/src
 COPY dependencies.repos $HOME/rebet_ws/dependencies.repos
 
 WORKDIR $HOME/rebet_ws
-RUN vcs import src < dependencies.repos --recursive
+
+ARG DEPS_CACHE_BUSTER
+RUN --mount=type=secret,id=gh_token,uid=1000,gid=1000,mode=0400 bash -lc '\
+  echo "deps-buster=${DEPS_CACHE_BUSTER}" > /dev/null; \
+  tok=$(tr -d "\r\n" < /run/secrets/gh_token); \
+  export GIT_TERMINAL_PROMPT=0; \
+  git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "https://github.com/"; \
+  vcs import --input $HOME/rebet_ws/dependencies.repos src ; \
+'
+
+
+COPY fuzzy $HOME/rebet_ws/src/typedb_tactics/fuzzy
+COPY launch $HOME/rebet_ws/src/typedb_tactics/launch
+COPY resource $HOME/rebet_ws/src/typedb_tactics/resource
+COPY schemas $HOME/rebet_ws/src/typedb_tactics/schemas
+COPY test $HOME/rebet_ws/src/typedb_tactics/test
+COPY typedb_tactics $HOME/rebet_ws/src/typedb_tactics/typedb_tactics
+COPY LICENSE $HOME/rebet_ws/src/typedb_tactics/LICENSE
+COPY package.xml $HOME/rebet_ws/src/typedb_tactics/package.xml
+COPY setup.cfg $HOME/rebet_ws/src/typedb_tactics/setup.cfg
+COPY setup.py $HOME/rebet_ws/src/typedb_tactics/setup.py
+
 
 RUN ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash \
     && sudo apt update \
