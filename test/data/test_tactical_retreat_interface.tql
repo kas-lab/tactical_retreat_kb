@@ -27,7 +27,7 @@ $double_0_25 isa ValueDouble,
     has double_value 0.25;
 
 ## define expression
-$ineq (lhs_value:$measure_mock, rhs_value: $double_0_25) isa inequality_expression, has operator "<";
+$ineq (lhs_value:$measure_mock, rhs_value: $double_0_25) isa less_than;
 
 ## define feature adaptation
 $fa (deactivation: $f1, activation: $f2, activation: $f3) isa feature_adaptation;
