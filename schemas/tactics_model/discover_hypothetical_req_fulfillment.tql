@@ -1,5 +1,13 @@
 define
 
+# measure_dependency sub relation,
+#     relates dependent,
+#     relates measure;
+# Measure plays measure_dependency:measure;
+
+# relaxed_expression plays measure_dependency:dependent;
+# system_requirement plays measure_dependency:dependent;
+
 hypothetical_fulfillment sub relation,
     owns fulfillment,
     relates effect,

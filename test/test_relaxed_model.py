@@ -101,18 +101,6 @@ def test_get_requirement_fulfillment_mirte(kb_interface):
     assert fulfillment == pytest.approx(0.941764572)
 
 
-# def test_get_requirement_measure_dependency(kb_interface):
-#     measures = kb_interface.get_requirement_measure_dependency('R1.1 Velocity')
-#     assert 'velocity_measure' in measures
-
-#     measures = kb_interface.get_requirement_measure_dependency('R1.2 Movement Power')
-#     assert 'movement_power_measure' in measures
-
-#     measures = kb_interface.get_requirement_measure_dependency('R1.3 Liquid intake')
-#     assert 'liquid_intake_measure' in measures
-#     assert 'minimum_liquid_intake_measure' in measures
-
-
 def test_get_requirement_fulfillment_relax_paper(kb_interface):
     # RELAX paper example model
     fulfillment = kb_interface.get_relaxed_requirement_fulfillment(

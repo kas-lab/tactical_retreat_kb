@@ -39,16 +39,10 @@ System sub entity,
 	plays system_requirement:system;
 
 ## Relations
-measure_dependency sub relation,
-    relates dependent,
-    relates measure;
-Measure plays measure_dependency:measure;
-
 system_requirement sub relation,
 	abstract,
 	owns in_effect,
-	relates system,
-	plays measure_dependency:dependent;
+	relates system;
 
 relaxed_requirement sub system_requirement,
 	owns requirement_name @key,
