@@ -13,15 +13,20 @@
 # limitations under the License.
 
 import pytest
+
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def kb_interface():
     kb_interface = TacticalRetreatInterface(
         'localhost:1729',
         'test_feature_model',
-        ['schemas/feature_model/feature_model.tql'],
+        ['schemas/data_structure/data_structure.tql',
+         'schemas/context_model/context_model.tql',
+         'schemas/logical_expressions/logical_expression.tql',
+         'schemas/feature_model/feature_model.tql',
+         'schemas/feature_model/feature_model_logical_expression.tql'],
         ['test/data/test_feature_model.tql'],
         force_database=True,
         force_data=True,
@@ -50,3 +55,18 @@ def test_feature_selectable(kb_interface):
     assert kb_interface.is_feature_selectable('f_excl_constrained_3') is False
     assert kb_interface.is_feature_selectable('f_excl_constrained_4') is True
     assert kb_interface.is_feature_selectable('f_excl_constrained_5') is False
+
+
+def test_feature_as_proposition_expression(kb_interface):
+    assert kb_interface.fetch_attribute_from_thing(
+        'propositional_expression',
+        [('expression_name', 'true_feature_prop_exp')],
+        'expression_satisfied')[0] is True
+    assert kb_interface.fetch_attribute_from_thing(
+        'propositional_expression',
+        [('expression_name', 'false_feature_prop_exp')],
+        'expression_satisfied')[0] is False
+    assert kb_interface.fetch_attribute_from_thing(
+        'propositional_expression',
+        [('expression_name', 'false_feature_prop_exp_2')],
+        'expression_satisfied')[0] is False

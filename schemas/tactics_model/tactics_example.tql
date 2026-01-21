@@ -71,20 +71,16 @@ $litdoublefifteen isa ValueDouble,
 $litdoublethreenine isa ValueDouble,
     has double_value 39.0;
 
-$ineq_nearest_lower_than_10 (lhs_value:$nearest_object_measure, rhs_value:$litdouble) isa inequality_expression,
-	has operator "<";
+$ineq_nearest_lower_than_10 (lhs_value:$nearest_object_measure, rhs_value:$litdouble) isa less_than;
 # movement power > 40.0
-$ineq_mv_pwer_greater_than_40  (lhs_value:$movement_power_measure, rhs_value:$litdoublefoury) isa inequality_expression,
-	has operator ">";
+$ineq_mv_pwer_greater_than_40  (lhs_value:$movement_power_measure, rhs_value:$litdoublefoury) isa greater_than;
 # (nearest_object < 0.1) or (movement power > 40.0)
 $or_expression (expression:$ineq_nearest_lower_than_10, expression:$ineq_mv_pwer_greater_than_40) isa or_expression;
 
 # nearest_object > 0.15
-$ineq_nearest_greater_than_15 (lhs_value:$nearest_object_measure, rhs_value:$litdoublefifteen) isa inequality_expression,
-	has operator ">";
+$ineq_nearest_greater_than_15 (lhs_value:$nearest_object_measure, rhs_value:$litdoublefifteen) isa greater_than;
 # movement power < 40.0
-$ineq_mv_pwer_lower_than_39  (lhs_value:$movement_power_measure, rhs_value:$litdoublethreenine) isa inequality_expression,
-	has operator "<";
+$ineq_mv_pwer_lower_than_39  (lhs_value:$movement_power_measure, rhs_value:$litdoublethreenine) isa less_than;
 # (nearest_object > 0.15) and (movement power < 40.0)
 $and_expression (expression:$ineq_nearest_greater_than_15, expression:$ineq_mv_pwer_lower_than_39) isa and_expression;
 

@@ -42,7 +42,6 @@ Feature sub entity,
     plays cross_tree_constraint:constraint,
     plays cross_tree_constraint:constrained;
 
-
 # Rules
 rule leaf_feature:
     when {

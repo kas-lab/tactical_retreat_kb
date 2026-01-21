@@ -11,19 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
 from dataclasses import dataclass
 from datetime import datetime
+import logging
 from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import TypedDict
 from typing import Union
 
-from ros_typedb.typedb_interface import MatchResultDict
-from ros_typedb.typedb_interface import TypeDBInterface
 from ros_typedb.typedb_interface import convert_py_type_to_query_type
 from ros_typedb.typedb_interface import convert_query_type_to_py_type
+from ros_typedb.typedb_interface import MatchResultDict
+from ros_typedb.typedb_interface import TypeDBInterface
 
 from typedb.driver import ConceptMap
 
@@ -81,7 +81,7 @@ class RuntimeNodeDict(TypedDict):
 def node_query_to_node_dict(
         query_result: List[dict[str, MatchResultDict]],
         node_variable: str = 'node') -> List[RuntimeNodeDict]:
-    node_dict = list()
+    node_dict = []
     for result in query_result:
         node = result.get(node_variable)
         if len(node['namespace']) > 1:
@@ -246,7 +246,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param namespace: namespace of the running node
         :return: list of dictionaries with the action_name and action_type of the action clients
         """
-        ros_action_result_dict = list()
+        ros_action_result_dict = []
         for result in self.fetch_action_clients_names(node_name, namespace):
             action = result.get('action_client')
             if len(action['interface_name']) == 0:
@@ -819,47 +819,6 @@ class TacticalRetreatInterface(TypeDBInterface):
         if array_values:
             return [entry['value']['attribute'][0]['value']
                     for entry in array_values]
-
-    def fetch_ineq_expression_valid(self,
-                                    measure_name: str,
-                                    operator: str,
-                                    value: float) -> List[dict[str,
-                                                               MatchResultDict]]:
-        """
-        Fetch whether a inequality expression is valid.
-
-        :param measure_name: measure name
-        :param operator: ineq operator
-        :param value: value
-        :return: fetch query result
-        """
-        query = f"""
-            match
-                $measure isa Measure, has measure_name '{measure_name}';
-                $litdouble isa ValueDouble, has double_value {value};
-                $expr (lhs_value: $measure, rhs_value:$litdouble) isa inequality_expression,
-                    has operator '{operator}';
-            fetch
-                $expr: expression_valid;
-        """
-        return self.fetch_database(query)
-
-    def get_ineq_expression_valid(
-            self,
-            measure_name: str,
-            operator: str,
-            value: float) -> bool:
-        """
-        Get whether a inequality expression is valid.
-
-        :param measure_name: measure name
-        :param operator: ineq operator
-        :param value: value
-        :return: true or false
-        """
-        query_result = self.fetch_ineq_expression_valid(
-            measure_name, operator, value)
-        return query_result[0]['expr']['expression_valid'][0]['value']
 
     def fetch_tactic_rule_valid(
             self, tactic_rule: str) -> List[dict[str, MatchResultDict]]:
