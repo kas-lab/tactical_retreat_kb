@@ -8,6 +8,7 @@ $smart_house isa System, has system_name "Smart House";
 $foodpackage_measure isa Measure,
 	has measure_name "foodpackage_measure",
 	has description "amount of foodpackages";
+$foodpackage_measure_expr (proposition: $foodpackage_measure) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_foodpackage isa ValueDouble, has double_value 9.0;
@@ -17,10 +18,11 @@ $food_packages_set isa FuzzySigmoid,
 	has inflection_point 5.0,
 	has exponent 0.5889;
 
-$as_many_food_as_possible (ascend_membership: $food_packages_set, term: $foodpackage_measure) isa as_many_as_possible_expression;
-$food_shall_expression (relaxed_expression: $as_many_food_as_possible) isa shall_expression;
+$as_many_food_as_possible (fuzzy_set: $food_packages_set, proposition: $foodpackage_measure_expr) isa as_many_as_possible_expression;
+$food_shall_expression (expression: $as_many_food_as_possible) isa shall_expression;
 
-$r1_1 (system: $smart_house, relaxed_expression: $food_shall_expression) isa relaxed_requirement,
+# expected fulfillment 0.913378192
+$r1_1 (system: $smart_house, expression: $food_shall_expression) isa relaxed_requirement,
 	has requirement_name "R1.1 As many food as possible",
 	has description "The fridge SHALL detect and communicate information with AS MANY food packages AS POSSIBLE.";
 
@@ -28,27 +30,34 @@ $r1_1 (system: $smart_house, relaxed_expression: $food_shall_expression) isa rel
 $dietplan_measure isa Measure,
 	has measure_name "dietplan_measure",
 	has description "dietplan";
-$current_dietplan isa ValueDouble, has double_value 1820.0;
-(measure:$dietplan_measure , measurement_value: $current_dietplan) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+$dietplan_measure_expr (proposition: $dietplan_measure) isa propositional_expression;
 
-$calories_set isa FuzzyGuassian,
+$current_dietplan isa ValueDouble, has double_value 1820.0;
+(measure:$dietplan_measure, measurement_value: $current_dietplan) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+
+$calories_set isa FuzzyGaussian,
 	has center 0.0,
 	has sigma 100;
 
-$calories_as_close_expression (unimodal_membership: $calories_set, term: $dietplan_measure) isa as_close_as_possible_expression,
-	has required_value 1800;
+# expected fulfillment 0.980198686
+$calories_as_close_expression (fuzzy_set: $calories_set, proposition: $dietplan_measure_expr) isa as_close_as_possible_expression,
+	has required_value 1800.0;
 
-$calories_dietplan_shall_expression (relaxed_expression: $calories_as_close_expression) isa shall_expression;
+$calories_dietplan_shall_expression (expression: $calories_as_close_expression) isa shall_expression;
 
 $calorie_consumption_measure isa Measure,
 	has measure_name "calorie_consumption_measure",
-	has description "The fridge adjusts the dietplan in line with Mary’s actual calorie consumption";
-$current_calorie_consumption isa ValueDouble, has double_value 2200;
-(measure:$calorie_consumption_measure , measurement_value: $current_calorie_consumption) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+	has description "The fridge adjusts the dietplan in line with Mary’s actual calorie consumption. The measure indicates whether the fridge is adapting, its values are true/false";
+$calorie_consumption_expr (proposition: $calorie_consumption_measure) isa propositional_expression;
 
-$calories_consumption_shall_expression (term: $calorie_consumption_measure) isa shall_expression;
+$current_calorie_consumption isa ValueBool, has bool_value true;
+(measure:$calorie_consumption_measure, measurement_value: $current_calorie_consumption) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
-$r1_2 (system: $smart_house, relaxed_expression: $calories_dietplan_shall_expression, relaxed_expression: $calories_consumption_shall_expression) isa relaxed_requirement,
+# expected fulfillment 1.0
+$calories_consumption_shall_expression (expression: $calorie_consumption_expr) isa shall_expression;
+
+# expected fulfillment min(0.980198686, 1.0) = 0.980198686
+$r1_2 (system: $smart_house, expression: $calories_dietplan_shall_expression, expression: $calories_consumption_shall_expression) isa relaxed_requirement,
 	has requirement_name "R1.2 Dietplan",
 	has description "The fridge SHALL suggest a dietplan with total calories AS CLOSE AS POSSIBLE TO the daily ideal calories. The fridge SHALL adjust the dietplan in line with Mary’s actual calorie consumption.";
 
@@ -56,29 +65,34 @@ $r1_2 (system: $smart_house, relaxed_expression: $calories_dietplan_shall_expres
 $liquid_intake_measure isa Measure,
 	has measure_name "liquid_intake_measure",
 	has description "The system ensures a liquid intake";
+$liquid_intake_expr (proposition: $liquid_intake_measure) isa propositional_expression;
 $current_liquid_intake isa ValueDouble, has double_value 1.9;
-(measure:$liquid_intake_measure , measurement_value: $current_liquid_intake) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+(measure:$liquid_intake_measure, measurement_value: $current_liquid_intake) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
 $liquid_set isa FuzzyTriangular,
 	has a -0.5,
 	has b 0.0,
 	has c 0.5;
 
-$liquid_intake_as_close_expression (unimodal_membership: $liquid_set, term: $liquid_intake_measure) isa as_close_as_possible_expression,
+$liquid_intake_as_close_expression (fuzzy_set: $liquid_set, proposition: $liquid_intake_expr) isa as_close_as_possible_expression,
 	has required_value 2.0;
 
-$liquid_intake_shall_expression (relaxed_expression: $liquid_intake_as_close_expression) isa shall_expression;
+# expected fulfillment 0.8
+$liquid_intake_shall_expression (expression: $liquid_intake_as_close_expression) isa shall_expression;
 
 $minimum_liquid_intake_measure isa Measure,
 	has measure_name "minimum_liquid_intake_measure",
 	has description "The system ensures minimum liquid intake";
+$minimum_liquid_intake_measure_expr (proposition: $minimum_liquid_intake_measure) isa propositional_expression;
 $current_minimum_liquid_intake isa ValueDouble, has double_value 1.5;
 (measure:$minimum_liquid_intake_measure , measurement_value: $current_minimum_liquid_intake) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
-$liquid_intake_before_expression (term: $minimum_liquid_intake_measure) isa before_expression, has event_duration 21.0;
-$minmum_liquid_intake_shall_expression (relaxed_expression: $liquid_intake_before_expression) isa shall_expression;
+$liquid_intake_before_expression (expression: $minimum_liquid_intake_measure_expr) isa before_expression, has event_duration 21.0;
 
-$r1_3 (system: $smart_house, relaxed_expression: $liquid_intake_shall_expression, relaxed_expression: $minmum_liquid_intake_shall_expression) isa relaxed_requirement,
+# fulfillment depends on the current time, time is still not implemented
+$minmum_liquid_intake_shall_expression (expression: $liquid_intake_before_expression) isa shall_expression;
+
+$r1_3 (system: $smart_house, expression: $liquid_intake_shall_expression, expression: $minmum_liquid_intake_shall_expression) isa relaxed_requirement,
 	has requirement_name "R1.3 Liquid intake",
 	has description "The system SHALL ensure that Mary’s liquid intake is as AS CLOSE AS POSSIBLE TO ideal during the course of the day. The system SHALL ensure minimum liquid intake BEFORE bedtime.";
 
@@ -86,16 +100,18 @@ $r1_3 (system: $smart_house, relaxed_expression: $liquid_intake_shall_expression
 $energy_comsumption_measure isa Measure,
 	has measure_name "energy_comsumption_measure",
 	has description "The system consumes energy during normal operation";
+$energy_comsumption_measure_expr (proposition: $energy_comsumption_measure) isa propositional_expression;
 $current_energy_comsumption isa ValueDouble, has double_value 500;
-(measure:$energy_comsumption_measure , measurement_value: $current_energy_comsumption) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+(measure:$energy_comsumption_measure, measurement_value: $current_energy_comsumption) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
 $energy_comsumption_set isa FuzzyExponentialDecay,
-	has exponent 0.2;
+	has exponent 0.0002107;
 
-$as_few_energy_as_possible (decay_membership: $energy_comsumption_set, term: $energy_comsumption_measure) isa as_few_as_possible_expression;
-$energy_shall_expression (relaxed_expression: $as_few_energy_as_possible) isa shall_expression;
+$as_few_energy_as_possible (fuzzy_set: $energy_comsumption_set, proposition: $energy_comsumption_measure_expr) isa as_few_as_possible_expression;
+$energy_shall_expression (expression: $as_few_energy_as_possible) isa shall_expression;
 
-$r1_4 (system: $smart_house, relaxed_expression: $energy_shall_expression) isa relaxed_requirement,
+# expected fulfillment 0.900009528
+$r1_4 (system: $smart_house, expression: $energy_shall_expression) isa relaxed_requirement,
 	has requirement_name "R1.4 Energy comsumption",
 	has description "The system SHALL consume AS FEW units of energy AS POSSIBLE during normal operation.";
 

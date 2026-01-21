@@ -1,46 +1,89 @@
-match
-
-$movement_power_measure isa Measure,
-	has measure_name "movement_power_measure";
-
-$current_linear_velocity_measure isa Measure,
-	has measure_name "current_linear_velocity_measure";
-
 insert
 
 ## Examples Mirte's MVP use case
+$mirte isa System, has system_name "Mirte";
+
+## Measures + measurements
+
+$velocity_measure isa Measure,
+	has measure_name "velocity_measure",
+	has description "The robot's velocity";
+$velocity_measure_expr (proposition: $velocity_measure) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_vel isa ValueDouble, has double_value 0.22221;
-(measure:$current_linear_velocity_measure , measurement_value: $current_vel) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+(measure:$velocity_measure , measurement_value: $current_vel) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+
+
+$double_0_10 isa ValueDouble,
+    has double_value 0.10;
+$double_0_18 isa ValueDouble,
+    has double_value 0.18;
+
+$nearest_object_measure isa Measure,
+	has measure_name "nearest_object_measure",
+	has description "Nearest object distance in meters";
+(measure: $nearest_object_measure, measurement_value: $double_0_10) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666;
+
+
+$movement_power_measure isa Measure,
+	has measure_name "movement_power_measure",
+	has description "The robot's velocity";
+$movement_power_measure_expr (proposition: $movement_power_measure) isa propositional_expression;
+
+$current_mv_pwer isa ValueDouble, has double_value 0.3;
+(measure:$movement_power_measure , measurement_value: $current_mv_pwer) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+
+
+# object is too close if nearest_object < 0.18
+$objects_close_measure_expr (lhs_value:$nearest_object_measure, rhs_value:$double_0_18) isa less_than;
+
+# R1.1 Velocity
 
 $velocity_set isa FuzzyTriangular,
 	has a -0.5,
 	has b 0.0,
 	has c 0.5;
 
-$velocity_as_close_expression (unimodal_membership: $velocity_set, term: $current_linear_velocity_measure) isa as_close_as_possible_expression,
+$velocity_as_close_expression (fuzzy_set: $velocity_set, proposition: $velocity_measure_expr) isa as_close_as_possible_expression,
 	has required_value 0.26;
 
-$velocity_shall_expression (relaxed_expression: $velocity_as_close_expression) isa shall_expression;
+$velocity_shall_expression (expression: $velocity_as_close_expression) isa shall_expression,
+	has relaxed_expression_name 'velocity_shall_expression';  # used for tests only
 
-$mirte isa System, has system_name "Mirte";
-
-$velocity_requirement (system: $mirte, relaxed_expression: $velocity_shall_expression) isa relaxed_requirement,
+# expected fulfillment 0.92442
+$velocity_requirement (system: $mirte, expression: $velocity_shall_expression) isa relaxed_requirement,
 	has requirement_name "R1.1 Velocity",
 	has in_effect true,
 	has description "The robot SHALL maintain its velocity AS CLOSE AS POSSIBLE TO 0.26 m/s.";
+
+## R1.2 Velocity with obstacles
+
+$velocity_as_close_expression_2 (fuzzy_set: $velocity_set, proposition: $velocity_measure_expr) isa as_close_as_possible_expression,
+	has required_value 0.18,
+	has relaxed_expression_name 'velocity_as_close_expression_2';
+
+$not_objects_close_exp (expression: $objects_close_measure_expr) isa fuzzy_not;
+$not_objects_or_velocity (expression: $not_objects_close_exp, expression: $velocity_as_close_expression_2) isa fuzzy_or;
+
+$velocity_shall_expression_2 (expression: $not_objects_or_velocity) isa shall_expression,
+	has relaxed_expression_name 'velocity_shall_expression_2';  # used for tests only
+
+# expected fulfillment max(1- 1.0, m(0.22221 - 0.18)  ) = max(0.0, 0.91558) = 0.91558
+$velocity_requirement_objects_close (system: $mirte, expression: $velocity_shall_expression_2) isa relaxed_requirement,
+	has requirement_name "R1.2 Velocity with obstacles",
+	has in_effect true,
+	has description "The robot SHALL, when objects are too close, bring its velocity AS CLOSE AS POSSIBLE TO 0.18 m/s";
 
 # fake mirte requirement
 $mv_pwr_fuzzy_set isa FuzzyExponentialDecay,
 	has exponent 0.2;
 
-$as_few_mv_pwr_as_possible (decay_membership: $mv_pwr_fuzzy_set, term: $movement_power_measure) isa as_few_as_possible_expression;
-$mv_pwr_shall_expression (relaxed_expression: $as_few_mv_pwr_as_possible) isa shall_expression;
+$as_few_mv_pwr_as_possible (fuzzy_set: $mv_pwr_fuzzy_set, proposition: $movement_power_measure_expr) isa as_few_as_possible_expression;
+$mv_pwr_shall_expression (expression: $as_few_mv_pwr_as_possible) isa shall_expression;
 
-$current_mv_pwer isa ValueDouble, has double_value 0.3;
-(measure:$movement_power_measure , measurement_value: $current_mv_pwer) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
-$mv_power_requirement (system: $mirte, relaxed_expression: $mv_pwr_shall_expression) isa relaxed_requirement,
-	has requirement_name "R1.2 Movement Power",
+$mv_power_requirement (system: $mirte, expression: $mv_pwr_shall_expression) isa relaxed_requirement,
+	has requirement_name "R1.3 Movement Power",
 	has in_effect true,
 	has description "The robot SHALL maintain its movement power AS FEW AS POSSIBLE.";

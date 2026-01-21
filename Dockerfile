@@ -80,7 +80,6 @@ RUN --mount=type=secret,id=gh_token,uid=1000,gid=1000,mode=0400 bash -lc '\
   vcs import --input $HOME/rebet_ws/dependencies.repos src ; \
 '
 
-
 COPY fuzzy $HOME/rebet_ws/src/typedb_tactics/fuzzy
 COPY launch $HOME/rebet_ws/src/typedb_tactics/launch
 COPY resource $HOME/rebet_ws/src/typedb_tactics/resource
@@ -93,6 +92,7 @@ COPY setup.cfg $HOME/rebet_ws/src/typedb_tactics/setup.cfg
 COPY setup.py $HOME/rebet_ws/src/typedb_tactics/setup.py
 
 
+WORKDIR $HOME/rebet_ws/
 RUN ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash \
     && sudo apt update \
     && rosdep update \

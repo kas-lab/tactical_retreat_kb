@@ -5,6 +5,8 @@ system_name sub attribute,
 	value string;
 start_time sub attribute,
 	value datetime;
+relaxed_expression_name sub attribute,
+	value string;
 
 ### requirement attributes
 requirement_name sub attribute,
@@ -13,7 +15,9 @@ description sub attribute,
 	value string;
 in_effect sub attribute,
 	value boolean;
-fulfillment sub attribute,
+expression_fulfillment sub attribute,
+	value double;
+requirement_fulfillment sub attribute,
 	value double;
 
 ### event expr attributes
@@ -23,31 +27,9 @@ event_end_duration sub attribute,
 	value double;
 
 ### fuzzy expr attributes
-membership sub attribute,
-	value double;
 required_value sub attribute,
 	value double;
 required_period sub attribute,
-	value double;
-
-### fuzzy membership attributes
-exponent sub attribute,
-	value double;
-inflection_point sub attribute,
-	value double;
-curvature sub attribute,
-	value double;
-
-a sub attribute,
-	value double;
-b sub attribute,
-	value double;
-c sub attribute,
-	value double;
-
-sigma sub attribute,
-	value double;
-center sub attribute,
 	value double;
 
 ## Entities
@@ -55,59 +37,6 @@ System sub entity,
 	owns system_name @key,
 	owns start_time,
 	plays system_requirement:system;
-
-FuzzyMembership sub entity,
-	abstract;
-
-AscendMembership sub FuzzyMembership,
-	plays fuzzy_ascend_expression:ascend_membership;
-DecayMembership sub FuzzyMembership,
-	plays fuzzy_decay_expression:decay_membership;
-UnimodalMembership sub FuzzyMembership,
-	plays fuzzy_unimodal_expression:unimodal_membership;
-
-### Triangular, guassian etc membership functions (not necessarly descend or ascend)
-
-# μ(x) =  (x – a) / (b – a), a ≤ x ≤ b
-# μ(x) = (c – x) / (c – b), b ≤ x ≤ c
-FuzzyTriangular sub UnimodalMembership,
-	owns a,
-	owns b,
-	owns c;
-
-FuzzyGuassian sub UnimodalMembership,
-	owns sigma,
-	owns center;
-
-### Ascend "as many as possible" fuzzy membership functions
-
-## exponential saturation membership function
-## m(x) = 1 - e^(-exponent * x), exponent > 0
-FuzzyExponentialSaturation sub AscendMembership,
-	owns exponent; # speed of saturation
-
-## sigmoid membership function
-## m(x) = 1 / (1 + e ^ -exponent*(x - x0))
-FuzzySigmoid sub AscendMembership,
-	owns exponent,
-	owns inflection_point; # where m(inflection_point) = 0.5
-
-## bounded linear fraction membership function (monotonic)
-## m(x) = x / (x + curvature), curvature > 0
-FuzzyBoundedLinearFraction sub AscendMembership,
-	owns curvature; # controls the curvature
-
-### Decay "as few as possible"/"as close as possible" fuzzy membership functions
-
-## exponential decay membership function
-## m(x) = e^(-exponent * x), exponent > 0
-FuzzyExponentialDecay sub DecayMembership,
-	owns exponent;
-
-## rational decay membership function
-## m(x) = curvature / (x + curvature), curvature > 0
-FuzzyRationalDecay sub DecayMembership,
-	owns curvature;
 
 ## Relations
 measure_dependency sub relation,
@@ -124,32 +53,35 @@ system_requirement sub relation,
 relaxed_requirement sub system_requirement,
 	owns requirement_name @key,
 	owns description,
-	owns fulfillment,
-	relates relaxed_expression;
+	owns requirement_fulfillment,
+	relates expression;
 
 relaxed_expression sub relation,
 	abstract,
-	owns fulfillment,
-	relates relaxed_expression,
-	relates term,
-	plays relaxed_requirement:relaxed_expression,
-	plays relaxed_expression:relaxed_expression,
-	plays until_expression:after,
-	plays measure_dependency:dependent;
+	owns expression_fulfillment,
+	owns relaxed_expression_name @unique, # to make it possible to query the expression
+	plays relaxed_requirement:expression;
 
-shall_expression sub relaxed_expression;
-may_expression sub relaxed_expression;
-eventually_expression sub relaxed_expression;
+atomic_relaxed_expression sub relaxed_expression,
+	abstract,
+	relates expression,
+	plays shall_expression:expression,
+    plays may_expression:expression,
+	plays until_expression:after;
 
-until_expression sub relaxed_expression,
-	relates before as relaxed_expression,
-	relates after;
+compound_relaxed_expression sub relaxed_expression,
+	abstract;
 
-#### connection with context_model
-Measure plays relaxed_expression:term;
+shall_expression sub compound_relaxed_expression,
+	relates expression;
+may_expression sub compound_relaxed_expression,
+	relates expression,
+	plays shall_expression:expression;
+
+eventually_expression sub atomic_relaxed_expression;
 
 ### Event expressions
-event_expression sub relaxed_expression,
+event_expression sub atomic_relaxed_expression,
 	abstract,
 	owns event_duration;
 
@@ -158,166 +90,253 @@ before_expression sub event_expression;
 in_expression sub event_expression,
 	owns event_end_duration;
 
-### Fuzzy expressions
-fuzzy_expression sub relaxed_expression,
-	abstract,
-	owns membership;
-
-fuzzy_decay_expression sub fuzzy_expression,
-	relates decay_membership;
-fuzzy_ascend_expression sub fuzzy_expression,
-	relates ascend_membership;
-fuzzy_unimodal_expression sub fuzzy_expression,
-	relates unimodal_membership;
+### Until expression
+until_expression sub relaxed_expression,
+	relates before,
+	relates after,
+	plays shall_expression:expression,
+	plays may_expression:expression;
 
 #### Fuzzy set expression
 
+relaxed_fuzzy_expression sub relaxed_expression,
+	abstract,
+	owns membership_degree,
+	relates proposition,
+	plays shall_expression:expression,
+	plays may_expression:expression,
+	plays atomic_relaxed_expression:expression;
+
 # can have any membership function
-as_close_as_possible_expression sub fuzzy_unimodal_expression,
-	owns required_value;
+as_close_as_possible_expression sub relaxed_fuzzy_expression,
+	owns required_value,
+	relates fuzzy_set;
 
-as_many_as_possible_expression sub fuzzy_ascend_expression;
-as_few_as_possible_expression sub fuzzy_decay_expression;
+as_many_as_possible_expression sub relaxed_fuzzy_expression,
+	relates fuzzy_set;
+as_few_as_possible_expression sub relaxed_fuzzy_expression,
+	relates fuzzy_set;
 
 # can have any membership function
-freq_as_close_as_possible_expression sub fuzzy_unimodal_expression,
-	owns required_period;
+freq_as_close_as_possible_expression sub relaxed_fuzzy_expression,
+	owns required_period,
+	relates fuzzy_set;
 
-as_early_as_possible_expression sub fuzzy_decay_expression;
-as_late_as_possible_expression sub fuzzy_ascend_expression;
+as_early_as_possible_expression sub relaxed_fuzzy_expression,
+	relates fuzzy_set;
+as_late_as_possible_expression sub relaxed_fuzzy_expression,
+	relates fuzzy_set;
 
-## Fuzzy membership rules
-rule fuzzy-unimodal-expression-membership-evaluation :
+# connection to fuzzy_expression model
+fuzzy_expression relates relaxed_expression;
+relaxed_fuzzy_expression plays fuzzy_expression:relaxed_expression;
+relaxed_fuzzy_expression plays fuzzy_and:expression;
+relaxed_fuzzy_expression plays fuzzy_or:expression;
+relaxed_fuzzy_expression plays fuzzy_not:expression;
+
+AscendSet plays as_many_as_possible_expression:fuzzy_set;
+AscendSet plays as_late_as_possible_expression:fuzzy_set;
+
+DecaySet plays as_few_as_possible_expression:fuzzy_set;
+DecaySet plays as_early_as_possible_expression:fuzzy_set;
+
+UnimodalSet plays as_close_as_possible_expression:fuzzy_set;
+UnimodalSet plays freq_as_close_as_possible_expression:fuzzy_set;
+
+# connection to logical_expression model
+# TODO: check if we can just make proposition_expression play the role of a proposition in relaxed_expression
+# instead of one by one
+propositional_expression plays atomic_relaxed_expression:expression;
+
+propositional_expression plays shall_expression:expression;
+propositional_expression plays may_expression:expression;
+
+propositional_expression plays until_expression:before;
+propositional_expression plays until_expression:after;
+propositional_expression plays relaxed_fuzzy_expression:proposition;
+
+propositional_expression owns expression_fulfillment;
+
+fuzzy_or plays shall_expression:expression;
+fuzzy_or plays may_expression:expression;
+
+fuzzy_and plays shall_expression:expression;
+fuzzy_and plays may_expression:expression;
+
+fuzzy_not plays shall_expression:expression;
+fuzzy_not plays may_expression:expression;
+
+fuzzy_expression owns expression_fulfillment;
+
+rule as_close_as_possible_fuzzy_expression:
 	when {
-		$fuzzy_expression (unimodal_membership: $fuzzy_membership, term: $measure) isa fuzzy_unimodal_expression;
-		(measure:$measure, measurement_value: $mv) isa measurement, has latest true;
-		{
-			$mv isa ValueDouble, has double_value $quantified_value;
-		} or {
-			$mv isa ValueInteger, has integer_value $quantified_value;
-		};
-
-		{
-			$fuzzy_expression has required_period $period;
-			?quantified_value__ = min($quantified_value % $period, $period - ($quantified_value % $period));
-		} or {
-			$fuzzy_expression has required_value $value;
-			?quantified_value__ = $quantified_value - $value;
-		};
-		?quantified_value_ = ?quantified_value__;
-
-		{
-			$fuzzy_membership isa FuzzyTriangular, has a $a, has b $b, has c $c;
-			{
-				?quantified_value_ >= $a;
-				?quantified_value_ <= $b;
-				?membership_ = (?quantified_value_ - $a) / ($b - $a);
-			} or {
-				?quantified_value_ > $b;
-				?quantified_value_ <= $c;
-				?membership_ = ($c - ?quantified_value_) / ($c - $b);
-			};
-		} or {
-			$fuzzy_membership isa FuzzyGuassian, has sigma $sigma, has center $center;
-			?membership_ = 2.71828 ^ (-0.5 * ((?quantified_value_ - $center) / $sigma));
-		};
-		?membership = ?membership_;
+		$expr (proposition: $proposition, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression;
 	} then {
-		$fuzzy_expression has membership ?membership;
+		(proposition: $proposition, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_unimodal_expression;
 	};
 
-rule fuzzy-expression-ascend-membership-evaluation :
+rule as_close_as_possible_fuzzy_expression_offset:
 	when {
-		$fuzzy_expression (ascend_membership: $fuzzy_membership, term: $measure) isa fuzzy_ascend_expression;
-		(measure:$measure, measurement_value: $mv) isa measurement, has latest true;
-		{
-			$mv isa ValueDouble, has double_value $quantified_value;
-		} or {
-			$mv isa ValueInteger, has integer_value $quantified_value;
-		};
-		{
-			$fuzzy_membership isa FuzzyExponentialSaturation, has exponent $exponent;
-			?membership_ = 1.0 - 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
-		} or {
-			$fuzzy_membership isa FuzzySigmoid, has inflection_point $inflection_point, has exponent $exponent;
-			?membership_ = 1.0 / ( 1.0 + 2.71828 ^ ( -1.0 * $exponent * ($quantified_value - $inflection_point)));
-		} or {
-			$fuzzy_membership isa FuzzyBoundedLinearFraction, has curvature $curvature;
-			?membership_ = $quantified_value / ($quantified_value + $curvature);
-		};
-		?membership = ?membership_;
+		$fuzzy_expr (proposition: $proposition, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_unimodal_expression;
+		$expr (proposition: $proposition, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression,
+			has required_value $required_value;
+		?offset_value_ = -1.0 * $required_value;
 	} then {
-		$fuzzy_expression has membership ?membership;
+		$fuzzy_expr has offset_value ?offset_value_;
 	};
 
-rule fuzzy-expression-decay-membership-evaluation :
+rule as_close_as_possible_membership:
 	when {
-		$fuzzy_expression (decay_membership: $fuzzy_membership, term: $measure) isa fuzzy_decay_expression;
-		(measure:$measure, measurement_value: $mv) isa measurement, has latest true;
-		{
-			$mv isa ValueDouble, has double_value $quantified_value;
-		} or {
-			$mv isa ValueInteger, has integer_value $quantified_value;
-		};
-		{
-			$fuzzy_variable isa FuzzyExponentialDecay, has exponent $exponent;
-			?membership_ = 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
-		} or {
-			$fuzzy_variable isa FuzzyRationalDecay, has curvature $curvature;
-			?membership_ = $curvature / ($quantified_value + $curvature);
-		};
-		?membership = ?membership_;
+		$expr isa as_close_as_possible_expression;
+		(relaxed_expression: $expr) isa fuzzy_unimodal_expression,
+			has membership_degree $membership_degree;
 	} then {
-		$fuzzy_expression has membership ?membership;
+		$expr has $membership_degree;
+	};
+
+### as_many_as_possible_fuzzy_expression rules
+rule as_many_as_possible_fuzzy_expression:
+	when {
+		$expr (proposition: $proposition, fuzzy_set: $fuzzy_set) isa as_many_as_possible_expression;
+	} then {
+		(proposition: $proposition, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_ascend_expression;
+	};
+
+rule as_many_as_possible_membership:
+	when {
+		$expr isa as_many_as_possible_expression;
+		(relaxed_expression: $expr) isa fuzzy_ascend_expression,
+			has membership_degree $membership_degree;
+	} then {
+		$expr has $membership_degree;
+	};
+
+### as_few_as_possible_fuzzy_expression rules
+rule as_few_as_possible_fuzzy_expression:
+	when {
+		$expr (proposition: $proposition, fuzzy_set: $fuzzy_set) isa as_few_as_possible_expression;
+	} then {
+		(proposition: $proposition, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_decay_expression;
+	};
+
+rule as_few_as_possible_membership:
+	when {
+		$expr isa as_few_as_possible_expression;
+		(relaxed_expression: $expr) isa fuzzy_decay_expression,
+			has membership_degree $membership_degree;
+	} then {
+		$expr has $membership_degree;
+	};
+
+### TODO: freq_as_close_as_possible_expression rules
+### TODO: as_early_as_possible_expression rules
+### TODO: as_late_as_possible_expression rules
+
+## relaxed_fuzzy_expression_fulfillment
+
+rule fuzzy_expression_fulfillment:
+	when {
+		$fuzzy_expression isa fuzzy_expression,
+			has membership_degree $membership_degree;
+		?fulfillment_ = $membership_degree;
+	} then {
+		$fuzzy_expression has expression_fulfillment ?fulfillment_;
+	};
+
+rule relaxed_fuzzy_expression_fulfillment:
+	when {
+		$expr isa relaxed_fuzzy_expression;
+		(relaxed_expression: $expr) isa fuzzy_expression,
+			has expression_fulfillment $fulfillment;
+	} then {
+		$expr has $fulfillment;
 	};
 
 ## expressions fulfillment rules
-rule shall-expression-fulfillment :
+
+#  shall_expression: returns min fulfillment among its operands.
+rule shall_expression_fulfillment :
 	when {
-		$shall_expression (relaxed_expression: $relaxed_expression) isa shall_expression;
-		$relaxed_expression has fulfillment $fulfillment;
+		$shall_expression (expression: $expression) isa! shall_expression;
+		$expression has expression_fulfillment $fulfillment;
+		not {
+			$shall_expression (expression: $b) isa! shall_expression;
+			$b has expression_fulfillment $b_fulfillment;
+			$b_fulfillment < $fulfillment;
+		};
 	} then {
 		$shall_expression has $fulfillment;
 	};
 
-## membership and fulfillment are redundant
-rule fuzzy-expression-fulfillment :
+# may_expression: returns max fulfillment among its operands.
+rule may_expression_fulfillment :
 	when {
-		$fuzzy_expression isa fuzzy_expression, has membership $membership;
-		?fulfillment = $membership;
+		$may_expression (expression: $expression) isa! may_expression;
+		$expression has expression_fulfillment $fulfillment;
+
+		not {
+			$may_expression (expression: $b) isa! may_expression;
+			$b has expression_fulfillment $b_fulfillment;
+			$b_fulfillment > $fulfillment;
+		};
 	} then {
-		$fuzzy_expression has fulfillment ?fulfillment;
+		$may_expression has $fulfillment;
 	};
+
+## TODO: add rule for eventually_expression
+## TODO: add rule for until_expression
+## TODO: add rule for after_expression
+## TODO: add rule for before_expression
+## TODO: add rule for in_expression
 
 ## requirement fulfillment
-rule requirement-fulfillment :
+## interpreting multiple exoressions as a fuzzy and with resolution fulfillment = min(fulfillment1, fulfillment2, ...)
+rule requirement_fulfillment :
 	when {
-		$req (relaxed_expression: $relaxed_expression) isa relaxed_requirement;
-		$relaxed_expression has fulfillment $fulfillment;
+		$req (expression: $expression) isa relaxed_requirement;
+		$expression has expression_fulfillment $fulfillment;
+
+		not {
+			$req (expression: $b) isa relaxed_requirement;
+			$b has expression_fulfillment $b_fulfillment;
+			$b_fulfillment < $fulfillment;
+		};
+		?fulfillment_ = $fulfillment;
 	} then {
-		$req has $fulfillment;
+		$req has requirement_fulfillment ?fulfillment_;
 	};
 
-# Rules for checking whether an expression depends on a Measure
-rule relaxed_expression_measure_dependency_reflection:
-    when {
-        $expression (term: $measure) isa relaxed_expression;
-    } then {
-        (dependent: $expression, measure: $measure) isa measure_dependency;
-    };
+## crisp proposition fulfillment
+rule crisp_proposition_fulfillment_measure_bool_true:
+	when {
+		$propositional_expression (proposition: $measure) isa! propositional_expression;
+        (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
+        $mv isa! ValueBool, has bool_value true;
+	} then {
+		$propositional_expression has expression_fulfillment 1.0;
+	};
 
-rule relaxed_expression_measure_dependency_transitivity:
-    when {
-        $expression_parent (relaxed_expression: $expression_child) isa relaxed_expression;
-        (dependent: $expression_child, measure: $measure) isa measure_dependency;
-    } then {
-        (dependent: $expression_parent, measure: $measure) isa measure_dependency;
-    };
+rule crisp_proposition_fulfillment_measure_bool_false:
+	when {
+		$propositional_expression (proposition: $measure) isa! propositional_expression;
+        (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
+        $mv isa! ValueBool, has bool_value false;
+	} then {
+		$propositional_expression has expression_fulfillment 0.0;
+	};
 
-rule requirement_measure_dependency:
-    when {
-		$requirement (relaxed_expression: $expression) isa relaxed_requirement;
-        (dependent: $expression, measure: $measure) isa measure_dependency;
-    } then {
-        (dependent: $requirement, measure: $measure) isa measure_dependency;
-    };
+rule crisp_proposition_fulfillment_true:
+   when {
+    $propositional_expression (proposition: $value) isa! propositional_expression;
+	$value isa! ValueBool, has bool_value true;
+  } then {
+    $propositional_expression has expression_fulfillment 1.0;
+  };
+
+rule crisp_proposition_fulfillment_false:
+  when {
+    $propositional_expression (proposition: $value) isa! propositional_expression;
+	$value isa! ValueBool, has bool_value false;
+  } then {
+    $propositional_expression has expression_fulfillment 0.0;
+  };
