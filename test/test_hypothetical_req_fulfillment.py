@@ -32,7 +32,7 @@ def kb_interface():
             'schemas/relaxed/relaxed_model.tql',
             'schemas/tactics_model/tactics_model.tql',
             'schemas/discover_tactics_model/discover_tactics_model.tql',
-            'schemas/tactics_model/discover_hypothetical_req_fulfillment.tql'],
+            'schemas/discover_hypothetical_req_fulfillment/discover_hypothetical_req_fulfillment.tql'],
         ['schemas/ros_model/ros_model_example.tql',
             'schemas/tactics_model/tactics_example.tql',
             'schemas/relaxed/relaxed_mirte_example.tql',
