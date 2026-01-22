@@ -5,10 +5,13 @@ expression_name sub attribute,
 expression_satisfied sub attribute,
     value boolean;
 
-# logical expressions
-logical_expression sub relation,
+expression sub relation,
     abstract,
-    owns expression_name @unique,  # to make it possible to query the expression
+    owns expression_name @unique;  # to make it possible to query the expression
+
+# logical expressions
+logical_expression sub expression,
+    abstract,
     owns expression_satisfied;
 
 ## negation expression
@@ -25,7 +28,7 @@ atomic_expression sub logical_expression,
     plays or_expression:expression;
 
 propositional_expression sub atomic_expression,
-	relates proposition;
+	relates term;
 
 comparison_expression sub atomic_expression,
     abstract,
@@ -42,8 +45,6 @@ not_equal sub comparison_expression;
 ## compound expression
 compound_expression sub logical_expression,
     abstract;
-    # relates expression;
-    # plays compound_expression:expression;
 
 and_expression sub compound_expression,
     relates expression;
@@ -60,8 +61,8 @@ Measure plays comparison_expression:rhs_value;
 Value plays comparison_expression:lhs_value;
 Value plays comparison_expression:rhs_value;
 
-ValueBool plays propositional_expression:proposition;
-Measure plays propositional_expression:proposition;
+ValueBool plays propositional_expression:term;
+Measure plays propositional_expression:term;
 
 ## Rules to infer whether an expression is satisfied
 rule propositional_expression_not_satisfied :
@@ -87,7 +88,7 @@ rule comparison_expression_not_satisfied :
 ### Rules for propositional_expression
 rule propositional_expression_value_satisfied :
 	when {
-		$propositional_expression (proposition: $value) isa propositional_expression;
+		$propositional_expression (term: $value) isa propositional_expression;
         $value isa ValueBool, has bool_value true;
 	} then {
 		$propositional_expression has expression_satisfied true;
@@ -95,7 +96,7 @@ rule propositional_expression_value_satisfied :
 
 rule propositional_expression_measure_satisfied :
 	when {
-		$propositional_expression (proposition: $measure) isa propositional_expression;
+		$propositional_expression (term: $measure) isa propositional_expression;
 		(measure:$measure, measurement_value: $mv) isa measurement, has latest true;
         $mv isa ValueBool, has bool_value true;
 	} then {

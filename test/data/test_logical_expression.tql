@@ -65,14 +65,14 @@ $measure_bool_true isa Measure, has measure_name 'measure_bool_true';
     has measurement_time 2025-08-06T10:57:56.666;
 
 # proposition expressions
-$bool_false_prop_exp (proposition: $bool_false) isa propositional_expression, has expression_name 'bool_false_prop_exp';
-$bool_true_prop_exp (proposition: $bool_true) isa propositional_expression, has expression_name 'bool_true_prop_exp';
+$bool_false_prop_exp (term: $bool_false) isa propositional_expression, has expression_name 'bool_false_prop_exp';
+$bool_true_prop_exp (term: $bool_true) isa propositional_expression, has expression_name 'bool_true_prop_exp';
 
-$false_measure_prop_exp (proposition: $measure_bool_false) isa propositional_expression, has expression_name 'false_measure_prop_exp';
-$true_measure_prop_exp (proposition: $measure_bool_true) isa propositional_expression, has expression_name 'true_measure_prop_exp';
+$false_measure_prop_exp (term: $measure_bool_false) isa propositional_expression, has expression_name 'false_measure_prop_exp';
+$true_measure_prop_exp (term: $measure_bool_true) isa propositional_expression, has expression_name 'true_measure_prop_exp';
 
 $measure_no_measurement isa Measure, has measure_name 'measure_no_measurement';
-(proposition: $measure_no_measurement) isa propositional_expression, has expression_name 'no_measure_prop_exp';
+(term: $measure_no_measurement) isa propositional_expression, has expression_name 'no_measure_prop_exp';
 
 # not expressions
 $not_false_expr (expression: $bool_false_prop_exp) isa not_expression, has expression_name 'not_false_expr';

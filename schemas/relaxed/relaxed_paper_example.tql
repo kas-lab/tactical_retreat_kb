@@ -8,7 +8,7 @@ $smart_house isa System, has system_name "Smart House";
 $foodpackage_measure isa Measure,
 	has measure_name "foodpackage_measure",
 	has description "amount of foodpackages";
-$foodpackage_measure_expr (proposition: $foodpackage_measure) isa propositional_expression;
+$foodpackage_measure_expr (term: $foodpackage_measure) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_foodpackage isa ValueDouble, has double_value 9.0;
@@ -30,7 +30,7 @@ $r1_1 (system: $smart_house, expression: $food_shall_expression) isa relaxed_req
 $dietplan_measure isa Measure,
 	has measure_name "dietplan_measure",
 	has description "dietplan";
-$dietplan_measure_expr (proposition: $dietplan_measure) isa propositional_expression;
+$dietplan_measure_expr (term: $dietplan_measure) isa propositional_expression;
 
 $current_dietplan isa ValueDouble, has double_value 1820.0;
 (measure:$dietplan_measure, measurement_value: $current_dietplan) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
@@ -48,7 +48,7 @@ $calories_dietplan_shall_expression (expression: $calories_as_close_expression) 
 $calorie_consumption_measure isa Measure,
 	has measure_name "calorie_consumption_measure",
 	has description "The fridge adjusts the dietplan in line with Mary’s actual calorie consumption. The measure indicates whether the fridge is adapting, its values are true/false";
-$calorie_consumption_expr (proposition: $calorie_consumption_measure) isa propositional_expression;
+$calorie_consumption_expr (term: $calorie_consumption_measure) isa propositional_expression;
 
 $current_calorie_consumption isa ValueBool, has bool_value true;
 (measure:$calorie_consumption_measure, measurement_value: $current_calorie_consumption) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
@@ -65,7 +65,7 @@ $r1_2 (system: $smart_house, expression: $calories_dietplan_shall_expression, ex
 $liquid_intake_measure isa Measure,
 	has measure_name "liquid_intake_measure",
 	has description "The system ensures a liquid intake";
-$liquid_intake_expr (proposition: $liquid_intake_measure) isa propositional_expression;
+$liquid_intake_expr (term: $liquid_intake_measure) isa propositional_expression;
 $current_liquid_intake isa ValueDouble, has double_value 1.9;
 (measure:$liquid_intake_measure, measurement_value: $current_liquid_intake) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
@@ -83,7 +83,7 @@ $liquid_intake_shall_expression (expression: $liquid_intake_as_close_expression)
 $minimum_liquid_intake_measure isa Measure,
 	has measure_name "minimum_liquid_intake_measure",
 	has description "The system ensures minimum liquid intake";
-$minimum_liquid_intake_measure_expr (proposition: $minimum_liquid_intake_measure) isa propositional_expression;
+$minimum_liquid_intake_measure_expr (term: $minimum_liquid_intake_measure) isa propositional_expression;
 $current_minimum_liquid_intake isa ValueDouble, has double_value 1.5;
 (measure:$minimum_liquid_intake_measure , measurement_value: $current_minimum_liquid_intake) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
@@ -100,7 +100,7 @@ $r1_3 (system: $smart_house, expression: $liquid_intake_shall_expression, expres
 $energy_comsumption_measure isa Measure,
 	has measure_name "energy_comsumption_measure",
 	has description "The system consumes energy during normal operation";
-$energy_comsumption_measure_expr (proposition: $energy_comsumption_measure) isa propositional_expression;
+$energy_comsumption_measure_expr (term: $energy_comsumption_measure) isa propositional_expression;
 $current_energy_comsumption isa ValueDouble, has double_value 500;
 (measure:$energy_comsumption_measure, measurement_value: $current_energy_comsumption) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
