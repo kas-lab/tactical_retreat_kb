@@ -313,11 +313,11 @@ rule fuzzy_or_operator :
 rule fuzzy_and_operator :
 	when {
 		$and_expr (expression: $a) isa! fuzzy_and;
-		$a has membership $a_membership;
+		$a has membership_degree $a_membership;
 
 		not {
 			$and_expr (expression: $b) isa! fuzzy_and;
-			$b has membership $b_membership;
+			$b has membership_degree $b_membership;
 			$b_membership < $a_membership;
 		};
 	} then {
