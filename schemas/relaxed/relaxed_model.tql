@@ -138,23 +138,18 @@ UnimodalSet plays freq_as_close_as_possible_expression:fuzzy_set;
 # instead of one by one
 propositional_expression plays atomic_relaxed_expression:expression;
 
-propositional_expression plays shall_expression:expression;
-propositional_expression plays may_expression:expression;
+logical_expression plays shall_expression:expression;
+logical_expression plays may_expression:expression;
 
+# TODO: can logical_expression play these roles?
 propositional_expression plays until_expression:before;
 propositional_expression plays until_expression:after;
 propositional_expression plays relaxed_fuzzy_expression:proposition;
 
 propositional_expression owns fulfillment;
 
-fuzzy_or plays shall_expression:expression;
-fuzzy_or plays may_expression:expression;
-
-fuzzy_and plays shall_expression:expression;
-fuzzy_and plays may_expression:expression;
-
-fuzzy_not plays shall_expression:expression;
-fuzzy_not plays may_expression:expression;
+fuzzy_operator plays shall_expression:expression;
+fuzzy_operator plays may_expression:expression;
 
 fuzzy_expression owns fulfillment;
 
