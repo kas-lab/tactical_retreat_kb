@@ -207,6 +207,7 @@ def kb_interface_test_model():
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
             'schemas/logical_expressions/logical_expression.tql',
+            'schemas/logical_expressions/fuzzy_expression.tql',
             'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
             'schemas/relaxed/relaxed_model.tql',
