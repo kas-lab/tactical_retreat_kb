@@ -8,7 +8,7 @@ $fake_req (system: $fake_system) isa relaxed_requirement,
 $fake_measure isa Measure,
 	has measure_name "fake_measure",
 	has description "The robot's velocity";
-$fake_measure_expr (term: $fake_measure) isa propositional_expression;
+$fake_measure_expr (atom: $fake_measure) isa propositional_expression;
 
 $current_fake_measure isa ValueDouble, has double_value 0.22221;
 (measure:$fake_measure , measurement_value: $current_fake_measure) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
@@ -25,7 +25,7 @@ $fake_as_close_expression (fuzzy_set: $triangular_set, proposition: $fake_measur
 $fake_measure_2 isa Measure,
 	has measure_name "fake_measure_2",
 	has description "The system consumes energy during normal operation";
-$fake_measure_2_expr (term: $fake_measure_2) isa propositional_expression;
+$fake_measure_2_expr (atom: $fake_measure_2) isa propositional_expression;
 $current_fake_measure_2 isa ValueDouble, has double_value 500;
 (measure:$fake_measure_2, measurement_value: $current_fake_measure_2) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
@@ -39,7 +39,7 @@ $fake_as_few_as_possible_expr (fuzzy_set: $fake_measure_2_set, proposition: $fak
 $fake_measure_3 isa Measure,
 	has measure_name "fake_measure_3",
 	has description "amount of foodpackages";
-$fake_measure_3_expr (term: $fake_measure_3) isa propositional_expression;
+$fake_measure_3_expr (atom: $fake_measure_3) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_fake_measure_3 isa ValueDouble, has double_value 9.0;

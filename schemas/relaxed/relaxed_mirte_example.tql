@@ -8,7 +8,7 @@ $mirte isa System, has system_name "Mirte";
 $velocity_measure isa Measure,
 	has measure_name "velocity_measure",
 	has description "The robot's velocity";
-$velocity_measure_expr (term: $velocity_measure) isa propositional_expression;
+$velocity_measure_expr (atom: $velocity_measure) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_vel isa ValueDouble, has double_value 0.22221;
@@ -30,7 +30,7 @@ $nearest_object_measure isa Measure,
 $movement_power_measure isa Measure,
 	has measure_name "movement_power_measure",
 	has description "The robot's velocity";
-$movement_power_measure_expr (term: $movement_power_measure) isa propositional_expression;
+$movement_power_measure_expr (atom: $movement_power_measure) isa propositional_expression;
 
 $current_mv_pwer isa ValueDouble, has double_value 0.3;
 (measure:$movement_power_measure , measurement_value: $current_mv_pwer) isa measurement, has measurement_time 2025-08-06T10:57:56.666;

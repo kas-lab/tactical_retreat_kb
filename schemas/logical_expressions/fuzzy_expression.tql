@@ -134,7 +134,7 @@ propositional_expression plays fuzzy_comparison_expression:proposition;
 
 rule quantified_value_measure_double:
 	when {
-		$propositional_expression (term: $measure) isa! propositional_expression;
+		$propositional_expression (atom: $measure) isa! propositional_expression;
         (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
         $mv isa! ValueDouble, has double_value $measure_double_value;
 		?double_value_ = $measure_double_value;

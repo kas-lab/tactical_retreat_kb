@@ -28,7 +28,7 @@ atomic_expression sub logical_expression,
     plays or_expression:expression;
 
 propositional_expression sub atomic_expression,
-	relates term;
+	relates atom;
 
 comparison_expression sub atomic_expression,
     abstract,
@@ -61,8 +61,8 @@ Measure plays comparison_expression:rhs_value;
 Value plays comparison_expression:lhs_value;
 Value plays comparison_expression:rhs_value;
 
-ValueBool plays propositional_expression:term;
-Measure plays propositional_expression:term;
+ValueBool plays propositional_expression:atom;
+Measure plays propositional_expression:atom;
 
 ## Rules to infer whether an expression is satisfied
 rule propositional_expression_not_satisfied :
@@ -88,7 +88,7 @@ rule comparison_expression_not_satisfied :
 ### Rules for propositional_expression
 rule propositional_expression_value_satisfied :
 	when {
-		$propositional_expression (term: $value) isa propositional_expression;
+		$propositional_expression (atom: $value) isa propositional_expression;
         $value isa ValueBool, has bool_value true;
 	} then {
 		$propositional_expression has expression_satisfied true;
@@ -96,7 +96,7 @@ rule propositional_expression_value_satisfied :
 
 rule propositional_expression_measure_satisfied :
 	when {
-		$propositional_expression (term: $measure) isa propositional_expression;
+		$propositional_expression (atom: $measure) isa propositional_expression;
 		(measure:$measure, measurement_value: $mv) isa measurement, has latest true;
         $mv isa ValueBool, has bool_value true;
 	} then {

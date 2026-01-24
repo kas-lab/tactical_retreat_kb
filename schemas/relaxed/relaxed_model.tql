@@ -294,7 +294,7 @@ rule requirement_fulfillment :
 ## crisp proposition fulfillment
 rule crisp_proposition_fulfillment_measure_bool_true:
 	when {
-		$propositional_expression (term: $measure) isa! propositional_expression;
+		$propositional_expression (atom: $measure) isa! propositional_expression;
         (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
         $mv isa! ValueBool, has bool_value true;
 	} then {
@@ -303,7 +303,7 @@ rule crisp_proposition_fulfillment_measure_bool_true:
 
 rule crisp_proposition_fulfillment_measure_bool_false:
 	when {
-		$propositional_expression (term: $measure) isa! propositional_expression;
+		$propositional_expression (atom: $measure) isa! propositional_expression;
         (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
         $mv isa! ValueBool, has bool_value false;
 	} then {
@@ -312,7 +312,7 @@ rule crisp_proposition_fulfillment_measure_bool_false:
 
 rule crisp_proposition_fulfillment_true:
    when {
-    $propositional_expression (term: $value) isa! propositional_expression;
+    $propositional_expression (atom: $value) isa! propositional_expression;
 	$value isa! ValueBool, has bool_value true;
   } then {
     $propositional_expression has fulfillment 1.0;
@@ -320,7 +320,7 @@ rule crisp_proposition_fulfillment_true:
 
 rule crisp_proposition_fulfillment_false:
   when {
-    $propositional_expression (term: $value) isa! propositional_expression;
+    $propositional_expression (atom: $value) isa! propositional_expression;
 	$value isa! ValueBool, has bool_value false;
   } then {
     $propositional_expression has fulfillment 0.0;

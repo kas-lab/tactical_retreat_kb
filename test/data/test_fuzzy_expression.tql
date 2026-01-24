@@ -14,11 +14,11 @@ $measure_bool_true isa Measure, has measure_name 'measure_bool_true';
     has measurement_time 2025-08-06T10:57:56.666;
 
 # proposition expressions
-$bool_false_prop_exp (term: $bool_false) isa propositional_expression, has expression_name 'bool_false_prop_exp';
-$bool_true_prop_exp (term: $bool_true) isa propositional_expression, has expression_name 'bool_true_prop_exp';
+$bool_false_prop_exp (atom: $bool_false) isa propositional_expression, has expression_name 'bool_false_prop_exp';
+$bool_true_prop_exp (atom: $bool_true) isa propositional_expression, has expression_name 'bool_true_prop_exp';
 
-$false_measure_prop_exp (term: $measure_bool_false) isa propositional_expression, has expression_name 'false_measure_prop_exp';
-$true_measure_prop_exp (term: $measure_bool_true) isa propositional_expression, has expression_name 'true_measure_prop_exp';
+$false_measure_prop_exp (atom: $measure_bool_false) isa propositional_expression, has expression_name 'false_measure_prop_exp';
+$true_measure_prop_exp (atom: $measure_bool_true) isa propositional_expression, has expression_name 'true_measure_prop_exp';
 
 # Fuzzy logic
 
@@ -26,7 +26,7 @@ $true_measure_prop_exp (term: $measure_bool_true) isa propositional_expression, 
 $fuzzy_ascend_measure isa Measure,
 	has measure_name "fuzzy_ascend_measure",
 	has description "amount of foodpackages";
-$fuzzy_ascend_measure_expr (term: $fuzzy_ascend_measure) isa propositional_expression;
+$fuzzy_ascend_measure_expr (atom: $fuzzy_ascend_measure) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_fuzzy_ascend_measure isa ValueDouble, has double_value 9.0;
@@ -59,7 +59,7 @@ $fuzzy_ascend_expression_3 (fuzzy_set: $fuzzy_ascend_blf_set, proposition: $fuzz
 $fuzzy_unimodal_measure isa Measure,
 	has measure_name "fuzzy_unimodal_measure",
 	has description "The robot's velocity";
-$fuzzy_unimodal_measure_expr (term: $fuzzy_unimodal_measure) isa propositional_expression;
+$fuzzy_unimodal_measure_expr (atom: $fuzzy_unimodal_measure) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_fuzzy_unimodal_measure isa ValueDouble, has double_value 0.03779;
@@ -88,7 +88,7 @@ $fuzzy_unimodal_expr_2 (fuzzy_set: $fuzzy_unimodal_gaussian_set, proposition: $f
 $fuzzy_decay_measure isa Measure,
 	has measure_name "fuzzy_decay_measure",
 	has description "The system consumes energy during normal operation";
-$fuzzy_decay_measure_expr (term: $fuzzy_decay_measure) isa propositional_expression;
+$fuzzy_decay_measure_expr (atom: $fuzzy_decay_measure) isa propositional_expression;
 $current_fuzzy_decay_measure isa ValueDouble, has double_value 500;
 (measure:$fuzzy_decay_measure, measurement_value: $current_fuzzy_decay_measure) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
@@ -226,7 +226,7 @@ $fuzzy_and_11 (expression: $fuzzy_not_5, expression: $fuzzy_unimodal_expr_2) isa
 $fuzzy_unimodal_offset_measure isa Measure,
 	has measure_name "fuzzy_unimodal_offset_measure",
 	has description "The robot's velocity";
-$fuzzy_unimodal_offset_measure_expr (term: $fuzzy_unimodal_offset_measure) isa propositional_expression;
+$fuzzy_unimodal_offset_measure_expr (atom: $fuzzy_unimodal_offset_measure) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_fuzzy_unimodal_offset_measure isa ValueDouble, has double_value 0.22221;

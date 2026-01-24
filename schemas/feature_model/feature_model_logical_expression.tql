@@ -1,12 +1,12 @@
 define
 
 ## connection with logical_expression model
-Feature plays propositional_expression:term;
+Feature plays propositional_expression:atom;
 
 ### Rules for propositional_expression
 rule propositional_expression_feature_satisfied :
 	when {
-		$propositional_expression (term: $feature) isa propositional_expression;
+		$propositional_expression (atom: $feature) isa propositional_expression;
         $feature isa Feature, has selected true;
 	} then {
 		$propositional_expression has expression_satisfied true;
