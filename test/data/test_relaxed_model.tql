@@ -57,14 +57,14 @@ $fake_may_expression (
     expression: $fake_as_close_expression,
     expression: $fake_as_few_as_possible_expr,
     expression: $as_many_fake_measure_3_as_possible) isa may_expression,
-    has relaxed_expression_name 'fake_may_expression';
+    has expression_name 'fake_may_expression';
 
 # expected fulfillment min(0.92442, 0.900009528, 0.913378192) = 0.900009528
 $fake_shall_expression (
     expression: $fake_as_close_expression,
     expression: $fake_as_few_as_possible_expr,
     expression: $as_many_fake_measure_3_as_possible) isa shall_expression,
-    has relaxed_expression_name 'fake_shall_expression';
+    has expression_name 'fake_shall_expression';
 
 
 ### Requirements

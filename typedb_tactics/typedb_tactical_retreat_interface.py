@@ -1117,7 +1117,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query = f"""
             match
-                $fe isa fuzzy_expression, has fuzzy_expression_name '{expression_name}';
+                $fe isa fuzzy_expression, has expression_name '{expression_name}';
             fetch
                 $fe: membership_degree;
         """
@@ -1143,7 +1143,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         query = f"""
             match
                 $relaxed_expression isa relaxed_expression,
-                has relaxed_expression_name '{expression_name}';
+                has expression_name '{expression_name}';
             fetch
                 $relaxed_expression: expression_fulfillment;
         """

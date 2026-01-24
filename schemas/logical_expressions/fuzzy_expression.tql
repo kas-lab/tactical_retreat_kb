@@ -84,12 +84,9 @@ FuzzyRationalDecay sub DecaySet,
 	owns curvature;
 
 ### Fuzzy expressions
-fuzzy_expression_name sub attribute,
-	value string;
 
-fuzzy_expression sub relation,
+fuzzy_expression sub expression,
 	abstract,
-	owns fuzzy_expression_name @unique, # to enable querying (good for tests)
 	owns membership_degree,
 	owns quantified_value,
 	owns offset_value;

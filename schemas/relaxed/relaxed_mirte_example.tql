@@ -50,7 +50,7 @@ $velocity_as_close_expression (fuzzy_set: $velocity_set, proposition: $velocity_
 	has required_value 0.26;
 
 $velocity_shall_expression (expression: $velocity_as_close_expression) isa shall_expression,
-	has relaxed_expression_name 'velocity_shall_expression';  # used for tests only
+	has expression_name 'velocity_shall_expression';  # used for tests only
 
 # expected fulfillment 0.92442
 $velocity_requirement (system: $mirte, expression: $velocity_shall_expression) isa relaxed_requirement,
@@ -62,13 +62,13 @@ $velocity_requirement (system: $mirte, expression: $velocity_shall_expression) i
 
 $velocity_as_close_expression_2 (fuzzy_set: $velocity_set, proposition: $velocity_measure_expr) isa as_close_as_possible_expression,
 	has required_value 0.18,
-	has relaxed_expression_name 'velocity_as_close_expression_2';
+	has expression_name 'velocity_as_close_expression_2';
 
 $not_objects_close_exp (expression: $objects_close_measure_expr) isa fuzzy_not;
 $not_objects_or_velocity (expression: $not_objects_close_exp, expression: $velocity_as_close_expression_2) isa fuzzy_or;
 
 $velocity_shall_expression_2 (expression: $not_objects_or_velocity) isa shall_expression,
-	has relaxed_expression_name 'velocity_shall_expression_2';  # used for tests only
+	has expression_name 'velocity_shall_expression_2';  # used for tests only
 
 # expected fulfillment max(1- 1.0, m(0.22221 - 0.18)  ) = max(0.0, 0.91558) = 0.91558
 $velocity_requirement_objects_close (system: $mirte, expression: $velocity_shall_expression_2) isa relaxed_requirement,

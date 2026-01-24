@@ -5,8 +5,6 @@ system_name sub attribute,
 	value string;
 start_time sub attribute,
 	value datetime;
-relaxed_expression_name sub attribute,
-	value string;
 
 ### requirement attributes
 requirement_name sub attribute,
@@ -50,10 +48,9 @@ relaxed_requirement sub system_requirement,
 	owns requirement_fulfillment,
 	relates expression;
 
-relaxed_expression sub relation,
+relaxed_expression sub expression,
 	abstract,
 	owns expression_fulfillment,
-	owns relaxed_expression_name @unique, # to make it possible to query the expression
 	plays relaxed_requirement:expression;
 
 atomic_relaxed_expression sub relaxed_expression,
