@@ -26,7 +26,6 @@ $true_measure_prop_exp (atom: $measure_bool_true) isa propositional_expression, 
 $fuzzy_ascend_measure isa Measure,
 	has measure_name "fuzzy_ascend_measure",
 	has description "amount of foodpackages";
-$fuzzy_ascend_measure_expr (atom: $fuzzy_ascend_measure) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_fuzzy_ascend_measure isa ValueDouble, has double_value 9.0;
@@ -44,22 +43,21 @@ $fuzzy_ascend_blf_set isa FuzzyBoundedLinearFraction,
 	has curvature 0.5;
 
 # expected membership 0.913378192
-$fuzzy_ascend_expression_1 (fuzzy_set: $fuzzy_ascend_sigmoid_set, proposition: $fuzzy_ascend_measure_expr) isa fuzzy_ascend_expression,
+$fuzzy_ascend_expression_1 (fuzzy_set: $fuzzy_ascend_sigmoid_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
     has expression_name 'fuzzy_ascend_sigmoid_expression';
 
 # expected memberhsip 0.834700912
-$fuzzy_ascend_expression_2 (fuzzy_set: $fuzzy_ascend_exponential_saturation_set, proposition: $fuzzy_ascend_measure_expr) isa fuzzy_ascend_expression,
+$fuzzy_ascend_expression_2 (fuzzy_set: $fuzzy_ascend_exponential_saturation_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
     has expression_name 'fuzzy_ascend_exp_saturation_expression';
 
 # expected memberhsip 0.947368421
-$fuzzy_ascend_expression_3 (fuzzy_set: $fuzzy_ascend_blf_set, proposition: $fuzzy_ascend_measure_expr) isa fuzzy_ascend_expression,
+$fuzzy_ascend_expression_3 (fuzzy_set: $fuzzy_ascend_blf_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
     has expression_name 'fuzzy_ascend_blf_expression';
 
 ## fuzzy unimodal
 $fuzzy_unimodal_measure isa Measure,
 	has measure_name "fuzzy_unimodal_measure",
 	has description "The robot's velocity";
-$fuzzy_unimodal_measure_expr (atom: $fuzzy_unimodal_measure) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_fuzzy_unimodal_measure isa ValueDouble, has double_value 0.03779;
@@ -76,11 +74,11 @@ $fuzzy_unimodal_gaussian_set isa FuzzyGaussian,
     has sigma 0.1;
 
 # expected membership 0.92442
-$fuzzy_unimodal_expr_1 (fuzzy_set: $fuzzy_unimodal_triangular_set, proposition: $fuzzy_unimodal_measure_expr) isa fuzzy_unimodal_expression,
+$fuzzy_unimodal_expr_1 (fuzzy_set: $fuzzy_unimodal_triangular_set, term: $fuzzy_unimodal_measure) isa fuzzy_unimodal_expression,
     has expression_name 'fuzzy_unimodal_triangular_expression';
 
 # expected membership 0.931085511
-$fuzzy_unimodal_expr_2 (fuzzy_set: $fuzzy_unimodal_gaussian_set, proposition: $fuzzy_unimodal_measure_expr) isa fuzzy_unimodal_expression,
+$fuzzy_unimodal_expr_2 (fuzzy_set: $fuzzy_unimodal_gaussian_set, term: $fuzzy_unimodal_measure) isa fuzzy_unimodal_expression,
     has expression_name 'fuzzy_unimodal_gaussian_expression';
 
 ## fuzzy decay
@@ -88,7 +86,6 @@ $fuzzy_unimodal_expr_2 (fuzzy_set: $fuzzy_unimodal_gaussian_set, proposition: $f
 $fuzzy_decay_measure isa Measure,
 	has measure_name "fuzzy_decay_measure",
 	has description "The system consumes energy during normal operation";
-$fuzzy_decay_measure_expr (atom: $fuzzy_decay_measure) isa propositional_expression;
 $current_fuzzy_decay_measure isa ValueDouble, has double_value 500;
 (measure:$fuzzy_decay_measure, measurement_value: $current_fuzzy_decay_measure) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
@@ -99,11 +96,11 @@ $fuzzy_decay_rational_set isa FuzzyRationalDecay,
 	has curvature 2000;
 
 # expected membership 0.9
-$fuzzy_decay_expr_1 (fuzzy_set: $fuzzy_decay_exp_set, proposition: $fuzzy_decay_measure_expr) isa fuzzy_decay_expression,
+$fuzzy_decay_expr_1 (fuzzy_set: $fuzzy_decay_exp_set, term: $fuzzy_decay_measure) isa fuzzy_decay_expression,
     has expression_name 'fuzzy_decay_exp_expression';
 
 # expected membership 0.8
-$fuzzy_decay_expr_2 (fuzzy_set: $fuzzy_decay_rational_set, proposition: $fuzzy_decay_measure_expr) isa fuzzy_decay_expression,
+$fuzzy_decay_expr_2 (fuzzy_set: $fuzzy_decay_rational_set, term: $fuzzy_decay_measure) isa fuzzy_decay_expression,
     has expression_name 'fuzzy_decay_rational_expression';
 
 
@@ -226,7 +223,6 @@ $fuzzy_and_11 (expression: $fuzzy_not_5, expression: $fuzzy_unimodal_expr_2) isa
 $fuzzy_unimodal_offset_measure isa Measure,
 	has measure_name "fuzzy_unimodal_offset_measure",
 	has description "The robot's velocity";
-$fuzzy_unimodal_offset_measure_expr (atom: $fuzzy_unimodal_offset_measure) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_fuzzy_unimodal_offset_measure isa ValueDouble, has double_value 0.22221;
@@ -239,7 +235,7 @@ $fuzzy_unimodal_triangular_set_offset isa FuzzyTriangular,
 	has c 0.5;
 
 # expected membership 0.92442
-$fuzzy_unimodal_offset_expr_1 (fuzzy_set: $fuzzy_unimodal_triangular_set_offset, proposition: $fuzzy_unimodal_offset_measure_expr) isa fuzzy_unimodal_expression,
+$fuzzy_unimodal_offset_expr_1 (fuzzy_set: $fuzzy_unimodal_triangular_set_offset, term: $fuzzy_unimodal_offset_measure) isa fuzzy_unimodal_expression,
     has expression_name 'fuzzy_unimodal_offset_triangular_expression',
     has offset_value -0.26;
 

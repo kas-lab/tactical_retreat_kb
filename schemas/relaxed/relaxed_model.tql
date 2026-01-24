@@ -92,7 +92,7 @@ until_expression sub relaxed_expression,
 relaxed_fuzzy_expression sub relaxed_expression,
 	abstract,
 	owns membership_degree,
-	relates proposition,
+	relates term,
 	plays shall_expression:expression,
 	plays may_expression:expression,
 	plays atomic_relaxed_expression:expression;
@@ -134,7 +134,7 @@ UnimodalSet plays as_close_as_possible_expression:fuzzy_set;
 UnimodalSet plays freq_as_close_as_possible_expression:fuzzy_set;
 
 # connection to logical_expression model
-# TODO: check if we can just make proposition_expression play the role of a proposition in relaxed_expression
+# TODO: check if we can just make proposition_expression play the role of a expression in relaxed_expression
 # instead of one by one
 propositional_expression plays atomic_relaxed_expression:expression;
 
@@ -144,7 +144,10 @@ logical_expression plays may_expression:expression;
 # TODO: can logical_expression play these roles?
 propositional_expression plays until_expression:before;
 propositional_expression plays until_expression:after;
-propositional_expression plays relaxed_fuzzy_expression:proposition;
+
+ValueInteger plays relaxed_fuzzy_expression:term;
+ValueDouble plays relaxed_fuzzy_expression:term;
+Measure plays relaxed_fuzzy_expression:term;
 
 propositional_expression owns fulfillment;
 
@@ -155,15 +158,15 @@ fuzzy_expression owns fulfillment;
 
 rule as_close_as_possible_fuzzy_expression:
 	when {
-		$expr (proposition: $proposition, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression;
+		$expr (term: $term, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression;
 	} then {
-		(proposition: $proposition, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_unimodal_expression;
+		(term: $term, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_unimodal_expression;
 	};
 
 rule as_close_as_possible_fuzzy_expression_offset:
 	when {
-		$fuzzy_expr (proposition: $proposition, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_unimodal_expression;
-		$expr (proposition: $proposition, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression,
+		$fuzzy_expr (term: $term, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_unimodal_expression;
+		$expr (term: $term, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression,
 			has required_value $required_value;
 		?offset_value_ = -1.0 * $required_value;
 	} then {
@@ -182,9 +185,9 @@ rule as_close_as_possible_membership:
 ### as_many_as_possible_fuzzy_expression rules
 rule as_many_as_possible_fuzzy_expression:
 	when {
-		$expr (proposition: $proposition, fuzzy_set: $fuzzy_set) isa as_many_as_possible_expression;
+		$expr (term: $term, fuzzy_set: $fuzzy_set) isa as_many_as_possible_expression;
 	} then {
-		(proposition: $proposition, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_ascend_expression;
+		(term: $term, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_ascend_expression;
 	};
 
 rule as_many_as_possible_membership:
@@ -199,9 +202,9 @@ rule as_many_as_possible_membership:
 ### as_few_as_possible_fuzzy_expression rules
 rule as_few_as_possible_fuzzy_expression:
 	when {
-		$expr (proposition: $proposition, fuzzy_set: $fuzzy_set) isa as_few_as_possible_expression;
+		$expr (term: $term, fuzzy_set: $fuzzy_set) isa as_few_as_possible_expression;
 	} then {
-		(proposition: $proposition, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_decay_expression;
+		(term: $term, fuzzy_set:$fuzzy_set, relaxed_expression: $expr) isa fuzzy_decay_expression;
 	};
 
 rule as_few_as_possible_membership:

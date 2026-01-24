@@ -8,7 +8,6 @@ $smart_house isa System, has system_name "Smart House";
 $foodpackage_measure isa Measure,
 	has measure_name "foodpackage_measure",
 	has description "amount of foodpackages";
-$foodpackage_measure_expr (atom: $foodpackage_measure) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_foodpackage isa ValueDouble, has double_value 9.0;
@@ -18,7 +17,7 @@ $food_packages_set isa FuzzySigmoid,
 	has inflection_point 5.0,
 	has exponent 0.5889;
 
-$as_many_food_as_possible (fuzzy_set: $food_packages_set, proposition: $foodpackage_measure_expr) isa as_many_as_possible_expression;
+$as_many_food_as_possible (fuzzy_set: $food_packages_set, term: $foodpackage_measure) isa as_many_as_possible_expression;
 $food_shall_expression (expression: $as_many_food_as_possible) isa shall_expression;
 
 # expected fulfillment 0.913378192
@@ -30,7 +29,6 @@ $r1_1 (system: $smart_house, expression: $food_shall_expression) isa relaxed_req
 $dietplan_measure isa Measure,
 	has measure_name "dietplan_measure",
 	has description "dietplan";
-$dietplan_measure_expr (atom: $dietplan_measure) isa propositional_expression;
 
 $current_dietplan isa ValueDouble, has double_value 1820.0;
 (measure:$dietplan_measure, measurement_value: $current_dietplan) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
@@ -40,7 +38,7 @@ $calories_set isa FuzzyGaussian,
 	has sigma 100;
 
 # expected fulfillment 0.980198686
-$calories_as_close_expression (fuzzy_set: $calories_set, proposition: $dietplan_measure_expr) isa as_close_as_possible_expression,
+$calories_as_close_expression (fuzzy_set: $calories_set, term: $dietplan_measure) isa as_close_as_possible_expression,
 	has required_value 1800.0;
 
 $calories_dietplan_shall_expression (expression: $calories_as_close_expression) isa shall_expression;
@@ -65,7 +63,6 @@ $r1_2 (system: $smart_house, expression: $calories_dietplan_shall_expression, ex
 $liquid_intake_measure isa Measure,
 	has measure_name "liquid_intake_measure",
 	has description "The system ensures a liquid intake";
-$liquid_intake_expr (atom: $liquid_intake_measure) isa propositional_expression;
 $current_liquid_intake isa ValueDouble, has double_value 1.9;
 (measure:$liquid_intake_measure, measurement_value: $current_liquid_intake) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
@@ -74,7 +71,7 @@ $liquid_set isa FuzzyTriangular,
 	has b 0.0,
 	has c 0.5;
 
-$liquid_intake_as_close_expression (fuzzy_set: $liquid_set, proposition: $liquid_intake_expr) isa as_close_as_possible_expression,
+$liquid_intake_as_close_expression (fuzzy_set: $liquid_set, term: $liquid_intake_measure) isa as_close_as_possible_expression,
 	has required_value 2.0;
 
 # expected fulfillment 0.8
@@ -100,14 +97,13 @@ $r1_3 (system: $smart_house, expression: $liquid_intake_shall_expression, expres
 $energy_comsumption_measure isa Measure,
 	has measure_name "energy_comsumption_measure",
 	has description "The system consumes energy during normal operation";
-$energy_comsumption_measure_expr (atom: $energy_comsumption_measure) isa propositional_expression;
 $current_energy_comsumption isa ValueDouble, has double_value 500;
 (measure:$energy_comsumption_measure, measurement_value: $current_energy_comsumption) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
 
 $energy_comsumption_set isa FuzzyExponentialDecay,
 	has exponent 0.0002107;
 
-$as_few_energy_as_possible (fuzzy_set: $energy_comsumption_set, proposition: $energy_comsumption_measure_expr) isa as_few_as_possible_expression;
+$as_few_energy_as_possible (fuzzy_set: $energy_comsumption_set, term: $energy_comsumption_measure) isa as_few_as_possible_expression;
 $energy_shall_expression (expression: $as_few_energy_as_possible) isa shall_expression;
 
 # expected fulfillment 0.900009528

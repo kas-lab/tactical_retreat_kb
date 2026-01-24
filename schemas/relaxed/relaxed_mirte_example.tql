@@ -8,7 +8,6 @@ $mirte isa System, has system_name "Mirte";
 $velocity_measure isa Measure,
 	has measure_name "velocity_measure",
 	has description "The robot's velocity";
-$velocity_measure_expr (atom: $velocity_measure) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_vel isa ValueDouble, has double_value 0.22221;
@@ -30,7 +29,6 @@ $nearest_object_measure isa Measure,
 $movement_power_measure isa Measure,
 	has measure_name "movement_power_measure",
 	has description "The robot's velocity";
-$movement_power_measure_expr (atom: $movement_power_measure) isa propositional_expression;
 
 $current_mv_pwer isa ValueDouble, has double_value 0.3;
 (measure:$movement_power_measure , measurement_value: $current_mv_pwer) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
@@ -46,7 +44,7 @@ $velocity_set isa FuzzyTriangular,
 	has b 0.0,
 	has c 0.5;
 
-$velocity_as_close_expression (fuzzy_set: $velocity_set, proposition: $velocity_measure_expr) isa as_close_as_possible_expression,
+$velocity_as_close_expression (fuzzy_set: $velocity_set, term: $velocity_measure) isa as_close_as_possible_expression,
 	has required_value 0.26;
 
 $velocity_shall_expression (expression: $velocity_as_close_expression) isa shall_expression,
@@ -60,7 +58,7 @@ $velocity_requirement (system: $mirte, expression: $velocity_shall_expression) i
 
 ## R1.2 Velocity with obstacles
 
-$velocity_as_close_expression_2 (fuzzy_set: $velocity_set, proposition: $velocity_measure_expr) isa as_close_as_possible_expression,
+$velocity_as_close_expression_2 (fuzzy_set: $velocity_set, term: $velocity_measure) isa as_close_as_possible_expression,
 	has required_value 0.18,
 	has expression_name 'velocity_as_close_expression_2';
 
@@ -80,7 +78,7 @@ $velocity_requirement_objects_close (system: $mirte, expression: $velocity_shall
 $mv_pwr_fuzzy_set isa FuzzyExponentialDecay,
 	has exponent 0.2;
 
-$as_few_mv_pwr_as_possible (fuzzy_set: $mv_pwr_fuzzy_set, proposition: $movement_power_measure_expr) isa as_few_as_possible_expression;
+$as_few_mv_pwr_as_possible (fuzzy_set: $mv_pwr_fuzzy_set, term: $movement_power_measure) isa as_few_as_possible_expression;
 $mv_pwr_shall_expression (expression: $as_few_mv_pwr_as_possible) isa shall_expression;
 
 $mv_power_requirement (system: $mirte, expression: $mv_pwr_shall_expression) isa relaxed_requirement,
