@@ -13,9 +13,8 @@ description sub attribute,
 	value string;
 in_effect sub attribute,
 	value boolean;
-expression_fulfillment sub attribute,
-	value double;
-requirement_fulfillment sub attribute,
+
+fulfillment sub attribute,
 	value double;
 
 ### event expr attributes
@@ -45,12 +44,12 @@ system_requirement sub relation,
 relaxed_requirement sub system_requirement,
 	owns requirement_name @key,
 	owns description,
-	owns requirement_fulfillment,
+	owns fulfillment,
 	relates expression;
 
 relaxed_expression sub expression,
 	abstract,
-	owns expression_fulfillment,
+	owns fulfillment,
 	plays relaxed_requirement:expression;
 
 atomic_relaxed_expression sub relaxed_expression,
@@ -146,7 +145,7 @@ propositional_expression plays until_expression:before;
 propositional_expression plays until_expression:after;
 propositional_expression plays relaxed_fuzzy_expression:proposition;
 
-propositional_expression owns expression_fulfillment;
+propositional_expression owns fulfillment;
 
 fuzzy_or plays shall_expression:expression;
 fuzzy_or plays may_expression:expression;
@@ -157,7 +156,7 @@ fuzzy_and plays may_expression:expression;
 fuzzy_not plays shall_expression:expression;
 fuzzy_not plays may_expression:expression;
 
-fuzzy_expression owns expression_fulfillment;
+fuzzy_expression owns fulfillment;
 
 rule as_close_as_possible_fuzzy_expression:
 	when {
@@ -223,22 +222,22 @@ rule as_few_as_possible_membership:
 ### TODO: as_early_as_possible_expression rules
 ### TODO: as_late_as_possible_expression rules
 
-## relaxed_fuzzy_expression_fulfillment
+## relaxed_fuzzy_fulfillment
 
-rule fuzzy_expression_fulfillment:
+rule fuzzy_fulfillment:
 	when {
 		$fuzzy_expression isa fuzzy_expression,
 			has membership_degree $membership_degree;
 		?fulfillment_ = $membership_degree;
 	} then {
-		$fuzzy_expression has expression_fulfillment ?fulfillment_;
+		$fuzzy_expression has fulfillment ?fulfillment_;
 	};
 
-rule relaxed_fuzzy_expression_fulfillment:
+rule relaxed_fuzzy_fulfillment:
 	when {
 		$expr isa relaxed_fuzzy_expression;
 		(relaxed_expression: $expr) isa fuzzy_expression,
-			has expression_fulfillment $fulfillment;
+			has fulfillment $fulfillment;
 	} then {
 		$expr has $fulfillment;
 	};
@@ -249,10 +248,10 @@ rule relaxed_fuzzy_expression_fulfillment:
 rule shall_expression_fulfillment :
 	when {
 		$shall_expression (expression: $expression) isa! shall_expression;
-		$expression has expression_fulfillment $fulfillment;
+		$expression has fulfillment $fulfillment;
 		not {
 			$shall_expression (expression: $b) isa! shall_expression;
-			$b has expression_fulfillment $b_fulfillment;
+			$b has fulfillment $b_fulfillment;
 			$b_fulfillment < $fulfillment;
 		};
 	} then {
@@ -263,11 +262,11 @@ rule shall_expression_fulfillment :
 rule may_expression_fulfillment :
 	when {
 		$may_expression (expression: $expression) isa! may_expression;
-		$expression has expression_fulfillment $fulfillment;
+		$expression has fulfillment $fulfillment;
 
 		not {
 			$may_expression (expression: $b) isa! may_expression;
-			$b has expression_fulfillment $b_fulfillment;
+			$b has fulfillment $b_fulfillment;
 			$b_fulfillment > $fulfillment;
 		};
 	} then {
@@ -285,16 +284,16 @@ rule may_expression_fulfillment :
 rule requirement_fulfillment :
 	when {
 		$req (expression: $expression) isa relaxed_requirement;
-		$expression has expression_fulfillment $fulfillment;
+		$expression has fulfillment $fulfillment;
 
 		not {
 			$req (expression: $b) isa relaxed_requirement;
-			$b has expression_fulfillment $b_fulfillment;
+			$b has fulfillment $b_fulfillment;
 			$b_fulfillment < $fulfillment;
 		};
 		?fulfillment_ = $fulfillment;
 	} then {
-		$req has requirement_fulfillment ?fulfillment_;
+		$req has fulfillment ?fulfillment_;
 	};
 
 ## crisp proposition fulfillment
@@ -304,7 +303,7 @@ rule crisp_proposition_fulfillment_measure_bool_true:
         (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
         $mv isa! ValueBool, has bool_value true;
 	} then {
-		$propositional_expression has expression_fulfillment 1.0;
+		$propositional_expression has fulfillment 1.0;
 	};
 
 rule crisp_proposition_fulfillment_measure_bool_false:
@@ -313,7 +312,7 @@ rule crisp_proposition_fulfillment_measure_bool_false:
         (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
         $mv isa! ValueBool, has bool_value false;
 	} then {
-		$propositional_expression has expression_fulfillment 0.0;
+		$propositional_expression has fulfillment 0.0;
 	};
 
 rule crisp_proposition_fulfillment_true:
@@ -321,7 +320,7 @@ rule crisp_proposition_fulfillment_true:
     $propositional_expression (term: $value) isa! propositional_expression;
 	$value isa! ValueBool, has bool_value true;
   } then {
-    $propositional_expression has expression_fulfillment 1.0;
+    $propositional_expression has fulfillment 1.0;
   };
 
 rule crisp_proposition_fulfillment_false:
@@ -329,5 +328,5 @@ rule crisp_proposition_fulfillment_false:
     $propositional_expression (term: $value) isa! propositional_expression;
 	$value isa! ValueBool, has bool_value false;
   } then {
-    $propositional_expression has expression_fulfillment 0.0;
+    $propositional_expression has fulfillment 0.0;
   };

@@ -547,7 +547,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $system isa System, has system_name '{system_name}';
                 (system: $system) isa relaxed_requirement,
                     has requirement_name '{requirement_name}',
-                    has requirement_fulfillment $fulfillment;
+                    has fulfillment $fulfillment;
             fetch $fulfillment;
         """
         return self.fetch_database(query)
@@ -578,7 +578,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $req isa relaxed_requirement,
                     has in_effect true;
             fetch
-                $req: requirement_name, requirement_fulfillment;
+                $req: requirement_name, fulfillment;
         """
         return self.fetch_database(query)
 
@@ -591,7 +591,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.fetch_in_effect_requirement_fulfillment()
         query_dict = [
             {'requirement_name': result['req']['requirement_name'][0]['value'],
-             'fulfillment': result['req']['requirement_fulfillment'][0]['value']}
+             'fulfillment': result['req']['fulfillment'][0]['value']}
             for result in query_result]
         return sorted(query_dict, key=lambda item: item['requirement_name'])
 
@@ -1145,7 +1145,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $relaxed_expression isa relaxed_expression,
                 has expression_name '{expression_name}';
             fetch
-                $relaxed_expression: expression_fulfillment;
+                $relaxed_expression: fulfillment;
         """
         return self.fetch_database(query)
 
@@ -1157,7 +1157,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: fulfillment type
         """
         query_result = self.fetch_relaxed_expression_fulfillment(expression_name)
-        return query_result[0]['relaxed_expression']['expression_fulfillment'][0]['value']
+        return query_result[0]['relaxed_expression']['fulfillment'][0]['value']
 
     def get_resulting_effect_value(self, tactic_rule: str, measure_name: str) -> float:
         """
