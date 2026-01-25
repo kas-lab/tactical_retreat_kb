@@ -147,8 +147,7 @@ rule atomic_expression_membership_false:
 		$expr has membership_degree 0.0;
 	};
 
-# This rule made the system slower
-rule fuzzy_expression_quantified_value :
+rule fuzzy_expression_quantified_value:
 	when {
 		$fuzzy_expression (term: $term) isa fuzzy_expression;
 

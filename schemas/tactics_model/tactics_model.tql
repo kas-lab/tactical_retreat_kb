@@ -248,3 +248,50 @@ rule variant_resolution_feasible:
     } then {
         $vr has feasible true;
     };
+
+# Rules for inferring the resulting value of an effect
+rule relative_effect_eval:
+    when {
+        $tr (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure, effect_value: $effect_value) isa relative_effect;
+        {
+            $effect_value isa ValueDouble, has double_value $effect_double_value;
+            ?effect_value_ = $effect_double_value;
+        } or {
+            $effect_value isa ValueInteger, has integer_value $effect_integer_value;
+            ?effect_value_ = $effect_integer_value;
+        };
+
+        $measurement (measure: $measure, measurement_value: $value) isa! measurement, has latest true;
+        {
+            $value isa ValueDouble, has double_value $measured_double_value;
+            ?measured_value_ = $measured_double_value;
+        } or {
+            $value isa ValueInteger, has integer_value $measured_integer_value;
+            ?measured_value_ = $measured_integer_value;
+        };
+
+        ?hypothetical_value = ?measured_value_ + ?effect_value_ ;
+    } then {
+        $effect has resulting_effect_value ?hypothetical_value;
+    };
+
+rule absolute_effect_double_result_value:
+    when {
+        $tr (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure, effect_value: $effect_value) isa absolute_effect;
+        $effect_value isa ValueDouble, has double_value $effect_double_value;
+        ?hypothetical_value = $effect_double_value;
+    } then {
+        $effect has resulting_effect_value ?hypothetical_value;
+    };
+
+rule absolute_effect_integer_result_value:
+    when {
+        $tr (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure, effect_value: $effect_value) isa absolute_effect;
+        $effect_value isa ValueInteger, has integer_value $effect_integer_value;
+        ?hypothetical_value = $effect_integer_value;
+    } then {
+        $effect has resulting_effect_value ?hypothetical_value;
+    };
