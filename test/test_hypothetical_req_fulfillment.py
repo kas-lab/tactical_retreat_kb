@@ -63,14 +63,9 @@ def kb_interface():
             'schemas/feature_model/feature_model.tql',
             'schemas/relaxed/relaxed_model.tql',
             'schemas/tactics_model/tactics_model.tql',
-            # 'schemas/discover_tactics_model/discover_tactics_model.tql',
             'schemas/discover_hypothetical_req_fulfillment/'
             'discover_hypothetical_req_fulfillment.tql'],
         ['test/data/test_discover_hypothetical_req_fulfillment.tql'],
-        # ['schemas/ros_model/ros_model_example.tql',
-        #     'schemas/tactics_model/tactics_example.tql',
-        #     'schemas/relaxed/relaxed_mirte_example.tql',
-        #     'test/data/test_tactics_model.tql'],
         force_database=True,
         force_data=True,
         infer=True)
@@ -86,7 +81,7 @@ def test_get_expression_measure_dependency(kb_interface):
     measures = kb_interface.get_expression_measure_dependency('less_than_equal')
     assert len(measures) == 2
     assert 'measure_lhs_comparison' in measures
-    assert 'measure_rhs_comparsion' in measures
+    assert 'measure_rhs_comparison' in measures
 
     # fuzzy_comparison_expression expressions
     measures = kb_interface.get_expression_measure_dependency('fuzzy_ascend_sigmoid_expression')
@@ -97,12 +92,12 @@ def test_get_expression_measure_dependency(kb_interface):
     measures = kb_interface.get_expression_measure_dependency('not_expr')
     assert len(measures) == 2
     assert 'measure_lhs_comparison' in measures
-    assert 'measure_rhs_comparsion' in measures
+    assert 'measure_rhs_comparison' in measures
 
     measures = kb_interface.get_expression_measure_dependency('or_expression_1')
     assert len(measures) == 2
     assert 'measure_lhs_comparison' in measures
-    assert 'measure_rhs_comparsion' in measures
+    assert 'measure_rhs_comparison' in measures
 
     measures = kb_interface.get_expression_measure_dependency('fake_as_close_expression')
     assert len(measures) == 1
@@ -112,7 +107,7 @@ def test_get_expression_measure_dependency(kb_interface):
     assert len(measures) == 3
     assert 'as_close_as_measure' in measures
     assert 'measure_lhs_comparison' in measures
-    assert 'measure_rhs_comparsion' in measures
+    assert 'measure_rhs_comparison' in measures
 
 
 def test_get_requirement_measure_dependency(kb_interface):
@@ -120,7 +115,7 @@ def test_get_requirement_measure_dependency(kb_interface):
     assert len(measures) == 3
     assert 'as_close_as_measure' in measures
     assert 'measure_lhs_comparison' in measures
-    assert 'measure_rhs_comparsion' in measures
+    assert 'measure_rhs_comparison' in measures
 
 
 def test_tactic_rule_dependency_comparison_expr_fulfillment(kb_interface):
@@ -210,6 +205,37 @@ def test_tactic_rule_dependency_fuzzy_expr_fulfillment(kb_interface):
     assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
     assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == pytest.approx(0.952380952)
 
+def test_tactic_rule_dependency_relaxed_fuzzy_expr_fulfillment(kb_interface):
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_dependency_fulfillment(
+        'fake_as_close_expression', 'tactic_rule_as_close_as_meas_0_27221')
+    assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == pytest.approx(0.97558)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_dependency_fulfillment(
+        'fake_as_close_expression', 'tactic_rule_as_close_as_meas_0_20')
+    assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == pytest.approx(0.88)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_dependency_fulfillment(
+        'fake_as_many_as_possible', 'tactic_rule_as_many_as_meas_10')
+    assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == pytest.approx(0.950002804)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_dependency_fulfillment(
+        'fake_as_many_as_possible', 'tactic_rule_as_many_as_meas_7')
+    assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == pytest.approx(0.764551865)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_dependency_fulfillment(
+        'fake_as_few_as_possible', 'tactic_rule_as_few_as_meas_0_08')
+    assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == pytest.approx(0.984127331)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_dependency_fulfillment(
+        'fake_as_few_as_possible', 'tactic_rule_as_few_as_meas_0_15')
+    assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == pytest.approx(0.970445553)
+
 # def test_tactic_impacts_requirement(kb_interface):
 #     requirements = kb_interface.get_tactic_impacts_requirement('MIN')
 #     assert 'R1.1 Velocity' in requirements
@@ -225,17 +251,6 @@ def test_tactic_rule_dependency_fuzzy_expr_fulfillment(kb_interface):
 
 #     requirements = kb_interface.get_tactic_impacts_requirement('tr_variant_resolution_feasible')
 #     assert len(requirements) == 0
-
-
-# def test_get_resulting_effect_value(kb_interface):
-#     effect_value = kb_interface.get_resulting_effect_value('MIN', 'movement_power_measure')
-#     assert effect_value == 0.3 + 0.05
-
-#     effect_value = kb_interface.get_resulting_effect_value('MED', 'movement_power_measure')
-#     assert effect_value == 0.3 + 0.07
-
-#     effect_value = kb_interface.get_resulting_effect_value('MAX', 'movement_power_measure')
-#     assert effect_value == 0.3 + 0.10
 
 
 # def test_get_relaxed_requirement_hypothetical_fulfillment(kb_interface):

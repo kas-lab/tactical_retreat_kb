@@ -1032,6 +1032,35 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.insert_database(query)
 
+    def fetch_expression_measure_dependency(self, expression_name: str):
+        """
+        Fetch the measure names that the expression depends on.
+
+        :param expression_name: expression name
+        :return: query result
+        """
+        query = f"""
+            match
+                $expr isa expression,
+                    has expression_name '{expression_name}';
+                (dependent: $expr, measure: $measure) isa measure_dependency;
+            fetch
+                $measure: measure_name;
+        """
+        return self.fetch_database(query)
+
+    def get_expression_measure_dependency(self, expression_name: str) -> List[str]:
+        """
+        Get the measure names that the expression depends on.
+
+        :param expression_name: expression name
+        :return: list of measure names
+        """
+        query_result = self.fetch_expression_measure_dependency(
+            expression_name)
+        return [result['measure']['measure_name'][0]['value']
+                for result in query_result]
+
     def fetch_requirement_measure_dependency(self, requirement_name: str):
         """
         Fetch the measure names that the requirement depends on.

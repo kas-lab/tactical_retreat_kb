@@ -7,12 +7,15 @@ Measure plays measure_dependency:measure;
 expression plays measure_dependency:dependent;
 system_requirement plays measure_dependency:dependent;
 
+fuzzy_comparison_expression relates effect;
+fuzzy_comparison_expression relates tactic_rule_dependency;
+effect plays fuzzy_comparison_expression:effect;
+
 tactic_rule_dependency sub relation,
     owns fulfillment,
-    # owns expression_satisfied,
-    owns quantified_value,
     relates tactic_rule,
-    relates dependent;
+    relates dependent,
+    plays fuzzy_comparison_expression:tactic_rule_dependency;
 expression plays tactic_rule_dependency:dependent;
 system_requirement plays tactic_rule_dependency:dependent;
 tactic_rule plays tactic_rule_dependency:tactic_rule;
@@ -38,14 +41,6 @@ tactic_rule plays tactic_rule_dependency:tactic_rule;
 #     relates requirement;
 # relaxed_requirement plays tactic_impact:requirement;
 # tactic_rule plays tactic_impact:tactic_rule;
-
-# rule propositional_expression_measure_dependency:
-#     when {
-#         $proposition_expr (atom: $measure) isa propositional_expression;
-#         $measure isa Measure;
-#     } then {
-#         (dependent: $proposition_expr, measure: $measure) isa measure_dependency;
-#     };
 
 rule comparison_expression_measure_dependency:
     when {
@@ -86,15 +81,6 @@ rule requirement_measure_dependency:
     } then {
         (dependent: $requirement, measure: $measure) isa measure_dependency;
     };
-
-# rule tactic_rule_dependency:
-#     when {
-#         (dependent: $dependent, measure: $measure) isa measure_dependency;
-#         $tactic_rule (effect: $effect) isa tactic_rule;
-#         $effect (measure: $measure) isa effect;
-#     } then {
-#         (dependent: $dependent, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
-#     };
 
 rule comparison_expression_tactic_rule_dependency:
     when {
@@ -245,15 +231,12 @@ rule comparison_expression_tactic_rule_dependency_fulfillment_0:
         $tr_dependency has fulfillment 0.0;
     };
 
-rule fuzzy_expression_hypothetical_quantified_value:
+rule fuzzy_expression_quantified_value_effect:
 	when {
-        $tr_dependency (dependent: $fuzzy_expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
-        $tactic_rule (effect: $effect) isa tactic_rule;
-        $effect (measure: $term) isa effect, has resulting_effect_value $quantified_value;
+		$fuzzy_expression (effect: $effect) isa fuzzy_comparison_expression;
+        $effect (effect_value: $term) isa effect, has resulting_effect_value $quantified_value;
 
-        $fuzzy_expression (term: $term) isa fuzzy_expression;
-
-		{
+        {
 			$fuzzy_expression  has offset_value $offest;
 			?quantified_value_ = $quantified_value + $offest;
 		} or {
@@ -261,119 +244,137 @@ rule fuzzy_expression_hypothetical_quantified_value:
 			?quantified_value_ = $quantified_value;
 		};
 		?quantified_value__ = ?quantified_value_;
+
 	} then {
-		$tr_dependency has quantified_value ?quantified_value__;
+		$fuzzy_expression has quantified_value ?quantified_value__;
 	};
 
-rule fuzzy_unimodal_triangular_tactic_rule_dependency_fulfillment:
+# rule fuzzy_decay_tactic_rule_dependency_effect:
+rule fuzzy_unimodal_expr_tactic_rule_dependency_effect:
 	when {
-        $tr_dependency (dependent: $fuzzy_expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency,
-            has quantified_value $quantified_value;
+		$tr_dependency (dependent: $fuzzy_expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
         $tactic_rule (effect: $effect) isa tactic_rule;
         $effect (measure: $term) isa effect;
-		$fuzzy_expression (fuzzy_set: $fuzzy_membership, term: $term) isa! fuzzy_unimodal_expression;
-
-        $fuzzy_membership isa! FuzzyTriangular, has a $a, has b $b, has c $c;
-
-		{
-			$quantified_value >= $a;
-			$quantified_value <= $b;
-			?membership_degree_ = ($quantified_value - $a) / ($b - $a);
-		} or {
-			$quantified_value > $b;
-			$quantified_value <= $c;
-			?membership_degree_ = ($c - $quantified_value) / ($c - $b);
-		};
-		?membership_degree = ?membership_degree_;
+		$fuzzy_expression (fuzzy_set: $fuzzy_set, term: $term) isa fuzzy_unimodal_expression;
 	} then {
-		$tr_dependency has fulfillment ?membership_degree;
+        (effect: $effect, fuzzy_set:$fuzzy_set, tactic_rule_dependency: $tr_dependency) isa fuzzy_unimodal_expression;
 	};
 
-rule fuzzy_unimodal_gaussian_membership_evaluation :
+rule fuzzy_ascend_expr_tactic_rule_dependency_effect:
 	when {
-		$tr_dependency (dependent: $fuzzy_expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency,
-            has quantified_value $quantified_value;
+		$tr_dependency (dependent: $fuzzy_expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
         $tactic_rule (effect: $effect) isa tactic_rule;
         $effect (measure: $term) isa effect;
-		$fuzzy_expression (fuzzy_set: $fuzzy_membership, term: $term) isa! fuzzy_unimodal_expression;
-
-        $fuzzy_membership isa! FuzzyGaussian, has sigma $sigma, has center $center;
-
-		?membership_degree = 2.71828 ^ (-0.5 * (($quantified_value - $center) / $sigma)^2 );
+		$fuzzy_expression (fuzzy_set: $fuzzy_set, term: $term) isa fuzzy_ascend_expression;
 	} then {
-		$tr_dependency has fulfillment ?membership_degree;
+        (effect: $effect, fuzzy_set:$fuzzy_set, tactic_rule_dependency: $tr_dependency) isa fuzzy_ascend_expression;
 	};
 
-
-rule fuzzy_ascend_exponential_membership_evaluation :
+rule fuzzy_decay_expr_tactic_rule_dependency_effect:
 	when {
-		$tr_dependency (dependent: $fuzzy_expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency,
-            has quantified_value $quantified_value;
+		$tr_dependency (dependent: $fuzzy_expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
         $tactic_rule (effect: $effect) isa tactic_rule;
         $effect (measure: $term) isa effect;
-		$fuzzy_expression (fuzzy_set: $fuzzy_membership, term: $term) isa! fuzzy_ascend_expression;
-
-		$fuzzy_membership isa! FuzzyExponentialSaturation, has exponent $exponent;
-		?membership_degree = 1.0 - 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
+		$fuzzy_expression (fuzzy_set: $fuzzy_set, term: $term) isa fuzzy_decay_expression;
 	} then {
-		$tr_dependency has fulfillment ?membership_degree;
+        (effect: $effect, fuzzy_set:$fuzzy_set, tactic_rule_dependency: $tr_dependency) isa fuzzy_decay_expression;
 	};
 
-rule fuzzy_ascend_sigmoid_membership_evaluation :
+rule fuzzy_expr_tactic_rule_dependency_fulfillment:
 	when {
-        $tr_dependency (dependent: $fuzzy_expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency,
-            has quantified_value $quantified_value;
-        $tactic_rule (effect: $effect) isa tactic_rule;
+        $tr_dependency (dependent: $expr, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
+		$expr (term: $term, fuzzy_set: $fuzzy_set) isa fuzzy_comparison_expression;
         $effect (measure: $term) isa effect;
-		$fuzzy_expression (fuzzy_set: $fuzzy_membership, term: $term) isa! fuzzy_ascend_expression;
 
-        $fuzzy_membership isa! FuzzySigmoid, has inflection_point $inflection_point, has exponent $exponent;
-
-		?membership_degree = 1.0 / ( 1.0 + 2.71828 ^ ( -1.0 * $exponent * ($quantified_value - $inflection_point)));
+        (effect: $effect, fuzzy_set:$fuzzy_set, tactic_rule_dependency: $tr_dependency) isa fuzzy_comparison_expression,
+			has membership_degree $membership_degree;
+        ?membership_degree_ = $membership_degree;
 	} then {
-		$tr_dependency has fulfillment ?membership_degree;
+		$tr_dependency has fulfillment ?membership_degree_;
 	};
 
-rule fuzzy_ascend_blf_membership_evaluation :
+### as_close_as_possible_fuzzy_expression rules
+rule as_close_as_possible_tactic_rule_dependency_effect:
 	when {
-		$tr_dependency (dependent: $fuzzy_expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency,
-            has quantified_value $quantified_value;
+        $tr_dependency (dependent: $relaxed_fuzzy_expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
         $tactic_rule (effect: $effect) isa tactic_rule;
         $effect (measure: $term) isa effect;
-		$fuzzy_expression (fuzzy_set: $fuzzy_membership, term: $term) isa! fuzzy_ascend_expression;
-
-		$fuzzy_membership isa! FuzzyBoundedLinearFraction, has curvature $curvature;
-		?membership_degree = $quantified_value / ($quantified_value + $curvature);
+		$relaxed_fuzzy_expression (term: $term, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression;
 	} then {
-		$tr_dependency has fulfillment ?membership_degree;
+		(effect: $effect, fuzzy_set:$fuzzy_set, tactic_rule_dependency: $tr_dependency) isa fuzzy_unimodal_expression;
 	};
 
-rule fuzzy_decay_exponential_membership_evaluation :
+rule as_close_as_possible_tactic_rule_dependency_offset:
 	when {
-        $tr_dependency (dependent: $fuzzy_expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency,
-            has quantified_value $quantified_value;
-        $tactic_rule (effect: $effect) isa tactic_rule;
+		$tr_dependency (dependent: $expr, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
+		$fuzzy_expr (effect: $effect, fuzzy_set:$fuzzy_set, tactic_rule_dependency: $tr_dependency) isa fuzzy_unimodal_expression;
         $effect (measure: $term) isa effect;
-		$fuzzy_expression (fuzzy_set: $fuzzy_membership, term: $term) isa! fuzzy_decay_expression;
 
-		$fuzzy_membership isa! FuzzyExponentialDecay, has exponent $exponent;
-		?membership_degree = 2.71828 ^ ( -1.0 * $exponent * $quantified_value);
+        $expr (term: $term, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression,
+			has required_value $required_value;
+		?offset_value_ = -1.0 * $required_value;
 	} then {
-		$tr_dependency has fulfillment ?membership_degree;
+		$fuzzy_expr has offset_value ?offset_value_;
 	};
 
-rule fuzzy_decay_rational_membership_evaluation :
+rule as_close_as_possible_tactic_rule_dependency_fulfillment:
 	when {
-		$tr_dependency (dependent: $fuzzy_expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency,
-            has quantified_value $quantified_value;
+        $tr_dependency (dependent: $expr, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
+		$expr (term: $term, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression;
+        $effect (measure: $term) isa effect;
+
+        (effect: $effect, fuzzy_set:$fuzzy_set, tactic_rule_dependency: $tr_dependency) isa fuzzy_unimodal_expression,
+            has membership_degree $membership_degree;
+        ?membership_degree_ = $membership_degree;
+	} then {
+        $tr_dependency has fulfillment ?membership_degree_;
+	};
+
+### as_many_as_possible_fuzzy_expression rules
+rule as_many_as_possible_tactic_rule_dependency_effect:
+	when {
+        $tr_dependency (dependent: $relaxed_fuzzy_expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
         $tactic_rule (effect: $effect) isa tactic_rule;
         $effect (measure: $term) isa effect;
-		$fuzzy_expression (fuzzy_set: $fuzzy_membership, term: $term) isa! fuzzy_decay_expression;
-
-		$fuzzy_membership isa! FuzzyRationalDecay, has curvature $curvature;
-		?membership_degree = $curvature / ($quantified_value + $curvature);
+		$relaxed_fuzzy_expression (term: $term, fuzzy_set: $fuzzy_set) isa as_many_as_possible_expression;
 	} then {
-		$tr_dependency has fulfillment ?membership_degree;
+		(effect: $effect, fuzzy_set:$fuzzy_set, tactic_rule_dependency: $tr_dependency) isa fuzzy_ascend_expression;
+	};
+
+rule as_many_as_possible_tactic_rule_dependency_fulfillment:
+	when {
+        $tr_dependency (dependent: $expr, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
+		$expr (term: $term, fuzzy_set: $fuzzy_set) isa as_many_as_possible_expression;
+        $effect (measure: $term) isa effect;
+
+        (effect: $effect, fuzzy_set:$fuzzy_set, tactic_rule_dependency: $tr_dependency) isa fuzzy_ascend_expression,
+			has membership_degree $membership_degree;
+        ?membership_degree_ = $membership_degree;
+	} then {
+		$tr_dependency has fulfillment ?membership_degree_;
+	};
+
+rule as_few_as_possible_tactic_rule_dependency_effect:
+	when {
+        $tr_dependency (dependent: $relaxed_fuzzy_expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
+        $tactic_rule (effect: $effect) isa tactic_rule;
+        $effect (measure: $term) isa effect;
+		$relaxed_fuzzy_expression (term: $term, fuzzy_set: $fuzzy_set) isa as_few_as_possible_expression;
+	} then {
+		(effect: $effect, fuzzy_set:$fuzzy_set, tactic_rule_dependency: $tr_dependency) isa fuzzy_decay_expression;
+	};
+
+rule as_few_as_possible_tactic_rule_dependency_fulfillment:
+	when {
+        $tr_dependency (dependent: $expr, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
+		$expr (term: $term, fuzzy_set: $fuzzy_set) isa as_few_as_possible_expression;
+        $effect (measure: $term) isa effect;
+
+		(effect: $effect, fuzzy_set:$fuzzy_set, tactic_rule_dependency: $tr_dependency) isa fuzzy_decay_expression,
+			has membership_degree $membership_degree;
+        ?membership_degree_ = $membership_degree;
+	} then {
+		$tr_dependency has fulfillment ?membership_degree_;
 	};
 
 ## rules for inferring hypothetical_fulfillment relation
