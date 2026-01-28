@@ -63,7 +63,7 @@ $velocity_as_close_expression_2 (fuzzy_set: $velocity_set, term: $velocity_measu
 	has required_value 0.18,
 	has expression_name 'velocity_as_close_expression_2';
 
-$not_objects_close_exp (expression: $objects_close_measure_expr) isa fuzzy_not;
+$not_objects_close_exp (expression: $objects_close_measure_expr) isa not_expression;
 $not_objects_or_velocity (expression: $not_objects_close_exp, expression: $velocity_as_close_expression_2) isa fuzzy_or;
 
 $velocity_shall_expression_2 (expression: $not_objects_or_velocity) isa shall_expression,

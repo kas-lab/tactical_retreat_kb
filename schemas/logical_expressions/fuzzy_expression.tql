@@ -129,6 +129,10 @@ atomic_expression plays fuzzy_not:expression;
 atomic_expression plays fuzzy_and:expression;
 atomic_expression plays fuzzy_or:expression;
 
+not_expression owns membership_degree;
+not_expression plays fuzzy_and:expression;
+not_expression plays fuzzy_or:expression;
+
 ValueInteger plays fuzzy_comparison_expression:term;
 ValueDouble plays fuzzy_comparison_expression:term;
 Measure plays fuzzy_comparison_expression:term;
@@ -143,6 +147,20 @@ rule atomic_expression_membership_true:
 rule atomic_expression_membership_false:
   	when {
 		$expr isa atomic_expression, has expression_satisfied false;
+	} then {
+		$expr has membership_degree 0.0;
+	};
+
+rule not_expression_membership_true:
+  	when {
+		$expr isa not_expression, has expression_satisfied true;
+	} then {
+		$expr has membership_degree 1.0;
+	};
+
+rule not_expression_membership_false:
+  	when {
+		$expr isa not_expression, has expression_satisfied false;
 	} then {
 		$expr has membership_degree 0.0;
 	};
