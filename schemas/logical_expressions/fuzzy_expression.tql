@@ -149,7 +149,7 @@ rule atomic_expression_membership_false:
 
 rule fuzzy_expression_quantified_value:
 	when {
-		$fuzzy_expression (term: $term) isa fuzzy_expression;
+		$fuzzy_expression (term: $term) isa fuzzy_comparison_expression;
 
 		{
             $term isa ValueDouble, has double_value $quantified_value;

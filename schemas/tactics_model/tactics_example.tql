@@ -17,6 +17,14 @@ $mvalueonine isa  ValueDouble,
 (measure: $nearest_object_measure, measurement_value:$mvalueonine) isa measurement,
         has measurement_time 2025-09-06T12:57:56.666;
 
+$current_mv_pwer isa ValueDouble, has double_value 0.3;
+(measure:$movement_power_measure , measurement_value: $current_mv_pwer) isa measurement,
+	has measurement_time 2025-08-06T10:57:56.666;
+
+$current_vel isa ValueDouble, has double_value 0.22221;
+(measure:$current_linear_velocity_measure , measurement_value: $current_vel) isa measurement,
+	has measurement_time 2025-08-06T10:57:56.666;
+
 ## Nearest object
 $scan_filtered_pub isa Publisher,
 	has interface_name '/scan_filtered',

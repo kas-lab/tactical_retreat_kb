@@ -1107,8 +1107,20 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
+    def get_resulting_effect_value(self, tactic_rule: str, measure_name: str) -> float:
+        """
+        Get resulting effect value of a tactic on a measure.
+
+        :param tactic_rule: tactic rule name
+        :param measure_name: measure name
+        :return: resulting effect value
+        """
+        query_result = self.fetch_resulting_effect_value(
+            tactic_rule, measure_name)
+        return query_result[0]['effect']['resulting_effect_value'][0]['value']
+
     def fetch_fuzzy_membership_degree(self, expression_name: str
-                                        ) -> List[dict[str, MatchResultDict]]:
+                                      ) -> List[dict[str, MatchResultDict]]:
         """
         Fetch fuzzy membership of a fuzzy expression.
 
@@ -1158,18 +1170,6 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_relaxed_expression_fulfillment(expression_name)
         return query_result[0]['relaxed_expression']['fulfillment'][0]['value']
-
-    def get_resulting_effect_value(self, tactic_rule: str, measure_name: str) -> float:
-        """
-        Get resulting effect value of a tactic on a measure.
-
-        :param tactic_rule: tactic rule name
-        :param measure_name: measure name
-        :return: resulting effect value
-        """
-        query_result = self.fetch_resulting_effect_value(
-            tactic_rule, measure_name)
-        return query_result[0]['effect']['resulting_effect_value'][0]['value']
 
     def fetch_potential_requirements_fulfillment(
             self, action_name: str) -> List[dict[str, MatchResultDict]]:

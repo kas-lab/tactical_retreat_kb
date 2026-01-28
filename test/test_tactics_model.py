@@ -31,7 +31,9 @@ def kb_interface():
             'schemas/feature_model/feature_model.tql',
             'schemas/feature_model/feature_model_logical_expression.tql',
             'schemas/tactics_model/tactics_model.tql'],
-        ['test/data/test_tactics_model.tql'],
+        ['test/data/test_tactics_model.tql',
+         'schemas/ros_model/ros_model_example.tql',
+            'schemas/tactics_model/tactics_example.tql'],
         force_database=True,
         force_data=True,
         infer=True)
@@ -113,27 +115,16 @@ def test_set_lifecycle_state_feasible(kb_interface):
         'lifecycle_node_finalized', 'finalized') is True
 
 
-@pytest.fixture(scope='module')
-def kb_interface_example():
-    kb_interface_example = TacticalRetreatInterface(
-        'localhost:1729',
-        'test_tactics_example_model',
-        ['schemas/data_structure/data_structure.tql',
-            'schemas/context_model/context_model.tql',
-            'schemas/ros_model/ros_model.tql',
-            'schemas/logical_expressions/logical_expression.tql',
-            'schemas/feature_model/feature_model.tql',
-            'schemas/feature_model/feature_model_logical_expression.tql',
-            'schemas/tactics_model/tactics_model.tql'],
-        ['schemas/ros_model/ros_model_example.tql',
-            'schemas/tactics_model/tactics_example.tql',
-            'schemas/relaxed/relaxed_mirte_example.tql'],
-        force_database=True,
-        force_data=True,
-        infer=True)
-    yield kb_interface_example
-    kb_interface_example.delete_database()
+def test_tactic_min_valid(kb_interface):
+    assert kb_interface.get_tactic_rule_valid('MIN')
 
 
-def test_tactic_min_valid(kb_interface_example):
-    assert kb_interface_example.get_tactic_rule_valid('MIN')
+def test_get_resulting_effect_value(kb_interface):
+    effect_value = kb_interface.get_resulting_effect_value('MIN', 'movement_power_measure')
+    assert effect_value == 0.3 + 0.05
+
+    effect_value = kb_interface.get_resulting_effect_value('MED', 'movement_power_measure')
+    assert effect_value == 0.3 + 0.07
+
+    effect_value = kb_interface.get_resulting_effect_value('MAX', 'movement_power_measure')
+    assert effect_value == 0.3 + 0.10
