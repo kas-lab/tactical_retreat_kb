@@ -14,6 +14,7 @@
 
 import importlib
 import inspect
+import traceback
 
 import rclpy
 from rclpy.duration import Duration
@@ -31,7 +32,8 @@ from std_srvs.srv import Trigger
 
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 from ros_monitors_functions.factory import MonitorFactory
-from rebet_monitors.rebet_monitors import MovementPowerDraw, PowerBudget
+from rebet_monitors.rebet_monitors import MovementPowerDraw, PowerBudget, is_too_close
+
 
 def publish_event(event_type: str):
     """Publish event (Decorator)."""
@@ -156,9 +158,12 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             'MovementPowerDraw', MovementPowerDraw)
         self.monitor.register_monitor(
             'PowerBudget', PowerBudget)
+        self.monitor.register_monitor(
+            "is_too_close", is_too_close
+        )
 
     def on_activate(self, state: State) -> TransitionCallbackReturn:
-        self.get_logger().info(self.get_name() + ': on_activate() is called.')
+        super().get_logger().info(self.get_name() + ': on_activate() is called.')
         self.active = True
         self.get_logger().info(
             self.get_name() + ': on_activate() is completed.')
@@ -181,6 +186,20 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         def _fetch_all_measurements_cb(_, res):
             pass
 
+        def print_req_fullfillment():
+            try:
+                x = self.typedb_interface.get_in_effect_requirement_fulfillment()
+                self.get_logger().info(f'Recorded requirement fulfillment: \n {str(x)}')
+            except Exception as e:
+                self.get_logger().error(
+                    f'Error recording requirement fulfillment: {e}')
+                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+
+        def __record_req_fullfillment(_, res):
+            self.create_timer(5, print_req_fullfillment)
+            res.success = True
+            return res
+
         # create service with a lambda calling the create_measures_interfaces
         # function
         self.measures_service = self.create_service(
@@ -194,7 +213,6 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             self.get_name() + '/fetch_all_measurements',
             _fetch_all_measurements_cb
         )
-
         return super().on_activate(state)
 
     def on_deactivate(self, state: State) -> TransitionCallbackReturn:
@@ -209,6 +227,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
         :return: transition result
         """
+        super().get_logger().info('I have arisen')
         config_res = super().on_configure(state)
         return config_res
 
@@ -252,7 +271,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         # function_lib = self.monitor[function_lib_name]
         # importlib.import_module(function_lib_name)
         measure_function = self.monitor[function_name]
-        #getattr(function_lib, function_name)
+        # getattr(function_lib, function_name)
 
         # Support both stateless functions and stateful callables (classes with __call__).
         if inspect.isclass(measure_function):
@@ -284,7 +303,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         if (interface.get('source') == 'ServiceServer'):
             service_type = get_ros_msg_type_from_string(ros_msg_type_str, 'srv')
             if (interface.get('measurement_proxy') is not True):
-                self.get_logger().info(f'Creating service client for: {ros_msg_type_str}')
+                super().get_logger().info(f'Creating service client for: {ros_msg_type_str}')
                 service_request_kwargs_str = interface.get('service_request_kwargs')
                 service_request_kwargs = {}
                 if service_request_kwargs_str:
@@ -317,7 +336,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                         interface['measurement_period'],
                         _cb)
             else:
-                self.get_logger().info(f'Creating proxy service for: {ros_msg_type_str}')
+                super().get_logger().info(f'Creating proxy service for: {ros_msg_type_str}')
                 self.measures_clients[measure_name] = self.create_client(
                     service_type,
                     interface_name,
@@ -350,7 +369,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 raise Exception('No measures interfaces to create.')
 
             for interface in measures_interfaces:
-                self.get_logger().info(
+                super().get_logger().info(
                     f'Creating measure interface: {interface}')
                 self.create_measure_interface(interface)
 
