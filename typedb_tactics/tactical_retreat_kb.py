@@ -14,6 +14,7 @@
 
 import importlib
 import inspect
+import time
 import traceback
 
 import rclpy
@@ -29,7 +30,7 @@ from rclpy.qos import QoSReliabilityPolicy
 from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
 
 from std_srvs.srv import Trigger
-
+from adapt_x_msgs.srv import FetchApplicable
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 from ros_monitors_functions.factory import MonitorFactory
 from rebet_monitors.rebet_monitors import MovementPowerDraw, PowerBudget, is_too_close
@@ -102,15 +103,16 @@ def _to_duration(v):
 def get_qos_from_qos_dict(qos_dict: dict) -> QoSProfile:
     # depth must be provided when KEEP_LAST; default to 10
     if qos_dict is None:
-        return QoSProfile(depth=10)
+        return QoSProfile(depth=1)
 
-    qos = QoSProfile(depth=int(qos_dict.get('depth', 10)))
+    # qos = QoSProfile(depth=int(qos_dict.get('depth', 1)))
+    qos = QoSProfile(depth=1)
 
     # Policies
     if 'reliability' in qos_dict:
         qos.reliability = RELIABILITY_MAP[qos_dict['reliability']]
     if 'history' in qos_dict:
-        qos.history = HISTORY_MAP[qos_dict['history']]
+        qos.history = HISTORY_MAP['KEEP_LAST'] # change back
     if 'durability' in qos_dict:
         qos.durability = DURABILITY_MAP[qos_dict['durability']]
     if 'liveliness' in qos_dict:
@@ -182,6 +184,21 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 res.success = False
             return res
 
+        def _fetch_applicable_cb(req, res):
+            try:
+                start_time = time.perf_counter()
+                self.get_logger().info('Fetching applicable tactics...')
+                self.typedb_interface.fetch_applicable_valid_adaptations(req.resolution_model, req.interface_name)
+                elapsed_time = time.perf_counter() - start_time
+                self.get_logger().info(f'Applicable tactics fetched in {elapsed_time:.4f} seconds.')
+                res.success = True
+            except Exception as e:
+                self.get_logger().error(
+                    f'Error fetching applicable tactics: {e}')
+                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+                res.success = False
+            return res
+
         # TODO: Implement properly.
         def _fetch_all_measurements_cb(_, res):
             pass
@@ -206,6 +223,13 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             Trigger,
             self.get_name() + '/create_measures',
             _create_measures_cb
+        )
+
+        self.applicable_tactics_service = self.create_service(
+            FetchApplicable,
+            self.get_name() + '/fetch_applicable_tactics',
+            _fetch_applicable_cb,
+            # callback_group=self.query_cb_group
         )
 
         self.all_measurements_service = self.create_service(
