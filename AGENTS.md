@@ -30,6 +30,18 @@ In summary the main meta-models needed for adaptation are:
 
 ## Common commands
 
+Source ROS and workspace before anything:
+
+```Bash
+source /opt/ros/humble/setup.bash
+```
+
+From the workspace folder:
+
+```Bash
+source ../../install/setup.bash
+```
+
 Build repo:
 
 ```Bash
@@ -57,6 +69,12 @@ And so on.
 **Testing note:** Running the full test suite takes ~10 minutes and most of that time is spent setting up the KB/TypeDB. Prefer running only the relevant tests for the module you changed (e.g., if you change the relaxed model, run `test_relaxed_model`).
 
 **TypeDB note:** Tests and the KB node expect a running TypeDB server (default `localhost:1729`). Start TypeDB before running tests.
+
+## TypeDB rules: common pitfalls
+
+- **Relation creation vs attribute assignment:** you cannot create a new relation and assign attributes to it in the same `then` clause. Create the relation in one rule, then assign attributes in another rule, or bind the relation in the `when` and only add attributes in the `then`.
+- **Variables in `then`:** any variable used in the `then` must be bound in the `when` **outside nested patterns** (e.g., not only inside `or {}` or `not {}` blocks). Otherwise you will get `[TQL33]`.
+- **Negation cycles:** if a rule both reads and writes the same predicate under `not {}`, TypeDB rejects it (`[RUW02]`). Stratify by writing to a different relation/attribute layer and then copy results in a positive rule.
 
 ## Run the KB node
 
@@ -195,7 +213,19 @@ docker exec -it tactical_retreat bash
 Run tests in the container:
 
 ```Bash
-docker exec -it tactical_retreat colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics
+docker exec -it tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics'
+```
+
+If running from a non-interactive environment, drop `-it`:
+
+```Bash
+docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics'
+```
+
+Run a focused test selection:
+
+```Bash
+docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_hyp'
 ```
 
 ## Information on TypeDB 2
