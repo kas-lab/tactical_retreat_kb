@@ -32,6 +32,20 @@ def fetch_tactic_rule_dependency_fulfillment(self, expression_name, tactic_rule_
         query_result = self.fetch_database(query)
         return query_result
 
+def fetch_tactic_rule_impacts_fulfillment(self, expression_name, tactic_rule_name):
+        query = f"""
+            match
+                $expr isa expression,
+                    has expression_name '{expression_name}';
+                $tr isa tactic_rule,
+                    has rule_name '{tactic_rule_name}';
+                $tr_impacts (expression: $expr, tactic_rule: $tr) isa tactic_rule_impacts;
+            fetch
+                $tr_impacts: fulfillment;
+        """
+        query_result = self.fetch_database(query)
+        return query_result
+
 
 def fetch_tactic_rule_effect_resulting_values(self, expression_name, tactic_rule_name):
         query = f"""
@@ -71,6 +85,7 @@ def kb_interface():
         infer=True)
     kb_interface.register_method('fetch_tactic_rule_dependency_fulfillment', fetch_tactic_rule_dependency_fulfillment)
     kb_interface.register_method('fetch_tactic_rule_effect_resulting_values', fetch_tactic_rule_effect_resulting_values)
+    kb_interface.register_method('fetch_tactic_rule_impacts_fulfillment', fetch_tactic_rule_impacts_fulfillment)
     yield kb_interface
     kb_interface.delete_database()
 
@@ -94,7 +109,7 @@ def test_get_expression_measure_dependency(kb_interface):
     assert 'measure_lhs_comparison' in measures
     assert 'measure_rhs_comparison' in measures
 
-    measures = kb_interface.get_expression_measure_dependency('or_expression_1')
+    measures = kb_interface.get_expression_measure_dependency('fuzzy_or_1')
     assert len(measures) == 2
     assert 'measure_lhs_comparison' in measures
     assert 'measure_rhs_comparison' in measures
@@ -235,6 +250,76 @@ def test_tactic_rule_dependency_relaxed_fuzzy_expr_fulfillment(kb_interface):
         'fake_as_few_as_possible', 'tactic_rule_as_few_as_meas_0_15')
     assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
     assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == pytest.approx(0.970445553)
+
+def test_tactic_rule_impacts_not_expr_fulfillment(kb_interface):
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'not_expr', 'tactic_rule_rel_effect_measure_lhs')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.0)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'not_expr', 'tactic_rule_lhs_0_10_rhs_0_05')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(1.0)
+
+    # non-related tactic_rule
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'not_expr', 'tactic_rule_decay_meas_550')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(1.0)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_not', 'tactic_rule_rel_effect_measure_lhs')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.0)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_not', 'tactic_rule_lhs_0_10_rhs_0_05')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(1.0)
+
+    # non-related tactic_rule
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_not', 'tactic_rule_decay_meas_550')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(1.0)
+
+def test_tactic_rule_impacts_or_expr_fulfillment(kb_interface):
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_or_1', 'tactic_rule_rel_effect_measure_lhs')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(1.0)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_or_1', 'tactic_rule_lhs_0_10_rhs_0_05')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(1.0)
+
+    # non-related tactic_rule
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_or_1', 'tactic_rule_decay_meas_550')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(1.0)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_or_2', 'tactic_rule_as_close_as_meas_0_27221')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.97558)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_or_2', 'tactic_rule_as_many_as_meas_10')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.950002804)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_or_2', 'tactic_rule_as_few_as_meas_0_08')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.984127331)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_or_2', 'tactic_rule_rel_effect_measure_lhs')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.941764572)
 
 # def test_tactic_impacts_requirement(kb_interface):
 #     requirements = kb_interface.get_tactic_impacts_requirement('MIN')

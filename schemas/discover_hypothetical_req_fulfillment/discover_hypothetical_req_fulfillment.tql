@@ -11,6 +11,7 @@ fuzzy_comparison_expression relates effect;
 fuzzy_comparison_expression relates tactic_rule_dependency;
 effect plays fuzzy_comparison_expression:effect;
 
+# direct dependency on effect
 tactic_rule_dependency sub relation,
     owns fulfillment,
     relates tactic_rule,
@@ -35,12 +36,14 @@ tactic_rule plays tactic_rule_dependency:tactic_rule;
 # relaxed_expression plays hypothetical_fulfillment:relaxed_expression;
 # effect plays hypothetical_fulfillment:effect;
 
-# tactic_impact sub relation,
-#     owns fulfillment,
-#     relates tactic_rule,
-#     relates requirement;
+# direct or indirect dependency
+tactic_rule_impacts sub relation,
+    owns fulfillment,
+    relates tactic_rule,
+    relates expression;
 # relaxed_requirement plays tactic_impact:requirement;
-# tactic_rule plays tactic_impact:tactic_rule;
+expression plays tactic_rule_impacts:expression;
+tactic_rule plays tactic_rule_impacts:tactic_rule;
 
 rule comparison_expression_measure_dependency:
     when {
@@ -112,6 +115,27 @@ rule relaxed_fuzzy_expression_tactic_rule_dependency:
         (dependent: $expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
     };
 
+# tactic_rule_impacts
+
+rule tactic_rule_impacts:
+    when {
+        $requirement (expression: $expression) isa relaxed_requirement;
+        $tactic_rule isa tactic_rule;
+    } then {
+        (tactic_rule: $tactic_rule, expression: $expression) isa tactic_rule_impacts;
+    };
+
+rule tactic_rule_impacts_transitivity:
+    when {
+        $expression_parent (expression: $expression_child) isa expression;
+        (tactic_rule: $tactic_rule, expression: $expression_parent) isa tactic_rule_impacts;
+        # (dependent: $expression_child, measure: $measure) isa measure_dependency;
+    } then {
+        (tactic_rule: $tactic_rule, expression: $expression_child) isa tactic_rule_impacts;
+    };
+
+# TODO: try to implement something similar to the fuzzy_expression, so it is not needed to
+# repeat all the logic here
 rule comparison_expression_double_and_integers_tactic_rule_dependency_fulfillment:
     when {
         $tr_dependency (dependent: $expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
@@ -376,6 +400,126 @@ rule as_few_as_possible_tactic_rule_dependency_fulfillment:
 	} then {
 		$tr_dependency has fulfillment ?membership_degree_;
 	};
+
+# rules for evaluating expressions that don't depend on the measure but might have
+# sub-expression that depends on measures impacted by effects
+rule tr_dependency_tr_impacts_fulfillment:
+  when {
+    $tr_impacts (tactic_rule: $tactic_rule, expression: $expression) isa tactic_rule_impacts;
+    $tr_dependency (tactic_rule: $tactic_rule, dependent: $expression) isa tactic_rule_dependency,
+        has fulfillment $fulfillment;
+  } then {
+    $tr_impacts has $fulfillment;
+  };
+
+rule tr_impacts_fulfillment_comparison:
+  when {
+    $tr_impacts (tactic_rule: $tactic_rule, expression: $expression) isa tactic_rule_impacts;
+    $expression isa $comparison_type, has membership_degree $membership_degree;
+    {
+        $comparison_type sub comparison_expression;
+    } or {
+        $comparison_type sub fuzzy_comparison_expression;
+    } or {
+        $comparison_type sub relaxed_fuzzy_expression;
+    };
+    not {$tr_dependency (tactic_rule: $tactic_rule, dependent: $expression) isa tactic_rule_dependency;};
+    ?fulfillment = $membership_degree;
+  } then {
+    $tr_impacts has fulfillment ?fulfillment;
+  };
+
+rule tr_impacts_fulfillment_proposition:
+  when {
+    $tr_impacts (tactic_rule: $tactic_rule, expression: $expression) isa tactic_rule_impacts;
+    $expression isa propositional_expression, has membership_degree $membership_degree;
+    ?fulfillment = $membership_degree;
+  } then {
+    $tr_impacts has fulfillment ?fulfillment;
+  };
+
+rule not_expression_tr_impacts_fulfillment:
+  when {
+    $tr_impacts (tactic_rule: $tactic_rule, expression: $not_expr) isa tactic_rule_impacts;
+    $not_expr (expression: $expression) isa $not_type;
+
+    {
+        $not_type sub not_expression;
+    } or {
+        $not_type sub fuzzy_not;
+    };
+
+    (tactic_rule: $tactic_rule, expression: $expression) isa tactic_rule_impacts,
+        has fulfillment $fulfillment;
+
+    ?negated_fulfillment = 1.0 - $fulfillment;
+  } then {
+    $tr_impacts has fulfillment ?negated_fulfillment;
+  };
+
+rule or_expression_tr_impacts_fulfillment :
+	when {
+        $or_expr (expression: $expression) isa! fuzzy_or;
+        $tr_impacts (tactic_rule: $tactic_rule, expression: $or_expr) isa tactic_rule_impacts;
+        # $or_expr (expression: $expression) isa $or_type;
+
+
+        # {
+        #     $or_type sub or_expression;
+        # } or {
+        #     $or_type sub fuzzy_or;
+        # };
+
+        (tactic_rule: $tactic_rule, expression: $expression) isa tactic_rule_impacts,
+            has fulfillment $fulfillment;
+
+        not {
+			# $or_expr (expression: $another_expression) isa $or_type;
+			$or_expr (expression: $another_expression) isa! fuzzy_or;
+            $another_expression isa $another_expression_type;
+            {
+                $another_expression_type sub atomic_expression;
+            } or {
+                $another_expression_type sub not_expression;
+            } or {
+                $another_expression_type sub fuzzy_not;
+            } or {
+                $another_expression_type sub fuzzy_comparison_expression;
+            };
+            # atomic_expression. not expression, fuzzy_not, fuzzy_comparison_expression
+            $tr_impacts_2 (tactic_rule: $tactic_rule, expression: $another_expression) isa tactic_rule_impacts,
+                has fulfillment $another_fulfillment;
+
+            $another_fulfillment > $fulfillment;
+		};
+
+	} then {
+        $tr_impacts has $fulfillment;
+	};
+
+# rule fuzzy_and_operator :
+# 	when {
+# 		$and_expr (expression: $a) isa! fuzzy_and;
+# 		$a has membership_degree $a_membership;
+
+# 		not {
+# 			$and_expr (expression: $b) isa! fuzzy_and;
+# 			$b has membership_degree $b_membership;
+# 			$b_membership < $a_membership;
+# 		};
+# 	} then {
+# 		$and_expr has $a_membership;
+# 	};
+
+# rule not_expression_false:
+#   when {
+#     $not (expression: $e) isa not_expression;
+#     $e has expression_satisfied true;
+#   } then {
+#     $not has expression_satisfied false;
+#   };
+
+
 
 ## rules for inferring hypothetical_fulfillment relation
 # rule relaxed_expression_hypothetical_fulfillment_relation_reflection:
