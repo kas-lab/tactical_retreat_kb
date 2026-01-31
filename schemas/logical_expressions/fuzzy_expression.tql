@@ -297,16 +297,16 @@ rule fuzzy_not_operator :
 
 rule fuzzy_or_operator :
 	when {
-		$or_expr (expression: $a) isa! fuzzy_or;
-		$a has membership_degree $a_membership;
+		$or_expr (expression: $expression) isa! fuzzy_or;
+		$expression has membership_degree $membership_degree;
 
 		not {
-			$or_expr (expression: $b) isa! fuzzy_or;
-			$b has membership_degree $b_membership;
-			$b_membership > $a_membership;
+			$or_expr (expression: $another_expression) isa! fuzzy_or;
+			$another_expression has membership_degree $another_membership;
+			$another_membership > $membership_degree;
 		};
 	} then {
-		$or_expr has $a_membership;
+		$or_expr has $membership_degree;
 	};
 
 rule fuzzy_and_operator :

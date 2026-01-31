@@ -54,7 +54,7 @@ or_expression sub compound_expression,
     plays and_expression:expression;
 
 #### connection with the context model
-##### The measure entity can be intepreted as a Variable
+##### The measure entity can be interpreted as a Variable
 Measure plays comparison_expression:lhs_value;
 Measure plays comparison_expression:rhs_value;
 
