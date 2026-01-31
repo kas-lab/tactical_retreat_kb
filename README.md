@@ -5,19 +5,48 @@
 ### Dependencies
 
 ```mermaid
-graph LR
+graph TB
     data_structure["data_structure.tql"]
     context["context_model.tql"]
     ros["ros_model.tql"]
+    logical["logical_expression.tql"]
+    fuzzy["fuzzy_expression.tql"]
     feature["feature_model.tql"]
+    feature_logic["feature_model_logical_expression.tql"]
+    relaxed["relaxed_model.tql"]
     tactics["tactics_model.tql"]
     discover["discover_tactics_model.tql"]
+    discover_hypo["discover_hypothetical_req_fulfillment.tql"]
 
     data_structure --> context
-    context --> ros
-    ros --> tactics
+    data_structure --> ros
+    data_structure --> logical
+    data_structure --> fuzzy
+    data_structure --> relaxed
+    data_structure --> tactics
+
+    logical --> fuzzy
+    logical --> relaxed
+    logical --> tactics
+    logical --> feature_logic
+
+    feature --> feature_logic
     feature --> tactics
+
+    context --> fuzzy
+    context --> relaxed
+    context --> tactics
+    context --> discover_hypo
+
+    ros --> tactics
+    ros --> discover
+
+    fuzzy --> relaxed
+    relaxed --> discover_hypo
+
     tactics --> discover
+    tactics --> discover_hypo
+    fuzzy --> discover_hypo
 ```
 
 Arrows point from each prerequisite model to the model that depends on it.
