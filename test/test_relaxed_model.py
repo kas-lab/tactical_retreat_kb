@@ -25,6 +25,9 @@ def kb_interface():
             'schemas/context_model/context_model.tql',
             'schemas/logical_expressions/logical_expression.tql',
             'schemas/logical_expressions/fuzzy_expression.tql',
+            'schemas/feature_model/feature_model.tql',
+            'schemas/ros_model/ros_model.tql',
+            'schemas/tactics_model/tactics_model.tql',
             'schemas/relaxed/relaxed_model.tql'],
         ['schemas/ros_model/ros_model_example.tql',  # required for relax_mirte_example
          'schemas/tactics_model/tactics_example.tql',  # required for relax_mirte_example
