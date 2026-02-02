@@ -1,3 +1,14 @@
+match
+
+$nearest_object_measure isa Measure,
+	has measure_name "nearest_object_measure";
+
+$movement_power_measure isa Measure,
+	has measure_name "movement_power_measure";
+
+$current_linear_velocity_measure isa Measure,
+	has measure_name "current_linear_velocity_measure";
+
 insert
 
 ## Examples Mirte's MVP use case
@@ -5,38 +16,13 @@ $mirte isa System, has system_name "Mirte";
 
 ## Measures + measurements
 
-$velocity_measure isa Measure,
-	has measure_name "velocity_measure",
-	has description "The robot's velocity";
-
-# just an example, the measurement should be inserted at runtime
-$current_vel isa ValueDouble, has double_value 0.22221;
-(measure:$velocity_measure, measurement_value: $current_vel) isa measurement,
-	has measurement_time 2025-08-06T10:57:56.666;
-
-
-$double_0_10 isa ValueDouble,
-    has double_value 0.10;
 $double_0_18 isa ValueDouble,
     has double_value 0.18;
 
-$nearest_object_measure isa Measure,
-	has measure_name "nearest_object_measure",
-	has description "Nearest object distance in meters";
-(measure: $nearest_object_measure, measurement_value: $double_0_10) isa measurement,
-    has measurement_time 2025-09-06T11:57:56.666;
-
-
-$movement_power_measure isa Measure,
-	has measure_name "movement_power_measure",
-	has description "The robot's velocity";
-
-$current_mv_pwer isa ValueDouble, has double_value 0.3;
-(measure:$movement_power_measure, measurement_value: $current_mv_pwer) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
-
-
 # object is too close if nearest_object < 0.18
-$objects_close_measure_expr (lhs_value:$nearest_object_measure, rhs_value:$double_0_18) isa less_than;
+# with current measurement 0.10 -> 0.10 < 0.18 -> true
+$objects_close_measure_expr (lhs_value:$nearest_object_measure, rhs_value:$double_0_18) isa less_than,
+	has expression_name "objects_close_measure_expr";
 
 # R1.1 Velocity
 
@@ -45,7 +31,7 @@ $velocity_set isa FuzzyTriangular,
 	has b 0.0,
 	has c 0.5;
 
-$velocity_as_close_expression (fuzzy_set: $velocity_set, term: $velocity_measure) isa as_close_as_possible_expression,
+$velocity_as_close_expression (fuzzy_set: $velocity_set, term: $current_linear_velocity_measure) isa as_close_as_possible_expression,
 	has required_value 0.26;
 
 $velocity_shall_expression (expression: $velocity_as_close_expression) isa shall_expression,
@@ -59,17 +45,31 @@ $velocity_requirement (system: $mirte, expression: $velocity_shall_expression) i
 
 ## R1.2 Velocity with obstacles
 
-$velocity_as_close_expression_2 (fuzzy_set: $velocity_set, term: $velocity_measure) isa as_close_as_possible_expression,
+# tactic MIN -> vel = 0.10, mv_pwr = 0.05 -> 0.84
+# tactic MED -> vel = 0.18, mv_pwr = 0.07 -> 1.0
+# tactic MAX -> vel = 0.26, mv_pwr = 0.10 -> 0.84
+$velocity_as_close_expression_2 (fuzzy_set: $velocity_set, term: $current_linear_velocity_measure) isa as_close_as_possible_expression,
 	has required_value 0.18,
 	has expression_name 'velocity_as_close_expression_2';
 
+# not true -> false
 $not_objects_close_exp (expression: $objects_close_measure_expr) isa not_expression;
+
+# tactic MIN -> 0.0 or 0.84 -> 0.84
+# tactic MED -> 0.0 or 1.0  -> 1.0
+# tactic MAX -> 0.0 or 0.84 -> 0.84
 $not_objects_or_velocity (expression: $not_objects_close_exp, expression: $velocity_as_close_expression_2) isa fuzzy_or;
 
+# tactic MIN -> 0.84
+# tactic MED -> 1.0
+# tactic MAX -> 0.84
 $velocity_shall_expression_2 (expression: $not_objects_or_velocity) isa shall_expression,
 	has expression_name 'velocity_shall_expression_2';  # used for tests only
 
 # expected fulfillment max(1- 1.0, m(0.22221 - 0.18)  ) = max(0.0, 0.91558) = 0.91558
+# tactic MIN -> 0.84
+# tactic MED -> 1.0
+# tactic MAX -> 0.84
 $velocity_requirement_objects_close (system: $mirte, expression: $velocity_shall_expression_2) isa relaxed_requirement,
 	has requirement_name "R1.2 Velocity with obstacles",
 	has in_effect true,

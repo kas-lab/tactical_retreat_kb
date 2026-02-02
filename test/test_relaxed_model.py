@@ -26,7 +26,9 @@ def kb_interface():
             'schemas/logical_expressions/logical_expression.tql',
             'schemas/logical_expressions/fuzzy_expression.tql',
             'schemas/relaxed/relaxed_model.tql'],
-        ['schemas/relaxed/relaxed_mirte_example.tql',
+        ['schemas/ros_model/ros_model_example.tql', # required for relax_mirte_example
+         'schemas/tactics_model/tactics_example.tql', # required for relax_mirte_example
+         'schemas/relaxed/relaxed_mirte_example.tql',
          'schemas/relaxed/relaxed_paper_example.tql',
          'test/data/test_relaxed_model.tql'],
         force_database=True,

@@ -243,7 +243,7 @@ rule relaxed_fuzzy_fulfillment:
 ## expressions fulfillment rules
 
 #  shall_expression: returns min fulfillment among its operands.
-rule shall_expression_fulfillment :
+rule shall_expression_fulfillment:
 	when {
 		$shall_expression (expression: $expression) isa! shall_expression;
 		$expression has fulfillment $fulfillment;
@@ -278,7 +278,7 @@ rule may_expression_fulfillment :
 ## TODO: add rule for in_expression
 
 ## requirement fulfillment
-## interpreting multiple exoressions as a fuzzy and with resolution fulfillment = min(fulfillment1, fulfillment2, ...)
+## interpreting multiple expressions as a fuzzy and with resolution fulfillment = min(fulfillment1, fulfillment2, ...)
 rule requirement_fulfillment :
 	when {
 		$req (expression: $expression) isa relaxed_requirement;

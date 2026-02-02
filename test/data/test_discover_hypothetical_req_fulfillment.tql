@@ -3,6 +3,9 @@ insert
 # Values
 $double_minus_0_05 isa ValueDouble,
     has double_value -0.05;
+$double_minus_0_22 isa ValueDouble,
+    has double_value -0.22;
+
 $double_0_01 isa ValueDouble,
     has double_value 0.01;
 $double_0_03 isa ValueDouble,
@@ -17,6 +20,8 @@ $double_0_20 isa ValueDouble,
     has double_value 0.20;
 $double_0_22221 isa ValueDouble,
 	has double_value 0.22221;
+$double_0_30 isa ValueDouble,
+    has double_value 0.30;
 $double_1 isa ValueDouble,
     has double_value 1.0;
 $double_7 isa ValueDouble,
@@ -189,11 +194,11 @@ $fuzzy_ascend_blf_set isa FuzzyBoundedLinearFraction,
 # $fuzzy_ascend_expression_1 (fuzzy_set: $fuzzy_ascend_sigmoid_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
 #     has expression_name 'fuzzy_ascend_sigmoid_expression';
 
-# expected memberhsip 0.834700912
+# expected membership 0.834700912
 $fuzzy_ascend_expression_2 (fuzzy_set: $fuzzy_ascend_exponential_saturation_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
     has expression_name 'fuzzy_ascend_exp_saturation_expression';
 
-# expected memberhsip 0.947368421
+# expected membership 0.947368421
 $fuzzy_ascend_expression_3 (fuzzy_set: $fuzzy_ascend_blf_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
     has expression_name 'fuzzy_ascend_blf_expression';
 
@@ -266,17 +271,17 @@ $abs_effect_as_many_as_measure (measure: $as_many_as_measure, effect_value: $dou
 $as_few_as_measure isa Measure,
 	has measure_name 'as_few_as_measure';
 
-(measure:$as_few_as_measure, measurement_value: $double_0_03) isa measurement,
+(measure:$as_few_as_measure, measurement_value: $double_0_30) isa measurement,
 	has measurement_time 2025-08-06T10:57:56.666;
 
 $fuzzy_exp_decay_set isa FuzzyExponentialDecay,
 	has exponent 0.2;
 
-# expected fulfillment
+# expected fulfillment 0.941764572
 $fake_as_few_as_possible (fuzzy_set: $fuzzy_exp_decay_set, term: $as_few_as_measure) isa as_few_as_possible_expression,
 	has expression_name 'fake_as_few_as_possible';
 
-$rel_effect_as_few_as_measure (measure: $as_few_as_measure, effect_value: $double_0_05) isa relative_effect;
+$rel_effect_as_few_as_measure (measure: $as_few_as_measure, effect_value: $double_minus_0_22) isa relative_effect;
 $abs_effect_as_few_as_measure (measure: $as_few_as_measure, effect_value: $double_0_15) isa absolute_effect;
 
 # expected fulfillment 0.984127331
@@ -315,13 +320,41 @@ $fuzzy_or_1 (expression:$less_than_equal, expression:$propositional_expression, 
 $fuzzy_or_2 (expression:$fake_as_close_expression, expression:$fake_as_many_as_possible, expression: $fake_as_few_as_possible)
     isa fuzzy_or, has expression_name 'fuzzy_or_2';
 
+# or expressions
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.10 <= 0.10 -> 1.0 && 1.0 -> 1.0
+# tactic_rule: tactic_rule_lhs_0_10_rhs_0_05 -> 0.10 <= 0.05 -> 0.0 && 1.0 -> 0.0
+# tactic_rule: tactic_rule_decay_meas_550 (non-related rule) -> 0.15 <= 0.10 -> 0.0 && 1.0 -> 0.0
+$fuzzy_and_1 (expression:$less_than_equal, expression: $fuzzy_or_1)
+    isa fuzzy_and, has expression_name 'fuzzy_and_1';
+
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> 0.97558 && 0.913378192 && 0.941764572 -> 0.913378192
+# tactic_rule: tactic_rule_as_many_as_meas_10 -> 0.92442 && 0.950002804 && 0.941764572 -> 0.92442
+# tactic_rule: tactic_rule_as_few_as_meas_0_08 -> 0.92442 && 0.913378192 && 0.984127331 -> 0.913378192
+# tactic_rule: tactic_rule_rel_effect_measure_lhs (non-related) -> 0.92442 && 0.913378192 && 0.941764572 -> 0.913378192
+$fuzzy_and_2 (expression:$fake_as_close_expression, expression:$fake_as_many_as_possible, expression: $fake_as_few_as_possible)
+    isa fuzzy_and, has expression_name 'fuzzy_and_2';
+
 # shall expression
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.92442 && 1.0 && 0.941764572 && 1.0 && 0.913378192 -> 0.913378192
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> 0.97558 && 1.0 && 0.97558 && 0.0 && 0.913378192 -> 0.0
 $fake_shall_expression (
     expression: $fake_as_close_expression,
-    expression: $fuzzy_or_1) isa shall_expression,
+    expression: $fuzzy_or_1,
+	expression: $fuzzy_or_2,
+	expression: $fuzzy_and_1,
+	expression: $fuzzy_and_2) isa shall_expression,
     has expression_name 'fake_shall_expression';
+
+# shall expression
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.941764572
+$fake_shall_expression_2 (
+    expression: $fake_as_few_as_possible) isa shall_expression,
+    has expression_name 'fake_shall_expression_2';
 
 ### Requirements
 $fake_system isa System, has system_name 'system';
-$req_1 (system: $fake_system, expression: $fake_shall_expression) isa relaxed_requirement,
+
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.913378192 && 0.941764572 -> 0.913378192
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> 0.0 && 0.941764572 -> 0.0
+$req_1 (system: $fake_system, expression: $fake_shall_expression, expression: $fake_shall_expression_2) isa relaxed_requirement,
     has requirement_name 'req_1';

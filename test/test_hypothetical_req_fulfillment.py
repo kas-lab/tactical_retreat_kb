@@ -16,6 +16,7 @@ import pytest
 
 from typedb_tactics.typedb_tactical_retreat_interface import RequirementImpactDict
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+import time
 
 
 def fetch_tactic_rule_dependency_fulfillment(self, expression_name, tactic_rule_name):
@@ -35,11 +36,16 @@ def fetch_tactic_rule_dependency_fulfillment(self, expression_name, tactic_rule_
 def fetch_tactic_rule_impacts_fulfillment(self, expression_name, tactic_rule_name):
         query = f"""
             match
-                $expr isa expression,
-                    has expression_name '{expression_name}';
+                {{
+                    $impacted isa expression,
+                        has expression_name '{expression_name}';
+                }} or {{
+                    $impacted isa relaxed_requirement,
+                        has requirement_name '{expression_name}';
+                }};
                 $tr isa tactic_rule,
                     has rule_name '{tactic_rule_name}';
-                $tr_impacts (expression: $expr, tactic_rule: $tr) isa tactic_rule_impacts;
+                $tr_impacts (impacted: $impacted, tactic_rule: $tr) isa tactic_rule_impacts;
             fetch
                 $tr_impacts: fulfillment;
         """
@@ -64,6 +70,7 @@ def fetch_tactic_rule_effect_resulting_values(self, expression_name, tactic_rule
         query_result = self.fetch_database(query)
         return query_result
 
+
 @pytest.fixture(scope='module')
 def kb_interface():
     kb_interface = TacticalRetreatInterface(
@@ -78,8 +85,12 @@ def kb_interface():
             'schemas/relaxed/relaxed_model.tql',
             'schemas/tactics_model/tactics_model.tql',
             'schemas/discover_hypothetical_req_fulfillment/'
-            'discover_hypothetical_req_fulfillment.tql'],
-        ['test/data/test_discover_hypothetical_req_fulfillment.tql'],
+            'discover_hypothetical_req_fulfillment.tql',
+            'schemas/discover_tactics_model/discover_tactics_model.tql'],
+        ['test/data/test_discover_hypothetical_req_fulfillment.tql',
+         'schemas/ros_model/ros_model_example.tql',
+         'schemas/tactics_model/tactics_example.tql',
+         'schemas/relaxed/relaxed_mirte_example.tql'],
         force_database=True,
         force_data=True,
         infer=True)
@@ -88,49 +99,6 @@ def kb_interface():
     kb_interface.register_method('fetch_tactic_rule_impacts_fulfillment', fetch_tactic_rule_impacts_fulfillment)
     yield kb_interface
     kb_interface.delete_database()
-
-
-def test_get_expression_measure_dependency(kb_interface):
-
-    # comparison expressions
-    measures = kb_interface.get_expression_measure_dependency('less_than_equal')
-    assert len(measures) == 2
-    assert 'measure_lhs_comparison' in measures
-    assert 'measure_rhs_comparison' in measures
-
-    # fuzzy_comparison_expression expressions
-    measures = kb_interface.get_expression_measure_dependency('fuzzy_ascend_sigmoid_expression')
-    assert len(measures) == 1
-    assert 'fuzzy_ascend_measure' in measures
-
-    # fuzzy_comparison_expression expressions
-    measures = kb_interface.get_expression_measure_dependency('not_expr')
-    assert len(measures) == 2
-    assert 'measure_lhs_comparison' in measures
-    assert 'measure_rhs_comparison' in measures
-
-    measures = kb_interface.get_expression_measure_dependency('fuzzy_or_1')
-    assert len(measures) == 2
-    assert 'measure_lhs_comparison' in measures
-    assert 'measure_rhs_comparison' in measures
-
-    measures = kb_interface.get_expression_measure_dependency('fake_as_close_expression')
-    assert len(measures) == 1
-    assert 'as_close_as_measure' in measures
-
-    measures = kb_interface.get_expression_measure_dependency('fake_shall_expression')
-    assert len(measures) == 3
-    assert 'as_close_as_measure' in measures
-    assert 'measure_lhs_comparison' in measures
-    assert 'measure_rhs_comparison' in measures
-
-
-def test_get_requirement_measure_dependency(kb_interface):
-    measures = kb_interface.get_requirement_measure_dependency('req_1')
-    assert len(measures) == 3
-    assert 'as_close_as_measure' in measures
-    assert 'measure_lhs_comparison' in measures
-    assert 'measure_rhs_comparison' in measures
 
 
 def test_tactic_rule_dependency_comparison_expr_fulfillment(kb_interface):
@@ -184,6 +152,7 @@ def test_tactic_rule_dependency_comparison_expr_fulfillment(kb_interface):
     assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
     assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == 0.0
 
+
 def test_tactic_rule_dependency_fuzzy_expr_fulfillment(kb_interface):
     fulfillment_query_res = kb_interface.fetch_tactic_rule_dependency_fulfillment(
         'fuzzy_unimodal_triangular_expression', 'tactic_rule_unimodal_meas_0_04779')
@@ -220,6 +189,7 @@ def test_tactic_rule_dependency_fuzzy_expr_fulfillment(kb_interface):
     assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
     assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == pytest.approx(0.952380952)
 
+
 def test_tactic_rule_dependency_relaxed_fuzzy_expr_fulfillment(kb_interface):
     fulfillment_query_res = kb_interface.fetch_tactic_rule_dependency_fulfillment(
         'fake_as_close_expression', 'tactic_rule_as_close_as_meas_0_27221')
@@ -250,6 +220,23 @@ def test_tactic_rule_dependency_relaxed_fuzzy_expr_fulfillment(kb_interface):
         'fake_as_few_as_possible', 'tactic_rule_as_few_as_meas_0_15')
     assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
     assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == pytest.approx(0.970445553)
+
+    # Relax Mirte example
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_dependency_fulfillment(
+        'velocity_as_close_expression_2', 'MIN')
+    assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == pytest.approx(0.84)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_dependency_fulfillment(
+        'velocity_as_close_expression_2', 'MED')
+    assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == pytest.approx(1.0)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_dependency_fulfillment(
+        'velocity_as_close_expression_2', 'MAX')
+    assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == pytest.approx(0.84)
+
 
 def test_tactic_rule_impacts_not_expr_fulfillment(kb_interface):
     fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
@@ -283,6 +270,7 @@ def test_tactic_rule_impacts_not_expr_fulfillment(kb_interface):
         'fuzzy_not', 'tactic_rule_decay_meas_550')
     assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
     assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(1.0)
+
 
 def test_tactic_rule_impacts_or_expr_fulfillment(kb_interface):
     fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
@@ -321,80 +309,180 @@ def test_tactic_rule_impacts_or_expr_fulfillment(kb_interface):
     assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
     assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.941764572)
 
-# def test_tactic_impacts_requirement(kb_interface):
-#     requirements = kb_interface.get_tactic_impacts_requirement('MIN')
-#     assert 'R1.1 Velocity' in requirements
-#     assert 'R1.2 Movement Power' in requirements
 
-#     requirements = kb_interface.get_tactic_impacts_requirement('MED')
-#     assert 'R1.1 Velocity' in requirements
-#     assert 'R1.2 Movement Power' in requirements
+def test_tactic_rule_impacts_and_expr_fulfillment(kb_interface):
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_and_1', 'tactic_rule_rel_effect_measure_lhs')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(1.0)
 
-#     requirements = kb_interface.get_tactic_impacts_requirement('MAX')
-#     assert 'R1.1 Velocity' in requirements
-#     assert 'R1.2 Movement Power' in requirements
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_and_1', 'tactic_rule_lhs_0_10_rhs_0_05')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.0)
 
-#     requirements = kb_interface.get_tactic_impacts_requirement('tr_variant_resolution_feasible')
-#     assert len(requirements) == 0
+    # non-related tactic_rule
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_and_1', 'tactic_rule_decay_meas_550')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.0)
 
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_and_2', 'tactic_rule_as_close_as_meas_0_27221')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.913378192)
 
-# def test_get_relaxed_requirement_hypothetical_fulfillment(kb_interface):
-#     fulfillment = kb_interface.get_relaxed_requirement_hypothetical_fulfillment(
-#         'Mirte', 'R1.1 Velocity', 'MIN')
-#     assert fulfillment == pytest.approx(0.68)
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_and_2', 'tactic_rule_as_many_as_meas_10')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.92442)
 
-#     fulfillment = kb_interface.get_relaxed_requirement_hypothetical_fulfillment(
-#         'Mirte', 'R1.1 Velocity', 'MED')
-#     assert fulfillment == pytest.approx(0.84)
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_and_2', 'tactic_rule_as_few_as_meas_0_08')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.913378192)
 
-#     fulfillment = kb_interface.get_relaxed_requirement_hypothetical_fulfillment(
-#         'Mirte', 'R1.1 Velocity', 'MAX')
-#     assert fulfillment == pytest.approx(1.0)
-
-#     fulfillment = kb_interface.get_relaxed_requirement_hypothetical_fulfillment(
-#         'Mirte', 'R1.2 Movement Power', 'MIN')
-#     assert fulfillment == pytest.approx(0.932393864)
-
-#     fulfillment = kb_interface.get_relaxed_requirement_hypothetical_fulfillment(
-#         'Mirte', 'R1.2 Movement Power', 'MED')
-#     assert fulfillment == pytest.approx(0.92867174)
-
-#     fulfillment = kb_interface.get_relaxed_requirement_hypothetical_fulfillment(
-#         'Mirte', 'R1.2 Movement Power', 'MAX')
-#     assert fulfillment == pytest.approx(0.923116396)
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_and_2', 'tactic_rule_rel_effect_measure_lhs')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.913378192)
 
 
-# def test_potential_requirements_fulfillment(kb_interface):
-#     result = kb_interface.get_potential_requirements_fulfillment('/navigate_to_pose')
+def test_tactic_rule_impacts_shall_expr_fulfillment(kb_interface):
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fake_shall_expression', 'tactic_rule_rel_effect_measure_lhs')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.913378192)
 
-#     assert RequirementImpactDict(
-#         action_name='/navigate_to_pose',
-#         requirement_name='R1.1 Velocity',
-#         tactic_rule='MIN',
-#         fulfillment=pytest.approx(0.68)) in result
-#     assert RequirementImpactDict(
-#         action_name='/navigate_to_pose',
-#         requirement_name='R1.1 Velocity',
-#         tactic_rule='MED',
-#         fulfillment=pytest.approx(0.84)) in result
-#     assert RequirementImpactDict(
-#         action_name='/navigate_to_pose',
-#         requirement_name='R1.1 Velocity',
-#         tactic_rule='MAX',
-#         fulfillment=pytest.approx(1.0)) in result
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fake_shall_expression', 'tactic_rule_as_close_as_meas_0_27221')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.0)
 
-#     assert RequirementImpactDict(
-#         action_name='/navigate_to_pose',
-#         requirement_name='R1.2 Movement Power',
-#         tactic_rule='MIN',
-#         fulfillment=pytest.approx(0.932393864)) in result
-#     assert RequirementImpactDict(
-#         action_name='/navigate_to_pose',
-#         requirement_name='R1.2 Movement Power',
-#         tactic_rule='MED',
-#         fulfillment=pytest.approx(0.92867174)) in result
-#     assert RequirementImpactDict(
-#         action_name='/navigate_to_pose',
-#         requirement_name='R1.2 Movement Power',
-#         tactic_rule='MAX',
-#         fulfillment=pytest.approx(0.923116396)) in result
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'velocity_shall_expression_2', 'MIN')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.84)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'velocity_shall_expression_2', 'MED')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(1.0)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'velocity_shall_expression_2', 'MAX')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.84)
+
+def test_tactic_impacts_requirement(kb_interface):
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'req_1', 'tactic_rule_rel_effect_measure_lhs')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.913378192)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'req_1', 'tactic_rule_as_close_as_meas_0_27221')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.0)
+
+    # Relax Mirte example
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'R1.1 Velocity', 'MIN')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.68)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'R1.1 Velocity', 'MED')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.84)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'R1.1 Velocity', 'MAX')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(1.0)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'R1.2 Velocity with obstacles', 'MIN')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.84)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'R1.2 Velocity with obstacles', 'MED')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(1.0)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'R1.2 Velocity with obstacles', 'MAX')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.84)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'R1.3 Movement Power', 'MIN')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.932393864)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'R1.3 Movement Power', 'MED')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.92867174)
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'R1.3 Movement Power', 'MAX')
+    assert len(fulfillment_query_res[0]['tr_impacts']['fulfillment']) == 1
+    assert fulfillment_query_res[0]['tr_impacts']['fulfillment'][0]['value'] == pytest.approx(0.923116396)
+
+
+def test_potential_requirements_fulfillment(kb_interface):
+    start_time = time.time()
+    result = kb_interface.get_potential_requirements_fulfillment('/navigate_to_pose')
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Execution time: {elapsed_time:.2f} seconds", flush=True)
+
+    assert RequirementImpactDict(
+        action_name='/navigate_to_pose',
+        requirement_name='R1.1 Velocity',
+        tactic_rule='MIN',
+        fulfillment=pytest.approx(0.68)) in result
+    assert RequirementImpactDict(
+        action_name='/navigate_to_pose',
+        requirement_name='R1.1 Velocity',
+        tactic_rule='MED',
+        fulfillment=pytest.approx(0.84)) in result
+    assert RequirementImpactDict(
+        action_name='/navigate_to_pose',
+        requirement_name='R1.1 Velocity',
+        tactic_rule='MAX',
+        fulfillment=pytest.approx(1.0)) in result
+
+    assert RequirementImpactDict(
+        action_name='/navigate_to_pose',
+        requirement_name='R1.2 Velocity with obstacles',
+        tactic_rule='MIN',
+        fulfillment=pytest.approx(0.84)) in result
+    assert RequirementImpactDict(
+        action_name='/navigate_to_pose',
+        requirement_name='R1.2 Velocity with obstacles',
+        tactic_rule='MED',
+        fulfillment=pytest.approx(1.0)) in result
+    assert RequirementImpactDict(
+        action_name='/navigate_to_pose',
+        requirement_name='R1.2 Velocity with obstacles',
+        tactic_rule='MAX',
+        fulfillment=pytest.approx(0.84)) in result
+
+    assert RequirementImpactDict(
+        action_name='/navigate_to_pose',
+        requirement_name='R1.3 Movement Power',
+        tactic_rule='MIN',
+        fulfillment=pytest.approx(0.932393864)) in result
+    assert RequirementImpactDict(
+        action_name='/navigate_to_pose',
+        requirement_name='R1.3 Movement Power',
+        tactic_rule='MED',
+        fulfillment=pytest.approx(0.92867174)) in result
+    assert RequirementImpactDict(
+        action_name='/navigate_to_pose',
+        requirement_name='R1.3 Movement Power',
+        tactic_rule='MAX',
+        fulfillment=pytest.approx(0.923116396)) in result

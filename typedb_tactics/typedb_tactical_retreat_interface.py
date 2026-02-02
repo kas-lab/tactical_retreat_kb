@@ -389,6 +389,30 @@ class TacticalRetreatInterface(TypeDBInterface):
         return [result['tactic']['tactic_name'][0]['value']
                 for result in query_result]
 
+    def fetch_all_tactic_rules(self) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch all tactic rules names.
+
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $tactic_rule isa tactic_rule;
+            fetch
+                $tactic_rule: rule_name;
+        """
+        return self.fetch_database(query)
+
+    def get_all_tactic_rules(self) -> List[str]:
+        """
+        Get all tactic tactic rules names.
+
+        :return: list of tactic rule names
+        """
+        query_result = self.fetch_all_tactic_rules()
+        return [result['tactic_rule']['rule_name'][0]['value']
+                for result in query_result]
+
     def does_tactic_affect_nodes(
             self,
             tactic_name: str,
@@ -919,7 +943,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.fetch_database(query)
         return query_result[0]['ra']['feasible'][0]['value']
 
-    def fetch_measures_inferfaces(self):
+    def fetch_measures_interfaces(self):
         query = """
             match
                 $measure isa Measure, has measure_name $measure_name;
@@ -942,7 +966,7 @@ class TacticalRetreatInterface(TypeDBInterface):
 
     def get_measures_interfaces(self):
         result_dict_list = []
-        for result in self.fetch_measures_inferfaces():
+        for result in self.fetch_measures_interfaces():
             result_dict = {}
             measure = result.get('measure_name')
             if measure:
@@ -1090,33 +1114,33 @@ class TacticalRetreatInterface(TypeDBInterface):
         return [result['measure']['measure_name'][0]['value']
                 for result in query_result]
 
-    def fetch_tactic_impacts_requirement(self, rule_name: str) -> List[dict[str, MatchResultDict]]:
-        """
-        Fetch which requirement is impacted by a tactic.
+    # def fetch_tactic_impacts_requirement(self, rule_name: str) -> List[dict[str, MatchResultDict]]:
+    #     """
+    #     Fetch which requirement is impacted by a tactic.
 
-        :param rule_name: tactic rule name
-        :return: fetch query result
-        """
-        query = f"""
-            match
-                $tactic_rule isa tactic_rule, has rule_name '{rule_name}';
-                (tactic_rule: $tactic_rule, requirement: $req) isa tactic_impact;
-            fetch
-                $req: requirement_name;
-        """
-        return self.fetch_database(query)
+    #     :param rule_name: tactic rule name
+    #     :return: fetch query result
+    #     """
+    #     query = f"""
+    #         match
+    #             $tactic_rule isa tactic_rule, has rule_name '{rule_name}';
+    #             (tactic_rule: $tactic_rule, requirement: $req) isa tactic_impact;
+    #         fetch
+    #             $req: requirement_name;
+    #     """
+    #     return self.fetch_database(query)
 
-    def get_tactic_impacts_requirement(self, rule_name: str) -> List[str]:
-        """
-        Get which requirement is impacted by a tactic.
+    # def get_tactic_impacts_requirement(self, rule_name: str) -> List[str]:
+    #     """
+    #     Get which requirement is impacted by a tactic.
 
-        :param rule_name: tactic rule name
-        :return: fetch query result
-        """
-        query_result = self.fetch_tactic_impacts_requirement(
-            rule_name)
-        return [result['req']['requirement_name'][0]['value']
-                for result in query_result]
+    #     :param rule_name: tactic rule name
+    #     :return: fetch query result
+    #     """
+    #     query_result = self.fetch_tactic_impacts_requirement(
+    #         rule_name)
+    #     return [result['req']['requirement_name'][0]['value']
+    #             for result in query_result]
 
     def fetch_resulting_effect_value(self, tactic_rule: str, measure_name: str
                                      ) -> List[dict[str, MatchResultDict]]:
@@ -1214,7 +1238,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $ros_interface isa ROSInterface, has interface_name '{action_name}';
                 (interface: $ros_interface, tactic_rule: $tactic_rule)
                     isa applicable_tactics;
-                $tactic_impact (requirement: $req, tactic_rule: $tactic_rule) isa tactic_impact;
+                $tactic_impact (impacted: $req, tactic_rule: $tactic_rule) isa tactic_rule_impacts;
                 $req isa relaxed_requirement, has in_effect true;
             fetch
                 $tactic_rule: rule_name;
@@ -1240,3 +1264,51 @@ class TacticalRetreatInterface(TypeDBInterface):
                 fulfillment=result['tactic_impact']['fulfillment'][0]['value']
             ))
         return result_list
+
+    def fetch_all_requirements(self):
+        """
+        Fetch all requirements names.
+
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $req isa relaxed_requirement;
+            fetch
+                $req: requirement_name;
+        """
+        return self.fetch_database(query)
+
+    def get_all_requirements(self):
+        """
+        Get all requirements names.
+
+        :return: list with requirement names
+        """
+        query_result = self.fetch_all_requirements()
+        return [result['req']['requirement_name'][0]['value']
+                for result in query_result if len(result['req']['requirement_name']) > 0]
+
+    def fetch_all_expressions(self):
+        """
+        Fetch all expressions names.
+
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $expr isa expression;
+            fetch
+                $expr: expression_name;
+        """
+        return self.fetch_database(query)
+
+    def get_all_expressions(self):
+        """
+        Get all expressions names.
+
+        :return: list with expressions names
+        """
+        query_result = self.fetch_all_expressions()
+        return [result['expr']['expression_name'][0]['value']
+                for result in query_result if len(result['expr']['expression_name']) > 0]
