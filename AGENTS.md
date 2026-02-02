@@ -75,6 +75,13 @@ And so on.
 - **Relation creation vs attribute assignment:** you cannot create a new relation and assign attributes to it in the same `then` clause. Create the relation in one rule, then assign attributes in another rule, or bind the relation in the `when` and only add attributes in the `then`.
 - **Variables in `then`:** any variable used in the `then` must be bound in the `when` **outside nested patterns** (e.g., not only inside `or {}` or `not {}` blocks). Otherwise you will get `[TQL33]`.
 - **Negation cycles:** if a rule both reads and writes the same predicate under `not {}`, TypeDB rejects it (`[RUW02]`). Stratify by writing to a different relation/attribute layer and then copy results in a positive rule.
+- **Minimal schema edits:** prefer subtyping existing relations over adding parallel relations, to keep fetch/query code stable.
+
+## Docker test tips
+
+- **Container running:** `docker exec` fails if the container is not running. Check `docker ps` or start the container first.
+- **Non-interactive exec:** for CI/agents, prefer `docker exec tactical_retreat ...` (no `-it`).
+- **Timeouts:** schema-heavy `colcon test` runs can exceed default agent timeouts; allow 5–7 minutes.
 
 ## Run the KB node
 
@@ -231,3 +238,8 @@ docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && sour
 ## Information on TypeDB 2
 
 the documentation for typedb2 lives here: https://typedb.com/docs/home/2.x/
+
+## Agent helpers
+
+- `docs/agent-notes.md` has a quick checklist and common failure checks.
+- `scripts/run-tests-docker.sh` runs tests in the `tactical_retreat` container (supports `-k`).
