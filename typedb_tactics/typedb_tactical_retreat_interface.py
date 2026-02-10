@@ -1044,6 +1044,16 @@ class TacticalRetreatInterface(TypeDBInterface):
         else:
             value_query, variable_name = create_value_query(value)
 
+        delete_query = f"""
+            match
+                $measure isa Measure, has measure_name '{measure_name}';
+                $measurement (measure: $measure) isa measurement,
+                    has latest $latest;
+                $latest == true;
+            delete $measurement has $latest;
+        """
+        self.delete_from_database(delete_query)
+
         time = convert_py_type_to_query_type(datetime.now())
         query = f"""
             match
@@ -1052,7 +1062,8 @@ class TacticalRetreatInterface(TypeDBInterface):
                 {value_query}
                 $measurement (measure: $measure, measurement_value: {variable_name})
                     isa measurement,
-                    has measurement_time {time};
+                    has measurement_time {time},
+                    has latest true;
         """
         return self.insert_database(query)
 
