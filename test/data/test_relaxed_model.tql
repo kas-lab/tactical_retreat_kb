@@ -10,7 +10,8 @@ $fake_measure isa Measure,
 	has description "The robot's velocity";
 
 $current_fake_measure isa ValueDouble, has double_value 0.22221;
-(measure:$fake_measure , measurement_value: $current_fake_measure) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+(measure:$fake_measure , measurement_value: $current_fake_measure) isa measurement,
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 $triangular_set isa FuzzyTriangular,
 	has a -0.5,
@@ -25,7 +26,8 @@ $fake_measure_2 isa Measure,
 	has measure_name "fake_measure_2",
 	has description "The system consumes energy during normal operation";
 $current_fake_measure_2 isa ValueDouble, has double_value 500;
-(measure:$fake_measure_2, measurement_value: $current_fake_measure_2) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+(measure:$fake_measure_2, measurement_value: $current_fake_measure_2) isa measurement,
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 $fake_measure_2_set isa FuzzyExponentialDecay,
 	has exponent 0.0002107;
@@ -40,7 +42,8 @@ $fake_measure_3 isa Measure,
 
 # just an example, the measurement should be inserted at runtime
 $current_fake_measure_3 isa ValueDouble, has double_value 9.0;
-(measure:$fake_measure_3 , measurement_value: $current_fake_measure_3) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+(measure:$fake_measure_3 , measurement_value: $current_fake_measure_3) isa measurement,
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 $fake_measure_3_set isa FuzzySigmoid,
 	has inflection_point 5.0,

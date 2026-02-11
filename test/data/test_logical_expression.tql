@@ -28,41 +28,41 @@ $bool_true isa ValueBool, has bool_value true;
 ## measures integer
 $measure_integer_1 isa Measure, has measure_name 'measure_integer_1';
 (measure: $measure_integer_1, measurement_value: $integer_1) isa measurement,
-    has measurement_time 2025-09-06T11:57:56.666;
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
 $measure_integer_2 isa Measure, has measure_name 'measure_integer_2';
 (measure: $measure_integer_2, measurement_value: $integer_2) isa measurement,
-    has measurement_time 2025-09-06T11:57:56.666;
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
 $measure_integer_3 isa Measure, has measure_name 'measure_integer_3';
 (measure: $measure_integer_3, measurement_value: $integer_3) isa measurement,
-    has measurement_time 2025-09-06T11:57:56.666;
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
 
 ## measures double
 $measure_double_1_1 isa Measure, has measure_name 'measure_double_1_1';
 (measure: $measure_double_1_1, measurement_value: $double_1_1) isa measurement,
-    has measurement_time 2025-09-06T11:57:56.666;
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
 $measure_double_1_2 isa Measure, has measure_name 'measure_double_1_2';
 (measure: $measure_double_1_2, measurement_value: $double_1_2) isa measurement,
-    has measurement_time 2025-09-06T11:57:56.666;
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
 $measure_double_1_3 isa Measure, has measure_name 'measure_double_1_3';
 (measure: $measure_double_1_3, measurement_value: $double_1_3) isa measurement,
-    has measurement_time 2025-09-06T11:57:56.666;
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
 
 ## measures string
 $measure_string_1 isa Measure, has measure_name 'measure_string_1';
 (measure: $measure_string_1, measurement_value: $string_1) isa measurement,
-    has measurement_time 2025-09-06T11:57:56.666;
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
 $measure_string_2 isa Measure, has measure_name 'measure_string_2';
 (measure: $measure_string_2, measurement_value: $string_2) isa measurement,
-    has measurement_time 2025-09-06T11:57:56.666;
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
 
 ## measures bool
 $measure_bool_false isa Measure, has measure_name 'measure_bool_false';
 (measure: $measure_bool_false, measurement_value: $bool_false) isa measurement,
-    has measurement_time 2025-08-06T10:57:56.666;
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 $measure_bool_true isa Measure, has measure_name 'measure_bool_true';
 (measure: $measure_bool_true, measurement_value: $bool_true) isa measurement,
-    has measurement_time 2025-08-06T10:57:56.666;
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 # proposition expressions
 $bool_false_prop_exp (atom: $bool_false) isa propositional_expression, has expression_name 'bool_false_prop_exp';
