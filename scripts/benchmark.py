@@ -1,8 +1,20 @@
-
+# Copyright 2026 KAS Lab
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import argparse
-import time
 from decimal import Decimal
+import time
 
 from typing import Iterator
 from typing import List
@@ -13,7 +25,7 @@ from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInte
 
 def float_range(start: float, stop: float, step: float) -> Iterator[float]:
     if step <= 0:
-        raise ValueError("step must be > 0")
+        raise ValueError('step must be > 0')
 
     start_decimal = Decimal(str(start))
     stop_decimal = Decimal(str(stop))
@@ -37,9 +49,8 @@ def add_measurements(
             measurement_count += 1
 
         print(
-            f"Added {measurement_count} measurements for {measure_name} "
-            f"(from {range_start:.2f} to {range_stop:.2f}, step {range_step:.2f})"
-        )
+            f'Added {measurement_count} measurements for {measure_name} '
+            f'(from {range_start:.2f} to {range_stop:.2f}, step {range_step:.2f})')
 
 
 def main(runs: int):
@@ -66,8 +77,8 @@ def main(runs: int):
     )
     interface_creation_time_s = time.perf_counter() - interface_start_time
     print(
-        "TacticalRetreatInterface creation time: "
-        f"{interface_creation_time_s:.6f}s"
+        'TacticalRetreatInterface creation time: '
+        f'{interface_creation_time_s:.6f}s'
     )
 
     def get_expression_satisfied(self, expression_name):
@@ -81,13 +92,15 @@ def main(runs: int):
         query_result = self.fetch_database(query)
         return query_result[0]['expr']['expression_satisfied'][0]['value']
 
-    kb_interface.register_method('get_expression_satisfied', get_expression_satisfied)
+    kb_interface.register_method(
+        'get_expression_satisfied',
+        get_expression_satisfied)
 
     measures_name_range = [
-        ("nearest_object", 0.01, 10.0, 0.01),
-        ("current_velocity", 0.01, 5.0, 0.01),
-        ("power_draw", 1.0, 100.0, 1.0),
-        ("power_budget", 1.0, 100.0, 1.0),
+        ('nearest_object', 0.01, 10.0, 0.01),
+        ('current_velocity', 0.01, 5.0, 0.01),
+        ('power_draw', 1.0, 100.0, 1.0),
+        ('power_budget', 1.0, 100.0, 1.0),
     ]
 
     add_measurements(kb_interface, measures_name_range)
@@ -125,46 +138,46 @@ def main(runs: int):
             expression_elapsed_times_s.append(elapsed_time_s)
 
             print(
-                f"{expression_name} run {run_idx + 1}/{runs}: "
-                f"satisfied={expression_satisfied}, "
-                f"time={elapsed_time_s:.6f}s"
+                f'{expression_name} run {run_idx + 1}/{runs}: '
+                f'satisfied={expression_satisfied}, '
+                f'time={elapsed_time_s:.6f}s'
             )
 
         expression_avg_time_s = (
             sum(expression_elapsed_times_s) / len(expression_elapsed_times_s))
         print(
-            f"{expression_name} average over {runs} runs: "
-            f"{expression_avg_time_s:.6f}s"
+            f'{expression_name} average over {runs} runs: '
+            f'{expression_avg_time_s:.6f}s'
         )
 
     if elapsed_times_s:
         average_time_s = sum(elapsed_times_s) / len(elapsed_times_s)
         print(
-            "Overall average get_expression_satisfied time "
-            f"({len(elapsed_times_s)} total calls): {average_time_s:.6f}s"
+            'Overall average get_expression_satisfied time '
+            f'({len(elapsed_times_s)} total calls): {average_time_s:.6f}s'
         )
 
     print(
-        "TacticalRetreatInterface creation time: "
-        f"{interface_creation_time_s:.6f}s"
+        'TacticalRetreatInterface creation time: '
+        f'{interface_creation_time_s:.6f}s'
     )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=(
-            "Benchmark get_expression_satisfied for configured expressions."
+            'Benchmark get_expression_satisfied for configured expressions.'
         )
     )
     parser.add_argument(
-        "--runs",
+        '--runs',
         type=int,
         default=1,
-        help="Number of runs per expression (default: 1).",
+        help='Number of runs per expression (default: 1).',
     )
     args = parser.parse_args()
 
     if args.runs < 1:
-        parser.error("--runs must be >= 1")
+        parser.error('--runs must be >= 1')
 
     main(args.runs)
