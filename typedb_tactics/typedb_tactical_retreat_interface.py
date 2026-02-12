@@ -55,7 +55,8 @@ def create_value_query(value, suffix=''):
     if isinstance(value, str):
         value_query = f'{variable_name} isa ValueString, has string_value "{value}";'
     elif isinstance(value, float):
-        value_query = f'{variable_name} isa ValueDouble, has double_value {value};'
+        formatted = format(value, ".15f")
+        value_query = f"{variable_name} isa ValueDouble, has double_value {formatted};"
     elif isinstance(value, bool):
         value_query = f"""{variable_name} isa ValueBool,
             has bool_value {convert_py_type_to_query_type(value)};"""
@@ -126,6 +127,8 @@ class TacticalRetreatInterface(TypeDBInterface):
             force_data,
             infer
         )
+
+        self.seen = {}
 
     def fetch_subnodes(self, node_name: str,
                        namespace: str = '') -> List[dict[str, MatchResultDict]]:
@@ -536,6 +539,114 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
+    def fetch_applicable_valid_tactics(self,
+                                 resolution_model: str,
+                                 action_name: str) -> List[dict[str,
+                                                                MatchResultDict]]:
+        """
+        Fetch all tactics that are applicable and valid given an ROS action name and resolution model.
+
+        :param resolution_model: name of the resolution model to check
+        :param action_name: name of the ROS action
+        :param action_name: type of the ROS action
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $interface isa ROSInterface, has interface_name '{interface_name}';
+                $resolution_model isa resolution_model,
+                    has resolution_model_name '{resolution_model}';
+                (interface: $interface,
+                    resolution_model: $resolution_model, tactic_rule: $tactic_rule)
+                    isa applicable_tactics;
+                $tactic_rule isa tactic_rule, has rule_valid true;
+            fetch
+                $tactic_rule: rule_name;
+        """
+        return self.fetch_database(query)
+
+    def fetch_applicable_valid_adaptations(self,
+                                 resolution_model: str,
+                                 interface_name: str) -> List[dict[str,
+                                                                MatchResultDict]]:
+        """
+        Fetch all tactics that are applicable and valid given an ROS action name and resolution model.
+
+        :param resolution_model: name of the resolution model to check
+        :param interface_name: name of the ROS interface
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $interface isa ROSInterface, has interface_name '{interface_name}';
+                $resolution_model isa resolution_model,
+                    has resolution_model_name '{resolution_model}';
+                (interface: $interface,
+                    resolution_model: $resolution_model, tactic_rule: $tactic_rule)
+                    isa applicable_tactics;
+                $tactic_rule (tactic:$t, consequent:$fa) isa tactic_rule, has rule_valid true;
+            fetch
+                variant_activation: {{
+                    match
+                        $fa (activation: $feature_activate) isa feature_adaptation;
+                        (tactic:$t, variant_resolution:$vr) isa resolution_model;
+                        $vr (resolution_action:$res_action, variant: $feature_activate) isa variant_activation;
+                    fetch
+                        set_parameter_action: {{
+                            match
+                                $res_action (node: $node, parameter: $parameter, parameter_value: $parameter_value) isa! set_nodes_parameters;
+                            fetch
+                                $node: node_name;
+                                $parameter: parameter_name;
+                                param_values: {{
+                                    match
+                                        $parameter_value isa! ValueArray;
+                                        $index (array: $parameter_value, array_value: $value) isa at_index;
+                                    fetch
+                                        $index: index;
+                                        $value: attribute;
+                                }};
+                        }};
+                        set_lifecycle_action: {{
+                            match
+                                $res_action (node: $node) isa! set_lifecycle_state;
+                            fetch
+                                $node: node_name;
+                                $res_action: lifecycle_state;
+                        }};
+                }};
+                variant_deactivation: {{
+                    match
+                        $fa (deactivation: $feature_deactivate) isa feature_adaptation;
+                        (tactic:$t, variant_resolution:$vr) isa resolution_model;
+                        $vr (resolution_action:$res_action, variant: $feature_deactivate) isa variant_deactivation;
+                    fetch
+                        set_parameter_action: {{
+                            match
+                                $res_action (node: $node, parameter: $parameter, parameter_value: $parameter_value) isa! set_nodes_parameters;
+                            fetch
+                                $node: node_name;
+                                $parameter: parameter_name;
+                                param_values: {{
+                                    match
+                                        $parameter_value isa! ValueArray;
+                                        $index (array: $parameter_value, array_value: $value) isa at_index;
+                                    fetch
+                                        $index: index;
+                                        $value: attribute;
+                                }};
+                        }};
+                        set_lifecycle_action: {{
+                            match
+                                $res_action (node: $node) isa! set_lifecycle_state;
+                            fetch
+                                $node: node_name;
+                                $res_action: lifecycle_state;
+                        }};
+                }};
+        """
+        return self.fetch_database(query)
+
     def get_applicable_tactics(
             self,
             resolution_model: str,
@@ -637,6 +748,26 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.insert_database(query)
 
+    def update_all_requirement_in_effect(self, requirement_name: str, in_effect: bool
+                                  ) -> Optional[Iterator[ConceptMap]]:
+        """
+        Set the in_effect status of a relaxed requirement.
+
+        :param requirement_name: requirement name
+        :param in_effect: boolean indicating if the requirement is in effect
+        """
+        out_effect_tql_type = convert_py_type_to_query_type(not in_effect)
+        in_effect_tql_type = convert_py_type_to_query_type(in_effect)
+        query = f"""
+        match
+            $requirement isa relaxed_requirement, has requirement_name '{requirement_name}', has in_effect $in_effect;
+            $in_effect = {out_effect_tql_type};
+        delete
+            $requirement has $in_effect;
+        insert
+            $requirement has in_effect {in_effect_tql_type};
+        """
+        return self.update_database(query)
     def fetch_relaxed_requirement_hypothetical_fulfillment(
             self, system_name: str, requirement_name: str, tactic_rule: str
             ) -> List[dict[str, MatchResultDict]]:
@@ -862,6 +993,22 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
+    def fetch_all_tactic_rules(
+            self) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch all tactic_ rules
+
+        :param tactic_rule: tactic rule name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $tr isa tactic_rule;
+            fetch
+                $tr: rule_name;
+        """
+        return self.fetch_database(query)
+
     def get_tactic_rule_valid(self, tactic_rule: str) -> bool:
         """
         Get whether a tactic_rule is valid.
@@ -870,6 +1017,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: true or false
         """
         query_result = self.fetch_tactic_rule_valid(tactic_rule)
+        print(query_result)
         return query_result[0]['tr']['rule_valid'][0]['value']
 
     def is_feature_selectable(self, feature_name: str) -> bool:
@@ -887,6 +1035,43 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_database(query)
         return query_result[0]['f']['selectable'][0]['value']
+
+    def is_feature_selected(self, feature_name: str) -> bool:
+        """
+        Return whether a feature is selected.
+
+        :param feature_name: feature name
+        :return: true or false
+        """
+        query = f"""
+            match
+                $f isa Feature, has feature_name '{feature_name}';
+            fetch
+                $f: selected;
+        """
+        query_result = self.fetch_database(query)
+        return query_result[0]['f']['selected'][0]['value']
+
+    def update_feature_selected_by_param_value(self, feature_name: str):
+        """
+        Update whether a feature is selected based on its parameter value.
+
+        :param feature_name: feature name
+        """
+        query = f"""
+        match
+            $f isa Feature, has feature_name "{feature_name}";
+            $vr (variant: $f, resolution_action: $ra) isa variant_resolution;
+            $ra (node: $n, parameter: $p, parameter_value: $pv) isa set_nodes_parameters;
+            $old_hpv (node: $n, parameter: $p) isa has_parameter_value;
+        delete
+            $old_hpv isa has_parameter_value;
+        insert
+            $hpv (node: $n, parameter: $p, parameter_value: $pv) isa has_parameter_value;
+
+        """
+        query_result = self.update_database(query)
+        return query_result
 
     def is_node_running(self, node_name: str) -> bool:
         """
@@ -1025,6 +1210,12 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param value: measured value
         :return: query result
         """
+
+        if(measure_name in self.seen):
+            return
+
+        self.seen[measure_name] = True
+        
         value_query = ''
         variable_name = ''
         if (isinstance(value, list)):
@@ -1042,7 +1233,17 @@ class TacticalRetreatInterface(TypeDBInterface):
                 )
             value_query = '\n'.join(query_fragments)
         else:
-            value_query, variable_name = create_value_query(value)
+            value_query, variable_name = create_value_query(value,measure_name)
+
+        del_query = f"""
+            match
+                $measure isa Measure, has measure_name "{measure_name}";
+                $measurement (measure: $measure) isa measurement,
+                    has latest $latest;
+                $latest == true;
+            delete $measurement has $latest;
+        """
+        self.delete_from_database(del_query)
 
         delete_query = f"""
             match
@@ -1055,7 +1256,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         self.delete_from_database(delete_query)
 
         time = convert_py_type_to_query_type(datetime.now())
-        query = f"""
+        insert_query = f"""
             match
                 $measure isa Measure, has measure_name '{measure_name}';
             insert
@@ -1065,7 +1266,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                     has measurement_time {time},
                     has latest true;
         """
-        return self.insert_database(query)
+        return self.insert_database(insert_query)
 
     def fetch_expression_measure_dependency(self, expression_name: str):
         """

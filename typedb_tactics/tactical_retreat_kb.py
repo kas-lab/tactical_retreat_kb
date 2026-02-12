@@ -14,6 +14,8 @@
 
 import importlib
 import inspect
+import time
+import traceback
 
 import rclpy
 from rclpy.duration import Duration
@@ -28,8 +30,10 @@ from rclpy.qos import QoSReliabilityPolicy
 from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
 
 from std_srvs.srv import Trigger
-
+from adapt_x_msgs.srv import FetchApplicable
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+from ros_monitors_functions.factory import MonitorFactory
+from rebet_monitors.rebet_monitors import MovementPowerDraw, PowerBudget, is_too_close
 
 
 def publish_event(event_type: str):
@@ -99,15 +103,16 @@ def _to_duration(v):
 def get_qos_from_qos_dict(qos_dict: dict) -> QoSProfile:
     # depth must be provided when KEEP_LAST; default to 10
     if qos_dict is None:
-        return QoSProfile(depth=10)
+        return QoSProfile(depth=1)
 
-    qos = QoSProfile(depth=int(qos_dict.get('depth', 10)))
+    # qos = QoSProfile(depth=int(qos_dict.get('depth', 1)))
+    qos = QoSProfile(depth=1)
 
     # Policies
     if 'reliability' in qos_dict:
         qos.reliability = RELIABILITY_MAP[qos_dict['reliability']]
     if 'history' in qos_dict:
-        qos.history = HISTORY_MAP[qos_dict['history']]
+        qos.history = HISTORY_MAP['KEEP_LAST'] # change back
     if 'durability' in qos_dict:
         qos.durability = DURABILITY_MAP[qos_dict['durability']]
     if 'liveliness' in qos_dict:
@@ -150,9 +155,17 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         self.measures_clients = {}
         self.measures_timers = {}
         self.measures_services = {}  # For proxies
+        self.monitor = MonitorFactory()
+        self.monitor.register_monitor(
+            'MovementPowerDraw', MovementPowerDraw)
+        self.monitor.register_monitor(
+            'PowerBudget', PowerBudget)
+        self.monitor.register_monitor(
+            "is_too_close", is_too_close
+        )
 
     def on_activate(self, state: State) -> TransitionCallbackReturn:
-        self.get_logger().info(self.get_name() + ': on_activate() is called.')
+        super().get_logger().info(self.get_name() + ': on_activate() is called.')
         self.active = True
         self.get_logger().info(
             self.get_name() + ': on_activate() is completed.')
@@ -167,21 +180,41 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             except Exception as e:
                 self.get_logger().error(
                     f'Error creating measures interfaces: {e}')
+                self.get_logger().error("Traceback:\n" + traceback.format_exc())
                 res.success = False
             return res
 
-        # TODO: pass the measure name as a string argument to fetch specific measurements
-        def _fetch_all_measurements_cb(_, res):
+        def _fetch_applicable_cb(req, res):
             try:
-                self.get_logger().info('Creating measures interfaces...')
-                x = self.typedb_interface.fetch_all_measurements('current_velocity')
-                self.get_logger().info('Measures interfaces created.')
+                start_time = time.perf_counter()
+                self.get_logger().info('Fetching applicable tactics...')
+                self.typedb_interface.fetch_applicable_valid_adaptations(req.resolution_model, req.interface_name)
+                elapsed_time = time.perf_counter() - start_time
+                self.get_logger().info(f'Applicable tactics fetched in {elapsed_time:.4f} seconds.')
                 res.success = True
-                res.message = str(x)
             except Exception as e:
                 self.get_logger().error(
-                    f'Error creating measures interfaces: {e}')
+                    f'Error fetching applicable tactics: {e}')
+                self.get_logger().error("Traceback:\n" + traceback.format_exc())
                 res.success = False
+            return res
+
+        # TODO: Implement properly.
+        def _fetch_all_measurements_cb(_, res):
+            pass
+
+        def print_req_fullfillment():
+            try:
+                x = self.typedb_interface.get_in_effect_requirement_fulfillment()
+                self.get_logger().info(f'Recorded requirement fulfillment: \n {str(x)}')
+            except Exception as e:
+                self.get_logger().error(
+                    f'Error recording requirement fulfillment: {e}')
+                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+
+        def __record_req_fullfillment(_, res):
+            self.create_timer(5, print_req_fullfillment)
+            res.success = True
             return res
 
         # create service with a lambda calling the create_measures_interfaces
@@ -192,12 +225,18 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             _create_measures_cb
         )
 
+        self.applicable_tactics_service = self.create_service(
+            FetchApplicable,
+            self.get_name() + '/fetch_applicable_tactics',
+            _fetch_applicable_cb,
+            # callback_group=self.query_cb_group
+        )
+
         self.all_measurements_service = self.create_service(
             Trigger,
             self.get_name() + '/fetch_all_measurements',
             _fetch_all_measurements_cb
         )
-
         return super().on_activate(state)
 
     def on_deactivate(self, state: State) -> TransitionCallbackReturn:
@@ -212,6 +251,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
         :return: transition result
         """
+        super().get_logger().info('I have arisen')
         config_res = super().on_configure(state)
         return config_res
 
@@ -243,8 +283,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
         measurement_qos = get_qos_from_qos_dict(interface.get('qos', {}))
 
-        function_lib_name = (interface.get('measurement_function_lib')
-                             or 'ros_monitors_functions.monitor_functions')
+        # function_lib_name = (interface.get('measurement_function_lib')
+        #                      or 'ros_monitors_functions.monitor_functions')
         function_name = (interface.get('measurement_function_name')
                          or 'get_data_field')
 
@@ -252,8 +292,10 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         function_args = [arg.strip() for arg in function_args_str.split(
             ',')] if function_args_str else []
 
-        function_lib = importlib.import_module(function_lib_name)
-        measure_function = getattr(function_lib, function_name)
+        # function_lib = self.monitor[function_lib_name]
+        # importlib.import_module(function_lib_name)
+        measure_function = self.monitor[function_name]
+        # getattr(function_lib, function_name)
 
         # Support both stateless functions and stateful callables (classes with __call__).
         if inspect.isclass(measure_function):
@@ -282,9 +324,10 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 measurement_qos,
                 callback_group=self.query_cb_group
             )
-        if (interface.get('source') == 'Service'):
+        if (interface.get('source') == 'ServiceServer'):
             service_type = get_ros_msg_type_from_string(ros_msg_type_str, 'srv')
             if (interface.get('measurement_proxy') is not True):
+                super().get_logger().info(f'Creating service client for: {ros_msg_type_str}')
                 service_request_kwargs_str = interface.get('service_request_kwargs')
                 service_request_kwargs = {}
                 if service_request_kwargs_str:
@@ -317,6 +360,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                         interface['measurement_period'],
                         _cb)
             else:
+                super().get_logger().info(f'Creating proxy service for: {ros_msg_type_str}')
                 self.measures_clients[measure_name] = self.create_client(
                     service_type,
                     interface_name,
@@ -349,7 +393,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 raise Exception('No measures interfaces to create.')
 
             for interface in measures_interfaces:
-                self.get_logger().info(
+                super().get_logger().info(
                     f'Creating measure interface: {interface}')
                 self.create_measure_interface(interface)
 
