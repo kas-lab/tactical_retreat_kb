@@ -41,11 +41,11 @@ $propositional_expression (atom: $measure_bool_false) isa propositional_expressi
 # comparison expressions
 $measure_lhs_comparison isa Measure, has measure_name 'measure_lhs_comparison';
 (measure: $measure_lhs_comparison, measurement_value:$double_0_15) isa measurement,
-        has measurement_time 2025-09-06T12:57:56.666;
+        has measurement_time 2025-09-06T12:57:56.666, has latest true;
 
 $measure_rhs_comparison isa Measure, has measure_name 'measure_rhs_comparison';
 (measure: $measure_rhs_comparison, measurement_value:$double_0_10) isa measurement,
-        has measurement_time 2025-09-06T12:57:56.666;
+        has measurement_time 2025-09-06T12:57:56.666, has latest true;
 #  0.15 <= 0.10
 $less_than_equal (lhs_value:$measure_lhs_comparison, rhs_value:$measure_rhs_comparison) isa less_than_equal, has expression_name 'less_than_equal';
 $less_than_equal_2 (lhs_value:$measure_lhs_comparison, rhs_value:$double_0_10) isa less_than_equal, has expression_name 'less_than_equal_2';
@@ -116,7 +116,7 @@ $fuzzy_unimodal_measure isa Measure,
 # just an example, the measurement should be inserted at runtime
 $current_fuzzy_unimodal_measure isa ValueDouble, has double_value 0.03779;
 (measure:$fuzzy_unimodal_measure, measurement_value: $current_fuzzy_unimodal_measure) isa measurement,
-    has measurement_time 2025-08-06T10:57:56.666;
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 $fuzzy_unimodal_triangular_set isa FuzzyTriangular,
 	has a -0.5,
@@ -147,7 +147,8 @@ $rel_effect_unimodal_measure (measure: $fuzzy_unimodal_measure, effect_value: $d
 $fuzzy_decay_measure isa Measure,
 	has measure_name "fuzzy_decay_measure";
 $current_fuzzy_decay_measure isa ValueDouble, has double_value 500;
-(measure:$fuzzy_decay_measure, measurement_value: $current_fuzzy_decay_measure) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+(measure:$fuzzy_decay_measure, measurement_value: $current_fuzzy_decay_measure) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 $fuzzy_decay_exp_set isa FuzzyExponentialDecay,
 	has exponent 0.0002107;
@@ -178,7 +179,7 @@ $rel_effect_decay_measure (measure: $fuzzy_decay_measure, effect_value: $double_
 # just an example, the measurement should be inserted at runtime
 $current_fuzzy_ascend_measure isa ValueDouble, has double_value 9.0;
 (measure:$fuzzy_ascend_measure, measurement_value: $current_fuzzy_ascend_measure) isa measurement,
-    has measurement_time 2025-08-06T10:57:56.666;
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 # $fuzzy_ascend_sigmoid_set isa FuzzySigmoid,
 # 	has inflection_point 5.0,
@@ -226,7 +227,7 @@ $as_close_as_measure isa Measure,
 	has measure_name 'as_close_as_measure';
 
 (measure:$as_close_as_measure, measurement_value: $double_0_22221) isa measurement,
-	has measurement_time 2025-08-06T10:57:56.666;
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 # expected fulfillment 0.92442
 $fake_as_close_expression (fuzzy_set: $fuzzy_unimodal_triangular_set, term: $as_close_as_measure) isa as_close_as_possible_expression,
@@ -249,7 +250,7 @@ $as_many_as_measure isa Measure,
 	has measure_name 'as_many_as_measure';
 
 (measure:$as_many_as_measure, measurement_value: $double_9) isa measurement,
-	has measurement_time 2025-08-06T10:57:56.666;
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 # expected fulfillment 0.913378192
 $fake_as_many_as_possible (fuzzy_set: $fuzzy_ascend_sigmoid_set, term: $as_many_as_measure) isa as_many_as_possible_expression,
@@ -272,7 +273,7 @@ $as_few_as_measure isa Measure,
 	has measure_name 'as_few_as_measure';
 
 (measure:$as_few_as_measure, measurement_value: $double_0_30) isa measurement,
-	has measurement_time 2025-08-06T10:57:56.666;
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 $fuzzy_exp_decay_set isa FuzzyExponentialDecay,
 	has exponent 0.2;

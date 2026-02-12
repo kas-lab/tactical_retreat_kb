@@ -186,7 +186,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: list of dictionaries with the node_name and namespace of the client nodes
         """
         return node_query_to_node_dict(
-            self.fetch_action_clients(action_name))
+            self.fetch_action_clients_nodes(action_name))
 
     def fetch_action_server_nodes(
             self, action_name: str) -> List[dict[str, MatchResultDict]]:
@@ -1044,6 +1044,16 @@ class TacticalRetreatInterface(TypeDBInterface):
         else:
             value_query, variable_name = create_value_query(value)
 
+        delete_query = f"""
+            match
+                $measure isa Measure, has measure_name '{measure_name}';
+                $measurement (measure: $measure) isa measurement,
+                    has latest $latest;
+                $latest == true;
+            delete $measurement has $latest;
+        """
+        self.delete_from_database(delete_query)
+
         time = convert_py_type_to_query_type(datetime.now())
         query = f"""
             match
@@ -1052,7 +1062,8 @@ class TacticalRetreatInterface(TypeDBInterface):
                 {value_query}
                 $measurement (measure: $measure, measurement_value: {variable_name})
                     isa measurement,
-                    has measurement_time {time};
+                    has measurement_time {time},
+                    has latest true;
         """
         return self.insert_database(query)
 
@@ -1236,43 +1247,63 @@ class TacticalRetreatInterface(TypeDBInterface):
         return query_result[0]['relaxed_expression']['fulfillment'][0]['value']
 
     def fetch_potential_requirements_fulfillment(
-            self, action_name: str) -> List[dict[str, MatchResultDict]]:
+            self,
+            action_name: str,
+            resolution_model: Optional[str] = None
+            ) -> List[dict[str, MatchResultDict]]:
         """
         Fetch all potential relaxed requirement fulfillments per applicable tactic.
 
-        :param system_name: system name
-        :param requirement_name: requirement name
+        :param action_name: ROS interface/action name
+        :param resolution_model: optional resolution model name
         :return: fetch query result
         """
+        resolution_model_query = '$resolution_model isa resolution_model;'
+        if resolution_model is not None:
+            resolution_model_query = (
+                "$resolution_model isa resolution_model,\n"
+                f"                    has resolution_model_name '{resolution_model}';"
+            )
+
         query = f"""
             match
                 $ros_interface isa ROSInterface, has interface_name '{action_name}';
-                (interface: $ros_interface, tactic_rule: $tactic_rule)
+                {resolution_model_query}
+                (interface: $ros_interface,
+                    resolution_model: $resolution_model,
+                    tactic_rule: $tactic_rule)
                     isa applicable_tactics;
-                $tactic_impact (impacted: $req, tactic_rule: $tactic_rule) isa tactic_rule_impacts;
+                $tactic_impact (impacted: $req, tactic_rule: $tactic_rule)
+                    isa tactic_rule_impacts_requirement, has fulfillment $fulfillment;
                 $req isa relaxed_requirement, has in_effect true;
             fetch
                 $tactic_rule: rule_name;
-                $tactic_impact: fulfillment;
+                $fulfillment;
                 $req: requirement_name;
         """
         return self.fetch_database(query)
 
     def get_potential_requirements_fulfillment(
-            self, action_name: str) -> List[RequirementImpactDict]:
+            self,
+            action_name: str,
+            resolution_model: Optional[str] = None
+            ) -> List[RequirementImpactDict]:
         """
         Get all potential relaxed requirement fulfillments per applicable tactic.
 
+        :param action_name: ROS interface/action name
+        :param resolution_model: optional resolution model name
         :return: list of RequirementImpactDict
         """
-        query_result = self.fetch_potential_requirements_fulfillment(action_name)
+        query_result = self.fetch_potential_requirements_fulfillment(
+            action_name, resolution_model)
         result_list = []
         for result in query_result:
             result_list.append(RequirementImpactDict(
                 action_name=action_name,
                 tactic_rule=result['tactic_rule']['rule_name'][0]['value'],
                 requirement_name=result['req']['requirement_name'][0]['value'],
-                fulfillment=result['tactic_impact']['fulfillment'][0]['value']
+                fulfillment=result['fulfillment']['value']
             ))
         return result_list
 

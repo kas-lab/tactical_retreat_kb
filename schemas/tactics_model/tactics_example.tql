@@ -15,15 +15,15 @@ $mvalueonine isa  ValueDouble,
 
 ## example measurement
 (measure: $nearest_object_measure, measurement_value:$mvalueonine) isa measurement,
-        has measurement_time 2025-09-06T12:57:56.666;
+        has measurement_time 2025-09-06T12:57:56.666, has latest true;
 
 $current_mv_pwer isa ValueDouble, has double_value 0.3;
 (measure:$movement_power_measure , measurement_value: $current_mv_pwer) isa measurement,
-	has measurement_time 2025-08-06T10:57:56.666;
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 $current_vel isa ValueDouble, has double_value 0.22221;
 (measure:$current_linear_velocity_measure , measurement_value: $current_vel) isa measurement,
-	has measurement_time 2025-08-06T10:57:56.666;
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 ## Nearest object
 $scan_filtered_pub isa Publisher,
@@ -79,9 +79,11 @@ $litdoublefifteen isa ValueDouble,
 $litdoublethreenine isa ValueDouble,
     has double_value 39.0;
 
-$ineq_nearest_lower_than_10 (lhs_value:$nearest_object_measure, rhs_value:$litdouble) isa less_than;
+$ineq_nearest_lower_than_10 (lhs_value:$nearest_object_measure, rhs_value:$litdouble) isa less_than,
+	has expression_name 'ineq_nearest_lower_than_10';
 # movement power > 40.0
-$ineq_mv_pwer_greater_than_40  (lhs_value:$movement_power_measure, rhs_value:$litdoublefoury) isa greater_than;
+$ineq_mv_pwer_greater_than_40  (lhs_value:$movement_power_measure, rhs_value:$litdoublefoury) isa greater_than,
+	has expression_name 'ineq_mv_pwer_greater_than_40';
 # (nearest_object < 0.1) or (movement power > 40.0)
 $or_expression (expression:$ineq_nearest_lower_than_10, expression:$ineq_mv_pwer_greater_than_40) isa or_expression;
 

@@ -18,7 +18,7 @@ $mvalue3 isa  ValueDouble,
     has measurement_time 2025-09-06T10:57:56.666;
 
 (measure: $m, measurement_value: $mvalue3) isa measurement,
-    has measurement_time 2025-09-06T11:57:56.666; # latest
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
 
 (measure: $m) isa measurement,
     has measurement_time 2025-09-06T12:57:56.666;
