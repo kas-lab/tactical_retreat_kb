@@ -15,7 +15,11 @@ connected_nodes sub relation,
 ROSNode plays connected_nodes:node;
 ROSNode plays connected_nodes:connected;
 
+valid sub attribute,
+    value boolean;
+
 applicable_tactics sub relation,
+    owns valid,
     relates interface,
     relates resolution_model,
     relates tactic_rule;
@@ -133,3 +137,11 @@ rule applicable_tactics:
         (interface: $ros_interface, resolution_model: $resolution_model, tactic_rule: $tactic_rule) isa applicable_tactics;
     };
 
+rule applicable_tactics_valid:
+    when {
+        $at (tactic_rule: $tactic_rule) isa applicable_tactics;
+        $tactic_rule has rule_valid $rule_valid;
+        ?valid = $rule_valid;
+    } then {
+        $at has valid ?valid;
+    };
