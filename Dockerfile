@@ -64,12 +64,12 @@ WORKDIR $HOME
 ## Create alias for TypeDB studio
 RUN echo 'alias typedb-studio="/opt/typedb-studio/bin/TypeDB\ Studio"' >> ~/.bashrc
 
-## Create, install deps, and build Rebet workspace
-RUN mkdir -p rebet_ws/src
-WORKDIR $HOME/rebet_ws/src
-COPY dependencies.repos $HOME/rebet_ws/dependencies.repos
+## Create, install deps, and build Tactical Retreat workspace
+RUN mkdir -p tactical_retreat_ws/src
+WORKDIR $HOME/tactical_retreat_ws/src
+COPY dependencies.repos $HOME/tactical_retreat_ws/dependencies.repos
 
-WORKDIR $HOME/rebet_ws
+WORKDIR $HOME/tactical_retreat_ws
 
 ARG DEPS_CACHE_BUSTER
 RUN --mount=type=secret,id=gh_token,uid=1000,gid=1000,mode=0400 bash -lc '\
@@ -77,22 +77,22 @@ RUN --mount=type=secret,id=gh_token,uid=1000,gid=1000,mode=0400 bash -lc '\
   tok=$(tr -d "\r\n" < /run/secrets/gh_token); \
   export GIT_TERMINAL_PROMPT=0; \
   git config --global url."https://x-access-token:${tok}@github.com/".insteadOf "https://github.com/"; \
-  vcs import --input $HOME/rebet_ws/dependencies.repos src ; \
+  vcs import --input $HOME/tactical_retreat_ws/dependencies.repos src ; \
 '
 
+COPY fuzzy $HOME/tactical_retreat_ws/src/typedb_tactics/fuzzy
+COPY launch $HOME/tactical_retreat_ws/src/typedb_tactics/launch
+COPY resource $HOME/tactical_retreat_ws/src/typedb_tactics/resource
+COPY schemas $HOME/tactical_retreat_ws/src/typedb_tactics/schemas
+COPY test $HOME/tactical_retreat_ws/src/typedb_tactics/test
+COPY typedb_tactics $HOME/tactical_retreat_ws/src/typedb_tactics/typedb_tactics
+COPY LICENSE $HOME/tactical_retreat_ws/src/typedb_tactics/LICENSE
+COPY package.xml $HOME/tactical_retreat_ws/src/typedb_tactics/package.xml
+COPY setup.cfg $HOME/tactical_retreat_ws/src/typedb_tactics/setup.cfg
+COPY setup.py $HOME/tactical_retreat_ws/src/typedb_tactics/setup.py
 
-COPY fuzzy $HOME/rebet_ws/src/typedb_tactics/fuzzy
-COPY launch $HOME/rebet_ws/src/typedb_tactics/launch
-COPY resource $HOME/rebet_ws/src/typedb_tactics/resource
-COPY schemas $HOME/rebet_ws/src/typedb_tactics/schemas
-COPY test $HOME/rebet_ws/src/typedb_tactics/test
-COPY typedb_tactics $HOME/rebet_ws/src/typedb_tactics/typedb_tactics
-COPY LICENSE $HOME/rebet_ws/src/typedb_tactics/LICENSE
-COPY package.xml $HOME/rebet_ws/src/typedb_tactics/package.xml
-COPY setup.cfg $HOME/rebet_ws/src/typedb_tactics/setup.cfg
-COPY setup.py $HOME/rebet_ws/src/typedb_tactics/setup.py
 
-
+WORKDIR $HOME/tactical_retreat_ws/
 RUN ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash \
     && sudo apt update \
     && rosdep update \
@@ -103,6 +103,6 @@ RUN ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash \
 RUN USER=ubuntu-user python3 -m pip install setuptools==75.8.2  packaging==24.1 empy==3.3.4 pandas==2.0.2 scipy==1.15.2 numpy==1.23.5
 RUN ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash \
     && colcon build --symlink-install \
-    && echo 'source ~/rebet_ws/install/setup.bash' >> ~/.bashrc"]
+    && echo 'source ~/tactical_retreat_ws/install/setup.bash' >> ~/.bashrc"]
 
 RUN sudo apt autoremove -y && sudo rm -rf /var/lib/apt/lists/

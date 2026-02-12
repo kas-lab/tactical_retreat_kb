@@ -5,19 +5,48 @@
 ### Dependencies
 
 ```mermaid
-graph LR
+graph TB
     data_structure["data_structure.tql"]
     context["context_model.tql"]
     ros["ros_model.tql"]
+    logical["logical_expression.tql"]
+    fuzzy["fuzzy_expression.tql"]
     feature["feature_model.tql"]
+    feature_logic["feature_model_logical_expression.tql"]
+    relaxed["relaxed_model.tql"]
     tactics["tactics_model.tql"]
     discover["discover_tactics_model.tql"]
+    discover_hypo["discover_hypothetical_req_fulfillment.tql"]
 
     data_structure --> context
-    context --> ros
-    ros --> tactics
+    data_structure --> ros
+    data_structure --> logical
+    data_structure --> fuzzy
+    data_structure --> relaxed
+    data_structure --> tactics
+
+    logical --> fuzzy
+    logical --> relaxed
+    logical --> tactics
+    logical --> feature_logic
+
+    feature --> feature_logic
     feature --> tactics
+
+    context --> fuzzy
+    context --> relaxed
+    context --> tactics
+    context --> discover_hypo
+
+    ros --> tactics
+    ros --> discover
+
+    fuzzy --> relaxed
+    relaxed --> discover_hypo
+
     tactics --> discover
+    tactics --> discover_hypo
+    fuzzy --> discover_hypo
 ```
 
 Arrows point from each prerequisite model to the model that depends on it.
@@ -43,7 +72,7 @@ gh auth login         # if not logged in
 Build:
 
 ```Bash
-docker build --secret id=gh_token,src=<(gh auth token) --build-arg DEPS_CACHE_BUSTER=${date} -t rebet .
+docker build --secret id=gh_token,src=<(gh auth token) --build-arg DEPS_CACHE_BUSTER=${date} -t tactical_retreat .
 ```
 
 ### Run
@@ -55,27 +84,37 @@ xhost +
 Start container in the background with typedb server running:
 
 ```Bash
-docker run -d --rm --name rebet -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/rebet_ws/src/typedb_tactics:/home/ubuntu-user/rebet_ws/src/typedb_tactics rebet typedb server
+docker run -d --rm --name tactical_retreat -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/tactical_retreat_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics tactical_retreat typedb server
 ```
 
 ```Bash
-docker run -d --rm --name rebet -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/rebet_ws/src/typedb_tactics:/home/ubuntu-user/rebet_ws/src/typedb_tactics rebet typedb server
+docker run -d --rm --name tactical_retreat -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/tactical_retreat_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics tactical_retreat typedb server
 ```
+
+With nvidia
 
 ```Bash
-docker run -d --rm --name rebet --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/rebet_ws/src/typedb_tactics:/home/ubuntu-user/rebet_ws/src/typedb_tactics rebet typedb server
+docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/tactical_retreat_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics tactical_retreat typedb server
 ```
+
+Mount ros_typedb as well:
 
 ```Bash
-docker run -d --rm --name rebet --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/rebet_ws/src/typedb_tactics:/home/ubuntu-user/rebet_ws/src/typedb_tactics -v $HOME/ros_workspaces/rebet_ws/src/ros_monitors:/home/ubuntu-user/rebet_ws/src/ros_monitors rebet typedb server
+docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/tactical_retreat_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics -v $HOME/ros_workspaces/tactical_retreat_ws/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors -v $HOME/ros_workspaces/tactical_retreat_ws/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb tactical_retreat typedb server
 ```
 
-**Note:** Use the correct image name, if you got the img from the github registry use `ghcr.io/kas-lab/typedb_tactics:latest` instead of `rebet`
+Mount ros_monitors as well:
+
+```Bash
+docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/tactical_retreat_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics -v $HOME/ros_workspaces/tactical_retreat_ws/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors tactical_retreat typedb server
+```
+
+**Note:** Use the correct image name, if you got the img from the github registry use `ghcr.io/kas-lab/typedb_tactics:latest` instead of `tactical_retreat`
 
 Start new terminal in the container:
 
 ```Bash
-docker exec -it rebet bash
+docker exec -it tactical_retreat bash
 ```
 
 ### Test

@@ -62,10 +62,10 @@ measurement_interface sub relation,
 
 rule measurement_latest:
     when {
-        $measurement (measure: $measure, measurement_value: $mv) isa measurement,
+        $measurement (measure: $measure, measurement_value: $mv) isa! measurement,
             has measurement_time $time;
         not {
-            (measure: $measure, measurement_value: $nmv) isa measurement,
+            (measure: $measure, measurement_value: $nmv) isa! measurement,
                 has measurement_time $time2;
             $time2 > $time;
         };

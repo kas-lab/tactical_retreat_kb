@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from dataclasses import dataclass
 from datetime import datetime
 import logging
 from typing import Iterator
@@ -30,6 +31,16 @@ from typedb.driver import ConceptMap
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class RequirementImpactDict():
+    """Dataclass for requirement impact information."""
+
+    action_name: str  #: name of the action
+    requirement_name: str  #: name of the requirement
+    tactic_rule: str  #: name of the tactic rule
+    fulfillment: float  #: fulfillment value
+
+
 def create_value_query(value, suffix=''):
     if not isinstance(value, (str, float, int, bool, list)):
         logger.error(
@@ -42,7 +53,7 @@ def create_value_query(value, suffix=''):
 
     value_query = ''
     if isinstance(value, str):
-        value_query = f"{variable_name} isa ValueString, has string_value '{value}';"
+        value_query = f'{variable_name} isa ValueString, has string_value "{value}";'
     elif isinstance(value, float):
         value_query = f'{variable_name} isa ValueDouble, has double_value {value};'
     elif isinstance(value, bool):
@@ -378,6 +389,30 @@ class TacticalRetreatInterface(TypeDBInterface):
         return [result['tactic']['tactic_name'][0]['value']
                 for result in query_result]
 
+    def fetch_all_tactic_rules(self) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch all tactic rules names.
+
+        :return: fetch query result
+        """
+        query = """
+            match
+                $tactic_rule isa tactic_rule;
+            fetch
+                $tactic_rule: rule_name;
+        """
+        return self.fetch_database(query)
+
+    def get_all_tactic_rules(self) -> List[str]:
+        """
+        Get all tactic tactic rules names.
+
+        :return: list of tactic rule names
+        """
+        query_result = self.fetch_all_tactic_rules()
+        return [result['tactic_rule']['rule_name'][0]['value']
+                for result in query_result]
+
     def does_tactic_affect_nodes(
             self,
             tactic_name: str,
@@ -578,9 +613,11 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: fetch query result
         """
         query_result = self.fetch_in_effect_requirement_fulfillment()
-        return [
+        query_dict = [
             {'requirement_name': result['req']['requirement_name'][0]['value'],
-             'fulfillment': result['req']['fulfillment'][0]['value']} for result in query_result]
+             'fulfillment': result['req']['fulfillment'][0]['value']}
+            for result in query_result]
+        return sorted(query_dict, key=lambda item: item['requirement_name'])
 
     def set_requirement_in_effect(self, requirement_name: str, in_effect: bool
                                   ) -> Optional[Iterator[ConceptMap]]:
@@ -599,6 +636,44 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $req has in_effect {in_effect_tql_type};
         """
         return self.insert_database(query)
+
+    def fetch_relaxed_requirement_hypothetical_fulfillment(
+            self, system_name: str, requirement_name: str, tactic_rule: str
+            ) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch hypothetical fulfillment of a relaxed requirement after applying a tactic rule.
+
+        :param system_name: system name
+        :param requirement_name: requirement name
+        :param tactic_rule: tactic rule name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $system isa System, has system_name '{system_name}';
+                $requirement (system: $system) isa relaxed_requirement,
+                    has requirement_name '{requirement_name}';
+                $tr isa tactic_rule, has rule_name '{tactic_rule}';
+                $tactic_impact (tactic_rule: $tr, requirement: $requirement) isa tactic_impact;
+            fetch
+                $tactic_impact : fulfillment;
+        """
+        return self.fetch_database(query)
+
+    def get_relaxed_requirement_hypothetical_fulfillment(
+            self, system_name: str, requirement_name: str, tactic_rule: str
+            ) -> List[dict[str, MatchResultDict]]:
+        """
+        Get hypothetical fulfillment of a relaxed requirement after applying a tactic rule.
+
+        :param system_name: system name
+        :param requirement_name: requirement name
+        :param tactic_rule: tactic rule name
+        :return: fulfillment value
+        """
+        query_result = self.fetch_relaxed_requirement_hypothetical_fulfillment(
+            system_name, requirement_name, tactic_rule)
+        return query_result[0]['tactic_impact']['fulfillment'][0]['value']
 
     def fetch_requirement_in_effect(self, requirement_name: str
                                     ) -> List[dict[str, MatchResultDict]]:
@@ -771,47 +846,6 @@ class TacticalRetreatInterface(TypeDBInterface):
             return [entry['value']['attribute'][0]['value']
                     for entry in array_values]
 
-    def fetch_ineq_expression_valid(self,
-                                    measure_name: str,
-                                    operator: str,
-                                    value: float) -> List[dict[str,
-                                                               MatchResultDict]]:
-        """
-        Fetch whether a inequality expression is valid.
-
-        :param measure_name: measure name
-        :param operator: ineq operator
-        :param value: value
-        :return: fetch query result
-        """
-        query = f"""
-            match
-                $measure isa Measure, has measure_name '{measure_name}';
-                $litdouble isa ValueDouble, has double_value {value};
-                $expr (lhs_value: $measure, rhs_value:$litdouble) isa inequality_expression,
-                    has operator '{operator}';
-            fetch
-                $expr: expression_valid;
-        """
-        return self.fetch_database(query)
-
-    def get_ineq_expression_valid(
-            self,
-            measure_name: str,
-            operator: str,
-            value: float) -> bool:
-        """
-        Get whether a inequality expression is valid.
-
-        :param measure_name: measure name
-        :param operator: ineq operator
-        :param value: value
-        :return: true or false
-        """
-        query_result = self.fetch_ineq_expression_valid(
-            measure_name, operator, value)
-        return query_result[0]['expr']['expression_valid'][0]['value']
-
     def fetch_tactic_rule_valid(
             self, tactic_rule: str) -> List[dict[str, MatchResultDict]]:
         """
@@ -909,7 +943,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.fetch_database(query)
         return query_result[0]['ra']['feasible'][0]['value']
 
-    def fetch_measures_inferfaces(self):
+    def fetch_measures_interfaces(self):
         query = """
             match
                 $measure isa Measure, has measure_name $measure_name;
@@ -932,7 +966,7 @@ class TacticalRetreatInterface(TypeDBInterface):
 
     def get_measures_interfaces(self):
         result_dict_list = []
-        for result in self.fetch_measures_inferfaces():
+        for result in self.fetch_measures_interfaces():
             result_dict = {}
             measure = result.get('measure_name')
             if measure:
@@ -1021,3 +1055,271 @@ class TacticalRetreatInterface(TypeDBInterface):
                     has measurement_time {time};
         """
         return self.insert_database(query)
+
+    def fetch_expression_measure_dependency(self, expression_name: str):
+        """
+        Fetch the measure names that the expression depends on.
+
+        :param expression_name: expression name
+        :return: query result
+        """
+        query = f"""
+            match
+                $expr isa expression,
+                    has expression_name '{expression_name}';
+                (dependent: $expr, measure: $measure) isa measure_dependency;
+            fetch
+                $measure: measure_name;
+        """
+        return self.fetch_database(query)
+
+    def get_expression_measure_dependency(self, expression_name: str) -> List[str]:
+        """
+        Get the measure names that the expression depends on.
+
+        :param expression_name: expression name
+        :return: list of measure names
+        """
+        query_result = self.fetch_expression_measure_dependency(
+            expression_name)
+        return [result['measure']['measure_name'][0]['value']
+                for result in query_result]
+
+    def fetch_requirement_measure_dependency(self, requirement_name: str):
+        """
+        Fetch the measure names that the requirement depends on.
+
+        :param requirement_name: requirement name
+        :return: query result
+        """
+        query = f"""
+            match
+                $req isa relaxed_requirement,
+                    has requirement_name '{requirement_name}';
+                (dependent: $req, measure: $measure) isa measure_dependency;
+            fetch
+                $measure: measure_name;
+        """
+        return self.fetch_database(query)
+
+    def get_requirement_measure_dependency(self, requirement_name: str) -> List[str]:
+        """
+        Get the measure names that the requirement depends on.
+
+        :param requirement_name: requirement name
+        :return: list of measure names
+        """
+        query_result = self.fetch_requirement_measure_dependency(
+            requirement_name)
+        return [result['measure']['measure_name'][0]['value']
+                for result in query_result]
+
+    def fetch_tactic_rule_impacts_fulfillment(self, impacted_name: str, tactic_rule_name: str):
+        """
+        Fetch hypothetical fulfillment of a expression or requirement given a tactic rule.
+
+        :param impacted_name: expression or requirement name
+        :param rule_name: tactic rule name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                {{
+                    $impacted isa expression,
+                        has expression_name '{impacted_name}';
+                }} or {{
+                    $impacted isa relaxed_requirement,
+                        has requirement_name '{impacted_name}';
+                }};
+                $tr isa tactic_rule,
+                    has rule_name '{tactic_rule_name}';
+                $tr_impacts (impacted: $impacted, tactic_rule: $tr) isa tactic_rule_impacts;
+            fetch
+                $tr_impacts: fulfillment;
+        """
+        query_result = self.fetch_database(query)
+        return query_result
+
+    def get_tactic_rule_impacts_requirement(self, impacted_name: str, rule_name: str) -> float:
+        """
+        Get hypothetical fulfillment of a expression or requirement given a tactic rule.
+
+        :param impacted_name: expression or requirement name
+        :param rule_name: tactic rule name
+        :return: fulfillment
+        """
+        query_result = self.fetch_tactic_rule_impacts_fulfillment(
+            impacted_name, rule_name)
+        return [result['tr_impacts']['fulfillment'][0]['value']
+                for result in query_result]
+
+    def fetch_resulting_effect_value(self, tactic_rule: str, measure_name: str
+                                     ) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch resulting effect value of a tactic on a measure.
+
+        :param tactic_rule: tactic rule name
+        :param measure_name: measure name
+        """
+        query = f"""
+            match
+                $tactic_rule (effect: $effect) isa tactic_rule, has rule_name '{tactic_rule}';
+                $measure isa Measure, has measure_name '{measure_name}';
+                $effect (measure: $measure, effect_value: $effect_value) isa relative_effect;
+            fetch
+                $effect: resulting_effect_value;
+        """
+        return self.fetch_database(query)
+
+    def get_resulting_effect_value(self, tactic_rule: str, measure_name: str) -> float:
+        """
+        Get resulting effect value of a tactic on a measure.
+
+        :param tactic_rule: tactic rule name
+        :param measure_name: measure name
+        :return: resulting effect value
+        """
+        query_result = self.fetch_resulting_effect_value(
+            tactic_rule, measure_name)
+        return query_result[0]['effect']['resulting_effect_value'][0]['value']
+
+    def fetch_fuzzy_membership_degree(self, expression_name: str
+                                      ) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch fuzzy membership of a fuzzy expression.
+
+        :param expression_name: fuzzy expression name
+        :return: membership degree
+        """
+        query = f"""
+            match
+                $fe isa fuzzy_expression, has expression_name '{expression_name}';
+            fetch
+                $fe: membership_degree;
+        """
+        return self.fetch_database(query)
+
+    def get_fuzzy_membership_degree(self, expression_name: str) -> str:
+        """
+        Get fuzzy membership of a fuzzy expression.
+
+        :param expression_name: fuzzy expression name
+        :return: membership type
+        """
+        query_result = self.fetch_fuzzy_membership_degree(expression_name)
+        return query_result[0]['fe']['membership_degree'][0]['value']
+
+    def fetch_relaxed_expression_fulfillment(self, expression_name: str
+                                             ) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch fuzzy fulfillment of a fuzzy expression.
+
+        :param expression_name: fuzzy expression name
+        """
+        query = f"""
+            match
+                $relaxed_expression isa relaxed_expression,
+                has expression_name '{expression_name}';
+            fetch
+                $relaxed_expression: fulfillment;
+        """
+        return self.fetch_database(query)
+
+    def get_relaxed_expression_fulfillment(self, expression_name: str) -> str:
+        """
+        Get fuzzy fulfillment of a fuzzy expression.
+
+        :param expression_name: fuzzy expression name
+        :return: fulfillment type
+        """
+        query_result = self.fetch_relaxed_expression_fulfillment(expression_name)
+        return query_result[0]['relaxed_expression']['fulfillment'][0]['value']
+
+    def fetch_potential_requirements_fulfillment(
+            self, action_name: str) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch all potential relaxed requirement fulfillments per applicable tactic.
+
+        :param system_name: system name
+        :param requirement_name: requirement name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $ros_interface isa ROSInterface, has interface_name '{action_name}';
+                (interface: $ros_interface, tactic_rule: $tactic_rule)
+                    isa applicable_tactics;
+                $tactic_impact (impacted: $req, tactic_rule: $tactic_rule) isa tactic_rule_impacts;
+                $req isa relaxed_requirement, has in_effect true;
+            fetch
+                $tactic_rule: rule_name;
+                $tactic_impact: fulfillment;
+                $req: requirement_name;
+        """
+        return self.fetch_database(query)
+
+    def get_potential_requirements_fulfillment(
+            self, action_name: str) -> List[RequirementImpactDict]:
+        """
+        Get all potential relaxed requirement fulfillments per applicable tactic.
+
+        :return: list of RequirementImpactDict
+        """
+        query_result = self.fetch_potential_requirements_fulfillment(action_name)
+        result_list = []
+        for result in query_result:
+            result_list.append(RequirementImpactDict(
+                action_name=action_name,
+                tactic_rule=result['tactic_rule']['rule_name'][0]['value'],
+                requirement_name=result['req']['requirement_name'][0]['value'],
+                fulfillment=result['tactic_impact']['fulfillment'][0]['value']
+            ))
+        return result_list
+
+    def fetch_all_requirements(self):
+        """
+        Fetch all requirements names.
+
+        :return: fetch query result
+        """
+        query = """
+            match
+                $req isa relaxed_requirement;
+            fetch
+                $req: requirement_name;
+        """
+        return self.fetch_database(query)
+
+    def get_all_requirements(self):
+        """
+        Get all requirements names.
+
+        :return: list with requirement names
+        """
+        query_result = self.fetch_all_requirements()
+        return [result['req']['requirement_name'][0]['value']
+                for result in query_result if len(result['req']['requirement_name']) > 0]
+
+    def fetch_all_expressions(self):
+        """
+        Fetch all expressions names.
+
+        :return: fetch query result
+        """
+        query = """
+            match
+                $expr isa expression;
+            fetch
+                $expr: expression_name;
+        """
+        return self.fetch_database(query)
+
+    def get_all_expressions(self):
+        """
+        Get all expressions names.
+
+        :return: list with expressions names
+        """
+        query_result = self.fetch_all_expressions()
+        return [result['expr']['expression_name'][0]['value']
+                for result in query_result if len(result['expr']['expression_name']) > 0]
