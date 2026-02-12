@@ -527,3 +527,10 @@ def test_potential_requirements_fulfillment(kb_interface):
         requirement_name='R1.3 Movement Power',
         tactic_rule='MAX',
         fulfillment=pytest.approx(0.923116396)) in result
+
+    result_with_resolution_model = kb_interface.get_potential_requirements_fulfillment(
+        '/navigate_to_pose',
+        resolution_model='rebetmc')
+    assert len(result_with_resolution_model) == len(result)
+    for impact in result:
+        assert impact in result_with_resolution_model
