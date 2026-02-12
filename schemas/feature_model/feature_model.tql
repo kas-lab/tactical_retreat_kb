@@ -9,9 +9,6 @@ selected sub attribute,
 selectable sub attribute,
     value boolean;
 
-leaf_feature sub attribute,
-    value boolean;
-
 mandatory sub attribute,
     value boolean;
 
@@ -36,22 +33,12 @@ Feature sub entity,
     owns selected,
     owns selectable,
     owns mandatory,
-    owns leaf_feature,
     plays feature_hierarchy:parent,
     plays feature_hierarchy:child,
     plays cross_tree_constraint:constraint,
     plays cross_tree_constraint:constrained;
 
 # Rules
-rule leaf_feature:
-    when {
-        $f isa Feature;
-        not {
-            $fh (parent: $f, child: $f_child) isa feature_hierarchy;
-        };
-    } then {
-        $f has leaf_feature true;
-    };
 
 rule feature_selectable:
     when {

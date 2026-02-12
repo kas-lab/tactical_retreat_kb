@@ -4,6 +4,8 @@
 
 We use a multi-sorted, quantifier-free first-order logic over typed state variables, with sorts for booleans, integers, reals, strings, and arrays of these types. Atomic formulas are either comparison predicates between terms (e.g. <, ≤, >, ≥, =, ≠ applied to variables or constants of compatible types) or propositional atoms over boolean terms. Negation is restricted to atomic formulas, yielding negation normal form (NNF). In addition, formulas are constrained to a conjunctive normal form (CNF) shape at the meta-model level: an or_expression (clause) may only relate atomic_expression instances (literals), while an and_expression (conjunction) may only relate atomic_expression instances and or_expression instances. This induces a three-tier expression graph (literals → disjunctions → conjunctions) that is acyclic and stratified, so every well-formed formula denotes a finite conjunction of finite disjunctions of literals (possibly degenerate to a single clause or a single literal), which can be evaluated monotonically by TypeDB rules.
 
+We formalize preconditions as quantifier-free, multi-sorted state formulas over runtime variables captured in the context knowledge base. “Multi-sorted” means that terms are typed and range over disjoint domains (e.g., ValueBool, ValueInteger, ValueDouble, ValueString, and arrays), and atomic predicates are only well-formed when their operands have compatible sorts. “Quantifier-free” means that formulas contain no ∀ or ∃; instead, they are built from atomic predicates over typed state variables (e.g., Measure-backed values) combined using Boolean connectives (and, in the fuzzy/temporal layer, degree-valued operators).
+
 **Grammar:**
 ```
 t   ::= x | c

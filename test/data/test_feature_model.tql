@@ -46,6 +46,6 @@ $f_excl_constrained_5 isa Feature, has feature_name "f_excl_constrained_5";
 
 # Feature as proposition expression
 
-$true_feature_prop_exp (proposition: $f_selected_1) isa propositional_expression, has expression_name 'true_feature_prop_exp';
-$false_feature_prop_exp (proposition: $f_not_selected_1) isa propositional_expression, has expression_name 'false_feature_prop_exp';
-$false_feature_prop_exp_2 (proposition: $f_not_selected_2) isa propositional_expression, has expression_name 'false_feature_prop_exp_2';
+$true_feature_prop_exp (atom: $f_selected_1) isa propositional_expression, has expression_name 'true_feature_prop_exp';
+$false_feature_prop_exp (atom: $f_not_selected_1) isa propositional_expression, has expression_name 'false_feature_prop_exp';
+$false_feature_prop_exp_2 (atom: $f_not_selected_2) isa propositional_expression, has expression_name 'false_feature_prop_exp_2';

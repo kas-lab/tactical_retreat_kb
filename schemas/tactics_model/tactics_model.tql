@@ -24,13 +24,40 @@ rule_valid sub attribute,
 feasible sub attribute,
     value boolean;
 
-### Relations
+### Tactic
+Tactic sub entity,
+    owns tactic_name @key,
+    plays tactic_rule:tactic,
+    plays resolution_model:tactic;
+
 tactic_rule sub relation,
     owns rule_name @key,
     owns rule_valid,
     relates tactic,
     relates antecedent,
-    relates consequent;
+    relates consequent,
+    relates effect;
+
+### effect
+
+resulting_effect_value sub attribute,
+    value double;
+effect sub relation,
+    abstract,
+    owns resulting_effect_value,
+    relates measure,
+    plays tactic_rule:effect;
+
+absolute_effect sub effect,
+    relates effect_value;
+
+relative_effect sub effect,
+    relates effect_value;
+
+Measure plays effect:measure;
+Value plays absolute_effect:effect_value;
+ValueDouble plays relative_effect:effect_value;
+ValueInteger plays relative_effect:effect_value;
 
 #### connection with logical_expression model
 logical_expression plays tactic_rule:antecedent;
@@ -81,12 +108,6 @@ Value plays set_nodes_parameters:parameter_value;
 
 set_lifecycle_state sub resolution_action,
     owns lifecycle_state;
-
-### Entities
-Tactic sub entity,
-    owns tactic_name @key,
-    plays tactic_rule:tactic,
-    plays resolution_model:tactic;
 
 ## Rules to infer whether a tactic rule is valid
 rule tactic_rule_valid:
@@ -254,4 +275,50 @@ rule feature_not_selected_by_parameter_match:
         not { $f has selected true; };  # don't overwrite an explicit/derived true
     } then {
         $f has selected false;
+    };
+# Rules for inferring the resulting value of an effect
+rule relative_effect_eval:
+    when {
+        $tr (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure, effect_value: $effect_value) isa relative_effect;
+        {
+            $effect_value isa ValueDouble, has double_value $effect_double_value;
+            ?effect_value_ = $effect_double_value;
+        } or {
+            $effect_value isa ValueInteger, has integer_value $effect_integer_value;
+            ?effect_value_ = $effect_integer_value;
+        };
+
+        $measurement (measure: $measure, measurement_value: $value) isa! measurement, has latest true;
+        {
+            $value isa ValueDouble, has double_value $measured_double_value;
+            ?measured_value_ = $measured_double_value;
+        } or {
+            $value isa ValueInteger, has integer_value $measured_integer_value;
+            ?measured_value_ = $measured_integer_value;
+        };
+
+        ?hypothetical_value = ?measured_value_ + ?effect_value_ ;
+    } then {
+        $effect has resulting_effect_value ?hypothetical_value;
+    };
+
+rule absolute_effect_double_result_value:
+    when {
+        $tr (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure, effect_value: $effect_value) isa absolute_effect;
+        $effect_value isa ValueDouble, has double_value $effect_double_value;
+        ?hypothetical_value = $effect_double_value;
+    } then {
+        $effect has resulting_effect_value ?hypothetical_value;
+    };
+
+rule absolute_effect_integer_result_value:
+    when {
+        $tr (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure, effect_value: $effect_value) isa absolute_effect;
+        $effect_value isa ValueInteger, has integer_value $effect_integer_value;
+        ?hypothetical_value = $effect_integer_value;
+    } then {
+        $effect has resulting_effect_value ?hypothetical_value;
     };

@@ -84,16 +84,11 @@ FuzzyRationalDecay sub DecaySet,
 	owns curvature;
 
 ### Fuzzy expressions
-fuzzy_expression_name sub attribute,
-	value string;
-
 quantified_value sub attribute,
 	value double;
-propositional_expression owns quantified_value;
 
-fuzzy_expression sub relation,
+fuzzy_expression sub expression,
 	abstract,
-	owns fuzzy_expression_name @unique, # to enable querying (good for tests)
 	owns membership_degree,
 	owns quantified_value,
 	owns offset_value;
@@ -102,7 +97,7 @@ fuzzy_comparison_expression sub fuzzy_expression,
 	plays fuzzy_and:expression,
 	plays fuzzy_or:expression,
 	plays fuzzy_not:expression,
-	relates proposition;
+	relates term;
 
 fuzzy_decay_expression sub fuzzy_comparison_expression,
 	relates fuzzy_set;
@@ -129,62 +124,66 @@ fuzzy_not sub fuzzy_operator,
 
 
 #### connection with logical_expression model
-propositional_expression owns membership_degree;
-propositional_expression plays fuzzy_not:expression;
-propositional_expression plays fuzzy_and:expression;
-propositional_expression plays fuzzy_or:expression;
+atomic_expression owns membership_degree;
+atomic_expression plays fuzzy_not:expression;
+atomic_expression plays fuzzy_and:expression;
+atomic_expression plays fuzzy_or:expression;
 
-propositional_expression plays fuzzy_comparison_expression:proposition;
+not_expression owns membership_degree;
+not_expression plays fuzzy_and:expression;
+not_expression plays fuzzy_or:expression;
 
-rule quantified_value_measure_double:
-	when {
-		$propositional_expression (proposition: $measure) isa! propositional_expression;
-        (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
-        $mv isa! ValueDouble, has double_value $measure_double_value;
-		?double_value_ = $measure_double_value;
+ValueInteger plays fuzzy_comparison_expression:term;
+ValueDouble plays fuzzy_comparison_expression:term;
+Measure plays fuzzy_comparison_expression:term;
+
+rule atomic_expression_membership_true:
+  	when {
+		$expr isa atomic_expression, has expression_satisfied true;
 	} then {
-		$propositional_expression has quantified_value ?double_value_;
+		$expr has membership_degree 1.0;
 	};
 
-rule crisp_proposition_membership_measure_bool_true:
-	when {
-		$propositional_expression (proposition: $measure) isa! propositional_expression;
-        (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
-        $mv isa! ValueBool, has bool_value true;
+rule atomic_expression_membership_false:
+  	when {
+		$expr isa atomic_expression, has expression_satisfied false;
 	} then {
-		$propositional_expression has membership_degree 1.0;
+		$expr has membership_degree 0.0;
 	};
 
-rule crisp_proposition_membership_measure_bool_false:
-	when {
-		$propositional_expression (proposition: $measure) isa! propositional_expression;
-        (measure:$measure, measurement_value: $mv) isa measurement, has latest true;
-        $mv isa! ValueBool, has bool_value false;
+rule not_expression_membership_true:
+  	when {
+		$expr isa not_expression, has expression_satisfied true;
 	} then {
-		$propositional_expression has membership_degree 0.0;
+		$expr has membership_degree 1.0;
 	};
 
-rule crisp_proposition_membership_true:
-   when {
-    $propositional_expression (proposition: $value) isa! propositional_expression;
-	$value isa! ValueBool, has bool_value true;
-  } then {
-    $propositional_expression has membership_degree 1.0;
-  };
+rule not_expression_membership_false:
+  	when {
+		$expr isa not_expression, has expression_satisfied false;
+	} then {
+		$expr has membership_degree 0.0;
+	};
 
-rule crisp_proposition_membership_false:
-  when {
-    $propositional_expression (proposition: $value) isa! propositional_expression;
-	$value isa! ValueBool, has bool_value false;
-  } then {
-    $propositional_expression has membership_degree 0.0;
-  };
-
-# This rule made the system slower
-rule fuzzy_expression_quantified_value :
+rule fuzzy_expression_quantified_value:
 	when {
-		$fuzzy_expression (proposition: $proposition) isa fuzzy_expression;
-		$proposition isa! propositional_expression, has quantified_value $quantified_value;
+		$fuzzy_expression (term: $term) isa fuzzy_comparison_expression;
+
+		{
+            $term isa ValueDouble, has double_value $quantified_value;
+        } or {
+            $term isa ValueInteger, has integer_value $quantified_value;
+        } or {
+			$term isa Measure;
+            (measure: $term, measurement_value: $value) isa measurement,
+                has latest true;
+			$value isa ValueDouble, has double_value $quantified_value;
+		} or {
+			$term isa Measure;
+            (measure: $term, measurement_value: $value) isa measurement,
+                has latest true;
+			$value isa ValueInteger, has integer_value $quantified_value;
+		};
 
 		{
 			$fuzzy_expression  has offset_value $offest;
@@ -298,16 +297,16 @@ rule fuzzy_not_operator :
 
 rule fuzzy_or_operator :
 	when {
-		$or_expr (expression: $a) isa! fuzzy_or;
-		$a has membership_degree $a_membership;
+		$or_expr (expression: $expression) isa! fuzzy_or;
+		$expression has membership_degree $membership_degree;
 
 		not {
-			$or_expr (expression: $b) isa! fuzzy_or;
-			$b has membership_degree $b_membership;
-			$b_membership > $a_membership;
+			$or_expr (expression: $another_expression) isa! fuzzy_or;
+			$another_expression has membership_degree $another_membership;
+			$another_membership > $membership_degree;
 		};
 	} then {
-		$or_expr has $a_membership;
+		$or_expr has $membership_degree;
 	};
 
 rule fuzzy_and_operator :

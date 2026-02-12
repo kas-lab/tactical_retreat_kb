@@ -8,10 +8,10 @@ $fake_req (system: $fake_system) isa relaxed_requirement,
 $fake_measure isa Measure,
 	has measure_name "fake_measure",
 	has description "The robot's velocity";
-$fake_measure_expr (proposition: $fake_measure) isa propositional_expression;
 
 $current_fake_measure isa ValueDouble, has double_value 0.22221;
-(measure:$fake_measure , measurement_value: $current_fake_measure) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+(measure:$fake_measure , measurement_value: $current_fake_measure) isa measurement,
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 $triangular_set isa FuzzyTriangular,
 	has a -0.5,
@@ -19,52 +19,52 @@ $triangular_set isa FuzzyTriangular,
 	has c 0.5;
 
 # expected membership 0.92442
-$fake_as_close_expression (fuzzy_set: $triangular_set, proposition: $fake_measure_expr) isa as_close_as_possible_expression,
+$fake_as_close_expression (fuzzy_set: $triangular_set, term: $fake_measure) isa as_close_as_possible_expression,
 	has required_value 0.26;
 
 $fake_measure_2 isa Measure,
 	has measure_name "fake_measure_2",
 	has description "The system consumes energy during normal operation";
-$fake_measure_2_expr (proposition: $fake_measure_2) isa propositional_expression;
 $current_fake_measure_2 isa ValueDouble, has double_value 500;
-(measure:$fake_measure_2, measurement_value: $current_fake_measure_2) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+(measure:$fake_measure_2, measurement_value: $current_fake_measure_2) isa measurement,
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 $fake_measure_2_set isa FuzzyExponentialDecay,
 	has exponent 0.0002107;
 
 # expected membership 0.900009528
-$fake_as_few_as_possible_expr (fuzzy_set: $fake_measure_2_set, proposition: $fake_measure_2_expr) isa as_few_as_possible_expression;
+$fake_as_few_as_possible_expr (fuzzy_set: $fake_measure_2_set, term: $fake_measure_2) isa as_few_as_possible_expression;
 
 
 $fake_measure_3 isa Measure,
 	has measure_name "fake_measure_3",
 	has description "amount of foodpackages";
-$fake_measure_3_expr (proposition: $fake_measure_3) isa propositional_expression;
 
 # just an example, the measurement should be inserted at runtime
 $current_fake_measure_3 isa ValueDouble, has double_value 9.0;
-(measure:$fake_measure_3 , measurement_value: $current_fake_measure_3) isa measurement, has measurement_time 2025-08-06T10:57:56.666;
+(measure:$fake_measure_3 , measurement_value: $current_fake_measure_3) isa measurement,
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 $fake_measure_3_set isa FuzzySigmoid,
 	has inflection_point 5.0,
 	has exponent 0.5889;
 
 # expected membership 0.913378192
-$as_many_fake_measure_3_as_possible (fuzzy_set: $fake_measure_3_set, proposition: $fake_measure_3_expr) isa as_many_as_possible_expression;
+$as_many_fake_measure_3_as_possible (fuzzy_set: $fake_measure_3_set, term: $fake_measure_3) isa as_many_as_possible_expression;
 
 # expected fulfillment max(0.92442, 0.900009528, 0.913378192) = 0.92442
 $fake_may_expression (
     expression: $fake_as_close_expression,
     expression: $fake_as_few_as_possible_expr,
     expression: $as_many_fake_measure_3_as_possible) isa may_expression,
-    has relaxed_expression_name 'fake_may_expression';
+    has expression_name 'fake_may_expression';
 
 # expected fulfillment min(0.92442, 0.900009528, 0.913378192) = 0.900009528
 $fake_shall_expression (
     expression: $fake_as_close_expression,
     expression: $fake_as_few_as_possible_expr,
     expression: $as_many_fake_measure_3_as_possible) isa shall_expression,
-    has relaxed_expression_name 'fake_shall_expression';
+    has expression_name 'fake_shall_expression';
 
 
 ### Requirements
