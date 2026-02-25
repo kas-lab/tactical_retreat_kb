@@ -81,3 +81,10 @@ def test_get_measures_interfaces(kb_interface):
     measures_interfaces = kb_interface.get_measures_interfaces()
     assert measure_test_topic_dict in measures_interfaces
     assert laser_scan_dict in measures_interfaces
+
+
+def test_get_measures_interfaces_without_qos(kb_interface):
+    measures_interfaces = kb_interface.get_measures_interfaces(include_qos=False)
+    assert len(measures_interfaces) > 0
+    for measure_interface in measures_interfaces:
+        assert 'qos' not in measure_interface

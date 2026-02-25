@@ -637,44 +637,6 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.insert_database(query)
 
-    def fetch_relaxed_requirement_hypothetical_fulfillment(
-            self, system_name: str, requirement_name: str, tactic_rule: str
-            ) -> List[dict[str, MatchResultDict]]:
-        """
-        Fetch hypothetical fulfillment of a relaxed requirement after applying a tactic rule.
-
-        :param system_name: system name
-        :param requirement_name: requirement name
-        :param tactic_rule: tactic rule name
-        :return: fetch query result
-        """
-        query = f"""
-            match
-                $system isa System, has system_name '{system_name}';
-                $requirement (system: $system) isa relaxed_requirement,
-                    has requirement_name '{requirement_name}';
-                $tr isa tactic_rule, has rule_name '{tactic_rule}';
-                $tactic_impact (tactic_rule: $tr, requirement: $requirement) isa tactic_impact;
-            fetch
-                $tactic_impact : fulfillment;
-        """
-        return self.fetch_database(query)
-
-    def get_relaxed_requirement_hypothetical_fulfillment(
-            self, system_name: str, requirement_name: str, tactic_rule: str
-            ) -> List[dict[str, MatchResultDict]]:
-        """
-        Get hypothetical fulfillment of a relaxed requirement after applying a tactic rule.
-
-        :param system_name: system name
-        :param requirement_name: requirement name
-        :param tactic_rule: tactic rule name
-        :return: fulfillment value
-        """
-        query_result = self.fetch_relaxed_requirement_hypothetical_fulfillment(
-            system_name, requirement_name, tactic_rule)
-        return query_result[0]['tactic_impact']['fulfillment'][0]['value']
-
     def fetch_requirement_in_effect(self, requirement_name: str
                                     ) -> List[dict[str, MatchResultDict]]:
         """
@@ -943,15 +905,28 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.fetch_database(query)
         return query_result[0]['ra']['feasible'][0]['value']
 
-    def fetch_measures_interfaces(self):
-        query = """
+    def fetch_measures_interfaces(
+            self, include_qos: bool = True):
+        """
+        Fetch measures and their source interfaces.
+
+        :param include_qos: include QoS details for publisher sources
+        """
+        qos_sub_query = ''
+        if include_qos:
+            qos_sub_query = """
             match
                 $measure isa Measure, has measure_name $measure_name;
                 $measurement_interface (measure: $measure, source: $source)
                     isa measurement_interface;
             fetch
                 $measure_name;
-                $measurement_interface: attribute;
+                $measurement_interface: measurement_function_name,
+                    measurement_function_lib,
+                    measurement_function_args,
+                    measurement_proxy,
+                    measurement_period,
+                    service_request_kwargs;
                 $source: interface_name, interface_type;
             qos_sub_query: {
                 match
@@ -959,14 +934,49 @@ class TacticalRetreatInterface(TypeDBInterface):
                     (interface: $source, qos: $qos) isa has_qos;
                     $qos isa QoSProfile;
                 fetch
-                    $qos: attribute;
+                    $qos: reliability,
+                        history,
+                        depth,
+                        durability,
+                        deadline,
+                        lifespan,
+                        liveliness,
+                        lease_duration;
             };
-        """
+            """
+        else:
+            qos_sub_query = """
+            match
+                $measure isa Measure, has measure_name $measure_name;
+                $measurement_interface (measure: $measure, source: $source)
+                    isa measurement_interface;
+            fetch
+                $measure_name;
+                $measurement_interface: measurement_function_name,
+                    measurement_function_lib,
+                    measurement_function_args,
+                    measurement_proxy,
+                    measurement_period,
+                    service_request_kwargs;
+                $source: interface_name, interface_type;
+            """
+        query = qos_sub_query
         return self.fetch_database(query)
 
-    def get_measures_interfaces(self):
+    def get_measures_interfaces(self, include_qos: bool = True):
+        """
+        Get measures and source interfaces.
+
+        :param include_qos: include QoS details for publisher sources
+        """
+        def get_first_value(thing: dict, attribute_label: str):
+            values = thing.get(attribute_label, [])
+            if not values:
+                return None
+            return convert_query_type_to_py_type(values[0])
+
         result_dict_list = []
-        for result in self.fetch_measures_interfaces():
+        for result in self.fetch_measures_interfaces(include_qos=include_qos):
             result_dict = {}
             measure = result.get('measure_name')
             if measure:
@@ -982,19 +992,36 @@ class TacticalRetreatInterface(TypeDBInterface):
                 result.get('source').get('interface_type')[0])
 
             measurement_interface = result.get('measurement_interface')
-            for attribute in measurement_interface.get('attribute'):
-                attribute_label = attribute.get('type').get('label')
-                result_dict[attribute_label] = convert_query_type_to_py_type(
-                    attribute)
+            for attribute_label in (
+                'measurement_function_name',
+                'measurement_function_lib',
+                'measurement_function_args',
+                'measurement_proxy',
+                'measurement_period',
+                'service_request_kwargs',
+            ):
+                attribute_value = get_first_value(
+                    measurement_interface, attribute_label)
+                if attribute_value is not None:
+                    result_dict[attribute_label] = attribute_value
 
-            qos_list = result.get('qos_sub_query')
             qos_dict = {}
-            if isinstance(qos_list, list) and qos_list:
+            qos_list = result.get('qos_sub_query')
+            if include_qos and isinstance(qos_list, list) and qos_list:
                 qos = qos_list[0].get('qos')
-                for attribute in qos.get('attribute'):
-                    attribute_label = attribute.get('type').get('label')
-                    qos_dict[attribute_label] = convert_query_type_to_py_type(
-                        attribute)
+                for attribute_label in (
+                    'reliability',
+                    'history',
+                    'depth',
+                    'durability',
+                    'deadline',
+                    'lifespan',
+                    'liveliness',
+                    'lease_duration',
+                ):
+                    attribute_value = get_first_value(qos, attribute_label)
+                    if attribute_value is not None:
+                        qos_dict[attribute_label] = attribute_value
 
             if qos_dict:
                 result_dict['qos'] = qos_dict
@@ -1067,64 +1094,6 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.insert_database(query)
 
-    def fetch_expression_measure_dependency(self, expression_name: str):
-        """
-        Fetch the measure names that the expression depends on.
-
-        :param expression_name: expression name
-        :return: query result
-        """
-        query = f"""
-            match
-                $expr isa expression,
-                    has expression_name '{expression_name}';
-                (dependent: $expr, measure: $measure) isa measure_dependency;
-            fetch
-                $measure: measure_name;
-        """
-        return self.fetch_database(query)
-
-    def get_expression_measure_dependency(self, expression_name: str) -> List[str]:
-        """
-        Get the measure names that the expression depends on.
-
-        :param expression_name: expression name
-        :return: list of measure names
-        """
-        query_result = self.fetch_expression_measure_dependency(
-            expression_name)
-        return [result['measure']['measure_name'][0]['value']
-                for result in query_result]
-
-    def fetch_requirement_measure_dependency(self, requirement_name: str):
-        """
-        Fetch the measure names that the requirement depends on.
-
-        :param requirement_name: requirement name
-        :return: query result
-        """
-        query = f"""
-            match
-                $req isa relaxed_requirement,
-                    has requirement_name '{requirement_name}';
-                (dependent: $req, measure: $measure) isa measure_dependency;
-            fetch
-                $measure: measure_name;
-        """
-        return self.fetch_database(query)
-
-    def get_requirement_measure_dependency(self, requirement_name: str) -> List[str]:
-        """
-        Get the measure names that the requirement depends on.
-
-        :param requirement_name: requirement name
-        :return: list of measure names
-        """
-        query_result = self.fetch_requirement_measure_dependency(
-            requirement_name)
-        return [result['measure']['measure_name'][0]['value']
-                for result in query_result]
-
     def fetch_tactic_rule_impacts_fulfillment(self, impacted_name: str, tactic_rule_name: str):
         """
         Fetch hypothetical fulfillment of a expression or requirement given a tactic rule.
@@ -1144,9 +1113,32 @@ class TacticalRetreatInterface(TypeDBInterface):
                 }};
                 $tr isa tactic_rule,
                     has rule_name '{tactic_rule_name}';
-                $tr_impacts (impacted: $impacted, tactic_rule: $tr) isa tactic_rule_impacts;
+                $tr_impacts (impacted: $impacted, tactic_rule: $tr) isa tactic_rule_impacts,
+                    has fulfillment $fulfillment;
             fetch
-                $tr_impacts: fulfillment;
+                $fulfillment;
+        """
+        query_result = self.fetch_database(query)
+        return query_result
+
+    def fetch_tactic_rule_impacts_requirement(self, impacted_name: str, tactic_rule_name: str):
+        """
+        Fetch hypothetical fulfillment of a requirement given a tactic rule.
+
+        :param impacted_name: requirement name
+        :param rule_name: tactic rule name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $impacted isa relaxed_requirement,
+                    has requirement_name '{impacted_name}';
+                $tr isa tactic_rule,
+                    has rule_name '{tactic_rule_name}';
+                $tr_impacts (impacted: $impacted, tactic_rule: $tr) isa tactic_rule_impacts,
+                    has fulfillment $fulfillment;
+            fetch
+                $fulfillment;
         """
         query_result = self.fetch_database(query)
         return query_result
@@ -1159,9 +1151,9 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param rule_name: tactic rule name
         :return: fulfillment
         """
-        query_result = self.fetch_tactic_rule_impacts_fulfillment(
+        query_result = self.fetch_tactic_rule_impacts_requirement(
             impacted_name, rule_name)
-        return [result['tr_impacts']['fulfillment'][0]['value']
+        return [result[0]['fulfillment']['value']
                 for result in query_result]
 
     def fetch_resulting_effect_value(self, tactic_rule: str, measure_name: str
@@ -1230,9 +1222,10 @@ class TacticalRetreatInterface(TypeDBInterface):
         query = f"""
             match
                 $relaxed_expression isa relaxed_expression,
-                has expression_name '{expression_name}';
+                    has expression_name '{expression_name}',
+                    has fulfillment $fulfillment;
             fetch
-                $relaxed_expression: fulfillment;
+                $fulfillment;
         """
         return self.fetch_database(query)
 
@@ -1244,7 +1237,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: fulfillment type
         """
         query_result = self.fetch_relaxed_expression_fulfillment(expression_name)
-        return query_result[0]['relaxed_expression']['fulfillment'][0]['value']
+        return query_result[0]['fulfillment']['value']
 
     def fetch_potential_requirements_fulfillment(
             self,
@@ -1274,12 +1267,15 @@ class TacticalRetreatInterface(TypeDBInterface):
                     tactic_rule: $tactic_rule)
                     isa applicable_tactics;
                 $tactic_impact (impacted: $req, tactic_rule: $tactic_rule)
-                    isa tactic_rule_impacts_requirement, has fulfillment $fulfillment;
-                $req isa relaxed_requirement, has in_effect true;
+                    isa tactic_rule_impacts_requirement_in_effect, has fulfillment $fulfillment;
+                $req isa relaxed_requirement,
+                    has in_effect true,
+                    has requirement_name $requirement_name;
+                $tactic_rule has rule_name $rule_name;
             fetch
-                $tactic_rule: rule_name;
+                $rule_name;
                 $fulfillment;
-                $req: requirement_name;
+                $requirement_name;
         """
         return self.fetch_database(query)
 
@@ -1301,8 +1297,8 @@ class TacticalRetreatInterface(TypeDBInterface):
         for result in query_result:
             result_list.append(RequirementImpactDict(
                 action_name=action_name,
-                tactic_rule=result['tactic_rule']['rule_name'][0]['value'],
-                requirement_name=result['req']['requirement_name'][0]['value'],
+                tactic_rule=result['rule_name']['value'],
+                requirement_name=result['requirement_name']['value'],
                 fulfillment=result['fulfillment']['value']
             ))
         return result_list
@@ -1354,3 +1350,15 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.fetch_all_expressions()
         return [result['expr']['expression_name'][0]['value']
                 for result in query_result if len(result['expr']['expression_name']) > 0]
+
+    def get_expression_satisfied(self, expression_name):
+        query = f"""
+            match
+                $expr isa logical_expression,
+                    has expression_name '{expression_name}',
+                    has expression_satisfied $expression_satisfied;
+            fetch
+                $expression_satisfied;
+        """
+        query_result = self.fetch_database(query)
+        return query_result[0]['expression_satisfied']['value']
