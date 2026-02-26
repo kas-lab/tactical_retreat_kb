@@ -22,6 +22,7 @@ import time
 from typing import Dict
 from typing import Iterator
 from typing import List
+from typing import Optional
 from typing import Tuple
 
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
@@ -557,8 +558,12 @@ def build_method_calls(
     return deduplicated_specs
 
 
-def benchmark_get_methods(kb_interface: TacticalRetreatInterface, runs: int):
-    method_names = sorted(
+def benchmark_get_methods(
+        kb_interface: TacticalRetreatInterface,
+        runs: int,
+        selected_methods: Optional[set[str]] = None,
+        max_combinations: Optional[int] = None):
+    all_method_names = sorted(
         name for name, func in inspect.getmembers(
             TacticalRetreatInterface, predicate=inspect.isfunction)
         if (
@@ -566,6 +571,12 @@ def benchmark_get_methods(kb_interface: TacticalRetreatInterface, runs: int):
             and func.__qualname__.startswith('TacticalRetreatInterface.')
         )
     )
+    method_names = all_method_names
+    if selected_methods:
+        method_names = [
+            method_name for method_name in method_names
+            if method_name in selected_methods
+        ]
 
     context = resolve_context(kb_interface)
     benchmark_results = []
@@ -577,6 +588,8 @@ def benchmark_get_methods(kb_interface: TacticalRetreatInterface, runs: int):
         if not call_specs:
             skipped_methods.append(method_name)
             continue
+        if max_combinations is not None and max_combinations > 0:
+            call_specs = call_specs[:max_combinations]
 
         method = getattr(kb_interface, method_name)
         elapsed_times_s = []
@@ -653,10 +666,15 @@ def benchmark_get_methods(kb_interface: TacticalRetreatInterface, runs: int):
         })
 
     benchmark_results.sort(key=lambda item: item['avg_time_s'], reverse=True)
-    return benchmark_results, skipped_methods, error_methods
+    unknown_selected_methods = []
+    if selected_methods:
+        unknown_selected_methods = sorted(
+            selected_methods.difference(set(all_method_names))
+        )
+    return benchmark_results, skipped_methods, error_methods, unknown_selected_methods
 
 
-def main(runs: int):
+def main(runs: int, methods: Optional[str], max_combinations: Optional[int]):
     interface_start_time = time.perf_counter()
     kb_interface = TacticalRetreatInterface(
         'localhost:1729',
@@ -741,10 +759,25 @@ def main(runs: int):
             f"satisfied={expression_result['last_satisfied']}"
         )
 
-    benchmark_results, skipped_methods, error_methods = benchmark_get_methods(
-        kb_interface, runs)
+    selected_methods = None
+    if methods is not None and methods.strip() != '':
+        selected_methods = {
+            method_name.strip()
+            for method_name in methods.split(',')
+            if method_name.strip() != ''
+        }
+
+    benchmark_results, skipped_methods, error_methods, unknown_selected_methods = benchmark_get_methods(
+        kb_interface,
+        runs,
+        selected_methods=selected_methods,
+        max_combinations=max_combinations)
 
     print('')
+    if selected_methods:
+        print(f'Selected get_* methods: {", ".join(sorted(selected_methods))}')
+        print(f'Max combinations per method: {max_combinations if max_combinations else "unlimited"}')
+        print('')
     print(f'get_* benchmark results over {runs} run(s), sorted by avg_time_s descending:')
     for result in benchmark_results:
         print(
@@ -763,6 +796,12 @@ def main(runs: int):
         print('')
         print('Skipped methods (missing benchmark input data):')
         for method_name in skipped_methods:
+            print(f'- {method_name}')
+
+    if unknown_selected_methods:
+        print('')
+        print('Unknown selected methods:')
+        for method_name in unknown_selected_methods:
             print(f'- {method_name}')
 
     if error_methods:
@@ -817,9 +856,30 @@ if __name__ == '__main__':
         default=1,
         help='Number of runs per expression (default: 1).',
     )
+    parser.add_argument(
+        '--methods',
+        type=str,
+        default=None,
+        help=(
+            'Optional comma-separated get_* method names to benchmark. '
+            'Example: --methods get_potential_requirements_fulfillment,get_applicable_tactics'
+        ),
+    )
+    parser.add_argument(
+        '--max-combinations',
+        type=int,
+        default=0,
+        help=(
+            'Optional cap of argument combinations per method. '
+            'Use 0 for unlimited (default: 0).'
+        ),
+    )
     args = parser.parse_args()
 
     if args.runs < 1:
         parser.error('--runs must be >= 1')
+    if args.max_combinations < 0:
+        parser.error('--max-combinations must be >= 0')
 
-    main(args.runs)
+    max_combinations = args.max_combinations if args.max_combinations > 0 else None
+    main(args.runs, args.methods, max_combinations)
