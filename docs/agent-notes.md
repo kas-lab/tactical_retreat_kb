@@ -36,9 +36,17 @@ scripts/run-tests-docker.sh -k test_hyp
 - Is TypeDB running on `localhost:1729`?
 - Is the ROS + workspace environment sourced?
 - Is the `tactical_retreat` container running (if using Docker)?
+- If using `sort_fetch_results`, is `typedb_tactics` compatible with the currently installed/overlay `ros_typedb` version?
 
 ## Rule authoring reminders
 
 - Avoid negation cycles: do not read/write the same predicate under `not {}`.
 - Variables in `then` must be bound in `when` outside nested blocks.
 - If you need to assign attributes to a relation, bind or create the relation first.
+
+## Fetch + benchmark reminders
+
+- Runtime should use unordered fetches by default; tests that require deterministic ordering should construct `TacticalRetreatInterface(..., sort_fetch_results=True)`.
+- For quick interface-path checks: `python3 scripts/benchmark.py --runs 1 --methods get_potential_requirements_fulfillment`.
+- For bottleneck decomposition: `python3 scripts/benchmark_queries.py --profiles hyp --runs 5`.
+- Avoid performance conclusions from a single run; compare p50/p95 and row stability.
