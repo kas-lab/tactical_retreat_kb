@@ -1200,7 +1200,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_tactic_rule_impacts_requirement(
             impacted_name, rule_name)
-        return [result[0]['fulfillment']['value']
+        return [result['fulfillment']['value']
                 for result in query_result]
 
     def fetch_resulting_effect_value(self, tactic_rule: str, measure_name: str
@@ -1215,9 +1215,10 @@ class TacticalRetreatInterface(TypeDBInterface):
             match
                 $tactic_rule (effect: $effect) isa tactic_rule, has rule_name '{tactic_rule}';
                 $measure isa Measure, has measure_name '{measure_name}';
-                $effect (measure: $measure, effect_value: $effect_value) isa relative_effect;
+                $effect (measure: $measure, effect_value: $effect_value) isa relative_effect,
+                    has resulting_effect_value $resulting_effect_value;
             fetch
-                $effect: resulting_effect_value;
+                $resulting_effect_value;
         """
         return self.fetch_database(query)
 
@@ -1231,7 +1232,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_resulting_effect_value(
             tactic_rule, measure_name)
-        return query_result[0]['effect']['resulting_effect_value'][0]['value']
+        return query_result[0]['resulting_effect_value']['value']
 
     def fetch_fuzzy_membership_degree(self, expression_name: str
                                       ) -> List[dict[str, MatchResultDict]]:
@@ -1243,9 +1244,10 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query = f"""
             match
-                $fe isa fuzzy_expression, has expression_name '{expression_name}';
+                $fe isa fuzzy_expression, has expression_name '{expression_name}',
+                    has membership_degree $membership_degree;
             fetch
-                $fe: membership_degree;
+                $membership_degree;
         """
         return self.fetch_database(query)
 
@@ -1257,7 +1259,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: membership type
         """
         query_result = self.fetch_fuzzy_membership_degree(expression_name)
-        return query_result[0]['fe']['membership_degree'][0]['value']
+        return query_result[0]['membership_degree']['value']
 
     def fetch_relaxed_expression_fulfillment(self, expression_name: str
                                              ) -> List[dict[str, MatchResultDict]]:
