@@ -13,6 +13,7 @@
 # limitations under the License.
 from dataclasses import dataclass
 from datetime import datetime
+import inspect
 import logging
 from typing import Iterator
 from typing import List
@@ -115,17 +116,45 @@ class TacticalRetreatInterface(TypeDBInterface):
             data_path: Optional[list[str] | str] = None,
             force_database: Optional[bool] = False,
             force_data: Optional[bool] = False,
-            infer: Optional[bool] = False) -> None:
+            infer: Optional[bool] = False,
+            sort_fetch_results: Optional[bool] = False) -> None:
+        self._sort_fetch_results = bool(sort_fetch_results)
+        super_init = inspect.signature(TypeDBInterface.__init__)
+        if 'sort_fetch_results' in super_init.parameters:
+            super().__init__(
+                address,
+                database_name,
+                schema_path,
+                data_path,
+                force_database,
+                force_data,
+                infer,
+                sort_fetch_results
+            )
+        else:
+            super().__init__(
+                address,
+                database_name,
+                schema_path,
+                data_path,
+                force_database,
+                force_data,
+                infer
+            )
 
-        super().__init__(
-            address,
-            database_name,
-            schema_path,
-            data_path,
-            force_database,
-            force_data,
-            infer
-        )
+    def fetch_database(
+            self,
+            query: str,
+            sort_result: Optional[bool] = None) -> List[dict[str, MatchResultDict]]:
+        """
+        Perform fetch query using interface-level default ordering policy.
+        """
+        should_sort = self._sort_fetch_results if sort_result is None else sort_result
+        try:
+            return super().fetch_database(query, sort_result=should_sort)
+        except TypeError:
+            # Backward compatibility with base versions without sort_result support.
+            return super().fetch_database(query)
 
     def fetch_subnodes(self, node_name: str,
                        namespace: str = '') -> List[dict[str, MatchResultDict]]:
@@ -513,6 +542,24 @@ class TacticalRetreatInterface(TypeDBInterface):
             self.fetch_connected_nodes(
                 node_name, namespace), 'connected')
 
+    def fetch_database_unordered(self, query: str) -> List[dict[str, MatchResultDict]]:
+        """
+        Perform fetch query without recursively sorting result keys.
+        """
+        try:
+            return super().fetch_database_unordered(query)
+        except AttributeError:
+            try:
+                return self.fetch_database(query, sort_result=False)
+            except TypeError:
+                return self.fetch_database(query)
+
+    def fetch_database_unsorted(self, query: str) -> List[dict[str, MatchResultDict]]:
+        """
+        Backward-compatible alias for fetch_database_unordered.
+        """
+        return self.fetch_database_unordered(query)
+
     def fetch_applicable_tactics(self,
                                  resolution_model: str,
                                  interface_name: str) -> List[dict[str, MatchResultDict]]:
@@ -534,7 +581,7 @@ class TacticalRetreatInterface(TypeDBInterface):
             fetch
                 $tactic_rule: rule_name;
         """
-        return self.fetch_database(query)
+        return self.fetch_database_unordered(query)
 
     def get_applicable_tactics(
             self,
@@ -1277,7 +1324,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $fulfillment;
                 $requirement_name;
         """
-        return self.fetch_database(query)
+        return self.fetch_database_unordered(query)
 
     def get_potential_requirements_fulfillment(
             self,

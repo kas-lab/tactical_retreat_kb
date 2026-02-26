@@ -36,7 +36,8 @@ def kb_interface():
          'test/data/test_relaxed_model.tql'],
         force_database=True,
         force_data=True,
-        infer=True)
+        infer=True,
+        sort_fetch_results=True)
     yield kb_interface
     kb_interface.delete_database()
 
