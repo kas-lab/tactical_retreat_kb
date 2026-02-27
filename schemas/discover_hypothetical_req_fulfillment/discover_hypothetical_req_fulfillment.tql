@@ -87,6 +87,16 @@ tactic_rule_impacts_requirement_in_effect sub tactic_rule_impacts_in_effect,
     relates impacted;
 relaxed_requirement plays tactic_rule_impacts_requirement_in_effect:impacted;
 
+# resolution-model-scoped in-effect requirement impacts for hot query path
+resolution_model_tactic_rule_impacts_requirement_in_effect sub relation,
+    owns fulfillment,
+    relates resolution_model,
+    relates tactic_rule,
+    relates impacted;
+resolution_model plays resolution_model_tactic_rule_impacts_requirement_in_effect:resolution_model;
+tactic_rule plays resolution_model_tactic_rule_impacts_requirement_in_effect:tactic_rule;
+relaxed_requirement plays resolution_model_tactic_rule_impacts_requirement_in_effect:impacted;
+
 
 tr_dependency_lhs_double_operand sub relation,
     relates tr_dependency,
@@ -1155,3 +1165,32 @@ rule requirement_tr_impacts_in_effect_fulfillment:
 	} then {
         $tr_req has $fulfillment;
 	};
+
+rule resolution_model_tactic_rule_impacts_requirement_in_effect:
+    when {
+        $resolution_model (tactic: $tactic) isa resolution_model;
+        $tactic_rule (tactic: $tactic) isa tactic_rule;
+        $tr_req (tactic_rule: $tactic_rule, impacted: $requirement)
+            isa tactic_rule_impacts_requirement_in_effect;
+        $requirement isa relaxed_requirement, has in_effect true;
+    } then {
+        (resolution_model: $resolution_model,
+            tactic_rule: $tactic_rule,
+            impacted: $requirement)
+            isa resolution_model_tactic_rule_impacts_requirement_in_effect;
+    };
+
+rule resolution_model_tactic_rule_impacts_requirement_in_effect_fulfillment:
+    when {
+        $rm_tr_req (
+            resolution_model: $resolution_model,
+            tactic_rule: $tactic_rule,
+            impacted: $requirement
+        ) isa resolution_model_tactic_rule_impacts_requirement_in_effect;
+        $tr_req (tactic_rule: $tactic_rule, impacted: $requirement)
+            isa tactic_rule_impacts_requirement_in_effect,
+            has fulfillment $fulfillment;
+        $resolution_model isa resolution_model;
+    } then {
+        $rm_tr_req has $fulfillment;
+    };

@@ -146,9 +146,7 @@ class TacticalRetreatInterface(TypeDBInterface):
             self,
             query: str,
             sort_result: Optional[bool] = None) -> List[dict[str, MatchResultDict]]:
-        """
-        Perform fetch query using interface-level default ordering policy.
-        """
+        """Perform fetch query using interface-level default ordering policy."""
         should_sort = self._sort_fetch_results if sort_result is None else sort_result
         try:
             return super().fetch_database(query, sort_result=should_sort)
@@ -543,9 +541,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                 node_name, namespace), 'connected')
 
     def fetch_database_unordered(self, query: str) -> List[dict[str, MatchResultDict]]:
-        """
-        Perform fetch query without recursively sorting result keys.
-        """
+        """Perform fetch query without recursively sorting result keys."""
         try:
             return super().fetch_database_unordered(query)
         except AttributeError:
@@ -555,9 +551,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                 return self.fetch_database(query)
 
     def fetch_database_unsorted(self, query: str) -> List[dict[str, MatchResultDict]]:
-        """
-        Backward-compatible alias for fetch_database_unordered.
-        """
+        """Backward-compatible alias for fetch_database_unordered."""
         return self.fetch_database_unordered(query)
 
     def fetch_applicable_tactics(self,
@@ -1300,12 +1294,11 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param resolution_model: optional resolution model name
         :return: fetch query result
         """
-        resolution_model_query = '$resolution_model isa resolution_model;'
         if resolution_model is not None:
-            resolution_model_query = (
-                "$resolution_model isa resolution_model,\n"
-                f"                    has resolution_model_name '{resolution_model}';"
-            )
+            return self.fetch_potential_requirements_fulfillment_for_resolution_model(
+                action_name, resolution_model)
+
+        resolution_model_query = '$resolution_model isa resolution_model;'
 
         query = f"""
             match
@@ -1328,6 +1321,59 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database_unordered(query)
 
+    def fetch_potential_requirements_fulfillment_for_resolution_model(
+            self,
+            action_name: str,
+            resolution_model: str
+            ) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch potential relaxed requirement fulfillment using a fixed resolution model.
+
+        This is a strict fast-path for the hot query path.
+
+        :param action_name: ROS interface/action name
+        :param resolution_model: resolution model name
+        :return: fetch query result
+        """
+        query = f"""
+            match
+                $ros_interface isa ROSInterface, has interface_name '{action_name}';
+                $resolution_model isa resolution_model,
+                    has resolution_model_name '{resolution_model}';
+                (interface: $ros_interface,
+                    resolution_model: $resolution_model,
+                    tactic_rule: $tactic_rule)
+                    isa applicable_tactics;
+                $tactic_impact (
+                    resolution_model: $resolution_model,
+                    tactic_rule: $tactic_rule,
+                    impacted: $req
+                ) isa resolution_model_tactic_rule_impacts_requirement_in_effect,
+                    has fulfillment $fulfillment;
+                $req has requirement_name $requirement_name;
+                $tactic_rule has rule_name $rule_name;
+            fetch
+                $rule_name;
+                $fulfillment;
+                $requirement_name;
+        """
+        return self.fetch_database_unordered(query)
+
+    @staticmethod
+    def _build_requirement_impact_dicts(
+            action_name: str,
+            query_result: List[dict[str, MatchResultDict]]
+            ) -> List[RequirementImpactDict]:
+        """Convert query result rows to requirement impact dataclasses."""
+        return [
+            RequirementImpactDict(
+                action_name=action_name,
+                tactic_rule=result['rule_name']['value'],
+                requirement_name=result['requirement_name']['value'],
+                fulfillment=result['fulfillment']['value']
+            ) for result in query_result
+        ]
+
     def get_potential_requirements_fulfillment(
             self,
             action_name: str,
@@ -1340,17 +1386,29 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param resolution_model: optional resolution model name
         :return: list of RequirementImpactDict
         """
+        if resolution_model is not None:
+            return self.get_potential_requirements_fulfillment_for_resolution_model(
+                action_name, resolution_model)
+
         query_result = self.fetch_potential_requirements_fulfillment(
+            action_name)
+        return self._build_requirement_impact_dicts(action_name, query_result)
+
+    def get_potential_requirements_fulfillment_for_resolution_model(
+            self,
+            action_name: str,
+            resolution_model: str
+            ) -> List[RequirementImpactDict]:
+        """
+        Get potential relaxed requirement fulfillment using a fixed resolution model.
+
+        :param action_name: ROS interface/action name
+        :param resolution_model: resolution model name
+        :return: list of RequirementImpactDict
+        """
+        query_result = self.fetch_potential_requirements_fulfillment_for_resolution_model(
             action_name, resolution_model)
-        result_list = []
-        for result in query_result:
-            result_list.append(RequirementImpactDict(
-                action_name=action_name,
-                tactic_rule=result['rule_name']['value'],
-                requirement_name=result['requirement_name']['value'],
-                fulfillment=result['fulfillment']['value']
-            ))
-        return result_list
+        return self._build_requirement_impact_dicts(action_name, query_result)
 
     def fetch_all_requirements(self):
         """

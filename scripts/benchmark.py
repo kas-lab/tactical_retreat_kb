@@ -78,8 +78,12 @@ def percentile(values: List[float], fraction: float) -> float:
     if not values:
         return 0.0
     sorted_values = sorted(values)
-    index = int(fraction * (len(sorted_values) - 1))
-    return sorted_values[index]
+    if fraction <= 0.0:
+        return sorted_values[0]
+    if fraction >= 1.0:
+        return sorted_values[-1]
+    rank = math.ceil(fraction * len(sorted_values))
+    return sorted_values[rank - 1]
 
 
 def unique_preserve(items: List):
@@ -472,11 +476,20 @@ def build_method_calls(
     elif method_name == 'get_action_server_nodes':
         call_specs = [([action_name], {}) for action_name in action_server_names]
     elif method_name == 'get_action_clients_names':
-        call_specs = [([node_name, namespace], {}) for node_name, namespace in nodes_with_action_client]
+        call_specs = [
+            ([node_name, namespace], {})
+            for node_name, namespace in nodes_with_action_client
+        ]
     elif method_name == 'get_connected_action_server_nodes':
-        call_specs = [([node_name, namespace], {}) for node_name, namespace in nodes_with_action_client]
+        call_specs = [
+            ([node_name, namespace], {})
+            for node_name, namespace in nodes_with_action_client
+        ]
     elif method_name == 'get_connected_subscriber_nodes':
-        call_specs = [([node_name, namespace], {}) for node_name, namespace in nodes_with_publisher]
+        call_specs = [
+            ([node_name, namespace], {})
+            for node_name, namespace in nodes_with_publisher
+        ]
     elif method_name == 'get_tactics':
         call_specs = [([resolution_model], {}) for resolution_model in resolution_models]
     elif method_name == 'get_all_tactic_rules':
@@ -767,7 +780,12 @@ def main(runs: int, methods: Optional[str], max_combinations: Optional[int]):
             if method_name.strip() != ''
         }
 
-    benchmark_results, skipped_methods, error_methods, unknown_selected_methods = benchmark_get_methods(
+    (
+        benchmark_results,
+        skipped_methods,
+        error_methods,
+        unknown_selected_methods,
+    ) = benchmark_get_methods(
         kb_interface,
         runs,
         selected_methods=selected_methods,
@@ -776,7 +794,9 @@ def main(runs: int, methods: Optional[str], max_combinations: Optional[int]):
     print('')
     if selected_methods:
         print(f'Selected get_* methods: {", ".join(sorted(selected_methods))}')
-        print(f'Max combinations per method: {max_combinations if max_combinations else "unlimited"}')
+        max_combinations_label = (
+            max_combinations if max_combinations else 'unlimited')
+        print(f'Max combinations per method: {max_combinations_label}')
         print('')
     print(f'get_* benchmark results over {runs} run(s), sorted by avg_time_s descending:')
     for result in benchmark_results:
@@ -789,7 +809,9 @@ def main(runs: int, methods: Optional[str], max_combinations: Optional[int]):
             f"result_size_range={result['result_size_min']}..{result['result_size_max']}, "
             f"success_invocations={result['successful_invocations']}, "
             f"failed_invocations={result['failed_invocations']}, "
-            f"success_combinations={result['successful_combinations']}/{result['total_combinations']}"
+            'success_combinations='
+            f"{result['successful_combinations']}/"
+            f"{result['total_combinations']}"
         )
 
     if skipped_methods:
