@@ -68,6 +68,22 @@ And so on.
 
 **Testing note:** Running the full test suite takes ~10 minutes and most of that time is spent setting up the KB/TypeDB. Prefer running only the relevant tests for the module you changed (e.g., if you change the relaxed model, run `test_relaxed_model`).
 
+**Mandatory lint/style gate (all agent changes):** Before considering work complete, always run `test_flake8` and `test_pep257` and ensure both pass. This is required even if you already ran focused functional tests.
+
+Local:
+
+```Bash
+colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_flake8
+colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_pep257
+```
+
+Docker (`tactical_retreat`):
+
+```Bash
+docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_flake8'
+docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_pep257'
+```
+
 **TypeDB note:** Tests and the KB node expect a running TypeDB server (default `localhost:1729`). Start TypeDB before running tests.
 
 ## Fetch ordering policy

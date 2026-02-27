@@ -12,7 +12,7 @@ scripts/run-tests-docker.sh -k test_hyp
 
 ## Code style
 
-- Python code must pass flake8 tests
+- Python code must pass flake8 and pep257 tests
 - Add the following copyright to python files
 
 ```Python
@@ -50,3 +50,9 @@ scripts/run-tests-docker.sh -k test_hyp
 - For quick interface-path checks: `python3 scripts/benchmark.py --runs 1 --methods get_potential_requirements_fulfillment`.
 - For bottleneck decomposition: `python3 scripts/benchmark_queries.py --profiles hyp --runs 5`.
 - Avoid performance conclusions from a single run; compare p50/p95 and row stability.
+
+## Mandatory completion checks
+
+- Always run and pass both lint/style tests before marking work as done:
+  - `colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_flake8`
+  - `colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_pep257`
