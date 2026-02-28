@@ -37,6 +37,24 @@ scripts/run-tests-docker.sh -k test_hyp
 - Is the ROS + workspace environment sourced?
 - Is the `tactical_retreat` container running (if using Docker)?
 
+## Dockerfile update required
+
+The `Dockerfile` pins TypeDB 2 and must be updated before building:
+
+- Line 43: `typedb=2.28.3` → TypeDB 3.x apt package (check typedb.com for current install instructions)
+- Line 46: `pip3 install typedb-driver==2.28.0` → `pip3 install typedb-driver` (3.x)
+- Lines 50–51: TypeDB Studio 2.28.0 `.deb` → TypeDB 3 Studio version (or remove if not needed)
+- `openjdk-11-jre` can be removed once confirmed — TypeDB 3 is written in Rust, no JVM needed
+
+**All testing and execution must happen inside the `tactical_retreat` container.** The TypeDB server runs as the container entrypoint. Do not run tests on the host.
+
+Rebuild after editing the Dockerfile:
+
+```bash
+docker build --secret id=gh_token,src=<(gh auth token) \
+  --build-arg DEPS_CACHE_BUSTER=$(date +%s) -t tactical_retreat .
+```
+
 ## TypeDB 3 migration failure checks
 
 - **Fetch query returns empty list or `KeyError`** → check that fetch query uses TypeDB 3 `{ }` syntax:

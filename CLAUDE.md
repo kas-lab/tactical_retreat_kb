@@ -22,6 +22,12 @@ Migrate `typedb_tactics` from TypeDB 2 to **TypeDB 3** and update it to use the 
 
 Full details with code examples are in the `## TypeDB 3 Migration` section of [AGENTS.md](AGENTS.md).
 
+## Dockerfile Must Be Updated
+
+The `Dockerfile` hardcodes TypeDB 2 (`typedb=2.28.3`, `typedb-driver==2.28.0`). **Update it before building** — see the "Change 0: Dockerfile" entry in the TypeDB 3 Migration section of [AGENTS.md](AGENTS.md) for the exact lines to change.
+
+**All testing and execution must happen inside the `tactical_retreat` container**, not on the host. The TypeDB server runs as the container's entrypoint. Start the container before running any tests or queries.
+
 ## Working Branch
 
 All migration work goes on a new branch, e.g. `typedb3`. The current stable code lives on `optimizations`. Do **not** commit directly to `optimizations` or `main`.

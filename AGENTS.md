@@ -303,6 +303,44 @@ This section documents all changes required to migrate `typedb_tactics` from Typ
 - `test/test_ros_model.py`, `test/test_kb.py`, and all other test files that construct `TacticalRetreatInterface` or parse fetch results
 - Schema files in `schemas/` — audit each; `ros_model.tql` and others still use TypeDB 2 `sub attribute, value string` syntax
 
+### Change 0: Dockerfile — update TypeDB server and Python driver versions
+
+The `Dockerfile` hardcodes TypeDB 2 and must be updated before building a new image. Key lines to change:
+
+| Line | Current (TypeDB 2) | Required (TypeDB 3) |
+|---|---|---|
+| 43 | `typedb=2.28.3` | TypeDB 3.x package — check https://typedb.com/docs/ for the current apt install instructions; the repo URL or GPG key may also differ |
+| 46 | `pip3 install typedb-driver==2.28.0` | `pip3 install typedb-driver` (latest 3.x series, no version pin until stable) |
+| 50–51 | TypeDB Studio 2.28.0 `.deb` | TypeDB Studio for TypeDB 3 — update URL and version, or remove if Studio is not required for testing |
+| 38–44 | TypeDB 2 apt repo + GPG key | Verify whether the TypeDB 3 apt repo/key is the same; update if not |
+
+Additionally, **TypeDB 3 is written in Rust** and no longer requires a JVM. Once confirmed, `openjdk-11-jre` (line 27) can be removed from the `apt-get install` block.
+
+**All development, testing, and execution must happen inside the `tactical_retreat` container**, not on the host. The container mounts the source tree at `/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics/` (and `ros_monitors` alongside it). The TypeDB server starts automatically as the container's entrypoint (`typedb server`).
+
+Build the updated image (requires a GitHub token for private deps):
+
+```bash
+docker build --secret id=gh_token,src=<(gh auth token) \
+  --build-arg DEPS_CACHE_BUSTER=$(date +%s) \
+  -t tactical_retreat .
+```
+
+Start the container (TypeDB server starts automatically):
+
+```bash
+docker run -d --rm --name tactical_retreat \
+  -v $HOME/ros_workspaces/tactical_retreat_3_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics \
+  -v $HOME/ros_workspaces/tactical_retreat_3_ws/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors \
+  tactical_retreat typedb server
+```
+
+Verify TypeDB 3 is running before running any tests:
+
+```bash
+docker exec tactical_retreat bash -lc 'typedb --version'
+```
+
 ### Change 1: Architecture — inheritance → composition
 
 `TacticalRetreatInterface` currently subclasses `TypeDBInterface`. The new design removes inheritance; a `TypeDBInterface` instance is held as `self.db`.
