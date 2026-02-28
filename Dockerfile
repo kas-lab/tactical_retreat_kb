@@ -42,14 +42,14 @@ RUN apt-get update && apt-get install -y \
     typedb=3.8.0 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install typedb-driver
+RUN pip3 install "typedb-driver>=3,<4"
 
 ## Install TypeDB studio
-RUN sudo mkdir /usr/share/desktop-directories/
+RUN mkdir /usr/share/desktop-directories/
 RUN add-apt-repository universe \
-    && wget https://repo.typedb.com/public/public-release/raw/names/typedb-studio-linux-x86_64/versions/3.9.0/typedb-studio-linux-x86_64-3.9.0.deb \
-    && apt-get install -y ./typedb-studio-linux-x86_64-3.9.0.deb \
-    && rm typedb-studio-linux-x86_64-3.9.0.deb \
+    && wget -P /tmp https://repo.typedb.com/public/public-release/raw/names/typedb-studio-linux-x86_64/versions/3.9.0/typedb-studio-linux-x86_64-3.9.0.deb \
+    && apt-get install -y /tmp/typedb-studio-linux-x86_64-3.9.0.deb \
+    && rm /tmp/typedb-studio-linux-x86_64-3.9.0.deb \
     && rm -rf /var/lib/apt/lists/*
 
 ## Create ubuntu-user user, disable password, and add it to sudo group
