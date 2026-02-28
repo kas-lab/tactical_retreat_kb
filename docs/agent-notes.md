@@ -36,7 +36,33 @@ scripts/run-tests-docker.sh -k test_hyp
 - Is TypeDB running on `localhost:1729`?
 - Is the ROS + workspace environment sourced?
 - Is the `tactical_retreat` container running (if using Docker)?
-- If using `sort_fetch_results`, is `typedb_tactics` compatible with the currently installed/overlay `ros_typedb` version?
+
+## TypeDB 3 migration failure checks
+
+- **Fetch query returns empty list or `KeyError`** → check that fetch query uses TypeDB 3 `{ }` syntax:
+  ```typeql
+  # WRONG (TypeDB 2)
+  fetch $node: node_name, namespace;
+  # CORRECT (TypeDB 3)
+  fetch { "node_name": $node.node_name, "namespace": $node.namespace };
+  ```
+- **Result parsing fails with `TypeError` on `[0]['value']`** → the fetch result format is now flat native Python. Replace `result['var']['attr'][0]['value']` with `result['attr']` directly.
+- **Aggregate returns `None`** → check the query uses TypeDB 3 `select`/`reduce` syntax:
+  ```typeql
+  # WRONG (TypeDB 2)
+  get $node; count;
+  # CORRECT (TypeDB 3)
+  select $node; reduce $c = count;
+  ```
+- **`AttributeError: 'TacticalRetreatInterface' object has no attribute 'sort_fetch_results'`** → `sort_fetch_results` has been removed. Remove it from the constructor and sort results in Python after fetching.
+- **`TypeError` in `TacticalRetreatInterface.__init__`** → constructor signature changed. `TypeDBInterface.__init__` no longer accepts `sort_fetch_results`; remove it from all call sites.
+- **`ImportError: cannot import name 'convert_py_type_to_query_type' from 'ros_typedb.typedb_interface'`** → this function moved to `ros_typedb.typedb_helpers`. Update import:
+  ```python
+  from ros_typedb.typedb_helpers import convert_py_type_to_query_type
+  from ros_typedb.typedb_helpers import convert_query_type_to_py_type
+  # MatchResultDict is still in ros_typedb.typedb_interface
+  ```
+- **Schema error on `sub attribute, value string`** → update to TypeDB 3 syntax: `attribute foo, value string;`
 
 ## Rule authoring reminders
 
@@ -46,7 +72,7 @@ scripts/run-tests-docker.sh -k test_hyp
 
 ## Fetch + benchmark reminders
 
-- Runtime should use unordered fetches by default; tests that require deterministic ordering should construct `TacticalRetreatInterface(..., sort_fetch_results=True)`.
+- TypeDB 3 does not guarantee result order; `sort_fetch_results` is removed. Sort results in Python after fetching when deterministic order is required for assertions.
 - For quick interface-path checks: `python3 scripts/benchmark.py --runs 1 --methods get_potential_requirements_fulfillment`.
 - For bottleneck decomposition: `python3 scripts/benchmark_queries.py --profiles hyp --runs 5`.
 - Avoid performance conclusions from a single run; compare p50/p95 and row stability.

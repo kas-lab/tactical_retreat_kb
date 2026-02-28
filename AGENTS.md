@@ -16,8 +16,8 @@ In summary the main meta-models needed for adaptation are:
 
 ## Dependencies and environment
 
-- TypeDB 2.28.3
-- TypeDB python driver 2.28.0
+- TypeDB **3.x** (target; was TypeDB 2.28.3 on the `optimizations` branch)
+- TypeDB Python driver: **`typedb-driver`** (PyPI, 3.x series; was `typedb-client==2.28.0`)
 - Python dependencies:
   - setuptools==75.8.2
   - packaging==24.1
@@ -88,10 +88,9 @@ docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && sour
 
 ## Fetch ordering policy
 
-- Runtime fetches should be unordered by default for performance.
-- Use `sort_fetch_results=True` when constructing `TacticalRetreatInterface` in tests that rely on deterministic result order.
-- Prefer `fetch_database_unordered(...)` in hot-path query methods.
-- Use ordered fetches only when deterministic ordering is required for assertions/debugging.
+- TypeDB 3 does not guarantee result order. `sort_fetch_results` and `fetch_database_unordered` are removed.
+- If a test relies on deterministic result order, sort in Python after fetching (e.g., `results.sort(key=lambda d: d['node_name'])`).
+- Do not add `sort_fetch_results` to `TacticalRetreatInterface.__init__` — it no longer exists.
 
 ## Cross-repo compatibility (typedb_tactics + ros_typedb)
 
@@ -284,7 +283,259 @@ docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && sour
 
 ## Information on TypeDB 2
 
-the documentation for typedb2 lives here: https://typedb.com/docs/home/2.x/
+The documentation for TypeDB 2 lives at https://typedb.com/docs/home/2.x/ — use this only as a historical reference. The target for this project is TypeDB 3.
+
+## TypeDB 3 Migration
+
+This section documents all changes required to migrate `typedb_tactics` from TypeDB 2 to TypeDB 3. The primary file being migrated is `typedb_tactics/typedb_tactical_retreat_interface.py` (1471 lines). Tests and any TypeDB 2 schema files also need updating.
+
+### Dependencies update
+
+| | TypeDB 2 | TypeDB 3 |
+|---|---|---|
+| Server version | 2.28.3 | 3.x |
+| Python driver (PyPI) | `typedb-client==2.28.0` | `typedb-driver` (latest 3.x) |
+| TypeDB 3 docs | — | https://typedb.com/docs/ |
+
+### Files that need changing
+
+- `typedb_tactics/typedb_tactical_retreat_interface.py` — all 9 changes below apply here
+- `test/test_ros_model.py`, `test/test_kb.py`, and all other test files that construct `TacticalRetreatInterface` or parse fetch results
+- Schema files in `schemas/` — audit each; `ros_model.tql` and others still use TypeDB 2 `sub attribute, value string` syntax
+
+### Change 1: Architecture — inheritance → composition
+
+`TacticalRetreatInterface` currently subclasses `TypeDBInterface`. The new design removes inheritance; a `TypeDBInterface` instance is held as `self.db`.
+
+```python
+# OLD (TypeDB 2)
+class TacticalRetreatInterface(TypeDBInterface):
+    def __init__(self, address, database_name, schema_path=None, data_path=None,
+                 force_database=False, force_data=False, infer=False,
+                 sort_fetch_results=False):
+        self._sort_fetch_results = bool(sort_fetch_results)
+        super().__init__(address, database_name, schema_path, data_path,
+                         force_database, force_data, infer)
+
+# NEW (TypeDB 3)
+class TacticalRetreatInterface:
+    def __init__(self, address, database_name, schema_path=None, data_path=None,
+                 force_database=False, force_data=False, infer=False):
+        self.db = TypeDBInterface(address, database_name, schema_path, data_path,
+                                  force_database, force_data, infer)
+```
+
+All internal query calls must be updated to route through `self.db`:
+
+| Old call | New call |
+|---|---|
+| `self.fetch_database(q)` | `self.db.fetch_database(q)` |
+| `self.get_database(q)` | `self.db.get_database(q)` |
+| `self.get_aggregate_database(q)` | `self.db.get_aggregate_database(q)` |
+| `self.insert_database(q)` | `self.db.insert_database(q)` |
+| `self.delete_from_database(q)` | `self.db.delete_from_database(q)` |
+| `self.update_database(q)` | `self.db.update_database(q)` |
+| `self.delete_database()` | `self.db.delete_database()` |
+
+### Change 2: Import paths
+
+```python
+# OLD (TypeDB 2) — in typedb_tactical_retreat_interface.py
+from ros_typedb.typedb_interface import convert_py_type_to_query_type
+from ros_typedb.typedb_interface import convert_query_type_to_py_type
+from ros_typedb.typedb_interface import MatchResultDict
+from ros_typedb.typedb_interface import TypeDBInterface
+
+# NEW (TypeDB 3)
+from ros_typedb.typedb_helpers import convert_py_type_to_query_type   # moved
+from ros_typedb.typedb_helpers import convert_query_type_to_py_type   # moved
+from ros_typedb.typedb_interface import MatchResultDict                # still here
+from ros_typedb.typedb_interface import TypeDBInterface                # still here
+```
+
+Also remove the now-unused `import inspect` and `from typedb.driver import ConceptMap` if present.
+
+### Change 3: TypeQL fetch syntax
+
+Every `fetch` query in `typedb_tactical_retreat_interface.py` must be rewritten.
+
+```typeql
+# TypeDB 2 — INVALID in TypeDB 3
+fetch
+    $node: node_name, namespace;
+
+# TypeDB 3 — correct
+fetch {
+    "node_name": $node.node-name,
+    "namespace": $node.namespace
+};
+```
+
+Note the hyphen in `node-name` vs the underscore in the attribute label as defined in the schema. Use the schema attribute label exactly (e.g., `node_name` → `node-name` only if the schema defines it with a hyphen; check `schemas/ros_model/ros_model.tql` for the actual label).
+
+Multi-attribute fetch with a bound attribute variable:
+
+```typeql
+# TypeDB 2
+fetch
+    $entity: attribute1, attribute2;
+
+# TypeDB 3
+fetch {
+    "attribute1": $entity.attribute1,
+    "attribute2": $entity.attribute2
+};
+```
+
+Multi-value (array) fetch:
+
+```typeql
+# TypeDB 3 — collect multiple values of the same attribute type
+fetch {
+    "addresses": [$entity.address]
+};
+```
+
+### Change 4: Fetch result format
+
+`fetch_database()` in TypeDB 3 calls `as_concept_documents()`, returning a list of flat Python-native dicts keyed by the fetch projection names defined in the query.
+
+```python
+# TypeDB 2 result — deeply nested with type metadata
+result['node']['node_name'][0]['value']       # string value
+result['node']['node_name'][0]['type']['label']  # attribute label
+
+# TypeDB 3 result — flat, native Python types
+result['node_name']   # plain Python str
+result['namespace']   # plain Python str
+result['age']         # plain Python int (long in TypeDB maps to int)
+result['alive']       # plain Python bool
+result['height']      # plain Python float
+result['birth-date']  # plain Python str (ISO datetime with nanosecond precision)
+```
+
+**Consequence:** every result-parsing function that uses `result[var][attr][0]['value']` must be rewritten. In `typedb_tactical_retreat_interface.py` this includes:
+
+- `node_query_to_node_dict()` — accesses `node['namespace'][0]['value']`; rewrite to `result['namespace']`
+- `get_action_clients_names()` — accesses `action['interface_name'][0]['value']`
+- Every other method that unpacks fetch results with `[0]['value']`
+
+Example rewrite of `node_query_to_node_dict`:
+
+```python
+# OLD
+def node_query_to_node_dict(query_result, node_variable='node'):
+    node_dict = []
+    for result in query_result:
+        node = result.get(node_variable)
+        node_dict.append({
+            'node_name': node['node_name'][0]['value'],
+            'namespace': node['namespace'][0]['value'],
+        })
+    return node_dict
+
+# NEW
+def node_query_to_node_dict(query_result):
+    node_dict = []
+    for result in query_result:
+        node_dict.append({
+            'node_name': result['node_name'],
+            'namespace': result['namespace'],
+        })
+    return node_dict
+```
+
+### Change 5: Aggregate query syntax
+
+```typeql
+# TypeDB 2 — INVALID in TypeDB 3
+get $node; count;
+get $s; sum $s;
+
+# TypeDB 3
+select $node; reduce $c = count;
+select $s; reduce $total = sum($s);
+```
+
+`get_aggregate_database()` in `TypeDBInterface` already handles the TypeDB 3 `reduce` result format. The queries themselves are the only thing to change.
+
+### Change 6: Remove sort_fetch_results
+
+`TypeDBInterface` in TypeDB 3 has no `sort_fetch_results` parameter and no `fetch_database_unordered()` method.
+
+- Remove `sort_fetch_results` from `TacticalRetreatInterface.__init__`
+- Remove the overridden `fetch_database()` method in `TacticalRetreatInterface`
+- Remove `self._sort_fetch_results` usage
+- In tests that relied on `sort_fetch_results=True` for deterministic ordering, sort results in Python after fetching:
+
+  ```python
+  # OLD — test fixture
+  kb_interface = TacticalRetreatInterface(..., sort_fetch_results=True)
+
+  # NEW — test fixture
+  kb_interface = TacticalRetreatInterface(...)
+
+  # NEW — sort after fetch if needed
+  results = kb_interface.get_nodes()
+  results.sort(key=lambda d: (d['node_name'], d['namespace']))
+  ```
+
+### Change 7: `get` query — `get $var;` → `select $var;`
+
+Any TypeQL query with `get $var;` must use `select $var;` in TypeDB 3.
+
+```typeql
+# TypeDB 2
+match $node isa ROSNode; get $node;
+
+# TypeDB 3
+match $node isa ROSNode; select $node;
+```
+
+### Change 8: Schema syntax (TypeDB 3)
+
+The existing schemas still use TypeDB 2 syntax. Audit and update each schema file.
+
+```typeql
+# TypeDB 2
+package sub attribute,
+    value string;
+
+# TypeDB 3
+attribute package, value string;
+```
+
+Multi-valued `owns` requires `@card(0..)`:
+
+```typeql
+# TypeDB 3 — entity can own multiple values of this attribute
+ROSNode owns start_time @card(0..);
+```
+
+Check the TypeDB 3 docs (https://typedb.com/docs/) for the full schema syntax. Read existing schema files carefully before touching them — some may already be partially updated.
+
+### Change 9: MatchResultDict location (unchanged)
+
+`MatchResultDict` has **not** moved; it remains in `ros_typedb.typedb_interface`:
+
+```python
+from ros_typedb.typedb_interface import MatchResultDict  # still correct in TypeDB 3
+```
+
+### Before/after quick-reference table
+
+| Pattern | TypeDB 2 (old) | TypeDB 3 (new) |
+|---|---|---|
+| Class definition | `class TacticalRetreatInterface(TypeDBInterface):` | `class TacticalRetreatInterface:` |
+| DB instance | `self` (is TypeDBInterface) | `self.db` (holds TypeDBInterface) |
+| Fetch call | `self.fetch_database(q)` | `self.db.fetch_database(q)` |
+| Import helpers | `from ros_typedb.typedb_interface import convert_*` | `from ros_typedb.typedb_helpers import convert_*` |
+| Fetch syntax | `fetch $n: node_name, namespace;` | `fetch { "node_name": $n.node_name, ... };` |
+| Result access | `r['node']['node_name'][0]['value']` | `r['node_name']` |
+| Aggregate | `get $x; count;` | `select $x; reduce $c = count;` |
+| Select | `get $x;` | `select $x;` |
+| Sort param | `sort_fetch_results=True` in constructor | Sort in Python after fetch |
+| Schema attr | `foo sub attribute, value string;` | `attribute foo, value string;` |
 
 ## Agent helpers
 
