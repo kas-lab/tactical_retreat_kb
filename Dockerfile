@@ -45,12 +45,12 @@ RUN apt-get update && apt-get install -y \
 RUN pip3 install typedb-driver
 
 ## Install TypeDB studio
-# TODO: TypeDB Studio 3.x (latest: 3.9.0, compatible with TypeDB >= 3.3) does not appear to be
-# available at the previous deb repo URL pattern. Comment out until the correct download URL for
-# a TypeDB 3-compatible Studio deb is confirmed.
-# RUN sudo mkdir /usr/share/desktop-directories/
-# RUN wget https://repo.typedb.com/public/public-release/raw/names/typedb-studio-linux-x86_64-deb/versions/2.28.0/typedb-studio-linux-x86_64-2.28.0.deb
-# RUN dpkg -i typedb-studio-linux-x86_64-2.28.0.deb
+RUN sudo mkdir /usr/share/desktop-directories/
+RUN add-apt-repository universe \
+    && wget https://repo.typedb.com/public/public-release/raw/names/typedb-studio-linux-x86_64/versions/3.9.0/typedb-studio-linux-x86_64-3.9.0.deb \
+    && apt-get install -y ./typedb-studio-linux-x86_64-3.9.0.deb \
+    && rm typedb-studio-linux-x86_64-3.9.0.deb \
+    && rm -rf /var/lib/apt/lists/*
 
 ## Create ubuntu-user user, disable password, and add it to sudo group
 RUN groupadd -g 1000 ubuntu-user \
@@ -64,8 +64,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR $HOME
 
 ## Create alias for TypeDB studio
-# TODO: Uncomment when TypeDB Studio 3.x deb install is restored above.
-# RUN echo 'alias typedb-studio="/opt/typedb-studio/bin/TypeDB\ Studio"' >> ~/.bashrc
+RUN echo 'alias typedb-studio="/opt/typedb-studio/bin/TypeDB\ Studio"' >> ~/.bashrc
 
 ## Create, install deps, and build Tactical Retreat workspace
 RUN mkdir -p tactical_retreat_ws/src
