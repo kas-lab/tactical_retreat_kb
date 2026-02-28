@@ -21,12 +21,10 @@ from typing import Optional
 from typing import TypedDict
 from typing import Union
 
-from ros_typedb.typedb_interface import convert_py_type_to_query_type
-from ros_typedb.typedb_interface import convert_query_type_to_py_type
+from ros_typedb.typedb_helpers import convert_py_type_to_query_type
+from ros_typedb.typedb_helpers import convert_query_type_to_py_type
 from ros_typedb.typedb_interface import MatchResultDict
 from ros_typedb.typedb_interface import TypeDBInterface
-
-from typedb.driver import ConceptMap
 
 
 logger = logging.getLogger(__name__)
@@ -661,7 +659,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         return sorted(query_dict, key=lambda item: item['requirement_name'])
 
     def set_requirement_in_effect(self, requirement_name: str, in_effect: bool
-                                  ) -> Optional[Iterator[ConceptMap]]:
+                                  ) -> Optional[Iterator]:
         """
         Set the in_effect status of a relaxed requirement.
 
@@ -1085,7 +1083,7 @@ class TacticalRetreatInterface(TypeDBInterface):
             List[int],
             List[bool],
         ],
-    ) -> Optional[Iterator[ConceptMap]]:
+    ) -> Optional[Iterator]:
         """
         Add new measurement.
 
