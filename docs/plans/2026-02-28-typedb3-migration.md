@@ -145,7 +145,7 @@ from ros_typedb.typedb_interface import MatchResultDict
 from ros_typedb.typedb_interface import TypeDBInterface
 ```
 
-Also remove `import inspect` (line ~16) — it will no longer be needed after Task 3.
+Do **not** remove `import inspect` here — it is still used at line ~120 by the `__init__` compatibility shim. It will be removed in Task 3 once that shim is deleted.
 
 **Step 3: Verify imports resolve inside container**
 
