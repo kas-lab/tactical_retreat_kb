@@ -21,7 +21,6 @@ from typing import TypedDict
 from typing import Union
 
 from ros_typedb.typedb_helpers import convert_py_type_to_query_type
-from ros_typedb.typedb_helpers import convert_query_type_to_py_type
 from ros_typedb.typedb_interface import MatchResultDict
 from ros_typedb.typedb_interface import TypeDBInterface
 
@@ -77,26 +76,18 @@ class RuntimeNodeDict(TypedDict):
 
 
 def node_query_to_node_dict(
-        query_result: List[dict[str, MatchResultDict]],
-        node_variable: str = 'node') -> List[RuntimeNodeDict]:
+        query_result: List[dict]) -> List[RuntimeNodeDict]:
+    """Convert fetch query results to a list of node dicts.
+
+    :param query_result: list of fetch result dicts with 'node_name' and 'namespace' keys.
+    :return: list of RuntimeNodeDict sorted by node_name then namespace.
+    """
     node_dict = []
     for result in query_result:
-        node = result.get(node_variable)
-        if len(node['namespace']) > 1:
-            logger.error(
-                'In node_query_to_node_dict: '
-                'runtime node has more than 1 namespace')
-            return node_dict
-        if len(node['node_name']) > 1:
-            logger.error(
-                'In node_query_to_node_dict: '
-                'runtime node has more than 1 node_name')
-            return node_dict
         node_dict.append({
-            'node_name': node['node_name'][0]['value'],
-            'namespace': node['namespace'][0]['value'],
-        }
-        )
+            'node_name': result['node_name'],
+            'namespace': result['namespace'],
+        })
     # Sort list to guarantee deterministic list order
     node_dict.sort(key=lambda d: (d['node_name'], d['namespace']))
     return node_dict
@@ -171,7 +162,7 @@ class TacticalRetreatInterface:
         :return: list of dictionaries with the node_name and namespace of the subnodes
         """
         return node_query_to_node_dict(
-            self.fetch_subnodes(node_name, namespace), 'subnode')
+            self.fetch_subnodes(node_name, namespace))
 
     def fetch_action_clients_nodes(
             self, action_name: str) -> List[dict[str, MatchResultDict]]:
@@ -267,35 +258,11 @@ class TacticalRetreatInterface:
         """
         ros_action_result_dict = []
         for result in self.fetch_action_clients_names(node_name, namespace):
-            action = result.get('action_client')
-            if len(action['interface_name']) == 0:
-                logger.error(
-                    'In get_action_clients_names: action does not have an action_name')
-                return ros_action_result_dict
-            if len(action['interface_name']) > 1:
-                logger.error(
-                    'In get_action_clients_names: action has more than 1 action_name')
-                return ros_action_result_dict
-            if len(action['interface_type']) > 1:
-                logger.error(
-                    'In get_action_clients_names: action {} has more than 1 action_type'.format(
-                        action['action_name']))
-                return ros_action_result_dict
-            if len(action['interface_type']) == 0:
-                logger.error(
-                    'In get_action_clients_names: action {} does not have an action_type'.format(
-                        action['action_name']))
-                return ros_action_result_dict
             ros_action_result_dict.append({
-                'action_name': action['interface_name'][0]['value'],
-                'action_type': action['interface_type'][0]['value'],
-            }
-            )
-        # Sort list to guarantee deterministic list order
-        ros_action_result_dict.sort(
-            key=lambda d: (
-                d['action_name'],
-                d['action_type']))
+                'action_name': result['interface_name'],
+                'action_type': result['interface_type'],
+            })
+        ros_action_result_dict.sort(key=lambda d: (d['action_name'], d['action_type']))
         return ros_action_result_dict
 
     def fetch_connected_action_server_nodes(
@@ -339,7 +306,7 @@ class TacticalRetreatInterface:
         """
         return node_query_to_node_dict(
             self.fetch_connected_action_server_nodes(
-                node_name, namespace), 'server_node')
+                node_name, namespace))
 
     def fetch_connected_subscriber_nodes(
             self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
@@ -382,7 +349,7 @@ class TacticalRetreatInterface:
         """
         return node_query_to_node_dict(
             self.fetch_connected_subscriber_nodes(
-                node_name, namespace), 'subscriber_node')
+                node_name, namespace))
 
     def fetch_tactics(
             self, resolution_model: str) -> List[dict[str, MatchResultDict]]:
@@ -410,8 +377,7 @@ class TacticalRetreatInterface:
         :return: list of tactic names
         """
         query_result = self.fetch_tactics(resolution_model)
-        return [result['tactic']['tactic_name'][0]['value']
-                for result in query_result]
+        return [result['tactic_name'] for result in query_result]
 
     def fetch_all_tactic_rules(self) -> List[dict[str, MatchResultDict]]:
         """
@@ -435,8 +401,7 @@ class TacticalRetreatInterface:
         :return: list of tactic rule names
         """
         query_result = self.fetch_all_tactic_rules()
-        return [result['tactic_rule']['rule_name'][0]['value']
-                for result in query_result]
+        return [result['rule_name'] for result in query_result]
 
     def does_tactic_affect_nodes(
             self,
@@ -503,7 +468,7 @@ class TacticalRetreatInterface:
         """
         return node_query_to_node_dict(
             self.fetch_neighbours(
-                node_name, namespace), 'neighbour')
+                node_name, namespace))
 
     def fetch_connected_nodes(
             self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
@@ -540,7 +505,7 @@ class TacticalRetreatInterface:
         """
         return node_query_to_node_dict(
             self.fetch_connected_nodes(
-                node_name, namespace), 'connected')
+                node_name, namespace))
 
     def fetch_applicable_tactics(self,
                                  resolution_model: str,
@@ -579,10 +544,7 @@ class TacticalRetreatInterface:
         """
         query_result = self.fetch_applicable_tactics(
             resolution_model, interface_name)
-        return sorted(
-            result['tactic_rule']['rule_name'][0]['value']
-            for result in query_result
-        )
+        return sorted(result['rule_name'] for result in query_result)
 
     def fetch_relaxed_requirement_fulfillment(
             self,
@@ -619,7 +581,7 @@ class TacticalRetreatInterface:
         :return: fulfillment value
         """
         return self.fetch_relaxed_requirement_fulfillment(
-            system_name, requirement_name)[0]['fulfillment']['value']
+            system_name, requirement_name)[0]['fulfillment']
 
     def fetch_in_effect_requirement_fulfillment(self) -> List[dict[str, MatchResultDict]]:
         """
@@ -646,8 +608,8 @@ class TacticalRetreatInterface:
         """
         query_result = self.fetch_in_effect_requirement_fulfillment()
         query_dict = [
-            {'requirement_name': result['req']['requirement_name'][0]['value'],
-             'fulfillment': result['req']['fulfillment'][0]['value']}
+            {'requirement_name': result['requirement_name'],
+             'fulfillment': result['fulfillment']}
             for result in query_result]
         return sorted(query_dict, key=lambda item: item['requirement_name'])
 
@@ -700,9 +662,9 @@ class TacticalRetreatInterface:
                 'Requirement %s not found in the knowledge base.',
                 requirement_name)
             return False
-        if len(query_result[0]['req']['in_effect']) == 0:
+        if query_result[0].get('in_effect') is None:
             return False
-        return query_result[0]['req']['in_effect'][0]['value']
+        return query_result[0]['in_effect']
 
     def fetch_latest_measurement(
             self, measure_name: str) -> List[dict[str, MatchResultDict]]:
@@ -770,26 +732,12 @@ class TacticalRetreatInterface:
         :param action_name: type of the ROS action
         :return: list containing all tactic's names that are applicable
         """
-        query_result = self.fetch_latest_measurement(
-            measure_name)
+        query_result = self.fetch_latest_measurement(measure_name)
 
         if len(query_result) == 0:
             return float('nan')
 
-        first = query_result[0]
-        for key in (
-            'double_value',
-            'integer_value',
-            'string_value',
-                'bool_value'):
-            values = first.get(key, [])
-            if values:
-                return values[0]['value']['value']
-
-        array_values = first.get('array_values', [])
-        if array_values:
-            return [entry['value']['attribute'][0]['value']
-                    for entry in array_values]
+        return query_result[0]['value']
 
     def fetch_tactic_rule_valid(
             self, tactic_rule: str) -> List[dict[str, MatchResultDict]]:
@@ -816,7 +764,7 @@ class TacticalRetreatInterface:
         :return: true or false
         """
         query_result = self.fetch_tactic_rule_valid(tactic_rule)
-        return query_result[0]['tr']['rule_valid'][0]['value']
+        return query_result[0]['rule_valid']
 
     def is_feature_selectable(self, feature_name: str) -> bool:
         """
@@ -833,7 +781,7 @@ class TacticalRetreatInterface:
             }};
         """
         query_result = self.db.fetch_database(query)
-        return query_result[0]['f']['selectable'][0]['value']
+        return query_result[0]['selectable']
 
     def is_node_running(self, node_name: str) -> bool:
         """
@@ -850,7 +798,7 @@ class TacticalRetreatInterface:
             }};
         """
         query_result = self.db.fetch_database(query)
-        return query_result[0]['node']['running'][0]['value']
+        return query_result[0]['running']
 
     def is_set_nodes_parameters_feasible(
             self, node_name: str, parameter_name: str) -> bool:
@@ -871,7 +819,7 @@ class TacticalRetreatInterface:
             }};
         """
         query_result = self.db.fetch_database(query)
-        return query_result[0]['ra']['feasible'][0]['value']
+        return query_result[0]['feasible']
 
     def is_set_lifecycle_state_feasible(
             self, node_name: str, lifecycle_state: str) -> bool:
@@ -891,7 +839,7 @@ class TacticalRetreatInterface:
             }};
         """
         query_result = self.db.fetch_database(query)
-        return query_result[0]['ra']['feasible'][0]['value']
+        return query_result[0]['feasible']
 
     def fetch_measures_interfaces(
             self, include_qos: bool = True):
@@ -963,29 +911,19 @@ class TacticalRetreatInterface:
 
         :param include_qos: include QoS details for publisher sources
         """
-        def get_first_value(thing: dict, attribute_label: str):
-            values = thing.get(attribute_label, [])
-            if not values:
-                return None
-            return convert_query_type_to_py_type(values[0])
-
         result_dict_list = []
         for result in self.fetch_measures_interfaces(include_qos=include_qos):
             result_dict = {}
-            measure = result.get('measure_name')
-            if measure:
-                result_dict['measure_name'] = convert_query_type_to_py_type(
-                    measure)
 
-            result_dict['source'] = result.get(
-                'source').get('type').get('label')
-            result_dict['interface_name'] = convert_query_type_to_py_type(
-                result.get('source').get('interface_name')[0])
+            measure_name = result.get('measure_name')
+            if measure_name is not None:
+                result_dict['measure_name'] = measure_name
 
-            result_dict['interface_type'] = convert_query_type_to_py_type(
-                result.get('source').get('interface_type')[0])
+            # When include_qos is True the query restricts $source isa! Publisher
+            result_dict['source'] = 'Publisher' if include_qos else None
+            result_dict['interface_name'] = result.get('interface_name')
+            result_dict['interface_type'] = result.get('interface_type')
 
-            measurement_interface = result.get('measurement_interface')
             for attribute_label in (
                 'measurement_function_name',
                 'measurement_function_lib',
@@ -994,15 +932,12 @@ class TacticalRetreatInterface:
                 'measurement_period',
                 'service_request_kwargs',
             ):
-                attribute_value = get_first_value(
-                    measurement_interface, attribute_label)
+                attribute_value = result.get(attribute_label)
                 if attribute_value is not None:
                     result_dict[attribute_label] = attribute_value
 
-            qos_dict = {}
-            qos_list = result.get('qos_sub_query')
-            if include_qos and isinstance(qos_list, list) and qos_list:
-                qos = qos_list[0].get('qos')
+            if include_qos:
+                qos_dict = {}
                 for attribute_label in (
                     'reliability',
                     'history',
@@ -1013,12 +948,11 @@ class TacticalRetreatInterface:
                     'liveliness',
                     'lease_duration',
                 ):
-                    attribute_value = get_first_value(qos, attribute_label)
+                    attribute_value = result.get(attribute_label)
                     if attribute_value is not None:
                         qos_dict[attribute_label] = attribute_value
-
-            if qos_dict:
-                result_dict['qos'] = qos_dict
+                if qos_dict:
+                    result_dict['qos'] = qos_dict
 
             if result_dict:
                 result_dict_list.append(result_dict)
@@ -1145,8 +1079,7 @@ class TacticalRetreatInterface:
         """
         query_result = self.fetch_tactic_rule_impacts_requirement(
             impacted_name, rule_name)
-        return [result['fulfillment']['value']
-                for result in query_result]
+        return [result['fulfillment'] for result in query_result]
 
     def fetch_resulting_effect_value(self, tactic_rule: str, measure_name: str
                                      ) -> List[dict[str, MatchResultDict]]:
@@ -1176,7 +1109,7 @@ class TacticalRetreatInterface:
         """
         query_result = self.fetch_resulting_effect_value(
             tactic_rule, measure_name)
-        return query_result[0]['resulting_effect_value']['value']
+        return query_result[0]['resulting_effect_value']
 
     def fetch_fuzzy_membership_degree(self, expression_name: str
                                       ) -> List[dict[str, MatchResultDict]]:
@@ -1202,7 +1135,7 @@ class TacticalRetreatInterface:
         :return: membership type
         """
         query_result = self.fetch_fuzzy_membership_degree(expression_name)
-        return query_result[0]['membership_degree']['value']
+        return query_result[0]['membership_degree']
 
     def fetch_relaxed_expression_fulfillment(self, expression_name: str
                                              ) -> List[dict[str, MatchResultDict]]:
@@ -1228,7 +1161,7 @@ class TacticalRetreatInterface:
         :return: fulfillment type
         """
         query_result = self.fetch_relaxed_expression_fulfillment(expression_name)
-        return query_result[0]['fulfillment']['value']
+        return query_result[0]['fulfillment']
 
     def fetch_potential_requirements_fulfillment(
             self,
@@ -1318,9 +1251,9 @@ class TacticalRetreatInterface:
         return [
             RequirementImpactDict(
                 action_name=action_name,
-                tactic_rule=result['rule_name']['value'],
-                requirement_name=result['requirement_name']['value'],
-                fulfillment=result['fulfillment']['value']
+                tactic_rule=result['rule_name'],
+                requirement_name=result['requirement_name'],
+                fulfillment=result['fulfillment']
             ) for result in query_result
         ]
 
@@ -1382,8 +1315,8 @@ class TacticalRetreatInterface:
         :return: list with requirement names
         """
         query_result = self.fetch_all_requirements()
-        return [result['req']['requirement_name'][0]['value']
-                for result in query_result if len(result['req']['requirement_name']) > 0]
+        return [result['requirement_name']
+                for result in query_result if result.get('requirement_name') is not None]
 
     def fetch_all_expressions(self):
         """
@@ -1407,8 +1340,8 @@ class TacticalRetreatInterface:
         :return: list with expressions names
         """
         query_result = self.fetch_all_expressions()
-        return [result['expr']['expression_name'][0]['value']
-                for result in query_result if len(result['expr']['expression_name']) > 0]
+        return [result['expression_name']
+                for result in query_result if result.get('expression_name') is not None]
 
     def get_expression_satisfied(self, expression_name):
         query = f"""
@@ -1419,4 +1352,4 @@ class TacticalRetreatInterface:
             fetch {{ "expression_satisfied": $expression_satisfied }};
         """
         query_result = self.db.fetch_database(query)
-        return query_result[0]['expression_satisfied']['value']
+        return query_result[0]['expression_satisfied']
