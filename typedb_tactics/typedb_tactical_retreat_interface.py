@@ -152,8 +152,10 @@ class TacticalRetreatInterface:
                 $parent_node isa ROSNode, has node_name '{node_name}',
                     has namespace '{namespace}';
                 (node: $parent_node, subnode: $subnode) isa subnode;
-            fetch
-                $subnode: node_name, namespace;
+            fetch {{
+                "node_name": $subnode.node_name,
+                "namespace": $subnode.namespace
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -183,8 +185,10 @@ class TacticalRetreatInterface:
             match
                 $action_client isa ActionClient, has interface_name '{action_name}';
                 (node: $node, client: $action_client) isa has_action;
-            fetch
-                $node: node_name, namespace;
+            fetch {{
+                "node_name": $node.node_name,
+                "namespace": $node.namespace
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -211,8 +215,10 @@ class TacticalRetreatInterface:
             match
                 $action_server isa ActionServer, has interface_name '{action_name}';
                 (node: $node, server: $action_server) isa has_action;
-            fetch
-                $node: node_name, namespace;
+            fetch {{
+                "node_name": $node.node_name,
+                "namespace": $node.namespace
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -241,8 +247,10 @@ class TacticalRetreatInterface:
                 $node isa ROSNode, has node_name '{node_name}',
                     has namespace '{namespace}';
                 (node: $node, client: $action_client) isa has_action;
-            fetch
-                $action_client: interface_name, interface_type;
+            fetch {{
+                "interface_name": $action_client.interface_name,
+                "interface_type": $action_client.interface_type
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -311,8 +319,10 @@ class TacticalRetreatInterface:
                     has interface_name $interface_name,
                     has interface_type $interface_type;
                 (node: $server_node, server: $action_server) isa has_action;
-            fetch
-                $server_node: node_name, namespace;
+            fetch {{
+                "node_name": $server_node.node_name,
+                "namespace": $server_node.namespace
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -352,8 +362,10 @@ class TacticalRetreatInterface:
                     has interface_name $interface_name,
                     has interface_type $interface_type;
                 (node: $subscriber_node, subscriber: $subscriber) isa has_topic;
-            fetch
-                $subscriber_node: node_name, namespace;
+            fetch {{
+                "node_name": $subscriber_node.node_name,
+                "namespace": $subscriber_node.namespace
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -384,8 +396,9 @@ class TacticalRetreatInterface:
             match
                 (tactic: $tactic) isa resolution_model,
                     has resolution_model_name '{resolution_model}';
-            fetch
-                $tactic: tactic_name;
+            fetch {{
+                "tactic_name": $tactic.tactic_name
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -409,8 +422,9 @@ class TacticalRetreatInterface:
         query = """
             match
                 $tactic_rule isa tactic_rule;
-            fetch
-                $tactic_rule: rule_name;
+            fetch {{
+                "rule_name": $tactic_rule.rule_name
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -469,8 +483,10 @@ class TacticalRetreatInterface:
                     has node_name '{node_name}', has namespace '{namespace}';
                 $neighbours (node: $node, neighbour: $neighbour) isa
                     neighbours;
-            fetch
-                $neighbour: node_name, namespace;
+            fetch {{
+                "node_name": $neighbour.node_name,
+                "namespace": $neighbour.namespace
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -504,8 +520,10 @@ class TacticalRetreatInterface:
                     has namespace '{namespace}';
                 $connected_nodes (node: $node, connected: $connected)
                     isa connected_nodes;
-            fetch
-                $connected: node_name, namespace;
+            fetch {{
+                "node_name": $connected.node_name,
+                "namespace": $connected.namespace
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -542,8 +560,9 @@ class TacticalRetreatInterface:
                 (interface: $interface,
                     resolution_model: $resolution_model, tactic_rule: $tactic_rule)
                     isa applicable_tactics;
-            fetch
-                $tactic_rule: rule_name;
+            fetch {{
+                "rule_name": $tactic_rule.rule_name
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -583,7 +602,7 @@ class TacticalRetreatInterface:
                 (system: $system) isa relaxed_requirement,
                     has requirement_name '{requirement_name}',
                     has fulfillment $fulfillment;
-            fetch $fulfillment;
+            fetch {{ "fulfillment": $fulfillment }};
         """
         return self.db.fetch_database(query)
 
@@ -612,8 +631,10 @@ class TacticalRetreatInterface:
             match
                 $req isa relaxed_requirement,
                     has in_effect true;
-            fetch
-                $req: requirement_name, fulfillment;
+            fetch {{
+                "requirement_name": $req.requirement_name,
+                "fulfillment": $req.fulfillment
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -660,8 +681,9 @@ class TacticalRetreatInterface:
             match
                 $req isa relaxed_requirement,
                     has requirement_name '{requirement_name}';
-            fetch
-                $req: in_effect;
+            fetch {{
+                "in_effect": $req.in_effect
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -696,43 +718,18 @@ class TacticalRetreatInterface:
                 $measurement (measure: $measure,
                               measurement_value: $measurement_val) isa measurement,
                     has latest true;
-            fetch
-                double_value: {{
-                    match
-                        $measurement_val isa ValueDouble, has double_value $value;
-                    fetch
-                        $value;
+                {{
+                    $measurement_val isa ValueDouble, has double_value $value;
+                }} or {{
+                    $measurement_val isa ValueInteger, has integer_value $value;
+                }} or {{
+                    $measurement_val isa ValueString, has string_value $value;
+                }} or {{
+                    $measurement_val isa ValueBool, has bool_value $value;
                 }};
-                integer_value: {{
-                    match
-                        $measurement_val isa ValueInteger, has integer_value $value;
-                    fetch
-                        $value;
-                }};
-                string_value: {{
-                    match
-                        $measurement_val isa ValueString, has string_value $value;
-                    fetch
-                        $value;
-                }};
-                bool_value: {{
-                    match
-                        $measurement_val isa ValueBool, has bool_value $value;
-                    fetch
-                        $value;
-                }};
-                array_values : {{
-                    match
-                        $measurement_val isa ValueArray;
-                        (array: $measurement_val, array_value: $value) isa at_index,
-                                has index $index;
-                        $singleton_types sub! ValueSingleton;
-                        $value isa $singleton_types;
-                    fetch
-                        $value: attribute;
-                        $index;
-                    sort $index asc;
-                }};
+            fetch {{
+                "value": $value
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -749,43 +746,18 @@ class TacticalRetreatInterface:
                 $measure isa Measure, has measure_name '{measure_name}';
                 $measurement (measure: $measure,
                               measurement_value: $measurement_val) isa measurement;
-            fetch
-                double_value: {{
-                    match
-                        $measurement_val isa ValueDouble, has double_value $value;
-                    fetch
-                        $value;
+                {{
+                    $measurement_val isa ValueDouble, has double_value $value;
+                }} or {{
+                    $measurement_val isa ValueInteger, has integer_value $value;
+                }} or {{
+                    $measurement_val isa ValueString, has string_value $value;
+                }} or {{
+                    $measurement_val isa ValueBool, has bool_value $value;
                 }};
-                integer_value: {{
-                    match
-                        $measurement_val isa ValueInteger, has integer_value $value;
-                    fetch
-                        $value;
-                }};
-                string_value: {{
-                    match
-                        $measurement_val isa ValueString, has string_value $value;
-                    fetch
-                        $value;
-                }};
-                bool_value: {{
-                    match
-                        $measurement_val isa ValueBool, has bool_value $value;
-                    fetch
-                        $value;
-                }};
-                array_values : {{
-                    match
-                        $measurement_val isa ValueArray;
-                        (array: $measurement_val, array_value: $value) isa at_index,
-                                has index $index;
-                        $singleton_types sub! ValueSingleton;
-                        $value isa $singleton_types;
-                    fetch
-                        $value: attribute;
-                        $index;
-                    sort $index asc;
-                }};
+            fetch {{
+                "value": $value
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -830,8 +802,9 @@ class TacticalRetreatInterface:
         query = f"""
             match
                 $tr isa tactic_rule, has rule_name '{tactic_rule}';
-            fetch
-                $tr: rule_valid;
+            fetch {{
+                "rule_valid": $tr.rule_valid
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -855,8 +828,9 @@ class TacticalRetreatInterface:
         query = f"""
             match
                 $f isa Feature, has feature_name '{feature_name}';
-            fetch
-                $f: selectable;
+            fetch {{
+                "selectable": $f.selectable
+            }};
         """
         query_result = self.db.fetch_database(query)
         return query_result[0]['f']['selectable'][0]['value']
@@ -871,8 +845,9 @@ class TacticalRetreatInterface:
         query = f"""
             match
                 $node isa ROSNode, has node_name '{node_name}';
-            fetch
-                $node: running;
+            fetch {{
+                "running": $node.running
+            }};
         """
         query_result = self.db.fetch_database(query)
         return query_result[0]['node']['running'][0]['value']
@@ -891,8 +866,9 @@ class TacticalRetreatInterface:
                 $ra (node: $node, parameter: $parameter) isa set_nodes_parameters;
                 $node isa ROSNode, has node_name '{node_name}';
                 $parameter isa Parameter, has parameter_name '{parameter_name}';
-            fetch
-                $ra: feasible;
+            fetch {{
+                "feasible": $ra.feasible
+            }};
         """
         query_result = self.db.fetch_database(query)
         return query_result[0]['ra']['feasible'][0]['value']
@@ -910,8 +886,9 @@ class TacticalRetreatInterface:
             match
                 $ra (node: $node) isa set_lifecycle_state, has lifecycle_state '{lifecycle_state}';
                 $node isa LifeCycleNode, has node_name '{node_name}';
-            fetch
-                $ra: feasible;
+            fetch {{
+                "feasible": $ra.feasible
+            }};
         """
         query_result = self.db.fetch_database(query)
         return query_result[0]['ra']['feasible'][0]['value']
@@ -923,55 +900,61 @@ class TacticalRetreatInterface:
 
         :param include_qos: include QoS details for publisher sources
         """
-        qos_sub_query = ''
         if include_qos:
-            qos_sub_query = """
+            query = """
             match
                 $measure isa Measure, has measure_name $measure_name;
                 $measurement_interface (measure: $measure, source: $source)
                     isa measurement_interface;
-            fetch
-                $measure_name;
-                $measurement_interface: measurement_function_name,
-                    measurement_function_lib,
-                    measurement_function_args,
-                    measurement_proxy,
-                    measurement_period,
-                    service_request_kwargs;
-                $source: interface_name, interface_type;
-            qos_sub_query: {
-                match
-                    $source isa! Publisher;
-                    (interface: $source, qos: $qos) isa has_qos;
-                    $qos isa QoSProfile;
-                fetch
-                    $qos: reliability,
-                        history,
-                        depth,
-                        durability,
-                        deadline,
-                        lifespan,
-                        liveliness,
-                        lease_duration;
+                $source isa! Publisher;
+                (interface: $source, qos: $qos) isa has_qos;
+                $qos isa QoSProfile;
+            fetch {
+                "measure_name": $measure_name,
+                "measurement_function_name":
+                    $measurement_interface.measurement_function_name,
+                "measurement_function_lib":
+                    $measurement_interface.measurement_function_lib,
+                "measurement_function_args":
+                    $measurement_interface.measurement_function_args,
+                "measurement_proxy": $measurement_interface.measurement_proxy,
+                "measurement_period": $measurement_interface.measurement_period,
+                "service_request_kwargs":
+                    $measurement_interface.service_request_kwargs,
+                "interface_name": $source.interface_name,
+                "interface_type": $source.interface_type,
+                "reliability": $qos.reliability,
+                "history": $qos.history,
+                "depth": $qos.depth,
+                "durability": $qos.durability,
+                "deadline": $qos.deadline,
+                "lifespan": $qos.lifespan,
+                "liveliness": $qos.liveliness,
+                "lease_duration": $qos.lease_duration
             };
             """
         else:
-            qos_sub_query = """
+            query = """
             match
                 $measure isa Measure, has measure_name $measure_name;
                 $measurement_interface (measure: $measure, source: $source)
                     isa measurement_interface;
-            fetch
-                $measure_name;
-                $measurement_interface: measurement_function_name,
-                    measurement_function_lib,
-                    measurement_function_args,
-                    measurement_proxy,
-                    measurement_period,
-                    service_request_kwargs;
-                $source: interface_name, interface_type;
+            fetch {
+                "measure_name": $measure_name,
+                "measurement_function_name":
+                    $measurement_interface.measurement_function_name,
+                "measurement_function_lib":
+                    $measurement_interface.measurement_function_lib,
+                "measurement_function_args":
+                    $measurement_interface.measurement_function_args,
+                "measurement_proxy": $measurement_interface.measurement_proxy,
+                "measurement_period": $measurement_interface.measurement_period,
+                "service_request_kwargs":
+                    $measurement_interface.service_request_kwargs,
+                "interface_name": $source.interface_name,
+                "interface_type": $source.interface_type
+            };
             """
-        query = qos_sub_query
         return self.db.fetch_database(query)
 
     def get_measures_interfaces(self, include_qos: bool = True):
@@ -1126,8 +1109,7 @@ class TacticalRetreatInterface:
                     has rule_name '{tactic_rule_name}';
                 $tr_impacts (impacted: $impacted, tactic_rule: $tr) isa tactic_rule_impacts,
                     has fulfillment $fulfillment;
-            fetch
-                $fulfillment;
+            fetch {{ "fulfillment": $fulfillment }};
         """
         query_result = self.db.fetch_database(query)
         return query_result
@@ -1148,8 +1130,7 @@ class TacticalRetreatInterface:
                     has rule_name '{tactic_rule_name}';
                 $tr_impacts (impacted: $impacted, tactic_rule: $tr) isa tactic_rule_impacts,
                     has fulfillment $fulfillment;
-            fetch
-                $fulfillment;
+            fetch {{ "fulfillment": $fulfillment }};
         """
         query_result = self.db.fetch_database(query)
         return query_result
@@ -1181,8 +1162,7 @@ class TacticalRetreatInterface:
                 $measure isa Measure, has measure_name '{measure_name}';
                 $effect (measure: $measure, effect_value: $effect_value) isa relative_effect,
                     has resulting_effect_value $resulting_effect_value;
-            fetch
-                $resulting_effect_value;
+            fetch {{ "resulting_effect_value": $resulting_effect_value }};
         """
         return self.db.fetch_database(query)
 
@@ -1210,8 +1190,7 @@ class TacticalRetreatInterface:
             match
                 $fe isa fuzzy_expression, has expression_name '{expression_name}',
                     has membership_degree $membership_degree;
-            fetch
-                $membership_degree;
+            fetch {{ "membership_degree": $membership_degree }};
         """
         return self.db.fetch_database(query)
 
@@ -1237,8 +1216,7 @@ class TacticalRetreatInterface:
                 $relaxed_expression isa relaxed_expression,
                     has expression_name '{expression_name}',
                     has fulfillment $fulfillment;
-            fetch
-                $fulfillment;
+            fetch {{ "fulfillment": $fulfillment }};
         """
         return self.db.fetch_database(query)
 
@@ -1284,10 +1262,11 @@ class TacticalRetreatInterface:
                     has in_effect true,
                     has requirement_name $requirement_name;
                 $tactic_rule has rule_name $rule_name;
-            fetch
-                $rule_name;
-                $fulfillment;
-                $requirement_name;
+            fetch {{
+                "rule_name": $rule_name,
+                "fulfillment": $fulfillment,
+                "requirement_name": $requirement_name
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -1322,10 +1301,11 @@ class TacticalRetreatInterface:
                     has fulfillment $fulfillment;
                 $req has requirement_name $requirement_name;
                 $tactic_rule has rule_name $rule_name;
-            fetch
-                $rule_name;
-                $fulfillment;
-                $requirement_name;
+            fetch {{
+                "rule_name": $rule_name,
+                "fulfillment": $fulfillment,
+                "requirement_name": $requirement_name
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -1389,8 +1369,9 @@ class TacticalRetreatInterface:
         query = """
             match
                 $req isa relaxed_requirement;
-            fetch
-                $req: requirement_name;
+            fetch {{
+                "requirement_name": $req.requirement_name
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -1413,8 +1394,9 @@ class TacticalRetreatInterface:
         query = """
             match
                 $expr isa expression;
-            fetch
-                $expr: expression_name;
+            fetch {{
+                "expression_name": $expr.expression_name
+            }};
         """
         return self.db.fetch_database(query)
 
@@ -1434,8 +1416,7 @@ class TacticalRetreatInterface:
                 $expr isa logical_expression,
                     has expression_name '{expression_name}',
                     has expression_satisfied $expression_satisfied;
-            fetch
-                $expression_satisfied;
+            fetch {{ "expression_satisfied": $expression_satisfied }};
         """
         query_result = self.db.fetch_database(query)
         return query_result[0]['expression_satisfied']['value']
