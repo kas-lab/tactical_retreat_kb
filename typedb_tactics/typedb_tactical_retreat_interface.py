@@ -155,7 +155,7 @@ class TacticalRetreatInterface:
             fetch
                 $subnode: node_name, namespace;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_subnodes(
             self,
@@ -186,7 +186,7 @@ class TacticalRetreatInterface:
             fetch
                 $node: node_name, namespace;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_action_clients_nodes(
             self, action_name: str) -> List[RuntimeNodeDict]:
@@ -214,7 +214,7 @@ class TacticalRetreatInterface:
             fetch
                 $node: node_name, namespace;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_action_server_nodes(
             self, action_name: str) -> List[RuntimeNodeDict]:
@@ -244,7 +244,7 @@ class TacticalRetreatInterface:
             fetch
                 $action_client: interface_name, interface_type;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_action_clients_names(
             self,
@@ -314,7 +314,7 @@ class TacticalRetreatInterface:
             fetch
                 $server_node: node_name, namespace;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_connected_action_server_nodes(
             self,
@@ -355,7 +355,7 @@ class TacticalRetreatInterface:
             fetch
                 $subscriber_node: node_name, namespace;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_connected_subscriber_nodes(
             self,
@@ -387,7 +387,7 @@ class TacticalRetreatInterface:
             fetch
                 $tactic: tactic_name;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_tactics(self, resolution_model: str) -> List[str]:
         """
@@ -412,7 +412,7 @@ class TacticalRetreatInterface:
             fetch
                 $tactic_rule: rule_name;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_all_tactic_rules(self) -> List[str]:
         """
@@ -452,7 +452,7 @@ class TacticalRetreatInterface:
             get $node;
             count;
         """
-        return (self.get_aggregate_database(query) > 0)
+        return (self.db.get_aggregate_database(query) > 0)
 
     def fetch_neighbours(
             self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
@@ -472,7 +472,7 @@ class TacticalRetreatInterface:
             fetch
                 $neighbour: node_name, namespace;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_neighbours(
             self,
@@ -507,7 +507,7 @@ class TacticalRetreatInterface:
             fetch
                 $connected: node_name, namespace;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_connected_nodes(
             self,
@@ -545,7 +545,7 @@ class TacticalRetreatInterface:
             fetch
                 $tactic_rule: rule_name;
         """
-        return self.fetch_database_unordered(query)
+        return self.db.fetch_database(query)
 
     def get_applicable_tactics(
             self,
@@ -585,7 +585,7 @@ class TacticalRetreatInterface:
                     has fulfillment $fulfillment;
             fetch $fulfillment;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_relaxed_requirement_fulfillment(
             self,
@@ -615,7 +615,7 @@ class TacticalRetreatInterface:
             fetch
                 $req: requirement_name, fulfillment;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_in_effect_requirement_fulfillment(self) -> List[dict]:
         """
@@ -646,7 +646,7 @@ class TacticalRetreatInterface:
             insert
                 $req has in_effect {in_effect_tql_type};
         """
-        return self.insert_database(query)
+        return self.db.insert_database(query)
 
     def fetch_requirement_in_effect(self, requirement_name: str
                                     ) -> List[dict[str, MatchResultDict]]:
@@ -663,7 +663,7 @@ class TacticalRetreatInterface:
             fetch
                 $req: in_effect;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_requirement_in_effect(self, requirement_name: str) -> bool:
         """
@@ -734,7 +734,7 @@ class TacticalRetreatInterface:
                     sort $index asc;
                 }};
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def fetch_all_measurements(
             self, measure_name: str) -> List[dict[str, MatchResultDict]]:
@@ -787,7 +787,7 @@ class TacticalRetreatInterface:
                     sort $index asc;
                 }};
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_latest_measurement(self, measure_name: str) -> Union[float, int, str, bool, List]:
         """
@@ -833,7 +833,7 @@ class TacticalRetreatInterface:
             fetch
                 $tr: rule_valid;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_tactic_rule_valid(self, tactic_rule: str) -> bool:
         """
@@ -858,7 +858,7 @@ class TacticalRetreatInterface:
             fetch
                 $f: selectable;
         """
-        query_result = self.fetch_database(query)
+        query_result = self.db.fetch_database(query)
         return query_result[0]['f']['selectable'][0]['value']
 
     def is_node_running(self, node_name: str) -> bool:
@@ -874,7 +874,7 @@ class TacticalRetreatInterface:
             fetch
                 $node: running;
         """
-        query_result = self.fetch_database(query)
+        query_result = self.db.fetch_database(query)
         return query_result[0]['node']['running'][0]['value']
 
     def is_set_nodes_parameters_feasible(
@@ -894,7 +894,7 @@ class TacticalRetreatInterface:
             fetch
                 $ra: feasible;
         """
-        query_result = self.fetch_database(query)
+        query_result = self.db.fetch_database(query)
         return query_result[0]['ra']['feasible'][0]['value']
 
     def is_set_lifecycle_state_feasible(
@@ -913,7 +913,7 @@ class TacticalRetreatInterface:
             fetch
                 $ra: feasible;
         """
-        query_result = self.fetch_database(query)
+        query_result = self.db.fetch_database(query)
         return query_result[0]['ra']['feasible'][0]['value']
 
     def fetch_measures_interfaces(
@@ -972,7 +972,7 @@ class TacticalRetreatInterface:
                 $source: interface_name, interface_type;
             """
         query = qos_sub_query
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_measures_interfaces(self, include_qos: bool = True):
         """
@@ -1090,7 +1090,7 @@ class TacticalRetreatInterface:
                 $latest == true;
             delete $measurement has $latest;
         """
-        self.delete_from_database(delete_query)
+        self.db.delete_from_database(delete_query)
 
         time = convert_py_type_to_query_type(datetime.now())
         query = f"""
@@ -1103,7 +1103,7 @@ class TacticalRetreatInterface:
                     has measurement_time {time},
                     has latest true;
         """
-        return self.insert_database(query)
+        return self.db.insert_database(query)
 
     def fetch_tactic_rule_impacts_fulfillment(self, impacted_name: str, tactic_rule_name: str):
         """
@@ -1129,7 +1129,7 @@ class TacticalRetreatInterface:
             fetch
                 $fulfillment;
         """
-        query_result = self.fetch_database(query)
+        query_result = self.db.fetch_database(query)
         return query_result
 
     def fetch_tactic_rule_impacts_requirement(self, impacted_name: str, tactic_rule_name: str):
@@ -1151,7 +1151,7 @@ class TacticalRetreatInterface:
             fetch
                 $fulfillment;
         """
-        query_result = self.fetch_database(query)
+        query_result = self.db.fetch_database(query)
         return query_result
 
     def get_tactic_rule_impacts_requirement(self, impacted_name: str, rule_name: str) -> float:
@@ -1184,7 +1184,7 @@ class TacticalRetreatInterface:
             fetch
                 $resulting_effect_value;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_resulting_effect_value(self, tactic_rule: str, measure_name: str) -> float:
         """
@@ -1213,7 +1213,7 @@ class TacticalRetreatInterface:
             fetch
                 $membership_degree;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_fuzzy_membership_degree(self, expression_name: str) -> str:
         """
@@ -1240,7 +1240,7 @@ class TacticalRetreatInterface:
             fetch
                 $fulfillment;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_relaxed_expression_fulfillment(self, expression_name: str) -> str:
         """
@@ -1289,7 +1289,7 @@ class TacticalRetreatInterface:
                 $fulfillment;
                 $requirement_name;
         """
-        return self.fetch_database_unordered(query)
+        return self.db.fetch_database(query)
 
     def fetch_potential_requirements_fulfillment_for_resolution_model(
             self,
@@ -1327,7 +1327,7 @@ class TacticalRetreatInterface:
                 $fulfillment;
                 $requirement_name;
         """
-        return self.fetch_database_unordered(query)
+        return self.db.fetch_database(query)
 
     @staticmethod
     def _build_requirement_impact_dicts(
@@ -1392,7 +1392,7 @@ class TacticalRetreatInterface:
             fetch
                 $req: requirement_name;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_all_requirements(self):
         """
@@ -1416,7 +1416,7 @@ class TacticalRetreatInterface:
             fetch
                 $expr: expression_name;
         """
-        return self.fetch_database(query)
+        return self.db.fetch_database(query)
 
     def get_all_expressions(self):
         """
@@ -1437,5 +1437,5 @@ class TacticalRetreatInterface:
             fetch
                 $expression_satisfied;
         """
-        query_result = self.fetch_database(query)
+        query_result = self.db.fetch_database(query)
         return query_result[0]['expression_satisfied']['value']
