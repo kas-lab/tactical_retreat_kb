@@ -133,7 +133,6 @@ class TacticalRetreatInterface:
             force_database,
             force_data,
             infer)
-        self.logger = logging.getLogger(__name__)
 
     def delete_database(self) -> None:
         """Delete the database."""
@@ -675,7 +674,7 @@ class TacticalRetreatInterface:
         """
         query_result = self.fetch_requirement_in_effect(requirement_name)
         if query_result is None or len(query_result) == 0:
-            self.logger.warning(
+            logger.warning(
                 'Requirement %s not found in the knowledge base.',
                 requirement_name)
             return False
