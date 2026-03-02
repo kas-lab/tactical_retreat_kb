@@ -76,7 +76,8 @@ class RuntimeNodeDict(TypedDict):
 
 def node_query_to_node_dict(
         query_result: List[dict]) -> List[RuntimeNodeDict]:
-    """Convert fetch query results to a list of node dicts.
+    """
+    Convert fetch query results to a list of node dicts.
 
     :param query_result: list of fetch result dicts with 'node_name' and 'namespace' keys.
     :return: list of RuntimeNodeDict sorted by node_name then namespace.

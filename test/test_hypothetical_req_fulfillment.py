@@ -77,8 +77,7 @@ def kb_interface():
          'schemas/relaxed/relaxed_mirte_example.tql'],
         force_database=True,
         force_data=True,
-        infer=True,
-        sort_fetch_results=True)
+        infer=True)
     kb_interface.register_method(
         'fetch_tactic_rule_dependency_fulfillment',
         fetch_tactic_rule_dependency_fulfillment)

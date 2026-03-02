@@ -28,8 +28,7 @@ def kb_interface():
         ['test/data/test_fuzzy_expression.tql'],
         force_database=True,
         force_data=True,
-        infer=True,
-        sort_fetch_results=True)
+        infer=True)
     yield kb_interface
     kb_interface.delete_database()
 
