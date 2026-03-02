@@ -21,7 +21,6 @@ from typing import TypedDict
 from typing import Union
 
 from ros_typedb.typedb_helpers import convert_py_type_to_query_type
-from ros_typedb.typedb_interface import MatchResultDict
 from ros_typedb.typedb_interface import TypeDBInterface
 
 
@@ -82,6 +81,8 @@ def node_query_to_node_dict(
     :param query_result: list of fetch result dicts with 'node_name' and 'namespace' keys.
     :return: list of RuntimeNodeDict sorted by node_name then namespace.
     """
+    # TypeDB 3 fetch projections guarantee a single scalar per key;
+    # the old multi-value cardinality guard from TypeDB 2 is no longer needed.
     node_dict = []
     for result in query_result:
         node_dict.append({
@@ -130,7 +131,7 @@ class TacticalRetreatInterface:
         self.db.delete_database()
 
     def fetch_subnodes(self, node_name: str,
-                       namespace: str = '') -> List[dict[str, MatchResultDict]]:
+                       namespace: str = '') -> List[dict]:
         """
         Fetch subnodes of a running node and returns it as a typedb fetch query result.
 
@@ -165,7 +166,7 @@ class TacticalRetreatInterface:
             self.fetch_subnodes(node_name, namespace))
 
     def fetch_action_clients_nodes(
-            self, action_name: str) -> List[dict[str, MatchResultDict]]:
+            self, action_name: str) -> List[dict]:
         """
         Fetch action clients and returns it as a typedb fetch query result.
 
@@ -195,7 +196,7 @@ class TacticalRetreatInterface:
             self.fetch_action_clients_nodes(action_name))
 
     def fetch_action_server_nodes(
-            self, action_name: str) -> List[dict[str, MatchResultDict]]:
+            self, action_name: str) -> List[dict]:
         """
         Fetch action servers and returns it as a typedb fetch query result.
 
@@ -225,7 +226,7 @@ class TacticalRetreatInterface:
             self.fetch_action_server_nodes(action_name))
 
     def fetch_action_clients_names(
-            self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
+            self, node_name: str, namespace: str = '') -> List[dict]:
         """
         Fetch the name and type of all action clients of a running node.
 
@@ -266,7 +267,7 @@ class TacticalRetreatInterface:
         return ros_action_result_dict
 
     def fetch_connected_action_server_nodes(
-            self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
+            self, node_name: str, namespace: str = '') -> List[dict]:
         """
         Fetch the name and namespace of all runtime nodes that are servers for the action clients.
 
@@ -309,7 +310,7 @@ class TacticalRetreatInterface:
                 node_name, namespace))
 
     def fetch_connected_subscriber_nodes(
-            self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
+            self, node_name: str, namespace: str = '') -> List[dict]:
         """
         Fetch the name and namespace of all runtime nodes that are subscribers of the publishers.
 
@@ -352,7 +353,7 @@ class TacticalRetreatInterface:
                 node_name, namespace))
 
     def fetch_tactics(
-            self, resolution_model: str) -> List[dict[str, MatchResultDict]]:
+            self, resolution_model: str) -> List[dict]:
         """
         Fetch all tactic names in the given resolution model.
 
@@ -379,7 +380,7 @@ class TacticalRetreatInterface:
         query_result = self.fetch_tactics(resolution_model)
         return [result['tactic_name'] for result in query_result]
 
-    def fetch_all_tactic_rules(self) -> List[dict[str, MatchResultDict]]:
+    def fetch_all_tactic_rules(self) -> List[dict]:
         """
         Fetch all tactic rules names.
 
@@ -434,7 +435,7 @@ class TacticalRetreatInterface:
         return (self.db.get_aggregate_database(query) > 0)
 
     def fetch_neighbours(
-            self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
+            self, node_name: str, namespace: str = '') -> List[dict]:
         """
         Fetch the neighbours of a node.
 
@@ -471,7 +472,7 @@ class TacticalRetreatInterface:
                 node_name, namespace))
 
     def fetch_connected_nodes(
-            self, node_name: str, namespace: str = '') -> List[dict[str, MatchResultDict]]:
+            self, node_name: str, namespace: str = '') -> List[dict]:
         """
         Fetch the connected nodes of a node.
 
@@ -509,7 +510,7 @@ class TacticalRetreatInterface:
 
     def fetch_applicable_tactics(self,
                                  resolution_model: str,
-                                 interface_name: str) -> List[dict[str, MatchResultDict]]:
+                                 interface_name: str) -> List[dict]:
         """
         Fetch all tactics that are applicable given an ROS action name and resolution model.
 
@@ -549,8 +550,7 @@ class TacticalRetreatInterface:
     def fetch_relaxed_requirement_fulfillment(
             self,
             system_name: str,
-            requirement_name: str) -> List[dict[str,
-                                                MatchResultDict]]:
+            requirement_name: str) -> List[dict]:
         """
         Fetch relaxed requirement fulfillment.
 
@@ -571,8 +571,7 @@ class TacticalRetreatInterface:
     def get_relaxed_requirement_fulfillment(
             self,
             system_name: str,
-            requirement_name: str) -> List[dict[str,
-                                                MatchResultDict]]:
+            requirement_name: str) -> List[dict]:
         """
         Fetch relaxed requirement fulfillment.
 
@@ -583,7 +582,7 @@ class TacticalRetreatInterface:
         return self.fetch_relaxed_requirement_fulfillment(
             system_name, requirement_name)[0]['fulfillment']
 
-    def fetch_in_effect_requirement_fulfillment(self) -> List[dict[str, MatchResultDict]]:
+    def fetch_in_effect_requirement_fulfillment(self) -> List[dict]:
         """
         Fetch all relaxed requirement in effect fulfillment.
 
@@ -632,7 +631,7 @@ class TacticalRetreatInterface:
         return self.db.insert_database(query)
 
     def fetch_requirement_in_effect(self, requirement_name: str
-                                    ) -> List[dict[str, MatchResultDict]]:
+                                    ) -> List[dict]:
         """
         Fetch relaxed requirement in effect attribute.
 
@@ -667,7 +666,7 @@ class TacticalRetreatInterface:
         return query_result[0]['in_effect']
 
     def fetch_latest_measurement(
-            self, measure_name: str) -> List[dict[str, MatchResultDict]]:
+            self, measure_name: str) -> List[dict]:
         """
         Fetch latest measurement of a measure.
 
@@ -696,7 +695,7 @@ class TacticalRetreatInterface:
         return self.db.fetch_database(query)
 
     def fetch_all_measurements(
-            self, measure_name: str) -> List[dict[str, MatchResultDict]]:
+            self, measure_name: str) -> List[dict]:
         """
         Fetch all measurements of a measure.
 
@@ -740,7 +739,7 @@ class TacticalRetreatInterface:
         return query_result[0]['value']
 
     def fetch_tactic_rule_valid(
-            self, tactic_rule: str) -> List[dict[str, MatchResultDict]]:
+            self, tactic_rule: str) -> List[dict]:
         """
         Fetch whether a tactic_rule is valid.
 
@@ -842,7 +841,7 @@ class TacticalRetreatInterface:
         return query_result[0]['feasible']
 
     def fetch_measures_interfaces(
-            self, include_qos: bool = True):
+            self, include_qos: bool = True) -> List[dict]:
         """
         Fetch measures and their source interfaces.
 
@@ -919,7 +918,8 @@ class TacticalRetreatInterface:
             if measure_name is not None:
                 result_dict['measure_name'] = measure_name
 
-            # When include_qos is True the query restricts $source isa! Publisher
+            # 'source' type is 'Publisher' when include_qos=True (query filters isa! Publisher).
+            # When include_qos=False, source type is not projected by the query; set to None.
             result_dict['source'] = 'Publisher' if include_qos else None
             result_dict['interface_name'] = result.get('interface_name')
             result_dict['interface_type'] = result.get('interface_type')
@@ -1082,7 +1082,7 @@ class TacticalRetreatInterface:
         return [result['fulfillment'] for result in query_result]
 
     def fetch_resulting_effect_value(self, tactic_rule: str, measure_name: str
-                                     ) -> List[dict[str, MatchResultDict]]:
+                                     ) -> List[dict]:
         """
         Fetch resulting effect value of a tactic on a measure.
 
@@ -1112,7 +1112,7 @@ class TacticalRetreatInterface:
         return query_result[0]['resulting_effect_value']
 
     def fetch_fuzzy_membership_degree(self, expression_name: str
-                                      ) -> List[dict[str, MatchResultDict]]:
+                                      ) -> List[dict]:
         """
         Fetch fuzzy membership of a fuzzy expression.
 
@@ -1138,7 +1138,7 @@ class TacticalRetreatInterface:
         return query_result[0]['membership_degree']
 
     def fetch_relaxed_expression_fulfillment(self, expression_name: str
-                                             ) -> List[dict[str, MatchResultDict]]:
+                                             ) -> List[dict]:
         """
         Fetch fuzzy fulfillment of a fuzzy expression.
 
@@ -1167,7 +1167,7 @@ class TacticalRetreatInterface:
             self,
             action_name: str,
             resolution_model: Optional[str] = None
-            ) -> List[dict[str, MatchResultDict]]:
+            ) -> List[dict]:
         """
         Fetch all potential relaxed requirement fulfillments per applicable tactic.
 
@@ -1207,7 +1207,7 @@ class TacticalRetreatInterface:
             self,
             action_name: str,
             resolution_model: str
-            ) -> List[dict[str, MatchResultDict]]:
+            ) -> List[dict]:
         """
         Fetch potential relaxed requirement fulfillment using a fixed resolution model.
 
@@ -1245,7 +1245,7 @@ class TacticalRetreatInterface:
     @staticmethod
     def _build_requirement_impact_dicts(
             action_name: str,
-            query_result: List[dict[str, MatchResultDict]]
+            query_result: List[dict]
             ) -> List[RequirementImpactDict]:
         """Convert query result rows to requirement impact dataclasses."""
         return [
