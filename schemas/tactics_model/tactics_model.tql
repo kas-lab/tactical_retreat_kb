@@ -1,36 +1,29 @@
 define
 
-ros_system sub attribute,
-    value string;
+attribute ros_system, value string;
 
-name sub attribute,
-    abstract,
-    value string;
+attribute name @abstract, value string;
 
-resolution_model_name sub name;
-tactic_name sub name;
-rule_name sub name;
-variant_name sub name;
+attribute resolution_model_name, sub name;
+attribute tactic_name, sub name;
+attribute rule_name, sub name;
+attribute variant_name, sub name;
 
-tactic_resolution_model sub attribute,
-    value string;
+attribute tactic_resolution_model, value string;
 
-tactic_select_variant sub attribute,
-    value string;
+attribute tactic_select_variant, value string;
 
-rule_valid sub attribute,
-    value boolean;
+attribute rule_valid, value boolean;
 
-feasible sub attribute,
-    value boolean;
+attribute feasible, value boolean;
 
 ### Tactic
-Tactic sub entity,
+entity Tactic,
     owns tactic_name @key,
     plays tactic_rule:tactic,
     plays resolution_model:tactic;
 
-tactic_rule sub relation,
+relation tactic_rule,
     owns rule_name @key,
     owns rule_valid,
     relates tactic,
@@ -40,18 +33,16 @@ tactic_rule sub relation,
 
 ### effect
 
-resulting_effect_value sub attribute,
-    value double;
-effect sub relation,
-    abstract,
+attribute resulting_effect_value, value double;
+relation effect @abstract,
     owns resulting_effect_value,
     relates measure,
     plays tactic_rule:effect;
 
-absolute_effect sub effect,
+relation absolute_effect, sub effect,
     relates effect_value;
 
-relative_effect sub effect,
+relation relative_effect, sub effect,
     relates effect_value;
 
 Measure plays effect:measure;
@@ -63,7 +54,7 @@ ValueInteger plays relative_effect:effect_value;
 logical_expression plays tactic_rule:antecedent;
 
 # feature adaptation
-feature_adaptation sub relation,
+relation feature_adaptation,
     relates deactivation,
     relates activation,
     plays tactic_rule:consequent;
@@ -74,24 +65,22 @@ Feature plays feature_adaptation:activation;
 Feature plays feature_adaptation:deactivation;
 
 #### resolution model
-resolution_model sub relation,
+relation resolution_model,
     owns resolution_model_name @key,
     owns ros_system,
     relates tactic,
     relates variant_resolution;
 
-variant_resolution sub relation,
-    abstract,
+relation variant_resolution @abstract,
     owns feasible,
     relates resolution_action,
     relates variant,
     plays resolution_model:variant_resolution;
 
-variant_activation sub variant_resolution;
-variant_deactivation sub variant_resolution;
+relation variant_activation, sub variant_resolution;
+relation variant_deactivation, sub variant_resolution;
 
-resolution_action sub relation,
-    abstract,
+relation resolution_action @abstract,
     owns feasible,
     relates node,
     plays variant_resolution:resolution_action;
@@ -99,199 +88,35 @@ resolution_action sub relation,
 #### Connection to ROS model
 ROSNode plays resolution_action:node;
 
-set_nodes_parameters sub resolution_action,
+relation set_nodes_parameters, sub resolution_action,
     relates parameter,
     relates parameter_value;
 
 Parameter plays set_nodes_parameters:parameter;
 Value plays set_nodes_parameters:parameter_value;
 
-set_lifecycle_state sub resolution_action,
+relation set_lifecycle_state, sub resolution_action,
     owns lifecycle_state;
 
 ## Rules to infer whether a tactic rule is valid
-rule tactic_rule_valid:
-    when {
-        $tr isa tactic_rule;
-        not {$tr has rule_valid false;};
-    } then {
-        $tr has rule_valid true;
-    };
 
-rule tactic_rule_antecedent_invalid:
-    when {
-        $tr (antecedent: $a) isa tactic_rule;
-        $a isa logical_expression, has expression_satisfied false;
-    } then {
-        $tr has rule_valid false;
-    };
 
-rule tactic_rule_consequent_unfeasible:
-    when {
-        $tr (consequent: $fa) isa tactic_rule;
-        $fa ($feature) isa feature_adaptation;
-        $feature isa Feature;
-        $feature has selectable false;
-    } then {
-        $tr has rule_valid false;
-    };
 
-rule tactic_rule_consequent_variant_resolution_unfeasible:
-    when {
-        $t isa Tactic;
-        $tr (tactic: $t, consequent: $fa) isa tactic_rule;
-        $fa ($feature) isa feature_adaptation;
-        $feature isa Feature;
-        $rm (tactic: $t, variant_resolution: $vr) isa resolution_model;
-        $vr (variant: $feature) isa variant_resolution;
-        $vr has feasible false;
-    } then {
-        $tr has rule_valid false;
-    };
 
 
 ## Rules for infering whether a resolution action is feasible
-rule resolution_action_unfeasible_node_running:
-    when {
-        $ra (node: $node) isa resolution_action;
-        not {$node has running true;};
-    } then {
-        $ra has feasible false;
-    };
 
-rule resolution_action_feasible:
-    when {
-        $ra isa resolution_action;
-        not {$ra has feasible false;};
-    } then {
-        $ra has feasible true;
-    };
 
 ### lifecyle state rules. Allows setting the same state
-rule set_lifecycle_state_active_unfeasible:
-    when {
-        $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "active";
-        not{
-            {
-                $node has lifecycle_state "active";
-            } or {
-                $node has lifecycle_state "inactive";
-            };
-        };
-    } then {
-        $ra has feasible false;
-    };
 
-rule set_lifecycle_state_inactive_unfeasible:
-    when {
-        $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "inactive";
-        not{
-            {
-                $node has lifecycle_state "active";
-            } or {
-                $node has lifecycle_state "unconfigured";
-            } or {
-                $node has lifecycle_state "inactive";
-            };
-        };
-    } then {
-        $ra has feasible false;
-    };
 
-rule set_lifecycle_state_unconfigured_unfeasible:
-    when {
-        $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "unconfigured";
-        not{
-            {
-                $node has lifecycle_state "inactive";
-            } or {
-                $node has lifecycle_state "unconfigured";
-            };
-        };
-    } then {
-        $ra has feasible false;
-    };
 
-rule set_lifecycle_state_finalized_unfeasible:
-    when {
-        $ra (node: $node)isa set_lifecycle_state, has lifecycle_state "finalized";
-        not{
-            {
-                $node has lifecycle_state "active";
-            } or {
-                $node has lifecycle_state "unconfigured";
-            } or {
-                $node has lifecycle_state "inactive";
-            } or {
-                $node has lifecycle_state "finalized";
-            };
-        };
-    } then {
-        $ra has feasible false;
-    };
 
 ### check whether the parameter types are correct?
 
 ## Rules for inferring whether a variant resolution is feasible
-rule variant_resolution_unfeasible:
-    when {
-        $vr (resolution_action: $ra) isa variant_resolution;
-        $ra has feasible false;
-    } then {
-        $vr has feasible false;
-    };
 
-rule variant_resolution_feasible:
-    when {
-        $vr isa variant_resolution;
-        not{$vr has feasible false;};
-    } then {
-        $vr has feasible true;
-    };
 
 # Rules for inferring the resulting value of an effect
-rule relative_effect_eval:
-    when {
-        $tr (effect: $effect) isa tactic_rule;
-        $effect (measure: $measure, effect_value: $effect_value) isa relative_effect;
-        {
-            $effect_value isa ValueDouble, has double_value $effect_double_value;
-            ?effect_value_ = $effect_double_value;
-        } or {
-            $effect_value isa ValueInteger, has integer_value $effect_integer_value;
-            ?effect_value_ = $effect_integer_value;
-        };
 
-        $measurement (measure: $measure, measurement_value: $value) isa! measurement, has latest true;
-        {
-            $value isa ValueDouble, has double_value $measured_double_value;
-            ?measured_value_ = $measured_double_value;
-        } or {
-            $value isa ValueInteger, has integer_value $measured_integer_value;
-            ?measured_value_ = $measured_integer_value;
-        };
 
-        ?hypothetical_value = ?measured_value_ + ?effect_value_ ;
-    } then {
-        $effect has resulting_effect_value ?hypothetical_value;
-    };
-
-rule absolute_effect_double_result_value:
-    when {
-        $tr (effect: $effect) isa tactic_rule;
-        $effect (measure: $measure, effect_value: $effect_value) isa absolute_effect;
-        $effect_value isa ValueDouble, has double_value $effect_double_value;
-        ?hypothetical_value = $effect_double_value;
-    } then {
-        $effect has resulting_effect_value ?hypothetical_value;
-    };
-
-rule absolute_effect_integer_result_value:
-    when {
-        $tr (effect: $effect) isa tactic_rule;
-        $effect (measure: $measure, effect_value: $effect_value) isa absolute_effect;
-        $effect_value isa ValueInteger, has integer_value $effect_integer_value;
-        ?hypothetical_value = $effect_integer_value;
-    } then {
-        $effect has resulting_effect_value ?hypothetical_value;
-    };

@@ -3,75 +3,46 @@ define
 ## Attributes
 
 ### ROSNode attributes
-package sub attribute,
-    value string;
-executable sub attribute,
-    value string;
-lifecycle_state sub attribute,
-    value string,
-    regex "^(unconfigured|inactive|active|finalized)$";
-lifecycle_transition sub attribute,
-    value string,
-    regex "^(configure|shutdown|activate|deactivate|cleanup)$";
+attribute package, value string;
+attribute executable, value string;
+attribute lifecycle_state, value string @regex("^(unconfigured|inactive|active|finalized)$");
+attribute lifecycle_transition, value string @regex("^(configure|shutdown|activate|deactivate|cleanup)$");
 
 #### Should only be used by is_node_active rule
-is_active sub attribute,
-    value boolean;
+attribute is_active, value boolean;
 
 ### Runtime node attributes
-node_name sub attribute,
-    value string;
-namespace sub attribute,
-    value string;
-start_time sub attribute,
-    value datetime;
-end_time sub attribute,
-    value datetime;
+attribute node_name, value string;
+attribute namespace, value string;
+attribute start_time, value datetime;
+attribute end_time, value datetime;
 
 ### ROS interfaces attributes
-interface_name sub attribute,
-    value string;
-interface_type sub attribute,
-    value string;
+attribute interface_name, value string;
+attribute interface_type, value string;
 
-gid sub attribute,
-    value long;
+attribute gid, value integer;
 
 ### QoS attributes
-reliability sub attribute,
-    value string,
-    regex "^(BEST_EFFORT|RELIABLE|SYSTEM_DEFAULT)";
-history sub attribute,
-    value string,
-    regex "^(KEEP_LAST|KEEP_ALL|UNKNOWN|SYSTEM_DEFAULT)";
-depth sub attribute,
-    value long;
-durability sub attribute,
-    value string,
-    regex "^(TRANSIENT_LOCAL|VOLATILE|SYSTEM_DEFAULT)";
-deadline sub attribute,
-    value long;  # 0 indicates infinite
-lifespan sub attribute,
-    value long;  # 0 indicates infinite
-liveliness sub attribute,
-    value string,
-    regex "^(AUTOMATIC|MANUAL_BY_TOPIC|SYSTEM_DEFAULT)";
-lease_duration sub attribute,
-    value long;  # 0 indicates infinite
+attribute reliability, value string @regex("^(BEST_EFFORT|RELIABLE|SYSTEM_DEFAULT)");
+attribute history, value string @regex("^(KEEP_LAST|KEEP_ALL|UNKNOWN|SYSTEM_DEFAULT)");
+attribute depth, value integer;
+attribute durability, value string @regex("^(TRANSIENT_LOCAL|VOLATILE|SYSTEM_DEFAULT)");
+attribute deadline, value integer;  # 0 indicates infinite
+attribute lifespan, value integer;  # 0 indicates infinite
+attribute liveliness, value string @regex("^(AUTOMATIC|MANUAL_BY_TOPIC|SYSTEM_DEFAULT)");
+attribute lease_duration, value integer;  # 0 indicates infinite
 
 ### Parameter attributes
-parameter_name sub attribute,
-    value string;
+attribute parameter_name, value string;
 
-default_value sub attribute,
-    value boolean;
+attribute default_value, value boolean;
 
 ## Entities
 
-running sub attribute,
-    value boolean;
+attribute running, value boolean;
 
-ROSNode sub entity,
+entity ROSNode,
     owns node_name @key,
     owns namespace,
     owns start_time,
@@ -84,27 +55,25 @@ ROSNode sub entity,
     plays process_group:node,
     plays subnode:subnode;
 
-LifeCycleNode sub ROSNode,
+entity LifeCycleNode, sub ROSNode,
     owns lifecycle_state;
 
 ### ROS interfaces
-ROSInterface sub entity,
-    abstract,
+entity ROSInterface @abstract,
     owns interface_name,
     owns interface_type,
     plays has_interface:afferent,
     plays has_interface:efferent;
 
-TopicInterface sub ROSInterface,
-    abstract,
+entity TopicInterface @abstract, sub ROSInterface,
     owns gid,
     plays has_qos:interface;
-Subscriber sub TopicInterface,
+entity Subscriber, sub TopicInterface,
     plays has_topic:subscriber;
-Publisher sub TopicInterface,
+entity Publisher, sub TopicInterface,
     plays has_topic:publisher;
 
-QoSProfile sub entity,
+entity QoSProfile,
     owns reliability,
     owns history,
     owns depth,
@@ -115,39 +84,36 @@ QoSProfile sub entity,
     owns lease_duration,
     plays has_qos:qos;
 
-ServiceInterface sub ROSInterface,
-    abstract;
-ServiceClient sub ServiceInterface,
+entity ServiceInterface @abstract, sub ROSInterface;
+entity ServiceClient, sub ServiceInterface,
     plays has_service:client;
-ServiceServer sub ServiceInterface,
+entity ServiceServer, sub ServiceInterface,
     plays has_service:server;
 
-ActionInterface sub ROSInterface,
-    abstract;
-ActionClient sub ActionInterface,
+entity ActionInterface @abstract, sub ROSInterface;
+entity ActionClient, sub ActionInterface,
     plays has_action:client;
-ActionServer sub ActionInterface,
+entity ActionServer, sub ActionInterface,
     plays has_action:server;
 
-has_qos sub relation,
+relation has_qos,
     relates interface,
     relates qos;
 
-has_interface sub relation,
-    abstract,
+relation has_interface @abstract,
     relates node,
     relates afferent,
     relates efferent;
 
-has_topic sub has_interface,
+relation has_topic, sub has_interface,
     relates subscriber as afferent,
     relates publisher as efferent;
 
-has_service sub has_interface,
+relation has_service, sub has_interface,
     relates client as afferent,
     relates server as efferent;
 
-has_action sub has_interface,
+relation has_action, sub has_interface,
     relates client as afferent,
     relates server as efferent;
 
@@ -158,66 +124,46 @@ ServiceServer plays measurement_interface:source;
 ActionServer plays measurement_interface:source;
 
 ### Parameter related entities
-Parameter sub entity,
+entity Parameter,
     owns parameter_name,
     plays has_parameter:parameter,
     plays has_parameter_value:parameter;
 
-ParameterBool sub Parameter;
-ParameterInteger sub Parameter;
-ParameterDouble sub Parameter;
-ParameterString sub Parameter;
+entity ParameterBool, sub Parameter;
+entity ParameterInteger, sub Parameter;
+entity ParameterDouble, sub Parameter;
+entity ParameterString, sub Parameter;
 
-ParameterBoolArray sub Parameter;
-ParameterIntegerArray sub Parameter;
-ParameterStringArray sub Parameter;
-ParameterDoubleArray sub Parameter;
+entity ParameterBoolArray, sub Parameter;
+entity ParameterIntegerArray, sub Parameter;
+entity ParameterStringArray, sub Parameter;
+entity ParameterDoubleArray, sub Parameter;
 
 Value plays has_parameter_value:parameter_value;
 
 ## Relations
-has_parameter sub relation,
+relation has_parameter,
     relates node,
     relates parameter;
 
-has_parameter_value sub relation,
+relation has_parameter_value,
     owns default_value,
     relates node,
     relates parameter,
     relates parameter_value;
 
-node_deployment sub relation,
+relation node_deployment,
     owns package,
     owns executable,
     relates node;
 
-process_group sub relation,
+relation process_group,
     relates node;
 
-subnode sub process_group,
+relation subnode, sub process_group,
     relates subnode;
 
 
 ## rules
-rule ros_node_not_running_has_end_time:
-    when {
-        $node isa ROSNode, has end_time $end_time;
-    } then {
-        $node has running false;
-    };
 
-rule ros_node_not_running_no_start_time:
-    when {
-        $node isa ROSNode;
-        not {$node has start_time $start_time;};
-    } then {
-        $node has running false;
-    };
 
-rule ros_node_running:
-    when {
-        $node isa ROSNode;
-        not {$node has running false;};
-    } then {
-        $node has running true;
-    };

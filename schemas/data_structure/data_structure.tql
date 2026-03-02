@@ -1,34 +1,28 @@
 define
 
-Value sub entity,
-    abstract,
+entity Value @abstract,
     plays at_index:array_value;
 
-bool_value sub attribute,
-    value boolean;
-integer_value sub attribute,
-    value long;
-double_value sub attribute,
-    value double;
-string_value sub attribute,
-    value string;
+attribute bool_value, value boolean;
+attribute integer_value, value integer;
+attribute double_value, value double;
+attribute string_value, value string;
 
-ValueSingleton sub Value;
-ValueBool sub ValueSingleton,
+entity ValueSingleton, sub Value;
+entity ValueBool, sub ValueSingleton,
     owns bool_value;
-ValueInteger sub ValueSingleton,
+entity ValueInteger, sub ValueSingleton,
     owns integer_value;
-ValueDouble sub ValueSingleton,
+entity ValueDouble, sub ValueSingleton,
     owns double_value;
-ValueString sub ValueSingleton,
+entity ValueString, sub ValueSingleton,
     owns string_value;
 
-ValueArray sub Value,
+entity ValueArray, sub Value,
     plays at_index:array;
 
-index sub attribute,
-    value long;
-at_index sub relation,
+attribute index, value integer;
+relation at_index,
     owns index,
     relates array,
     relates array_value;

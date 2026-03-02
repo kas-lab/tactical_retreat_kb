@@ -1,33 +1,29 @@
 define
 
-measure_name sub attribute,
-	value string;
-description sub attribute,
-    value string;
+attribute measure_name, value string;
+attribute description, value string;
 
-measurement_time sub attribute,
-    value datetime;
+attribute measurement_time, value datetime;
 
-latest sub attribute,
-    value boolean;
+attribute latest, value boolean;
 
-Measure sub entity,
+entity Measure,
     owns measure_name @key,
     owns description,
     plays measurement:measure,
     plays measurement_interface:measure;
 
-MeasureBool sub Measure;
-MeasureInteger sub Measure;
-MeasureDouble sub Measure;
-MeasureString sub Measure;
+entity MeasureBool, sub Measure;
+entity MeasureInteger, sub Measure;
+entity MeasureDouble, sub Measure;
+entity MeasureString, sub Measure;
 
-MeasureBoolArray sub Measure;
-MeasureIntegerArray sub Measure;
-MeasureStringArray sub Measure;
-MeasureDoubleArray sub Measure;
+entity MeasureBoolArray, sub Measure;
+entity MeasureIntegerArray, sub Measure;
+entity MeasureStringArray, sub Measure;
+entity MeasureDoubleArray, sub Measure;
 
-measurement sub relation,
+relation measurement,
     owns measurement_time,
     owns latest,
     relates measure,
@@ -36,20 +32,14 @@ measurement sub relation,
 ### connection with data structure model
 Value plays measurement:measurement_value;
 
-measurement_function_name sub attribute,
-    value string;
-measurement_function_lib sub attribute,
-    value string;
-measurement_function_args sub attribute,
-    value string;
-measurement_proxy sub attribute,
-    value boolean;
-measurement_period sub attribute,
-   value long;
-service_request_kwargs sub attribute,
-   value string;
+attribute measurement_function_name, value string;
+attribute measurement_function_lib, value string;
+attribute measurement_function_args, value string;
+attribute measurement_proxy, value boolean;
+attribute measurement_period, value integer;
+attribute service_request_kwargs, value string;
 
-measurement_interface sub relation,
+relation measurement_interface,
     owns measurement_function_name,
     owns measurement_function_lib,
     owns measurement_function_args,
