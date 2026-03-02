@@ -429,10 +429,9 @@ class TacticalRetreatInterface:
                 $resolution_action (node: $node) isa resolution_action;
                 $node isa ROSNode, has node_name '{node_name}',
                     has namespace '{namespace}';
-            get $node;
-            count;
+            select $node; reduce $c = count;
         """
-        return (self.db.get_aggregate_database(query) > 0)
+        return (self.db.get_aggregate_database(query) or 0) > 0
 
     def fetch_neighbours(
             self, node_name: str, namespace: str = '') -> List[dict]:
