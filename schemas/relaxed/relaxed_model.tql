@@ -30,43 +30,43 @@ relation system_requirement @abstract,
 	owns in_effect,
 	relates system;
 
-relation relaxed_requirement, sub system_requirement,
+relation relaxed_requirement extends system_requirement,
 	owns requirement_name @key,
 	owns description,
 	owns fulfillment,
 	relates expression;
 
-relation relaxed_expression @abstract, sub expression,
+relation relaxed_expression @abstract extends expression,
 	owns fulfillment,
 	plays relaxed_requirement:expression;
 
-relation atomic_relaxed_expression @abstract, sub relaxed_expression,
+relation atomic_relaxed_expression @abstract extends relaxed_expression,
 	relates expression,
 	plays shall_expression:expression,
     plays may_expression:expression,
 	plays until_expression:after;
 
-relation compound_relaxed_expression @abstract, sub relaxed_expression;
+relation compound_relaxed_expression @abstract extends relaxed_expression;
 
-relation shall_expression, sub compound_relaxed_expression,
+relation shall_expression extends compound_relaxed_expression,
 	relates expression;
-relation may_expression, sub compound_relaxed_expression,
+relation may_expression extends compound_relaxed_expression,
 	relates expression,
 	plays shall_expression:expression;
 
-relation eventually_expression, sub atomic_relaxed_expression;
+relation eventually_expression extends atomic_relaxed_expression;
 
 ### Event expressions
-relation event_expression @abstract, sub atomic_relaxed_expression,
+relation event_expression @abstract extends atomic_relaxed_expression,
 	owns event_duration;
 
-relation after_expression, sub event_expression;
-relation before_expression, sub event_expression;
-relation in_expression, sub event_expression,
+relation after_expression extends event_expression;
+relation before_expression extends event_expression;
+relation in_expression extends event_expression,
 	owns event_end_duration;
 
 ### Until expression
-relation until_expression, sub relaxed_expression,
+relation until_expression extends relaxed_expression,
 	relates before,
 	relates after,
 	plays shall_expression:expression,
@@ -74,7 +74,7 @@ relation until_expression, sub relaxed_expression,
 
 #### Fuzzy set expression
 
-relation relaxed_fuzzy_expression @abstract, sub relaxed_expression,
+relation relaxed_fuzzy_expression @abstract extends relaxed_expression,
 	owns membership_degree,
 	relates term,
 	plays shall_expression:expression,
@@ -82,23 +82,23 @@ relation relaxed_fuzzy_expression @abstract, sub relaxed_expression,
 	plays atomic_relaxed_expression:expression;
 
 # can have any membership function
-relation as_close_as_possible_expression, sub relaxed_fuzzy_expression,
+relation as_close_as_possible_expression extends relaxed_fuzzy_expression,
 	owns required_value,
 	relates fuzzy_set;
 
-relation as_many_as_possible_expression, sub relaxed_fuzzy_expression,
+relation as_many_as_possible_expression extends relaxed_fuzzy_expression,
 	relates fuzzy_set;
-relation as_few_as_possible_expression, sub relaxed_fuzzy_expression,
+relation as_few_as_possible_expression extends relaxed_fuzzy_expression,
 	relates fuzzy_set;
 
 # can have any membership function
-relation freq_as_close_as_possible_expression, sub relaxed_fuzzy_expression,
+relation freq_as_close_as_possible_expression extends relaxed_fuzzy_expression,
 	owns required_period,
 	relates fuzzy_set;
 
-relation as_early_as_possible_expression, sub relaxed_fuzzy_expression,
+relation as_early_as_possible_expression extends relaxed_fuzzy_expression,
 	relates fuzzy_set;
-relation as_late_as_possible_expression, sub relaxed_fuzzy_expression,
+relation as_late_as_possible_expression extends relaxed_fuzzy_expression,
 	relates fuzzy_set;
 
 # connection to fuzzy_expression model

@@ -4,10 +4,10 @@ attribute ros_system, value string;
 
 attribute name @abstract, value string;
 
-attribute resolution_model_name, sub name;
-attribute tactic_name, sub name;
-attribute rule_name, sub name;
-attribute variant_name, sub name;
+attribute resolution_model_name extends name;
+attribute tactic_name extends name;
+attribute rule_name extends name;
+attribute variant_name extends name;
 
 attribute tactic_resolution_model, value string;
 
@@ -39,10 +39,10 @@ relation effect @abstract,
     relates measure,
     plays tactic_rule:effect;
 
-relation absolute_effect, sub effect,
+relation absolute_effect extends effect,
     relates effect_value;
 
-relation relative_effect, sub effect,
+relation relative_effect extends effect,
     relates effect_value;
 
 Measure plays effect:measure;
@@ -77,8 +77,8 @@ relation variant_resolution @abstract,
     relates variant,
     plays resolution_model:variant_resolution;
 
-relation variant_activation, sub variant_resolution;
-relation variant_deactivation, sub variant_resolution;
+relation variant_activation extends variant_resolution;
+relation variant_deactivation extends variant_resolution;
 
 relation resolution_action @abstract,
     owns feasible,
@@ -88,14 +88,14 @@ relation resolution_action @abstract,
 #### Connection to ROS model
 ROSNode plays resolution_action:node;
 
-relation set_nodes_parameters, sub resolution_action,
+relation set_nodes_parameters extends resolution_action,
     relates parameter,
     relates parameter_value;
 
 Parameter plays set_nodes_parameters:parameter;
 Value plays set_nodes_parameters:parameter_value;
 
-relation set_lifecycle_state, sub resolution_action,
+relation set_lifecycle_state extends resolution_action,
     owns lifecycle_state;
 
 ## Rules to infer whether a tactic rule is valid

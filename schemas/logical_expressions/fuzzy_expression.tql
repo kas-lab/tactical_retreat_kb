@@ -9,11 +9,11 @@ attribute offset_value, value double;
 entity FuzzySet @abstract,
 	owns offset_value;
 
-entity AscendSet, sub FuzzySet,
+entity AscendSet extends FuzzySet,
 	plays fuzzy_ascend_expression:fuzzy_set;
-entity DecaySet, sub FuzzySet,
+entity DecaySet extends FuzzySet,
 	plays fuzzy_decay_expression:fuzzy_set;
-entity UnimodalSet, sub FuzzySet,
+entity UnimodalSet extends FuzzySet,
 	plays fuzzy_unimodal_expression:fuzzy_set;
 
 ### fuzzy membership attributes
@@ -32,13 +32,13 @@ attribute center, value double;
 
 # μ(x) =  (x – a) / (b – a), a ≤ x ≤ b
 # μ(x) = (c – x) / (c – b), b ≤ x ≤ c
-entity FuzzyTriangular, sub UnimodalSet,
+entity FuzzyTriangular extends UnimodalSet,
 	owns a,
 	owns b,
 	owns c;
 
 # μ(x) = e^(-0.5*( ( (x - center) / sigma)^2 ) )
-entity FuzzyGaussian, sub UnimodalSet,
+entity FuzzyGaussian extends UnimodalSet,
 	owns sigma,
 	owns center;
 
@@ -46,64 +46,64 @@ entity FuzzyGaussian, sub UnimodalSet,
 
 ## exponential saturation membership function
 ## m(x) = 1 - e^(-exponent * x), exponent > 0
-entity FuzzyExponentialSaturation, sub AscendSet,
+entity FuzzyExponentialSaturation extends AscendSet,
 	owns exponent; # speed of saturation
 
 ## sigmoid membership function
 ## m(x) = 1 / (1 + e ^ -exponent*(x - x0))
-entity FuzzySigmoid, sub AscendSet,
+entity FuzzySigmoid extends AscendSet,
 	owns exponent,
 	owns inflection_point; # where m(inflection_point) = 0.5
 
 ## bounded linear fraction membership function (monotonic)
 ## m(x) = x / (x + curvature), curvature > 0
-entity FuzzyBoundedLinearFraction, sub AscendSet,
+entity FuzzyBoundedLinearFraction extends AscendSet,
 	owns curvature; # controls the curvature
 
 ### Decay fuzzy membership functions
 
 ## exponential decay membership function
 ## m(x) = e^(-exponent * x), exponent > 0
-entity FuzzyExponentialDecay, sub DecaySet,
+entity FuzzyExponentialDecay extends DecaySet,
 	owns exponent;
 
 ## rational decay membership function
 ## m(x) = curvature / (x + curvature), curvature > 0
-entity FuzzyRationalDecay, sub DecaySet,
+entity FuzzyRationalDecay extends DecaySet,
 	owns curvature;
 
 ### Fuzzy expressions
 attribute quantified_value, value double;
 
-relation fuzzy_expression @abstract, sub expression,
+relation fuzzy_expression @abstract extends expression,
 	owns membership_degree,
 	owns quantified_value,
 	owns offset_value;
 
-relation fuzzy_comparison_expression, sub fuzzy_expression,
+relation fuzzy_comparison_expression extends fuzzy_expression,
 	plays fuzzy_and:expression,
 	plays fuzzy_or:expression,
 	plays fuzzy_not:expression,
 	relates term;
 
-relation fuzzy_decay_expression, sub fuzzy_comparison_expression,
+relation fuzzy_decay_expression extends fuzzy_comparison_expression,
 	relates fuzzy_set;
-relation fuzzy_ascend_expression, sub fuzzy_comparison_expression,
+relation fuzzy_ascend_expression extends fuzzy_comparison_expression,
 	relates fuzzy_set;
-relation fuzzy_unimodal_expression, sub fuzzy_comparison_expression,
+relation fuzzy_unimodal_expression extends fuzzy_comparison_expression,
 	relates fuzzy_set;
 
 ## compound expression
-relation fuzzy_operator @abstract, sub fuzzy_expression;
+relation fuzzy_operator @abstract extends fuzzy_expression;
 
-relation fuzzy_and, sub fuzzy_operator,
+relation fuzzy_and extends fuzzy_operator,
     relates expression;
 
-relation fuzzy_or, sub fuzzy_operator,
+relation fuzzy_or extends fuzzy_operator,
     relates expression,
     plays fuzzy_and:expression;
 
-relation fuzzy_not, sub fuzzy_operator,
+relation fuzzy_not extends fuzzy_operator,
     relates expression,
 	plays fuzzy_and:expression,
     plays fuzzy_or:expression;

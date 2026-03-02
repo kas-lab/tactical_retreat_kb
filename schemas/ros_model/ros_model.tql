@@ -55,7 +55,7 @@ entity ROSNode,
     plays process_group:node,
     plays subnode:subnode;
 
-entity LifeCycleNode, sub ROSNode,
+entity LifeCycleNode extends ROSNode,
     owns lifecycle_state;
 
 ### ROS interfaces
@@ -65,12 +65,12 @@ entity ROSInterface @abstract,
     plays has_interface:afferent,
     plays has_interface:efferent;
 
-entity TopicInterface @abstract, sub ROSInterface,
+entity TopicInterface @abstract extends ROSInterface,
     owns gid,
     plays has_qos:interface;
-entity Subscriber, sub TopicInterface,
+entity Subscriber extends TopicInterface,
     plays has_topic:subscriber;
-entity Publisher, sub TopicInterface,
+entity Publisher extends TopicInterface,
     plays has_topic:publisher;
 
 entity QoSProfile,
@@ -84,16 +84,16 @@ entity QoSProfile,
     owns lease_duration,
     plays has_qos:qos;
 
-entity ServiceInterface @abstract, sub ROSInterface;
-entity ServiceClient, sub ServiceInterface,
+entity ServiceInterface @abstract extends ROSInterface;
+entity ServiceClient extends ServiceInterface,
     plays has_service:client;
-entity ServiceServer, sub ServiceInterface,
+entity ServiceServer extends ServiceInterface,
     plays has_service:server;
 
-entity ActionInterface @abstract, sub ROSInterface;
-entity ActionClient, sub ActionInterface,
+entity ActionInterface @abstract extends ROSInterface;
+entity ActionClient extends ActionInterface,
     plays has_action:client;
-entity ActionServer, sub ActionInterface,
+entity ActionServer extends ActionInterface,
     plays has_action:server;
 
 relation has_qos,
@@ -105,15 +105,15 @@ relation has_interface @abstract,
     relates afferent,
     relates efferent;
 
-relation has_topic, sub has_interface,
+relation has_topic extends has_interface,
     relates subscriber as afferent,
     relates publisher as efferent;
 
-relation has_service, sub has_interface,
+relation has_service extends has_interface,
     relates client as afferent,
     relates server as efferent;
 
-relation has_action, sub has_interface,
+relation has_action extends has_interface,
     relates client as afferent,
     relates server as efferent;
 
@@ -129,15 +129,15 @@ entity Parameter,
     plays has_parameter:parameter,
     plays has_parameter_value:parameter;
 
-entity ParameterBool, sub Parameter;
-entity ParameterInteger, sub Parameter;
-entity ParameterDouble, sub Parameter;
-entity ParameterString, sub Parameter;
+entity ParameterBool extends Parameter;
+entity ParameterInteger extends Parameter;
+entity ParameterDouble extends Parameter;
+entity ParameterString extends Parameter;
 
-entity ParameterBoolArray, sub Parameter;
-entity ParameterIntegerArray, sub Parameter;
-entity ParameterStringArray, sub Parameter;
-entity ParameterDoubleArray, sub Parameter;
+entity ParameterBoolArray extends Parameter;
+entity ParameterIntegerArray extends Parameter;
+entity ParameterStringArray extends Parameter;
+entity ParameterDoubleArray extends Parameter;
 
 Value plays has_parameter_value:parameter_value;
 
@@ -160,7 +160,7 @@ relation node_deployment,
 relation process_group,
     relates node;
 
-relation subnode, sub process_group,
+relation subnode extends process_group,
     relates subnode;
 
 

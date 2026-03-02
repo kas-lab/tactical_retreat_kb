@@ -7,42 +7,42 @@ relation expression @abstract,
     owns expression_name @unique;  # to make it possible to query the expression
 
 # logical expressions
-relation logical_expression @abstract, sub expression,
+relation logical_expression @abstract extends expression,
     owns expression_satisfied;
 
 ## negation expression
-relation not_expression, sub logical_expression,
+relation not_expression extends logical_expression,
     relates expression,
     plays and_expression:expression,
     plays or_expression:expression;
 
 ## atomic expressions
-relation atomic_expression @abstract, sub logical_expression,
+relation atomic_expression @abstract extends logical_expression,
     plays not_expression:expression,
     plays and_expression:expression,
     plays or_expression:expression;
 
-relation propositional_expression, sub atomic_expression,
+relation propositional_expression extends atomic_expression,
 	relates atom;
 
-relation comparison_expression @abstract, sub atomic_expression,
+relation comparison_expression @abstract extends atomic_expression,
     relates lhs_value,
     relates rhs_value;
 
-relation less_than, sub comparison_expression;
-relation less_than_equal, sub comparison_expression;
-relation greater_than, sub comparison_expression;
-relation greater_than_equal, sub comparison_expression;
-relation equal, sub comparison_expression;
-relation not_equal, sub comparison_expression;
+relation less_than extends comparison_expression;
+relation less_than_equal extends comparison_expression;
+relation greater_than extends comparison_expression;
+relation greater_than_equal extends comparison_expression;
+relation equal extends comparison_expression;
+relation not_equal extends comparison_expression;
 
 ## compound expression
-relation compound_expression @abstract, sub logical_expression;
+relation compound_expression @abstract extends logical_expression;
 
-relation and_expression, sub compound_expression,
+relation and_expression extends compound_expression,
     relates expression;
 
-relation or_expression, sub compound_expression,
+relation or_expression extends compound_expression,
     relates expression,
     plays and_expression:expression;
 

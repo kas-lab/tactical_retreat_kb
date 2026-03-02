@@ -21,7 +21,7 @@ relation tactic_rule_impacts,
 tactic_rule plays tactic_rule_impacts:tactic_rule;
 
 # stratified fulfillment subtypes to avoid negation cycles
-relation tactic_rule_impacts_base, sub tactic_rule_impacts,
+relation tactic_rule_impacts_base extends tactic_rule_impacts,
     relates impacted;
 atomic_expression plays tactic_rule_impacts_base:impacted;
 fuzzy_comparison_expression plays tactic_rule_impacts_base:impacted;
@@ -29,25 +29,25 @@ relaxed_fuzzy_expression plays tactic_rule_impacts_base:impacted;
 not_expression plays tactic_rule_impacts_base:impacted;
 fuzzy_not plays tactic_rule_impacts_base:impacted;
 
-relation tactic_rule_impacts_or, sub tactic_rule_impacts,
+relation tactic_rule_impacts_or extends tactic_rule_impacts,
     relates impacted;
 or_expression plays tactic_rule_impacts_or:impacted;
 fuzzy_or plays tactic_rule_impacts_or:impacted;
 
-relation tactic_rule_impacts_and, sub tactic_rule_impacts,
+relation tactic_rule_impacts_and extends tactic_rule_impacts,
     relates impacted;
 and_expression plays tactic_rule_impacts_and:impacted;
 fuzzy_and plays tactic_rule_impacts_and:impacted;
 
-relation tactic_rule_impacts_shall_expression, sub tactic_rule_impacts,
+relation tactic_rule_impacts_shall_expression extends tactic_rule_impacts,
     relates impacted;
 shall_expression plays tactic_rule_impacts_shall_expression:impacted;
 
-relation tactic_rule_impacts_may_expression, sub tactic_rule_impacts,
+relation tactic_rule_impacts_may_expression extends tactic_rule_impacts,
     relates impacted;
 may_expression plays tactic_rule_impacts_may_expression:impacted;
 
-relation tactic_rule_impacts_requirement, sub tactic_rule_impacts,
+relation tactic_rule_impacts_requirement extends tactic_rule_impacts,
     relates impacted;
 relaxed_requirement plays tactic_rule_impacts_requirement:impacted;
 
@@ -57,7 +57,7 @@ relation tactic_rule_impacts_in_effect,
     relates tactic_rule;
 tactic_rule plays tactic_rule_impacts_in_effect:tactic_rule;
 
-relation tactic_rule_impacts_base_in_effect, sub tactic_rule_impacts_in_effect,
+relation tactic_rule_impacts_base_in_effect extends tactic_rule_impacts_in_effect,
     relates impacted;
 atomic_expression plays tactic_rule_impacts_base_in_effect:impacted;
 fuzzy_comparison_expression plays tactic_rule_impacts_base_in_effect:impacted;
@@ -65,25 +65,25 @@ relaxed_fuzzy_expression plays tactic_rule_impacts_base_in_effect:impacted;
 not_expression plays tactic_rule_impacts_base_in_effect:impacted;
 fuzzy_not plays tactic_rule_impacts_base_in_effect:impacted;
 
-relation tactic_rule_impacts_or_in_effect, sub tactic_rule_impacts_in_effect,
+relation tactic_rule_impacts_or_in_effect extends tactic_rule_impacts_in_effect,
     relates impacted;
 or_expression plays tactic_rule_impacts_or_in_effect:impacted;
 fuzzy_or plays tactic_rule_impacts_or_in_effect:impacted;
 
-relation tactic_rule_impacts_and_in_effect, sub tactic_rule_impacts_in_effect,
+relation tactic_rule_impacts_and_in_effect extends tactic_rule_impacts_in_effect,
     relates impacted;
 and_expression plays tactic_rule_impacts_and_in_effect:impacted;
 fuzzy_and plays tactic_rule_impacts_and_in_effect:impacted;
 
-relation tactic_rule_impacts_shall_expression_in_effect, sub tactic_rule_impacts_in_effect,
+relation tactic_rule_impacts_shall_expression_in_effect extends tactic_rule_impacts_in_effect,
     relates impacted;
 shall_expression plays tactic_rule_impacts_shall_expression_in_effect:impacted;
 
-relation tactic_rule_impacts_may_expression_in_effect, sub tactic_rule_impacts_in_effect,
+relation tactic_rule_impacts_may_expression_in_effect extends tactic_rule_impacts_in_effect,
     relates impacted;
 may_expression plays tactic_rule_impacts_may_expression_in_effect:impacted;
 
-relation tactic_rule_impacts_requirement_in_effect, sub tactic_rule_impacts_in_effect,
+relation tactic_rule_impacts_requirement_in_effect extends tactic_rule_impacts_in_effect,
     relates impacted;
 relaxed_requirement plays tactic_rule_impacts_requirement_in_effect:impacted;
 
