@@ -1,7 +1,7 @@
 define
 
-fuzzy_comparison_expression relates effect;
-fuzzy_comparison_expression relates tactic_rule_dependency;
+fuzzy_comparison_expression relates effect @card(0..);
+fuzzy_comparison_expression relates tactic_rule_dependency @card(0..);
 effect plays fuzzy_comparison_expression:effect;
 
 # direct dependency on effect

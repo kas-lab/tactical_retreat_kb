@@ -144,7 +144,7 @@ Value plays has_parameter_value:parameter_value;
 ## Relations
 relation has_parameter,
     relates node,
-    relates parameter;
+    relates parameter @card(0..);
 
 relation has_parameter_value,
     owns default_value,
@@ -158,10 +158,10 @@ relation node_deployment,
     relates node;
 
 relation process_group,
-    relates node;
+    relates node @card(0..);
 
 relation subnode sub process_group,
-    relates subnode;
+    relates subnode @card(0..);
 
 
 ## rules

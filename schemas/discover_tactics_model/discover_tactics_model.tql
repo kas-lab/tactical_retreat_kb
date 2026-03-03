@@ -3,14 +3,14 @@ define
 ### Discover applicable tactics things and rules
 relation neighbours,
     relates node,
-    relates neighbour;
+    relates neighbour @card(0..);
 
 ROSNode plays neighbours:node;
 ROSNode plays neighbours:neighbour;
 
 relation connected_nodes,
     relates node,
-    relates connected;
+    relates connected @card(0..);
 
 ROSNode plays connected_nodes:node;
 ROSNode plays connected_nodes:connected;
@@ -18,7 +18,7 @@ ROSNode plays connected_nodes:connected;
 relation applicable_tactics,
     relates interface,
     relates resolution_model,
-    relates tactic_rule;
+    relates tactic_rule @card(0..);
 
 ROSInterface plays applicable_tactics:interface;
 resolution_model plays applicable_tactics:resolution_model;

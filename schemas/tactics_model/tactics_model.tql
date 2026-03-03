@@ -27,9 +27,9 @@ relation tactic_rule,
     owns rule_name @key,
     owns rule_valid,
     relates tactic,
-    relates antecedent,
+    relates antecedent @card(0..),
     relates consequent,
-    relates effect;
+    relates effect @card(0..);
 
 ### effect
 
