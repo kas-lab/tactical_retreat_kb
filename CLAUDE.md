@@ -11,6 +11,19 @@ Migrate `typedb_tactics` from TypeDB 2 to **TypeDB 3** and update it to use the 
 - **[AGENTS.md](AGENTS.md)** — full project overview, dependencies, common commands, Docker setup, TypeDB 3 migration notes, TypeQL pitfalls, and agent helpers.
 - **[docs/agent-notes.md](docs/agent-notes.md)** — quick checklist, code style rules, common failure checks, migration-specific failure checks, and mandatory completion checks.
 
+## TypeQL Examples — Use text2typeql First
+
+Before writing any TypeQL query, search the local example corpus:
+
+```bash
+# From src/ros_typedb/
+python3 scripts/find-text2typeql-examples.py "your query description" --top-k 5 --min-score 2
+python3 scripts/find-text2typeql-examples.py "fun function compute" --top-k 5 --min-score 1
+```
+
+- Local dataset: `src/ros_typedb/agent-data/text2typeql/dataset/` (~14 000 validated queries)
+- Full TypeDB 3 syntax reference: `src/ros_typedb/agent-data/text2typeql/CLAUDE.md`
+
 ## Four Key Changes at a Glance
 
 | # | What changed | Old | New |
@@ -55,19 +68,6 @@ docker exec tactical_retreat bash -lc \
 ```
 
 Also run the functional tests relevant to any modules you changed. See [AGENTS.md](AGENTS.md) for the full test commands.
-
-## TypeQL Examples — Use text2typeql First
-
-Before writing any TypeQL query, search the local example corpus:
-
-```bash
-# From src/ros_typedb/
-python3 scripts/find-text2typeql-examples.py "your query description" --top-k 5 --min-score 2
-python3 scripts/find-text2typeql-examples.py "fun function compute" --top-k 5 --min-score 1
-```
-
-- Local dataset: `src/ros_typedb/agent-data/text2typeql/dataset/` (~14 000 validated queries)
-- Full TypeDB 3 syntax reference: `src/ros_typedb/agent-data/text2typeql/CLAUDE.md`
 
 ## TypeDB 3: No `rule` Support — Use `with fun` Instead
 
