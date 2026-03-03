@@ -1,0 +1,536 @@
+match $e0 isa propositional_expression, has expression_name 'bool_false_prop_exp';
+insert $e0 has expression_satisfied false;
+
+match $e1 isa propositional_expression, has expression_name 'bool_true_prop_exp';
+insert $e1 has expression_satisfied true;
+
+match $e2 isa propositional_expression, has expression_name 'false_measure_prop_exp';
+insert $e2 has expression_satisfied false;
+
+match $e3 isa propositional_expression, has expression_name 'true_measure_prop_exp';
+insert $e3 has expression_satisfied true;
+
+match $e4 isa propositional_expression, has expression_name 'no_measure_prop_exp';
+insert $e4 has expression_satisfied false;
+
+# not expressions
+match $e5 isa not_expression, has expression_name 'not_false_expr';
+insert $e5 has expression_satisfied true;
+
+match $e6 isa not_expression, has expression_name 'not_true_expr';
+insert $e6 has expression_satisfied false;
+
+# less_than: doubles (lhs=1.2)
+match $e7 isa less_than, has expression_name 'vd_1_2_less_vd_1_3';
+insert $e7 has expression_satisfied true;
+
+match $e8 isa less_than, has expression_name 'vd_1_2_less_vd_1_2';
+insert $e8 has expression_satisfied false;
+
+match $e9 isa less_than, has expression_name 'vd_1_2_less_vd_1_1';
+insert $e9 has expression_satisfied false;
+
+match $e10 isa less_than, has expression_name 'md_1_2_less_md_1_3';
+insert $e10 has expression_satisfied true;
+
+match $e11 isa less_than, has expression_name 'md_1_2_less_md_1_2';
+insert $e11 has expression_satisfied false;
+
+match $e12 isa less_than, has expression_name 'md_1_2_less_md_1_1';
+insert $e12 has expression_satisfied false;
+
+match $e13 isa less_than, has expression_name 'md_1_2_less_vd_1_3';
+insert $e13 has expression_satisfied true;
+
+match $e14 isa less_than, has expression_name 'md_1_2_less_vd_1_2';
+insert $e14 has expression_satisfied false;
+
+match $e15 isa less_than, has expression_name 'md_1_2_less_vd_1_1';
+insert $e15 has expression_satisfied false;
+
+match $e16 isa less_than, has expression_name 'vd_1_3_less_md_1_2';
+insert $e16 has expression_satisfied false;
+
+match $e17 isa less_than, has expression_name 'vd_1_2_less_md_1_2';
+insert $e17 has expression_satisfied false;
+
+match $e18 isa less_than, has expression_name 'vd_1_1_less_md_1_2';
+insert $e18 has expression_satisfied true;
+
+# less_than: integers (lhs=2)
+match $e19 isa less_than, has expression_name 'vi_2_less_vi_3';
+insert $e19 has expression_satisfied true;
+
+match $e20 isa less_than, has expression_name 'vi_2_less_vi_2';
+insert $e20 has expression_satisfied false;
+
+match $e21 isa less_than, has expression_name 'vi_2_less_vi_1';
+insert $e21 has expression_satisfied false;
+
+match $e22 isa less_than, has expression_name 'mi_2_less_mi_3';
+insert $e22 has expression_satisfied true;
+
+match $e23 isa less_than, has expression_name 'mi_2_less_mi_2';
+insert $e23 has expression_satisfied false;
+
+match $e24 isa less_than, has expression_name 'mi_2_less_mi_1';
+insert $e24 has expression_satisfied false;
+
+match $e25 isa less_than, has expression_name 'mi_2_less_vi_3';
+insert $e25 has expression_satisfied true;
+
+match $e26 isa less_than, has expression_name 'mi_2_less_vi_2';
+insert $e26 has expression_satisfied false;
+
+match $e27 isa less_than, has expression_name 'mi_2_less_vi_1';
+insert $e27 has expression_satisfied false;
+
+match $e28 isa less_than, has expression_name 'vi_3_less_mi_2';
+insert $e28 has expression_satisfied false;
+
+match $e29 isa less_than, has expression_name 'vi_2_less_mi_2';
+insert $e29 has expression_satisfied false;
+
+match $e30 isa less_than, has expression_name 'vi_1_less_mi_2';
+insert $e30 has expression_satisfied true;
+
+# less_than_equal: doubles
+match $e31 isa less_than_equal, has expression_name 'vd_1_2_less_eq_vd_1_3';
+insert $e31 has expression_satisfied true;
+
+match $e32 isa less_than_equal, has expression_name 'vd_1_2_less_eq_vd_1_2';
+insert $e32 has expression_satisfied true;
+
+match $e33 isa less_than_equal, has expression_name 'vd_1_2_less_eq_vd_1_1';
+insert $e33 has expression_satisfied false;
+
+match $e34 isa less_than_equal, has expression_name 'md_1_2_less_eq_md_1_3';
+insert $e34 has expression_satisfied true;
+
+match $e35 isa less_than_equal, has expression_name 'md_1_2_less_eq_md_1_2';
+insert $e35 has expression_satisfied true;
+
+match $e36 isa less_than_equal, has expression_name 'md_1_2_less_eq_md_1_1';
+insert $e36 has expression_satisfied false;
+
+match $e37 isa less_than_equal, has expression_name 'md_1_2_less_eq_vd_1_3';
+insert $e37 has expression_satisfied true;
+
+match $e38 isa less_than_equal, has expression_name 'md_1_2_less_eq_vd_1_2';
+insert $e38 has expression_satisfied true;
+
+match $e39 isa less_than_equal, has expression_name 'md_1_2_less_eq_vd_1_1';
+insert $e39 has expression_satisfied false;
+
+match $e40 isa less_than_equal, has expression_name 'vd_1_3_less_eq_md_1_2';
+insert $e40 has expression_satisfied false;
+
+match $e41 isa less_than_equal, has expression_name 'vd_1_2_less_eq_md_1_2';
+insert $e41 has expression_satisfied true;
+
+match $e42 isa less_than_equal, has expression_name 'vd_1_1_less_eq_md_1_2';
+insert $e42 has expression_satisfied true;
+
+# less_than_equal: integers
+match $e43 isa less_than_equal, has expression_name 'vi_2_less_eq_vi_3';
+insert $e43 has expression_satisfied true;
+
+match $e44 isa less_than_equal, has expression_name 'vi_2_less_eq_vi_2';
+insert $e44 has expression_satisfied true;
+
+match $e45 isa less_than_equal, has expression_name 'vi_2_less_eq_vi_1';
+insert $e45 has expression_satisfied false;
+
+match $e46 isa less_than_equal, has expression_name 'mi_2_less_eq_mi_3';
+insert $e46 has expression_satisfied true;
+
+match $e47 isa less_than_equal, has expression_name 'mi_2_less_eq_mi_2';
+insert $e47 has expression_satisfied true;
+
+match $e48 isa less_than_equal, has expression_name 'mi_2_less_eq_mi_1';
+insert $e48 has expression_satisfied false;
+
+match $e49 isa less_than_equal, has expression_name 'mi_2_less_eq_vi_3';
+insert $e49 has expression_satisfied true;
+
+match $e50 isa less_than_equal, has expression_name 'mi_2_less_eq_vi_2';
+insert $e50 has expression_satisfied true;
+
+match $e51 isa less_than_equal, has expression_name 'mi_2_less_eq_vi_1';
+insert $e51 has expression_satisfied false;
+
+match $e52 isa less_than_equal, has expression_name 'vi_3_less_eq_mi_2';
+insert $e52 has expression_satisfied false;
+
+match $e53 isa less_than_equal, has expression_name 'vi_2_less_eq_mi_2';
+insert $e53 has expression_satisfied true;
+
+match $e54 isa less_than_equal, has expression_name 'vi_1_less_eq_mi_2';
+insert $e54 has expression_satisfied true;
+
+# greater_than: doubles
+match $e55 isa greater_than, has expression_name 'vd_1_2_greater_vd_1_3';
+insert $e55 has expression_satisfied false;
+
+match $e56 isa greater_than, has expression_name 'vd_1_2_greater_vd_1_2';
+insert $e56 has expression_satisfied false;
+
+match $e57 isa greater_than, has expression_name 'vd_1_2_greater_vd_1_1';
+insert $e57 has expression_satisfied true;
+
+match $e58 isa greater_than, has expression_name 'md_1_2_greater_md_1_3';
+insert $e58 has expression_satisfied false;
+
+match $e59 isa greater_than, has expression_name 'md_1_2_greater_md_1_2';
+insert $e59 has expression_satisfied false;
+
+match $e60 isa greater_than, has expression_name 'md_1_2_greater_md_1_1';
+insert $e60 has expression_satisfied true;
+
+match $e61 isa greater_than, has expression_name 'md_1_2_greater_vd_1_3';
+insert $e61 has expression_satisfied false;
+
+match $e62 isa greater_than, has expression_name 'md_1_2_greater_vd_1_2';
+insert $e62 has expression_satisfied false;
+
+match $e63 isa greater_than, has expression_name 'md_1_2_greater_vd_1_1';
+insert $e63 has expression_satisfied true;
+
+match $e64 isa greater_than, has expression_name 'vd_1_3_greater_md_1_2';
+insert $e64 has expression_satisfied true;
+
+match $e65 isa greater_than, has expression_name 'vd_1_2_greater_md_1_2';
+insert $e65 has expression_satisfied false;
+
+match $e66 isa greater_than, has expression_name 'vd_1_1_greater_md_1_2';
+insert $e66 has expression_satisfied false;
+
+# greater_than: integers
+match $e67 isa greater_than, has expression_name 'vi_2_greater_vi_3';
+insert $e67 has expression_satisfied false;
+
+match $e68 isa greater_than, has expression_name 'vi_2_greater_vi_2';
+insert $e68 has expression_satisfied false;
+
+match $e69 isa greater_than, has expression_name 'vi_2_greater_vi_1';
+insert $e69 has expression_satisfied true;
+
+match $e70 isa greater_than, has expression_name 'mi_2_greater_mi_3';
+insert $e70 has expression_satisfied false;
+
+match $e71 isa greater_than, has expression_name 'mi_2_greater_mi_2';
+insert $e71 has expression_satisfied false;
+
+match $e72 isa greater_than, has expression_name 'mi_2_greater_mi_1';
+insert $e72 has expression_satisfied true;
+
+match $e73 isa greater_than, has expression_name 'mi_2_greater_vi_3';
+insert $e73 has expression_satisfied false;
+
+match $e74 isa greater_than, has expression_name 'mi_2_greater_vi_2';
+insert $e74 has expression_satisfied false;
+
+match $e75 isa greater_than, has expression_name 'mi_2_greater_vi_1';
+insert $e75 has expression_satisfied true;
+
+match $e76 isa greater_than, has expression_name 'vi_3_greater_mi_2';
+insert $e76 has expression_satisfied true;
+
+match $e77 isa greater_than, has expression_name 'vi_2_greater_mi_2';
+insert $e77 has expression_satisfied false;
+
+match $e78 isa greater_than, has expression_name 'vi_1_greater_mi_2';
+insert $e78 has expression_satisfied false;
+
+# greater_than_equal: doubles
+match $e79 isa greater_than_equal, has expression_name 'vd_1_2_greater_eq_vd_1_3';
+insert $e79 has expression_satisfied false;
+
+match $e80 isa greater_than_equal, has expression_name 'vd_1_2_greater_eq_vd_1_2';
+insert $e80 has expression_satisfied true;
+
+match $e81 isa greater_than_equal, has expression_name 'vd_1_2_greater_eq_vd_1_1';
+insert $e81 has expression_satisfied true;
+
+match $e82 isa greater_than_equal, has expression_name 'md_1_2_greater_eq_md_1_3';
+insert $e82 has expression_satisfied false;
+
+match $e83 isa greater_than_equal, has expression_name 'md_1_2_greater_eq_md_1_2';
+insert $e83 has expression_satisfied true;
+
+match $e84 isa greater_than_equal, has expression_name 'md_1_2_greater_eq_md_1_1';
+insert $e84 has expression_satisfied true;
+
+match $e85 isa greater_than_equal, has expression_name 'md_1_2_greater_eq_vd_1_3';
+insert $e85 has expression_satisfied false;
+
+match $e86 isa greater_than_equal, has expression_name 'md_1_2_greater_eq_vd_1_2';
+insert $e86 has expression_satisfied true;
+
+match $e87 isa greater_than_equal, has expression_name 'md_1_2_greater_eq_vd_1_1';
+insert $e87 has expression_satisfied true;
+
+match $e88 isa greater_than_equal, has expression_name 'vd_1_3_greater_eq_md_1_2';
+insert $e88 has expression_satisfied true;
+
+match $e89 isa greater_than_equal, has expression_name 'vd_1_2_greater_eq_md_1_2';
+insert $e89 has expression_satisfied true;
+
+match $e90 isa greater_than_equal, has expression_name 'vd_1_1_greater_eq_md_1_2';
+insert $e90 has expression_satisfied false;
+
+# greater_than_equal: integers
+match $e91 isa greater_than_equal, has expression_name 'vi_2_greater_eq_vi_3';
+insert $e91 has expression_satisfied false;
+
+match $e92 isa greater_than_equal, has expression_name 'vi_2_greater_eq_vi_2';
+insert $e92 has expression_satisfied true;
+
+match $e93 isa greater_than_equal, has expression_name 'vi_2_greater_eq_vi_1';
+insert $e93 has expression_satisfied true;
+
+match $e94 isa greater_than_equal, has expression_name 'mi_2_greater_eq_mi_3';
+insert $e94 has expression_satisfied false;
+
+match $e95 isa greater_than_equal, has expression_name 'mi_2_greater_eq_mi_2';
+insert $e95 has expression_satisfied true;
+
+match $e96 isa greater_than_equal, has expression_name 'mi_2_greater_eq_mi_1';
+insert $e96 has expression_satisfied true;
+
+match $e97 isa greater_than_equal, has expression_name 'mi_2_greater_eq_vi_3';
+insert $e97 has expression_satisfied false;
+
+match $e98 isa greater_than_equal, has expression_name 'mi_2_greater_eq_vi_2';
+insert $e98 has expression_satisfied true;
+
+match $e99 isa greater_than_equal, has expression_name 'mi_2_greater_eq_vi_1';
+insert $e99 has expression_satisfied true;
+
+match $e100 isa greater_than_equal, has expression_name 'vi_3_greater_eq_mi_2';
+insert $e100 has expression_satisfied true;
+
+match $e101 isa greater_than_equal, has expression_name 'vi_2_greater_eq_mi_2';
+insert $e101 has expression_satisfied true;
+
+match $e102 isa greater_than_equal, has expression_name 'vi_1_greater_eq_mi_2';
+insert $e102 has expression_satisfied false;
+
+# equal: doubles
+match $e103 isa equal, has expression_name 'vd_1_2_equal_vd_1_3';
+insert $e103 has expression_satisfied false;
+
+match $e104 isa equal, has expression_name 'vd_1_2_equal_vd_1_2';
+insert $e104 has expression_satisfied true;
+
+match $e105 isa equal, has expression_name 'md_1_2_equal_md_1_3';
+insert $e105 has expression_satisfied false;
+
+match $e106 isa equal, has expression_name 'md_1_2_equal_md_1_2';
+insert $e106 has expression_satisfied true;
+
+match $e107 isa equal, has expression_name 'md_1_2_equal_vd_1_3';
+insert $e107 has expression_satisfied false;
+
+match $e108 isa equal, has expression_name 'md_1_2_equal_vd_1_2';
+insert $e108 has expression_satisfied true;
+
+match $e109 isa equal, has expression_name 'vd_1_3_equal_md_1_2';
+insert $e109 has expression_satisfied false;
+
+match $e110 isa equal, has expression_name 'vd_1_2_equal_md_1_2';
+insert $e110 has expression_satisfied true;
+
+# equal: integers
+match $e111 isa equal, has expression_name 'vi_2_equal_vi_3';
+insert $e111 has expression_satisfied false;
+
+match $e112 isa equal, has expression_name 'vi_2_equal_vi_2';
+insert $e112 has expression_satisfied true;
+
+match $e113 isa equal, has expression_name 'mi_2_equal_mi_3';
+insert $e113 has expression_satisfied false;
+
+match $e114 isa equal, has expression_name 'mi_2_equal_mi_2';
+insert $e114 has expression_satisfied true;
+
+match $e115 isa equal, has expression_name 'mi_2_equal_vi_3';
+insert $e115 has expression_satisfied false;
+
+match $e116 isa equal, has expression_name 'mi_2_equal_vi_2';
+insert $e116 has expression_satisfied true;
+
+match $e117 isa equal, has expression_name 'vi_3_equal_mi_2';
+insert $e117 has expression_satisfied false;
+
+match $e118 isa equal, has expression_name 'vi_2_equal_mi_2';
+insert $e118 has expression_satisfied true;
+
+# equal: strings ('2' vs '1' -> false, '2' vs '2' -> true)
+match $e119 isa equal, has expression_name 'vs_2_equal_vs_1';
+insert $e119 has expression_satisfied false;
+
+match $e120 isa equal, has expression_name 'vs_2_equal_vs_2';
+insert $e120 has expression_satisfied true;
+
+match $e121 isa equal, has expression_name 'ms_2_equal_ms_1';
+insert $e121 has expression_satisfied false;
+
+match $e122 isa equal, has expression_name 'ms_2_equal_ms_2';
+insert $e122 has expression_satisfied true;
+
+match $e123 isa equal, has expression_name 'ms_2_equal_vs_1';
+insert $e123 has expression_satisfied false;
+
+match $e124 isa equal, has expression_name 'ms_2_equal_vs_2';
+insert $e124 has expression_satisfied true;
+
+match $e125 isa equal, has expression_name 'vs_1_equal_ms_2';
+insert $e125 has expression_satisfied false;
+
+match $e126 isa equal, has expression_name 'vs_2_equal_ms_2';
+insert $e126 has expression_satisfied true;
+
+# equal: bools (false vs true -> false, false vs false -> true)
+match $e127 isa equal, has expression_name 'vb_false_equal_vb_true';
+insert $e127 has expression_satisfied false;
+
+match $e128 isa equal, has expression_name 'vb_false_equal_vb_false';
+insert $e128 has expression_satisfied true;
+
+match $e129 isa equal, has expression_name 'mb_false_equal_mb_true';
+insert $e129 has expression_satisfied false;
+
+match $e130 isa equal, has expression_name 'mb_false_equal_mb_false';
+insert $e130 has expression_satisfied true;
+
+match $e131 isa equal, has expression_name 'mb_false_equal_vb_true';
+insert $e131 has expression_satisfied false;
+
+match $e132 isa equal, has expression_name 'mb_false_equal_vb_false';
+insert $e132 has expression_satisfied true;
+
+match $e133 isa equal, has expression_name 'vb_true_equal_mb_false';
+insert $e133 has expression_satisfied false;
+
+match $e134 isa equal, has expression_name 'vb_false_equal_mb_false';
+insert $e134 has expression_satisfied true;
+
+# not_equal: doubles
+match $e135 isa not_equal, has expression_name 'vd_1_2_not_equal_vd_1_3';
+insert $e135 has expression_satisfied true;
+
+match $e136 isa not_equal, has expression_name 'vd_1_2_not_equal_vd_1_2';
+insert $e136 has expression_satisfied false;
+
+match $e137 isa not_equal, has expression_name 'md_1_2_not_equal_md_1_3';
+insert $e137 has expression_satisfied true;
+
+match $e138 isa not_equal, has expression_name 'md_1_2_not_equal_md_1_2';
+insert $e138 has expression_satisfied false;
+
+match $e139 isa not_equal, has expression_name 'md_1_2_not_equal_vd_1_3';
+insert $e139 has expression_satisfied true;
+
+match $e140 isa not_equal, has expression_name 'md_1_2_not_equal_vd_1_2';
+insert $e140 has expression_satisfied false;
+
+match $e141 isa not_equal, has expression_name 'vd_1_3_not_equal_md_1_2';
+insert $e141 has expression_satisfied true;
+
+match $e142 isa not_equal, has expression_name 'vd_1_2_not_equal_md_1_2';
+insert $e142 has expression_satisfied false;
+
+# not_equal: integers
+match $e143 isa not_equal, has expression_name 'vi_2_not_equal_vi_3';
+insert $e143 has expression_satisfied true;
+
+match $e144 isa not_equal, has expression_name 'vi_2_not_equal_vi_2';
+insert $e144 has expression_satisfied false;
+
+match $e145 isa not_equal, has expression_name 'mi_2_not_equal_mi_3';
+insert $e145 has expression_satisfied true;
+
+match $e146 isa not_equal, has expression_name 'mi_2_not_equal_mi_2';
+insert $e146 has expression_satisfied false;
+
+match $e147 isa not_equal, has expression_name 'mi_2_not_equal_vi_3';
+insert $e147 has expression_satisfied true;
+
+match $e148 isa not_equal, has expression_name 'mi_2_not_equal_vi_2';
+insert $e148 has expression_satisfied false;
+
+match $e149 isa not_equal, has expression_name 'vi_3_not_equal_mi_2';
+insert $e149 has expression_satisfied true;
+
+match $e150 isa not_equal, has expression_name 'vi_2_not_equal_mi_2';
+insert $e150 has expression_satisfied false;
+
+# not_equal: strings ('2' vs '1' -> true, '2' vs '2' -> false)
+match $e151 isa not_equal, has expression_name 'vs_2_not_equal_vs_1';
+insert $e151 has expression_satisfied true;
+
+match $e152 isa not_equal, has expression_name 'vs_2_not_equal_vs_2';
+insert $e152 has expression_satisfied false;
+
+match $e153 isa not_equal, has expression_name 'ms_2_not_equal_ms_1';
+insert $e153 has expression_satisfied true;
+
+match $e154 isa not_equal, has expression_name 'ms_2_not_equal_ms_2';
+insert $e154 has expression_satisfied false;
+
+match $e155 isa not_equal, has expression_name 'ms_2_not_equal_vs_1';
+insert $e155 has expression_satisfied true;
+
+match $e156 isa not_equal, has expression_name 'ms_2_not_equal_vs_2';
+insert $e156 has expression_satisfied false;
+
+match $e157 isa not_equal, has expression_name 'vs_1_not_equal_ms_2';
+insert $e157 has expression_satisfied true;
+
+match $e158 isa not_equal, has expression_name 'vs_2_not_equal_ms_2';
+insert $e158 has expression_satisfied false;
+
+# not_equal: bools (false vs true -> true, false vs false -> false)
+match $e159 isa not_equal, has expression_name 'vb_false_not_equal_vb_true';
+insert $e159 has expression_satisfied true;
+
+match $e160 isa not_equal, has expression_name 'vb_false_not_equal_vb_false';
+insert $e160 has expression_satisfied false;
+
+match $e161 isa not_equal, has expression_name 'mb_false_not_equal_mb_true';
+insert $e161 has expression_satisfied true;
+
+match $e162 isa not_equal, has expression_name 'mb_false_not_equal_mb_false';
+insert $e162 has expression_satisfied false;
+
+match $e163 isa not_equal, has expression_name 'mb_false_not_equal_vb_true';
+insert $e163 has expression_satisfied true;
+
+match $e164 isa not_equal, has expression_name 'mb_false_not_equal_vb_false';
+insert $e164 has expression_satisfied false;
+
+match $e165 isa not_equal, has expression_name 'vb_true_not_equal_mb_false';
+insert $e165 has expression_satisfied true;
+
+match $e166 isa not_equal, has expression_name 'vb_false_not_equal_mb_false';
+insert $e166 has expression_satisfied false;
+
+# or/and compound expressions
+match $e167 isa or_expression, has expression_name 'or_expression_1';
+insert $e167 has expression_satisfied true;
+
+match $e168 isa or_expression, has expression_name 'or_expression_2';
+insert $e168 has expression_satisfied true;
+
+match $e169 isa or_expression, has expression_name 'or_expression_3';
+insert $e169 has expression_satisfied false;
+
+match $e170 isa and_expression, has expression_name 'and_expression_1';
+insert $e170 has expression_satisfied true;
+
+match $e171 isa and_expression, has expression_name 'and_expression_2';
+insert $e171 has expression_satisfied false;
+
+match $e172 isa and_expression, has expression_name 'and_expression_3';
+insert $e172 has expression_satisfied true;

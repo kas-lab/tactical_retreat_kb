@@ -1,0 +1,24 @@
+define
+
+#### connection with the context model
+##### The measure entity can be interpreted as a Variable
+Measure plays comparison_expression:lhs_value;
+Measure plays comparison_expression:rhs_value;
+
+Value plays comparison_expression:lhs_value;
+Value plays comparison_expression:rhs_value;
+
+ValueBool plays propositional_expression:atom;
+Measure plays propositional_expression:atom;
+
+ValueDouble plays comparison_double_operand_pair:lhs_double;
+ValueDouble plays comparison_double_operand_pair:rhs_double;
+
+ValueInteger plays comparison_integer_operand_pair:lhs_integer;
+ValueInteger plays comparison_integer_operand_pair:rhs_integer;
+
+ValueString plays comparison_string_operand_pair:lhs_string;
+ValueString plays comparison_string_operand_pair:rhs_string;
+
+ValueBool plays comparison_bool_operand_pair:lhs_bool;
+ValueBool plays comparison_bool_operand_pair:rhs_bool;

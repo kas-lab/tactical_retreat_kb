@@ -23,8 +23,11 @@ def kb_interface():
         'test_model_interface',
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
-            'schemas/logical_expressions/logical_expression.tql'],
-        ['test/data/test_logical_expression.tql'],
+            'schemas/logical_expressions/logical_expression.tql',
+            'schemas/logical_expressions/logical_expression_ext.tql'],
+        ['test/data/test_logical_expression.tql',
+         'test/data/test_logical_expression_compound.tql',
+         'test/data/test_logical_expression_satisfied.tql'],
         force_database=True,
         force_data=True,
         infer=True)
@@ -799,8 +802,9 @@ def test_or_expression(kb_interface):
             match
                 $expr isa or_expression,
                     has expression_name '{expression_name}';
-            fetch
-                $expr: expression_satisfied;
+            fetch {{
+                "expression_satisfied": $expr.expression_satisfied
+            }};
         """
         query_result = self.fetch_database(query)
         return query_result
@@ -811,14 +815,14 @@ def test_or_expression(kb_interface):
     or_expression_2 = kb_interface.fetch_expression_satisfied('or_expression_2')
     or_expression_3 = kb_interface.fetch_expression_satisfied('or_expression_3')
 
-    assert len(or_expression_1[0]['expr']['expression_satisfied']) == 1
-    assert or_expression_1[0]['expr']['expression_satisfied'][0]['value'] is True
+    assert len(or_expression_1) == 1
+    assert or_expression_1[0]['expression_satisfied'] is True
 
-    assert len(or_expression_2[0]['expr']['expression_satisfied']) == 1
-    assert or_expression_2[0]['expr']['expression_satisfied'][0]['value'] is True
+    assert len(or_expression_2) == 1
+    assert or_expression_2[0]['expression_satisfied'] is True
 
-    assert len(or_expression_3[0]['expr']['expression_satisfied']) == 1
-    assert or_expression_3[0]['expr']['expression_satisfied'][0]['value'] is False
+    assert len(or_expression_3) == 1
+    assert or_expression_3[0]['expression_satisfied'] is False
 
 
 def test_and_expression(kb_interface):
@@ -827,8 +831,9 @@ def test_and_expression(kb_interface):
             match
                 $expr isa and_expression,
                     has expression_name '{expression_name}';
-            fetch
-                $expr: expression_satisfied;
+            fetch {{
+                "expression_satisfied": $expr.expression_satisfied
+            }};
         """
         query_result = self.fetch_database(query)
         return query_result
@@ -839,11 +844,11 @@ def test_and_expression(kb_interface):
     and_expression_2 = kb_interface.fetch_expression_satisfied('and_expression_2')
     and_expression_3 = kb_interface.fetch_expression_satisfied('and_expression_3')
 
-    assert len(and_expression_1[0]['expr']['expression_satisfied']) == 1
-    assert and_expression_1[0]['expr']['expression_satisfied'][0]['value'] is True
+    assert len(and_expression_1) == 1
+    assert and_expression_1[0]['expression_satisfied'] is True
 
-    assert len(and_expression_2[0]['expr']['expression_satisfied']) == 1
-    assert and_expression_2[0]['expr']['expression_satisfied'][0]['value'] is False
+    assert len(and_expression_2) == 1
+    assert and_expression_2[0]['expression_satisfied'] is False
 
-    assert len(and_expression_3[0]['expr']['expression_satisfied']) == 1
-    assert and_expression_3[0]['expr']['expression_satisfied'][0]['value'] is True
+    assert len(and_expression_3) == 1
+    assert and_expression_3[0]['expression_satisfied'] is True

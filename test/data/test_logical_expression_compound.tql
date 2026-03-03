@@ -1,0 +1,49 @@
+# not expressions
+match $ns_false isa propositional_expression, has expression_name 'bool_false_prop_exp';
+insert (expression: $ns_false) isa not_expression, has expression_name 'not_false_expr';
+
+match $ns_true isa propositional_expression, has expression_name 'bool_true_prop_exp';
+insert (expression: $ns_true) isa not_expression, has expression_name 'not_true_expr';
+
+# or expressions
+match
+    $or1_a isa not_equal, has expression_name 'vb_false_not_equal_vb_true';
+    $or1_b isa propositional_expression, has expression_name 'true_measure_prop_exp';
+    $or1_c isa not_expression, has expression_name 'not_false_expr';
+insert (expression: $or1_a, expression: $or1_b, expression: $or1_c) isa or_expression,
+    has expression_name 'or_expression_1';
+
+match
+    $or2_a isa not_equal, has expression_name 'vb_false_not_equal_vb_true';
+    $or2_b isa not_expression, has expression_name 'not_true_expr';
+    $or2_c isa not_expression, has expression_name 'not_false_expr';
+insert (expression: $or2_a, expression: $or2_b, expression: $or2_c) isa or_expression,
+    has expression_name 'or_expression_2';
+
+match
+    $or3_a isa not_expression, has expression_name 'not_true_expr';
+    $or3_b isa propositional_expression, has expression_name 'false_measure_prop_exp';
+    $or3_c isa propositional_expression, has expression_name 'bool_false_prop_exp';
+insert (expression: $or3_a, expression: $or3_b, expression: $or3_c) isa or_expression,
+    has expression_name 'or_expression_3';
+
+# and expressions
+match
+    $and1_a isa or_expression, has expression_name 'or_expression_1';
+    $and1_b isa or_expression, has expression_name 'or_expression_2';
+insert (expression: $and1_a, expression: $and1_b) isa and_expression,
+    has expression_name 'and_expression_1';
+
+match
+    $and2_a isa or_expression, has expression_name 'or_expression_1';
+    $and2_b isa or_expression, has expression_name 'or_expression_2';
+    $and2_c isa or_expression, has expression_name 'or_expression_3';
+insert (expression: $and2_a, expression: $and2_b, expression: $and2_c) isa and_expression,
+    has expression_name 'and_expression_2';
+
+match
+    $and3_a isa or_expression, has expression_name 'or_expression_1';
+    $and3_b isa propositional_expression, has expression_name 'true_measure_prop_exp';
+    $and3_c isa not_expression, has expression_name 'not_false_expr';
+insert (expression: $and3_a, expression: $and3_b, expression: $and3_c) isa and_expression,
+    has expression_name 'and_expression_3';

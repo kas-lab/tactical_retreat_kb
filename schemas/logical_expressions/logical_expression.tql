@@ -7,70 +7,45 @@ relation expression @abstract,
     owns expression_name @unique;  # to make it possible to query the expression
 
 # logical expressions
-relation logical_expression @abstract extends expression,
-    owns expression_satisfied;
+relation logical_expression sub expression,
+    owns expression_satisfied,
+    relates operand;
 
 ## negation expression
-relation not_expression extends logical_expression,
+relation not_expression sub logical_expression,
     relates expression,
     plays and_expression:expression,
     plays or_expression:expression;
 
 ## atomic expressions
-relation atomic_expression @abstract extends logical_expression,
+relation atomic_expression sub logical_expression,
     plays not_expression:expression,
     plays and_expression:expression,
     plays or_expression:expression;
 
-relation propositional_expression extends atomic_expression,
+relation propositional_expression sub atomic_expression,
 	relates atom;
 
-relation comparison_expression @abstract extends atomic_expression,
+relation comparison_expression sub atomic_expression,
     relates lhs_value,
     relates rhs_value;
 
-relation less_than extends comparison_expression;
-relation less_than_equal extends comparison_expression;
-relation greater_than extends comparison_expression;
-relation greater_than_equal extends comparison_expression;
-relation equal extends comparison_expression;
-relation not_equal extends comparison_expression;
+relation less_than sub comparison_expression;
+relation less_than_equal sub comparison_expression;
+relation greater_than sub comparison_expression;
+relation greater_than_equal sub comparison_expression;
+relation equal sub comparison_expression;
+relation not_equal sub comparison_expression;
 
 ## compound expression
-relation compound_expression @abstract extends logical_expression;
+relation compound_expression sub logical_expression;
 
-relation and_expression extends compound_expression,
-    relates expression;
+relation and_expression sub compound_expression,
+    relates expression @card(0..);
 
-relation or_expression extends compound_expression,
-    relates expression,
+relation or_expression sub compound_expression,
+    relates expression @card(0..),
     plays and_expression:expression;
-
-#### connection with the context model
-##### The measure entity can be interpreted as a Variable
-Measure plays comparison_expression:lhs_value;
-Measure plays comparison_expression:rhs_value;
-
-Value plays comparison_expression:lhs_value;
-Value plays comparison_expression:rhs_value;
-
-ValueBool plays propositional_expression:atom;
-Measure plays propositional_expression:atom;
-
-## Rules to infer whether an expression is satisfied
-
-
-### Rules for propositional_expression
-
-
-### Rules for negation_expression
-
-
-## Rules and expression
-
-
-## or rules
-
 
 ### Helper types for comparison operand resolution
 relation comparison_double_operand_pair,
@@ -78,62 +53,23 @@ relation comparison_double_operand_pair,
     relates lhs_double,
     relates rhs_double;
 comparison_expression plays comparison_double_operand_pair:expression;
-ValueDouble plays comparison_double_operand_pair:lhs_double;
-ValueDouble plays comparison_double_operand_pair:rhs_double;
 
 relation comparison_integer_operand_pair,
     relates expression,
     relates lhs_integer,
     relates rhs_integer;
 comparison_expression plays comparison_integer_operand_pair:expression;
-ValueInteger plays comparison_integer_operand_pair:lhs_integer;
-ValueInteger plays comparison_integer_operand_pair:rhs_integer;
 
 relation comparison_string_operand_pair,
     relates expression,
     relates lhs_string,
     relates rhs_string;
 comparison_expression plays comparison_string_operand_pair:expression;
-ValueString plays comparison_string_operand_pair:lhs_string;
-ValueString plays comparison_string_operand_pair:rhs_string;
 
 relation comparison_bool_operand_pair,
     relates expression,
     relates lhs_bool,
     relates rhs_bool;
 comparison_expression plays comparison_bool_operand_pair:expression;
-ValueBool plays comparison_bool_operand_pair:lhs_bool;
-ValueBool plays comparison_bool_operand_pair:rhs_bool;
 
 ### Rules for comparison expressions
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

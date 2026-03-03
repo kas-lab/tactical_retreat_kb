@@ -9,11 +9,11 @@ attribute offset_value, value double;
 entity FuzzySet @abstract,
 	owns offset_value;
 
-entity AscendSet extends FuzzySet,
+entity AscendSet sub FuzzySet,
 	plays fuzzy_ascend_expression:fuzzy_set;
-entity DecaySet extends FuzzySet,
+entity DecaySet sub FuzzySet,
 	plays fuzzy_decay_expression:fuzzy_set;
-entity UnimodalSet extends FuzzySet,
+entity UnimodalSet sub FuzzySet,
 	plays fuzzy_unimodal_expression:fuzzy_set;
 
 ### fuzzy membership attributes
@@ -32,13 +32,13 @@ attribute center, value double;
 
 # μ(x) =  (x – a) / (b – a), a ≤ x ≤ b
 # μ(x) = (c – x) / (c – b), b ≤ x ≤ c
-entity FuzzyTriangular extends UnimodalSet,
+entity FuzzyTriangular sub UnimodalSet,
 	owns a,
 	owns b,
 	owns c;
 
 # μ(x) = e^(-0.5*( ( (x - center) / sigma)^2 ) )
-entity FuzzyGaussian extends UnimodalSet,
+entity FuzzyGaussian sub UnimodalSet,
 	owns sigma,
 	owns center;
 
@@ -46,97 +46,72 @@ entity FuzzyGaussian extends UnimodalSet,
 
 ## exponential saturation membership function
 ## m(x) = 1 - e^(-exponent * x), exponent > 0
-entity FuzzyExponentialSaturation extends AscendSet,
+entity FuzzyExponentialSaturation sub AscendSet,
 	owns exponent; # speed of saturation
 
 ## sigmoid membership function
 ## m(x) = 1 / (1 + e ^ -exponent*(x - x0))
-entity FuzzySigmoid extends AscendSet,
+entity FuzzySigmoid sub AscendSet,
 	owns exponent,
 	owns inflection_point; # where m(inflection_point) = 0.5
 
 ## bounded linear fraction membership function (monotonic)
 ## m(x) = x / (x + curvature), curvature > 0
-entity FuzzyBoundedLinearFraction extends AscendSet,
+entity FuzzyBoundedLinearFraction sub AscendSet,
 	owns curvature; # controls the curvature
 
 ### Decay fuzzy membership functions
 
 ## exponential decay membership function
 ## m(x) = e^(-exponent * x), exponent > 0
-entity FuzzyExponentialDecay extends DecaySet,
+entity FuzzyExponentialDecay sub DecaySet,
 	owns exponent;
 
 ## rational decay membership function
 ## m(x) = curvature / (x + curvature), curvature > 0
-entity FuzzyRationalDecay extends DecaySet,
+entity FuzzyRationalDecay sub DecaySet,
 	owns curvature;
 
 ### Fuzzy expressions
 attribute quantified_value, value double;
 
-relation fuzzy_expression @abstract extends expression,
+relation fuzzy_expression sub expression,
 	owns membership_degree,
 	owns quantified_value,
-	owns offset_value;
+	owns offset_value,
+	relates fuzzy_member;
 
-relation fuzzy_comparison_expression extends fuzzy_expression,
+relation fuzzy_comparison_expression sub fuzzy_expression,
 	plays fuzzy_and:expression,
 	plays fuzzy_or:expression,
 	plays fuzzy_not:expression,
 	relates term;
 
-relation fuzzy_decay_expression extends fuzzy_comparison_expression,
+relation fuzzy_decay_expression sub fuzzy_comparison_expression,
 	relates fuzzy_set;
-relation fuzzy_ascend_expression extends fuzzy_comparison_expression,
+relation fuzzy_ascend_expression sub fuzzy_comparison_expression,
 	relates fuzzy_set;
-relation fuzzy_unimodal_expression extends fuzzy_comparison_expression,
+relation fuzzy_unimodal_expression sub fuzzy_comparison_expression,
 	relates fuzzy_set;
 
 ## compound expression
-relation fuzzy_operator @abstract extends fuzzy_expression;
+relation fuzzy_operator sub fuzzy_expression;
 
-relation fuzzy_and extends fuzzy_operator,
-    relates expression;
+relation fuzzy_and sub fuzzy_operator,
+    relates expression @card(0..);
 
-relation fuzzy_or extends fuzzy_operator,
-    relates expression,
+relation fuzzy_or sub fuzzy_operator,
+    relates expression @card(0..),
     plays fuzzy_and:expression;
 
-relation fuzzy_not extends fuzzy_operator,
-    relates expression,
+relation fuzzy_not sub fuzzy_operator,
+    relates expression @card(0..),
 	plays fuzzy_and:expression,
     plays fuzzy_or:expression;
 
-
-#### connection with logical_expression model
-atomic_expression owns membership_degree;
-atomic_expression plays fuzzy_not:expression;
-atomic_expression plays fuzzy_and:expression;
-atomic_expression plays fuzzy_or:expression;
-
-not_expression owns membership_degree;
-not_expression plays fuzzy_and:expression;
-not_expression plays fuzzy_or:expression;
-
-ValueInteger plays fuzzy_comparison_expression:term;
-ValueDouble plays fuzzy_comparison_expression:term;
-Measure plays fuzzy_comparison_expression:term;
-
-
-
-
-
-
-## Fuzzy membership rules
-
-
-
-
-
-
-
-
-# Fuzzy operators
-
-
+# NOTE: TypeDB 3 does not support the legacy `rule` syntax.
+# The fuzzy membership inference logic (triangular, gaussian, sigmoid, etc.)
+# and operator logic (AND=min, OR=max, NOT=1-x) need to be ported to:
+#   - TypeDB 3 `fun` functions (preferred), OR
+#   - Python application-level computation
+# See task10_checkpoint.md for details.
