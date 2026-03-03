@@ -55,3 +55,66 @@ docker exec tactical_retreat bash -lc \
 ```
 
 Also run the functional tests relevant to any modules you changed. See [AGENTS.md](AGENTS.md) for the full test commands.
+
+## TypeDB 3: No `rule` Support — Use `fun` Instead
+
+TypeDB 3.8 removed the `rule` keyword entirely. Any `define` block containing `rule`
+causes `[TSV7] Query parsing failed`. All rules must be ported to TypeDB 3 `fun` functions:
+
+```typeql
+define
+fun my_fun($arg: SomeType, $x: double) -> { double }:
+    match $arg has some_attr $val; let $result = $val * $x;
+    return { $result };
+```
+
+Docs: https://typedb.com/docs/typeql-reference/functions/
+
+Key difference: `fun` returns values, not inferred attribute instances. Queries must
+explicitly call the function instead of matching `has computed_attr $v`.
+
+## TypeDB 3 Schema Loading Fix (ros_typedb)
+
+`transaction.query(schema).resolve()` raises `[TSV7]` for schemas with rules.
+Without `.resolve()`, non-rule `define` queries still commit correctly.
+Fix applied in `ros_typedb` `typedb_interface.py`: removed `.resolve()` from the `define` path.
+
+## TypeDB 3 Multi-Player Roles Need `@card(0..)`
+
+`relates some_role` defaults to `@card(0..1)` in TypeDB 3. Any role that can have
+more than one player must be annotated: `relates some_role @card(0..)`.
+Violations produce `[CNT5] Constraint '@card(0..1)' has been violated`.
+
+## Multi-Stage Pipeline Pattern (avoids [REP1])
+
+In a single INSERT block you cannot create a named relation `$r` AND use it as a role
+player. Fix: make `$r` anonymous, give it an `expression_name` key attribute, then
+match it in a separate pipeline stage:
+
+```typeql
+# Stage 1 INSERT – anonymous leaf with key
+(role: $x) isa some_type, has expression_name 'my_key';
+# Stage 2 match+insert
+match $s1 isa some_type, has expression_name 'my_key';
+insert (role2: $s1) isa other_type;
+```
+
+Use unique variable names across stages to avoid `[INF11]` type conflicts ($s1_e, $s2_e, …).
+
+## Container File Sync
+
+The host (`~/ros_workspaces/tactical_retreat_3_ws/`) and container (`/home/ubuntu-user/tactical_retreat_ws/`) are **not bind-mounted**. After editing on the host, sync with:
+```bash
+docker cp <host_path> tactical_retreat:<container_path>
+```
+For Python packages, also rebuild: `docker exec tactical_retreat bash -lc '... colcon build --packages-select <pkg>'`
+
+## TypeDB Data Corruption Recovery
+
+If TypeDB fails to start (permission/WAL errors on data files):
+```bash
+docker exec -u root tactical_retreat bash -c 'rm -rf /opt/typedb/core/server/data/test_*'
+# If still failing:
+docker exec -u root tactical_retreat bash -c 'rm -rf /opt/typedb/core/server/data/*'
+docker restart tactical_retreat
+```
