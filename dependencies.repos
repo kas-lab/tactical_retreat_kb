@@ -2,7 +2,7 @@ repositories:
   ros_typedb:
     type: git
     url: https://github.com/kas-lab/ros_typedb.git
-    version: main
+    version: typedb3_py
   ros_monitors:
     type: git
     url: https://github.com/kas-lab/ros_monitors.git

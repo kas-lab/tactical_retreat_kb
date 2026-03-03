@@ -25,9 +25,11 @@ def kb_interface():
         ['schemas/data_structure/data_structure.tql',
          'schemas/context_model/context_model.tql',
          'schemas/logical_expressions/logical_expression.tql',
+         'schemas/logical_expressions/logical_expression_ext.tql',
          'schemas/feature_model/feature_model.tql',
          'schemas/feature_model/feature_model_logical_expression.tql'],
-        ['test/data/test_feature_model.tql'],
+        ['test/data/test_feature_model.tql',
+         'test/data/test_feature_model_props.tql'],
         force_database=True,
         force_data=True,
         infer=True)

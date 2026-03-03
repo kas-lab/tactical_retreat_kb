@@ -116,7 +116,7 @@ $odom_topic_param isa ParameterString,
 $odom_duration_param isa ParameterDouble,
 	has parameter_name "odom_duration";
 
-$velocity_smoother_parameters (
+(
 	node: $velocity_smoother_node,
 	parameter:$max_velocity_param,
 	parameter:$odom_topic_param,

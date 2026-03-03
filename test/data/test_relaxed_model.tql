@@ -1,3 +1,4 @@
+# Stage 1: Insert all entities, measurements, fuzzy sets, and anonymous leaf expressions
 insert
 
 $fake_system isa System, has system_name 'system';
@@ -19,8 +20,9 @@ $triangular_set isa FuzzyTriangular,
 	has c 0.5;
 
 # expected membership 0.92442
-$fake_as_close_expression (fuzzy_set: $triangular_set, term: $fake_measure) isa as_close_as_possible_expression,
-	has required_value 0.26;
+(fuzzy_set: $triangular_set, term: $fake_measure) isa as_close_as_possible_expression,
+	has required_value 0.26,
+	has expression_name 'fake_as_close_expression';
 
 $fake_measure_2 isa Measure,
 	has measure_name "fake_measure_2",
@@ -33,7 +35,8 @@ $fake_measure_2_set isa FuzzyExponentialDecay,
 	has exponent 0.0002107;
 
 # expected membership 0.900009528
-$fake_as_few_as_possible_expr (fuzzy_set: $fake_measure_2_set, term: $fake_measure_2) isa as_few_as_possible_expression;
+(fuzzy_set: $fake_measure_2_set, term: $fake_measure_2) isa as_few_as_possible_expression,
+	has expression_name 'fake_as_few_as_possible_expr';
 
 
 $fake_measure_3 isa Measure,
@@ -50,24 +53,31 @@ $fake_measure_3_set isa FuzzySigmoid,
 	has exponent 0.5889;
 
 # expected membership 0.913378192
-$as_many_fake_measure_3_as_possible (fuzzy_set: $fake_measure_3_set, term: $fake_measure_3) isa as_many_as_possible_expression;
+(fuzzy_set: $fake_measure_3_set, term: $fake_measure_3) isa as_many_as_possible_expression,
+	has expression_name 'as_many_fake_measure_3_as_possible';
+
+# Stage 2: Create fake_may_expression and fake_shall_expression referencing the three leaf expressions
+match
+$s2_a isa as_close_as_possible_expression, has expression_name 'fake_as_close_expression';
+$s2_b isa as_few_as_possible_expression, has expression_name 'fake_as_few_as_possible_expr';
+$s2_c isa as_many_as_possible_expression, has expression_name 'as_many_fake_measure_3_as_possible';
+insert
 
 # expected fulfillment max(0.92442, 0.900009528, 0.913378192) = 0.92442
-$fake_may_expression (
-    expression: $fake_as_close_expression,
-    expression: $fake_as_few_as_possible_expr,
-    expression: $as_many_fake_measure_3_as_possible) isa may_expression,
+(expression: $s2_a, expression: $s2_b, expression: $s2_c) isa may_expression,
     has expression_name 'fake_may_expression';
 
 # expected fulfillment min(0.92442, 0.900009528, 0.913378192) = 0.900009528
-$fake_shall_expression (
-    expression: $fake_as_close_expression,
-    expression: $fake_as_few_as_possible_expr,
-    expression: $as_many_fake_measure_3_as_possible) isa shall_expression,
+(expression: $s2_a, expression: $s2_b, expression: $s2_c) isa shall_expression,
     has expression_name 'fake_shall_expression';
 
+# Stage 3: Create req_1 referencing fake_may_expression
+match
+$s3_sys isa System, has system_name 'system';
+$s3_may isa may_expression, has expression_name 'fake_may_expression';
+insert
 
 ### Requirements
 # expected fulfillment max(0.92442, 0.900009528, 0.913378192) = 0.92442
-$req_1 (system: $fake_system, expression: $fake_may_expression) isa relaxed_requirement,
+(system: $s3_sys, expression: $s3_may) isa relaxed_requirement,
     has requirement_name 'req_1';

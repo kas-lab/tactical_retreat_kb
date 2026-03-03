@@ -11,17 +11,17 @@ attribute mandatory, value boolean;
 # Relations
 relation feature_hierarchy,
     relates parent,
-    relates child;
+    relates child @card(0..);
 
-relation alternative extends feature_hierarchy; # exclusive or (XOR)
-relation or_group extends feature_hierarchy;
+relation alternative sub feature_hierarchy; # exclusive or (XOR)
+relation or_group sub feature_hierarchy;
 
 relation cross_tree_constraint,
-    relates constraint,
+    relates constraint @card(0..),
     relates constrained;
 
-relation excludes_constraint extends cross_tree_constraint;
-relation requires_constraint extends cross_tree_constraint;
+relation excludes_constraint sub cross_tree_constraint;
+relation requires_constraint sub cross_tree_constraint;
 
 # Entities
 entity Feature,

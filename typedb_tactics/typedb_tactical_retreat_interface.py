@@ -21,6 +21,7 @@ from typing import TypedDict
 from typing import Union
 
 from ros_typedb.typedb_helpers import convert_py_type_to_query_type
+from ros_typedb.typedb_helpers import fetch_attribute_from_thing as _fetch_attribute_from_thing
 from ros_typedb.typedb_interface import TypeDBInterface
 
 
@@ -130,6 +131,46 @@ class TacticalRetreatInterface:
     def delete_database(self) -> None:
         """Delete the database."""
         self.db.delete_database()
+
+    def fetch_database(self, query: str) -> List[dict]:
+        """
+        Delegate fetch query to the underlying TypeDBInterface.
+
+        :param query: TypeQL fetch query string.
+        :return: list of result dicts.
+        """
+        return self.db.fetch_database(query)
+
+    def register_method(self, method_name: str, func) -> None:
+        """
+        Dynamically register a function as a bound method on this instance.
+
+        The function must accept ``self`` as its first argument (i.e. the
+        ``TacticalRetreatInterface`` instance).  After registration the method
+        can be called as ``kb_interface.<method_name>(...)``.
+
+        :param method_name: attribute name to bind the method under.
+        :param func: callable with signature ``func(self, *args, **kwargs)``.
+        """
+        import types
+        setattr(self, method_name, types.MethodType(func, self))
+
+    def fetch_attribute_from_thing(
+            self,
+            thing: str,
+            key_attr_list: list,
+            attr: str) -> list:
+        """
+        Fetch attribute values from a thing matched by one or more key attributes.
+
+        Delegates to :func:`ros_typedb.typedb_helpers.fetch_attribute_from_thing`.
+
+        :param thing: thing type name (e.g. 'less_than').
+        :param key_attr_list: list of (attr_name, attr_value) pairs to match on.
+        :param attr: attribute name to fetch.
+        :return: list of attribute values (Python-typed).
+        """
+        return _fetch_attribute_from_thing(self.db, thing, key_attr_list, attr)
 
     def fetch_subnodes(self, node_name: str,
                        namespace: str = '') -> List[dict]:
@@ -592,10 +633,10 @@ class TacticalRetreatInterface:
             match
                 $req isa relaxed_requirement,
                     has in_effect true;
-            fetch {{
+            fetch {
                 "requirement_name": $req.requirement_name,
                 "fulfillment": $req.fulfillment
-            }};
+            };
         """
         return self.db.fetch_database(query)
 
@@ -850,24 +891,20 @@ class TacticalRetreatInterface:
         if include_qos:
             query = """
             match
-                $measure isa Measure, has measure_name $measure_name;
+                $measure isa Measure;
                 $measurement_interface (measure: $measure, source: $source)
-                    isa measurement_interface;
+                    isa measurement_interface,
+                    has measurement_function_name $fname,
+                    has measurement_function_lib $flib,
+                    has measurement_function_args $fargs;
                 $source isa! Publisher;
                 (interface: $source, qos: $qos) isa has_qos;
                 $qos isa QoSProfile;
             fetch {
-                "measure_name": $measure_name,
-                "measurement_function_name":
-                    $measurement_interface.measurement_function_name,
-                "measurement_function_lib":
-                    $measurement_interface.measurement_function_lib,
-                "measurement_function_args":
-                    $measurement_interface.measurement_function_args,
-                "measurement_proxy": $measurement_interface.measurement_proxy,
-                "measurement_period": $measurement_interface.measurement_period,
-                "service_request_kwargs":
-                    $measurement_interface.service_request_kwargs,
+                "measure_name": $measure.measure_name,
+                "measurement_function_name": $fname,
+                "measurement_function_lib": $flib,
+                "measurement_function_args": $fargs,
                 "interface_name": $source.interface_name,
                 "interface_type": $source.interface_type,
                 "reliability": $qos.reliability,
@@ -883,21 +920,17 @@ class TacticalRetreatInterface:
         else:
             query = """
             match
-                $measure isa Measure, has measure_name $measure_name;
+                $measure isa Measure;
                 $measurement_interface (measure: $measure, source: $source)
-                    isa measurement_interface;
+                    isa measurement_interface,
+                    has measurement_function_name $fname,
+                    has measurement_function_lib $flib,
+                    has measurement_function_args $fargs;
             fetch {
-                "measure_name": $measure_name,
-                "measurement_function_name":
-                    $measurement_interface.measurement_function_name,
-                "measurement_function_lib":
-                    $measurement_interface.measurement_function_lib,
-                "measurement_function_args":
-                    $measurement_interface.measurement_function_args,
-                "measurement_proxy": $measurement_interface.measurement_proxy,
-                "measurement_period": $measurement_interface.measurement_period,
-                "service_request_kwargs":
-                    $measurement_interface.service_request_kwargs,
+                "measure_name": $measure.measure_name,
+                "measurement_function_name": $fname,
+                "measurement_function_lib": $flib,
+                "measurement_function_args": $fargs,
                 "interface_name": $source.interface_name,
                 "interface_type": $source.interface_type
             };
@@ -1091,10 +1124,10 @@ class TacticalRetreatInterface:
         """
         query = f"""
             match
-                $tactic_rule (effect: $effect) isa tactic_rule, has rule_name '{tactic_rule}';
+                $tr (effect: $eff) isa tactic_rule, has rule_name '{tactic_rule}';
                 $measure isa Measure, has measure_name '{measure_name}';
-                $effect (measure: $measure, effect_value: $effect_value) isa relative_effect,
-                    has resulting_effect_value $resulting_effect_value;
+                $eff isa relative_effect, has resulting_effect_value $resulting_effect_value;
+                $eff (measure: $measure);
             fetch {{ "resulting_effect_value": $resulting_effect_value }};
         """
         return self.db.fetch_database(query)

@@ -13,15 +13,15 @@ entity Measure,
     plays measurement:measure,
     plays measurement_interface:measure;
 
-entity MeasureBool extends Measure;
-entity MeasureInteger extends Measure;
-entity MeasureDouble extends Measure;
-entity MeasureString extends Measure;
+entity MeasureBool sub Measure;
+entity MeasureInteger sub Measure;
+entity MeasureDouble sub Measure;
+entity MeasureString sub Measure;
 
-entity MeasureBoolArray extends Measure;
-entity MeasureIntegerArray extends Measure;
-entity MeasureStringArray extends Measure;
-entity MeasureDoubleArray extends Measure;
+entity MeasureBoolArray sub Measure;
+entity MeasureIntegerArray sub Measure;
+entity MeasureStringArray sub Measure;
+entity MeasureDoubleArray sub Measure;
 
 relation measurement,
     owns measurement_time,

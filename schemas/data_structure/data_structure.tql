@@ -8,17 +8,17 @@ attribute integer_value, value integer;
 attribute double_value, value double;
 attribute string_value, value string;
 
-entity ValueSingleton extends Value;
-entity ValueBool extends ValueSingleton,
+entity ValueSingleton sub Value;
+entity ValueBool sub ValueSingleton,
     owns bool_value;
-entity ValueInteger extends ValueSingleton,
+entity ValueInteger sub ValueSingleton,
     owns integer_value;
-entity ValueDouble extends ValueSingleton,
+entity ValueDouble sub ValueSingleton,
     owns double_value;
-entity ValueString extends ValueSingleton,
+entity ValueString sub ValueSingleton,
     owns string_value;
 
-entity ValueArray extends Value,
+entity ValueArray sub Value,
     plays at_index:array;
 
 attribute index, value integer;

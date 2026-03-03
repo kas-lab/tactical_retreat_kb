@@ -1,3 +1,4 @@
+# Stage 1: insert all safe entities/relations and anonymous leaf expressions
 insert
 
 ### measurements
@@ -46,34 +47,14 @@ $double_1_0 isa ValueDouble,
 
 ### expressions
 
-#### inequality expressions
+#### anonymous leaf expressions (identified by expression_name for later pipeline stages)
 # measurement is 1.2
-$exp1 (lhs_value:$m, rhs_value:$double_1_3) isa less_than, has expression_name 'exp1'; # True
-$exp2 (lhs_value:$m, rhs_value:$double_1_2) isa less_than, has expression_name 'exp2'; # False
+(lhs_value:$m, rhs_value:$double_1_3) isa less_than, has expression_name 'exp1'; # True
+(lhs_value:$m, rhs_value:$double_1_2) isa less_than, has expression_name 'exp2'; # False
 
 # 1.2 < 1.0
-$exp3 (lhs_value:$m, rhs_value:$double_1_0) isa less_than, has expression_name 'exp3'; # False
-$exp4 (lhs_value:$m, rhs_value:$double_1_0) isa greater_than; # True
-
-### tactic rules
-
-(antecedent:$exp1) isa tactic_rule, has rule_name "tr1"; # true
-(antecedent:$exp2) isa tactic_rule, has rule_name "tr2"; # false
-
-$and_exp1 (expression: $exp1, expression:$exp2) isa and_expression; # true && false -> false
-(antecedent:$and_exp1) isa tactic_rule, has rule_name "tr3";
-
-$and_exp2 (expression: $exp1, expression:$exp4) isa and_expression; # true && true -> true
-(antecedent:$and_exp2) isa tactic_rule, has rule_name "tr4";
-
-$or_exp1 (expression: $exp1, expression:$exp2) isa or_expression; # true || false -> true
-(antecedent:$or_exp1) isa tactic_rule, has rule_name "tr5";
-
-$or_exp2 (expression: $exp1, expression:$exp4) isa or_expression; # true || true -> true
-(antecedent:$or_exp2) isa tactic_rule, has rule_name "tr6";
-
-$or_exp3 (expression: $exp2, expression:$exp3) isa or_expression, has expression_name 'or_tr7'; # false || false -> false
-(antecedent:$or_exp3) isa tactic_rule, has rule_name "tr7";
+(lhs_value:$m, rhs_value:$double_1_0) isa less_than, has expression_name 'exp3'; # False
+(lhs_value:$m, rhs_value:$double_1_0) isa greater_than, has expression_name 'exp4'; # True
 
 ### resolution actions
 $node_running isa ROSNode,
@@ -86,8 +67,9 @@ $node_not_running isa ROSNode,
 
 $parameter isa ParameterDouble, has parameter_name "parameter";
 $parameter_value isa ValueDouble, has double_value 0.10;
-$res_action_feasible (node: $node_running, parameter: $parameter, parameter_value: $parameter_value) isa set_nodes_parameters;
-$res_action_unfeasible (node: $node_not_running, parameter: $parameter, parameter_value: $parameter_value) isa set_nodes_parameters;
+# anonymous set_nodes_parameters (identified later by node_name)
+(node: $node_running, parameter: $parameter, parameter_value: $parameter_value) isa set_nodes_parameters;
+(node: $node_not_running, parameter: $parameter, parameter_value: $parameter_value) isa set_nodes_parameters;
 
 $lifecycle_node_active isa LifeCycleNode,
 	has node_name "lifecycle_node_active",
@@ -133,35 +115,171 @@ $lifecycle_node_finalized isa LifeCycleNode,
 $f_selectable isa Feature, has feature_name "f_selectable", has selectable true;
 $f_not_selectable isa Feature, has feature_name "f_not_selectable", has selectable false;
 
-$fa1 (activation: $f_selectable) isa feature_adaptation;
-$fa2 (activation: $f_not_selectable) isa feature_adaptation;
-
-(consequent: $fa1) isa tactic_rule, has rule_name "tr_consequent_feasible";   # rule_valid true
-(consequent: $fa2) isa tactic_rule, has rule_name "tr_consequent_unfeasible"; # rule_valid false
+# anonymous feature_adaptations (used as consequent in tactic_rule — cannot be named here)
+(activation: $f_selectable) isa feature_adaptation;
+(activation: $f_not_selectable) isa feature_adaptation;
 
 ## tactic_rule_consequent_variant_resolution_unfeasible
 $f_vr_1 isa Feature, has feature_name "f_vr_1";
 $f_vr_2 isa Feature, has feature_name "f_vr_2";
 $f_vr_3 isa Feature, has feature_name "f_vr_3";
 
-$vr1 (resolution_action: $res_action_feasible, variant: $f_vr_1) isa variant_activation;   # feasible true
-$vr2 (resolution_action: $res_action_unfeasible, variant: $f_vr_2) isa variant_activation; # feasible false
-$vr3 (resolution_action: $res_action_feasible, resolution_action: $res_action_unfeasible, variant: $f_vr_3) isa variant_activation; # feasible false
-
-$fa_vr_1 (activation: $f_vr_1) isa feature_adaptation;
-$fa_vr_2 (activation: $f_vr_2) isa feature_adaptation;
-$fa_vr_3 (activation: $f_vr_3) isa feature_adaptation;
+# anonymous feature_adaptations for variant resolution
+(activation: $f_vr_1) isa feature_adaptation;
+(activation: $f_vr_2) isa feature_adaptation;
+(activation: $f_vr_3) isa feature_adaptation;
 
 $t isa Tactic, has tactic_name "tactic";
 
-(tactic:$t, consequent: $fa_vr_1) isa tactic_rule, has rule_name "tr_variant_resolution_feasible";   # rule_valid true
-(tactic:$t, consequent: $fa_vr_2) isa tactic_rule, has rule_name "tr_variant_resolution_unfeasible_1"; # rule_valid false
-(tactic:$t, consequent: $fa_vr_3) isa tactic_rule, has rule_name "tr_variant_resolution_unfeasible_2"; # rule_valid false
+# Stage 2: match+insert tactic_rules tr1 and tr2 (reference leaf expressions directly)
+match
+    $s2_exp1 isa less_than, has expression_name 'exp1';
+insert
+    (antecedent: $s2_exp1) isa tactic_rule, has rule_name "tr1"; # true
 
-(
-	tactic: $t,
-	variant_resolution:$vr1,
-	variant_resolution:$vr2,
-	variant_resolution:$vr3) isa resolution_model,
-    has resolution_model_name "res_model", has ros_system "system";
+match
+    $s2b_exp2 isa less_than, has expression_name 'exp2';
+insert
+    (antecedent: $s2b_exp2) isa tactic_rule, has rule_name "tr2"; # false
 
+# Stage 3: match+insert compound expressions (and_exp1/2, or_exp1/2/3)
+match
+    $s3_exp1 isa less_than, has expression_name 'exp1';
+    $s3_exp2 isa less_than, has expression_name 'exp2';
+insert
+    (expression: $s3_exp1, expression: $s3_exp2) isa and_expression,
+        has expression_name 'and_exp1'; # true && false -> false
+
+match
+    $s3b_exp1 isa less_than, has expression_name 'exp1';
+    $s3b_exp4 isa greater_than, has expression_name 'exp4';
+insert
+    (expression: $s3b_exp1, expression: $s3b_exp4) isa and_expression,
+        has expression_name 'and_exp2'; # true && true -> true
+
+match
+    $s3c_exp1 isa less_than, has expression_name 'exp1';
+    $s3c_exp2 isa less_than, has expression_name 'exp2';
+insert
+    (expression: $s3c_exp1, expression: $s3c_exp2) isa or_expression,
+        has expression_name 'or_exp1'; # true || false -> true
+
+match
+    $s3d_exp1 isa less_than, has expression_name 'exp1';
+    $s3d_exp4 isa greater_than, has expression_name 'exp4';
+insert
+    (expression: $s3d_exp1, expression: $s3d_exp4) isa or_expression,
+        has expression_name 'or_exp2'; # true || true -> true
+
+match
+    $s3e_exp2 isa less_than, has expression_name 'exp2';
+    $s3e_exp3 isa less_than, has expression_name 'exp3';
+insert
+    (expression: $s3e_exp2, expression: $s3e_exp3) isa or_expression,
+        has expression_name 'or_tr7'; # false || false -> false
+
+# Stage 4: match+insert tactic_rules tr3-tr7 (reference compound expressions)
+match
+    $s4_and1 isa and_expression, has expression_name 'and_exp1';
+insert
+    (antecedent: $s4_and1) isa tactic_rule, has rule_name "tr3";
+
+match
+    $s4b_and2 isa and_expression, has expression_name 'and_exp2';
+insert
+    (antecedent: $s4b_and2) isa tactic_rule, has rule_name "tr4";
+
+match
+    $s4c_or1 isa or_expression, has expression_name 'or_exp1';
+insert
+    (antecedent: $s4c_or1) isa tactic_rule, has rule_name "tr5";
+
+match
+    $s4d_or2 isa or_expression, has expression_name 'or_exp2';
+insert
+    (antecedent: $s4d_or2) isa tactic_rule, has rule_name "tr6";
+
+match
+    $s4e_or3 isa or_expression, has expression_name 'or_tr7';
+insert
+    (antecedent: $s4e_or3) isa tactic_rule, has rule_name "tr7";
+
+# Stage 5: match+insert tactic_rules for consequent (feature_adaptation role players)
+match
+    $s5_f_sel isa Feature, has feature_name "f_selectable";
+    $s5_fa1 (activation: $s5_f_sel) isa feature_adaptation;
+insert
+    (consequent: $s5_fa1) isa tactic_rule, has rule_name "tr_consequent_feasible";   # rule_valid true
+
+match
+    $s5b_f_not_sel isa Feature, has feature_name "f_not_selectable";
+    $s5b_fa2 (activation: $s5b_f_not_sel) isa feature_adaptation;
+insert
+    (consequent: $s5b_fa2) isa tactic_rule, has rule_name "tr_consequent_unfeasible"; # rule_valid false
+
+match
+    $s5c_t isa Tactic, has tactic_name "tactic";
+    $s5c_f_vr1 isa Feature, has feature_name "f_vr_1";
+    $s5c_fa_vr1 (activation: $s5c_f_vr1) isa feature_adaptation;
+insert
+    (tactic: $s5c_t, consequent: $s5c_fa_vr1) isa tactic_rule,
+        has rule_name "tr_variant_resolution_feasible";   # rule_valid true
+
+match
+    $s5d_t isa Tactic, has tactic_name "tactic";
+    $s5d_f_vr2 isa Feature, has feature_name "f_vr_2";
+    $s5d_fa_vr2 (activation: $s5d_f_vr2) isa feature_adaptation;
+insert
+    (tactic: $s5d_t, consequent: $s5d_fa_vr2) isa tactic_rule,
+        has rule_name "tr_variant_resolution_unfeasible_1"; # rule_valid false
+
+match
+    $s5e_t isa Tactic, has tactic_name "tactic";
+    $s5e_f_vr3 isa Feature, has feature_name "f_vr_3";
+    $s5e_fa_vr3 (activation: $s5e_f_vr3) isa feature_adaptation;
+insert
+    (tactic: $s5e_t, consequent: $s5e_fa_vr3) isa tactic_rule,
+        has rule_name "tr_variant_resolution_unfeasible_2"; # rule_valid false
+
+# Stage 6: match+insert variant_activations (vr1/2/3)
+match
+    $s6_node_run isa ROSNode, has node_name "node_running";
+    $s6_param isa ParameterDouble, has parameter_name "parameter";
+    $s6_ra_feas (node: $s6_node_run, parameter: $s6_param) isa set_nodes_parameters;
+    $s6_f_vr1 isa Feature, has feature_name "f_vr_1";
+insert
+    (resolution_action: $s6_ra_feas, variant: $s6_f_vr1) isa variant_activation,
+        has expression_name 'vr1';   # feasible true
+
+match
+    $s6b_node_not_run isa ROSNode, has node_name "node_not_running";
+    $s6b_param isa ParameterDouble, has parameter_name "parameter";
+    $s6b_ra_unfeas (node: $s6b_node_not_run, parameter: $s6b_param) isa set_nodes_parameters;
+    $s6b_f_vr2 isa Feature, has feature_name "f_vr_2";
+insert
+    (resolution_action: $s6b_ra_unfeas, variant: $s6b_f_vr2) isa variant_activation,
+        has expression_name 'vr2'; # feasible false
+
+match
+    $s6c_node_run isa ROSNode, has node_name "node_running";
+    $s6c_node_not_run isa ROSNode, has node_name "node_not_running";
+    $s6c_param isa ParameterDouble, has parameter_name "parameter";
+    $s6c_ra_feas (node: $s6c_node_run, parameter: $s6c_param) isa set_nodes_parameters;
+    $s6c_ra_unfeas (node: $s6c_node_not_run, parameter: $s6c_param) isa set_nodes_parameters;
+    $s6c_f_vr3 isa Feature, has feature_name "f_vr_3";
+insert
+    (resolution_action: $s6c_ra_feas, resolution_action: $s6c_ra_unfeas, variant: $s6c_f_vr3) isa variant_activation,
+        has expression_name 'vr3'; # feasible false
+
+# Stage 7: match+insert resolution_model
+match
+    $s7_t isa Tactic, has tactic_name "tactic";
+    $s7_vr1 isa variant_activation, has expression_name 'vr1';
+    $s7_vr2 isa variant_activation, has expression_name 'vr2';
+    $s7_vr3 isa variant_activation, has expression_name 'vr3';
+insert
+    (tactic: $s7_t,
+        variant_resolution: $s7_vr1,
+        variant_resolution: $s7_vr2,
+        variant_resolution: $s7_vr3) isa resolution_model,
+        has resolution_model_name "res_model", has ros_system "system";

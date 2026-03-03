@@ -13,12 +13,12 @@ $measure_bool_true isa Measure, has measure_name 'measure_bool_true';
 (measure: $measure_bool_true, measurement_value: $bool_true) isa measurement,
     has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
-# proposition expressions
-$bool_false_prop_exp (atom: $bool_false) isa propositional_expression, has expression_name 'bool_false_prop_exp';
-$bool_true_prop_exp (atom: $bool_true) isa propositional_expression, has expression_name 'bool_true_prop_exp';
+# proposition expressions (anonymous — no $varname prefix)
+(atom: $bool_false) isa propositional_expression, has expression_name 'bool_false_prop_exp';
+(atom: $bool_true) isa propositional_expression, has expression_name 'bool_true_prop_exp';
 
-$false_measure_prop_exp (atom: $measure_bool_false) isa propositional_expression, has expression_name 'false_measure_prop_exp';
-$true_measure_prop_exp (atom: $measure_bool_true) isa propositional_expression, has expression_name 'true_measure_prop_exp';
+(atom: $measure_bool_false) isa propositional_expression, has expression_name 'false_measure_prop_exp';
+(atom: $measure_bool_true) isa propositional_expression, has expression_name 'true_measure_prop_exp';
 
 # Fuzzy logic
 
@@ -43,15 +43,15 @@ $fuzzy_ascend_blf_set isa FuzzyBoundedLinearFraction,
 	has curvature 0.5;
 
 # expected membership 0.913378192
-$fuzzy_ascend_expression_1 (fuzzy_set: $fuzzy_ascend_sigmoid_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
+(fuzzy_set: $fuzzy_ascend_sigmoid_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
     has expression_name 'fuzzy_ascend_sigmoid_expression';
 
 # expected memberhsip 0.834700912
-$fuzzy_ascend_expression_2 (fuzzy_set: $fuzzy_ascend_exponential_saturation_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
+(fuzzy_set: $fuzzy_ascend_exponential_saturation_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
     has expression_name 'fuzzy_ascend_exp_saturation_expression';
 
 # expected memberhsip 0.947368421
-$fuzzy_ascend_expression_3 (fuzzy_set: $fuzzy_ascend_blf_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
+(fuzzy_set: $fuzzy_ascend_blf_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
     has expression_name 'fuzzy_ascend_blf_expression';
 
 ## fuzzy unimodal
@@ -74,11 +74,11 @@ $fuzzy_unimodal_gaussian_set isa FuzzyGaussian,
     has sigma 0.1;
 
 # expected membership 0.92442
-$fuzzy_unimodal_expr_1 (fuzzy_set: $fuzzy_unimodal_triangular_set, term: $fuzzy_unimodal_measure) isa fuzzy_unimodal_expression,
+(fuzzy_set: $fuzzy_unimodal_triangular_set, term: $fuzzy_unimodal_measure) isa fuzzy_unimodal_expression,
     has expression_name 'fuzzy_unimodal_triangular_expression';
 
 # expected membership 0.931085511
-$fuzzy_unimodal_expr_2 (fuzzy_set: $fuzzy_unimodal_gaussian_set, term: $fuzzy_unimodal_measure) isa fuzzy_unimodal_expression,
+(fuzzy_set: $fuzzy_unimodal_gaussian_set, term: $fuzzy_unimodal_measure) isa fuzzy_unimodal_expression,
     has expression_name 'fuzzy_unimodal_gaussian_expression';
 
 ## fuzzy decay
@@ -97,127 +97,12 @@ $fuzzy_decay_rational_set isa FuzzyRationalDecay,
 	has curvature 2000;
 
 # expected membership 0.9
-$fuzzy_decay_expr_1 (fuzzy_set: $fuzzy_decay_exp_set, term: $fuzzy_decay_measure) isa fuzzy_decay_expression,
+(fuzzy_set: $fuzzy_decay_exp_set, term: $fuzzy_decay_measure) isa fuzzy_decay_expression,
     has expression_name 'fuzzy_decay_exp_expression';
 
 # expected membership 0.8
-$fuzzy_decay_expr_2 (fuzzy_set: $fuzzy_decay_rational_set, term: $fuzzy_decay_measure) isa fuzzy_decay_expression,
+(fuzzy_set: $fuzzy_decay_rational_set, term: $fuzzy_decay_measure) isa fuzzy_decay_expression,
     has expression_name 'fuzzy_decay_rational_expression';
-
-
-## Fuzzy operators
-
-### fuzzy not
-
-# expected membership (1 - 0.913378192) = 0.086621808
-$fuzzy_not_0 (expression: $fuzzy_ascend_expression_1) isa fuzzy_not, has expression_name 'fuzzy_not_0';
-
-# expected membership (1 - 0.8) = 0.2
-$fuzzy_not_1 (expression: $fuzzy_decay_expr_2) isa fuzzy_not, has expression_name 'fuzzy_not_1';
-
-# expected membership (1 - 1.0) = 0.0
-$fuzzy_not_2 (expression: $bool_true_prop_exp) isa fuzzy_not, has expression_name 'fuzzy_not_2';
-
-# expected membership (1 - 0.0) = 1.0
-$fuzzy_not_3 (expression: $bool_false_prop_exp) isa fuzzy_not, has expression_name 'fuzzy_not_3';
-
-# expected membership (1 - 1.0) = 0.0
-$fuzzy_not_4 (expression: $true_measure_prop_exp) isa fuzzy_not, has expression_name 'fuzzy_not_4';
-
-# expected membership (1 - 0.0) = 1.0
-$fuzzy_not_5 (expression: $false_measure_prop_exp) isa fuzzy_not, has expression_name 'fuzzy_not_5';
-
-### fuzzy or
-# expected membership 0.931085511
-$fuzzy_or_0 (expression: $fuzzy_unimodal_expr_2) isa fuzzy_or,
-    has expression_name 'fuzzy_or_0';
-
-# expected membership 0.931085511
-$fuzzy_or_1 (expression: $fuzzy_unimodal_expr_1, expression: $fuzzy_unimodal_expr_2) isa fuzzy_or,
-    has expression_name 'fuzzy_or_1';
-
-# expected membership 0.947368421
-$fuzzy_or_2 (
-        expression: $fuzzy_ascend_expression_1,
-        expression: $fuzzy_ascend_expression_2,
-        expression: $fuzzy_ascend_expression_3,
-        expression: $fuzzy_unimodal_expr_1,
-        expression: $fuzzy_unimodal_expr_2,
-        expression: $fuzzy_decay_expr_1,
-        expression: $fuzzy_decay_expr_2
-    ) isa fuzzy_or,
-    has expression_name 'fuzzy_or_2';
-
-# expected membership 0.2
-$fuzzy_or_3 (expression: $fuzzy_not_0, expression: $fuzzy_not_1) isa fuzzy_or,
-    has expression_name 'fuzzy_or_3';
-
-# expected membership 1.0
-$fuzzy_or_4 (expression: $fuzzy_unimodal_expr_1, expression: $fuzzy_unimodal_expr_2, expression: $bool_true_prop_exp) isa fuzzy_or,
-    has expression_name 'fuzzy_or_4';
-# expected membership 0.931085511
-$fuzzy_or_5 (expression: $fuzzy_unimodal_expr_1, expression: $fuzzy_unimodal_expr_2, expression: $bool_false_prop_exp) isa fuzzy_or,
-    has expression_name 'fuzzy_or_5';
-# expected membership 1.0
-$fuzzy_or_6 (expression: $fuzzy_unimodal_expr_1, expression: $fuzzy_unimodal_expr_2, expression: $true_measure_prop_exp) isa fuzzy_or,
-    has expression_name 'fuzzy_or_6';
-# expected membership 0.931085511
-$fuzzy_or_7 (expression: $fuzzy_unimodal_expr_1, expression: $fuzzy_unimodal_expr_2, expression: $false_measure_prop_exp) isa fuzzy_or,
-    has expression_name 'fuzzy_or_7';
-
-### fuzzy and
-
-# expected membership 0.931085511
-$fuzzy_and_0 (expression: $fuzzy_unimodal_expr_2) isa fuzzy_and,
-    has expression_name 'fuzzy_and_0';
-
-# expected membership 0.92442
-$fuzzy_and_1 (expression: $fuzzy_unimodal_expr_1, expression: $fuzzy_unimodal_expr_2) isa fuzzy_and,
-    has expression_name 'fuzzy_and_1';
-
-# expected membership 0.8
-$fuzzy_and_2 (
-        expression: $fuzzy_ascend_expression_1,
-        expression: $fuzzy_ascend_expression_2,
-        expression: $fuzzy_ascend_expression_3,
-        expression: $fuzzy_unimodal_expr_1,
-        expression: $fuzzy_unimodal_expr_2,
-        expression: $fuzzy_decay_expr_1,
-        expression: $fuzzy_decay_expr_2
-    ) isa fuzzy_and,
-    has expression_name 'fuzzy_and_2';
-
-# expected membership 0.086621808
-$fuzzy_and_3 (expression: $fuzzy_not_0, expression: $fuzzy_not_1) isa fuzzy_and,
-    has expression_name 'fuzzy_and_3';
-
-# expected membership 0.92442
-$fuzzy_and_4 (expression: $fuzzy_unimodal_expr_1, expression: $fuzzy_or_1) isa fuzzy_and,
-    has expression_name 'fuzzy_and_4';
-
-# expected membership 0.2
-$fuzzy_and_5 (expression: $fuzzy_or_0, expression: $fuzzy_or_3) isa fuzzy_and,
-    has expression_name 'fuzzy_and_5';
-
-# expected membership 0.92442
-$fuzzy_and_6 (expression: $fuzzy_unimodal_expr_1, expression: $fuzzy_unimodal_expr_2, expression: $bool_true_prop_exp) isa fuzzy_and,
-    has expression_name 'fuzzy_and_6';
-# expected membership 0.0
-$fuzzy_and_7 (expression: $fuzzy_unimodal_expr_1, expression: $fuzzy_unimodal_expr_2, expression: $bool_false_prop_exp) isa fuzzy_and,
-    has expression_name 'fuzzy_and_7';
-# expected membership 0.92442
-$fuzzy_and_8 (expression: $fuzzy_unimodal_expr_1, expression: $fuzzy_unimodal_expr_2, expression: $true_measure_prop_exp) isa fuzzy_and,
-    has expression_name 'fuzzy_and_8';
-# expected membership 0.0
-$fuzzy_and_9 (expression: $fuzzy_unimodal_expr_1, expression: $fuzzy_unimodal_expr_2, expression: $false_measure_prop_exp) isa fuzzy_and,
-    has expression_name 'fuzzy_and_9';
-
-# expected membership 0.0
-$fuzzy_and_10 (expression: $fuzzy_not_4, expression: $fuzzy_unimodal_expr_2) isa fuzzy_and,
-    has expression_name 'fuzzy_and_10';
-# expected membership 0.931085511
-$fuzzy_and_11 (expression: $fuzzy_not_5, expression: $fuzzy_unimodal_expr_2) isa fuzzy_and,
-    has expression_name 'fuzzy_and_11';
 
 ## Fuzzy membership offset
 
@@ -236,10 +121,9 @@ $fuzzy_unimodal_triangular_set_offset isa FuzzyTriangular,
 	has c 0.5;
 
 # expected membership 0.92442
-$fuzzy_unimodal_offset_expr_1 (fuzzy_set: $fuzzy_unimodal_triangular_set_offset, term: $fuzzy_unimodal_offset_measure) isa fuzzy_unimodal_expression,
+(fuzzy_set: $fuzzy_unimodal_triangular_set_offset, term: $fuzzy_unimodal_offset_measure) isa fuzzy_unimodal_expression,
     has expression_name 'fuzzy_unimodal_offset_triangular_expression',
     has offset_value -0.26;
-
 
 ## fuzzy expression with inequality
 $double_0_10 isa ValueDouble,
@@ -256,8 +140,189 @@ $measure_double_0_20 isa Measure, has measure_name 'measure_double_0_20';
 (measure: $measure_double_0_20, measurement_value: $double_0_20) isa measurement,
     has measurement_time 2025-09-06T11:57:56.666, has latest true;
 
-$md_0_10_less_v_0_18 (lhs_value:$measure_double_0_10, rhs_value:$double_0_18) isa less_than, has expression_name 'md_0_10_less_v_0_18';
-$md_0_20_less_v_0_18 (lhs_value:$measure_double_0_20, rhs_value:$double_0_18) isa less_than, has expression_name 'md_0_20_less_v_0_18';
+(lhs_value:$measure_double_0_10, rhs_value:$double_0_18) isa less_than, has expression_name 'md_0_10_less_v_0_18';
+(lhs_value:$measure_double_0_20, rhs_value:$double_0_18) isa less_than, has expression_name 'md_0_20_less_v_0_18';
 
-(expression: $md_0_10_less_v_0_18) isa fuzzy_not, has expression_name 'fuzzy_not_less_than_negated_true';
-(expression: $md_0_20_less_v_0_18) isa fuzzy_not, has expression_name 'fuzzy_not_less_than_negated_false';
+# Layer 2 — fuzzy_not expressions (each references one leaf expression)
+
+match $n0_expr isa fuzzy_ascend_expression, has expression_name 'fuzzy_ascend_sigmoid_expression';
+# expected membership (1 - 0.913378192) = 0.086621808
+insert (expression: $n0_expr) isa fuzzy_not, has expression_name 'fuzzy_not_0';
+
+match $n1_expr isa fuzzy_decay_expression, has expression_name 'fuzzy_decay_rational_expression';
+# expected membership (1 - 0.8) = 0.2
+insert (expression: $n1_expr) isa fuzzy_not, has expression_name 'fuzzy_not_1';
+
+match $n2_expr isa propositional_expression, has expression_name 'bool_true_prop_exp';
+# expected membership (1 - 1.0) = 0.0
+insert (expression: $n2_expr) isa fuzzy_not, has expression_name 'fuzzy_not_2';
+
+match $n3_expr isa propositional_expression, has expression_name 'bool_false_prop_exp';
+# expected membership (1 - 0.0) = 1.0
+insert (expression: $n3_expr) isa fuzzy_not, has expression_name 'fuzzy_not_3';
+
+match $n4_expr isa propositional_expression, has expression_name 'true_measure_prop_exp';
+# expected membership (1 - 1.0) = 0.0
+insert (expression: $n4_expr) isa fuzzy_not, has expression_name 'fuzzy_not_4';
+
+match $n5_expr isa propositional_expression, has expression_name 'false_measure_prop_exp';
+# expected membership (1 - 0.0) = 1.0
+insert (expression: $n5_expr) isa fuzzy_not, has expression_name 'fuzzy_not_5';
+
+match $n6_expr isa less_than, has expression_name 'md_0_10_less_v_0_18';
+insert (expression: $n6_expr) isa fuzzy_not, has expression_name 'fuzzy_not_less_than_negated_true';
+
+match $n7_expr isa less_than, has expression_name 'md_0_20_less_v_0_18';
+insert (expression: $n7_expr) isa fuzzy_not, has expression_name 'fuzzy_not_less_than_negated_false';
+
+# Layer 3 — fuzzy_or/and that only reference leaf expressions
+
+match $or0_a isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+# expected membership 0.931085511
+insert (expression: $or0_a) isa fuzzy_or, has expression_name 'fuzzy_or_0';
+
+match
+    $or1_a isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_triangular_expression';
+    $or1_b isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+# expected membership 0.931085511
+insert (expression: $or1_a, expression: $or1_b) isa fuzzy_or, has expression_name 'fuzzy_or_1';
+
+match
+    $or2_a isa fuzzy_ascend_expression, has expression_name 'fuzzy_ascend_sigmoid_expression';
+    $or2_b isa fuzzy_ascend_expression, has expression_name 'fuzzy_ascend_exp_saturation_expression';
+    $or2_c isa fuzzy_ascend_expression, has expression_name 'fuzzy_ascend_blf_expression';
+    $or2_d isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_triangular_expression';
+    $or2_e isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+    $or2_f isa fuzzy_decay_expression, has expression_name 'fuzzy_decay_exp_expression';
+    $or2_g isa fuzzy_decay_expression, has expression_name 'fuzzy_decay_rational_expression';
+# expected membership 0.947368421
+insert (expression: $or2_a, expression: $or2_b, expression: $or2_c, expression: $or2_d,
+        expression: $or2_e, expression: $or2_f, expression: $or2_g) isa fuzzy_or,
+    has expression_name 'fuzzy_or_2';
+
+match
+    $or4_a isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_triangular_expression';
+    $or4_b isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+    $or4_c isa propositional_expression, has expression_name 'bool_true_prop_exp';
+# expected membership 1.0
+insert (expression: $or4_a, expression: $or4_b, expression: $or4_c) isa fuzzy_or,
+    has expression_name 'fuzzy_or_4';
+
+match
+    $or5_a isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_triangular_expression';
+    $or5_b isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+    $or5_c isa propositional_expression, has expression_name 'bool_false_prop_exp';
+# expected membership 0.931085511
+insert (expression: $or5_a, expression: $or5_b, expression: $or5_c) isa fuzzy_or,
+    has expression_name 'fuzzy_or_5';
+
+match
+    $or6_a isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_triangular_expression';
+    $or6_b isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+    $or6_c isa propositional_expression, has expression_name 'true_measure_prop_exp';
+# expected membership 1.0
+insert (expression: $or6_a, expression: $or6_b, expression: $or6_c) isa fuzzy_or,
+    has expression_name 'fuzzy_or_6';
+
+match
+    $or7_a isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_triangular_expression';
+    $or7_b isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+    $or7_c isa propositional_expression, has expression_name 'false_measure_prop_exp';
+# expected membership 0.931085511
+insert (expression: $or7_a, expression: $or7_b, expression: $or7_c) isa fuzzy_or,
+    has expression_name 'fuzzy_or_7';
+
+match $and0_a isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+# expected membership 0.931085511
+insert (expression: $and0_a) isa fuzzy_and, has expression_name 'fuzzy_and_0';
+
+match
+    $and1_a isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_triangular_expression';
+    $and1_b isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+# expected membership 0.92442
+insert (expression: $and1_a, expression: $and1_b) isa fuzzy_and, has expression_name 'fuzzy_and_1';
+
+match
+    $and2_a isa fuzzy_ascend_expression, has expression_name 'fuzzy_ascend_sigmoid_expression';
+    $and2_b isa fuzzy_ascend_expression, has expression_name 'fuzzy_ascend_exp_saturation_expression';
+    $and2_c isa fuzzy_ascend_expression, has expression_name 'fuzzy_ascend_blf_expression';
+    $and2_d isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_triangular_expression';
+    $and2_e isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+    $and2_f isa fuzzy_decay_expression, has expression_name 'fuzzy_decay_exp_expression';
+    $and2_g isa fuzzy_decay_expression, has expression_name 'fuzzy_decay_rational_expression';
+# expected membership 0.8
+insert (expression: $and2_a, expression: $and2_b, expression: $and2_c, expression: $and2_d,
+        expression: $and2_e, expression: $and2_f, expression: $and2_g) isa fuzzy_and,
+    has expression_name 'fuzzy_and_2';
+
+match
+    $and6_a isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_triangular_expression';
+    $and6_b isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+    $and6_c isa propositional_expression, has expression_name 'bool_true_prop_exp';
+# expected membership 0.92442
+insert (expression: $and6_a, expression: $and6_b, expression: $and6_c) isa fuzzy_and,
+    has expression_name 'fuzzy_and_6';
+
+match
+    $and7_a isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_triangular_expression';
+    $and7_b isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+    $and7_c isa propositional_expression, has expression_name 'bool_false_prop_exp';
+# expected membership 0.0
+insert (expression: $and7_a, expression: $and7_b, expression: $and7_c) isa fuzzy_and,
+    has expression_name 'fuzzy_and_7';
+
+match
+    $and8_a isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_triangular_expression';
+    $and8_b isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+    $and8_c isa propositional_expression, has expression_name 'true_measure_prop_exp';
+# expected membership 0.92442
+insert (expression: $and8_a, expression: $and8_b, expression: $and8_c) isa fuzzy_and,
+    has expression_name 'fuzzy_and_8';
+
+match
+    $and9_a isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_triangular_expression';
+    $and9_b isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+    $and9_c isa propositional_expression, has expression_name 'false_measure_prop_exp';
+# expected membership 0.0
+insert (expression: $and9_a, expression: $and9_b, expression: $and9_c) isa fuzzy_and,
+    has expression_name 'fuzzy_and_9';
+
+# Layer 4 — expressions that reference Layer 2 (fuzzy_not) or Layer 3 (fuzzy_or/and)
+
+match
+    $or3_a isa fuzzy_not, has expression_name 'fuzzy_not_0';
+    $or3_b isa fuzzy_not, has expression_name 'fuzzy_not_1';
+# expected membership 0.2
+insert (expression: $or3_a, expression: $or3_b) isa fuzzy_or, has expression_name 'fuzzy_or_3';
+
+match
+    $and3_a isa fuzzy_not, has expression_name 'fuzzy_not_0';
+    $and3_b isa fuzzy_not, has expression_name 'fuzzy_not_1';
+# expected membership 0.086621808
+insert (expression: $and3_a, expression: $and3_b) isa fuzzy_and, has expression_name 'fuzzy_and_3';
+
+match
+    $and4_a isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_triangular_expression';
+    $and4_b isa fuzzy_or, has expression_name 'fuzzy_or_1';
+# expected membership 0.92442
+insert (expression: $and4_a, expression: $and4_b) isa fuzzy_and, has expression_name 'fuzzy_and_4';
+
+match
+    $and10_a isa fuzzy_not, has expression_name 'fuzzy_not_4';
+    $and10_b isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+# expected membership 0.0
+insert (expression: $and10_a, expression: $and10_b) isa fuzzy_and, has expression_name 'fuzzy_and_10';
+
+match
+    $and11_a isa fuzzy_not, has expression_name 'fuzzy_not_5';
+    $and11_b isa fuzzy_unimodal_expression, has expression_name 'fuzzy_unimodal_gaussian_expression';
+# expected membership 0.931085511
+insert (expression: $and11_a, expression: $and11_b) isa fuzzy_and, has expression_name 'fuzzy_and_11';
+
+# Layer 5 — fuzzy_and_5 references fuzzy_or_0 (layer 3) and fuzzy_or_3 (layer 4)
+
+match
+    $and5_a isa fuzzy_or, has expression_name 'fuzzy_or_0';
+    $and5_b isa fuzzy_or, has expression_name 'fuzzy_or_3';
+# expected membership 0.2
+insert (expression: $and5_a, expression: $and5_b) isa fuzzy_and, has expression_name 'fuzzy_and_5';
