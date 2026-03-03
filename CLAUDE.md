@@ -56,22 +56,68 @@ docker exec tactical_retreat bash -lc \
 
 Also run the functional tests relevant to any modules you changed. See [AGENTS.md](AGENTS.md) for the full test commands.
 
-## TypeDB 3: No `rule` Support — Use `fun` Instead
+## TypeQL Examples — Use text2typeql First
+
+Before writing any TypeQL query, search the local example corpus:
+
+```bash
+# From src/ros_typedb/
+python3 scripts/find-text2typeql-examples.py "your query description" --top-k 5 --min-score 2
+python3 scripts/find-text2typeql-examples.py "fun function compute" --top-k 5 --min-score 1
+```
+
+- Local dataset: `src/ros_typedb/agent-data/text2typeql/dataset/` (~14 000 validated queries)
+- Full TypeDB 3 syntax reference: `src/ros_typedb/agent-data/text2typeql/CLAUDE.md`
+
+## TypeDB 3: No `rule` Support — Use `with fun` Instead
 
 TypeDB 3.8 removed the `rule` keyword entirely. Any `define` block containing `rule`
-causes `[TSV7] Query parsing failed`. All rules must be ported to TypeDB 3 `fun` functions:
+causes `[TSV7] Query parsing failed`. Use **inline `with fun`** instead:
 
 ```typeql
-define
-fun my_fun($arg: SomeType, $x: double) -> { double }:
-    match $arg has some_attr $val; let $result = $val * $x;
-    return { $result };
+# Inline function (per-query, not stored in schema)
+with fun sigmoid_membership($exp: double, $infl: double, $x: double) -> double:
+    match let $m = 1.0 / (1.0 + 2.71828 ^ (-1.0 * $exp * ($x - $infl)));
+    return $m;
+match
+    $fe isa FuzzySigmoid, has exponent $exp, has inflection_point $infl;
+    (fuzzy_set: $fe) isa fuzzy_ascend_expression, has quantified_value $qv;
+    let $membership = sigmoid_membership($exp, $infl, $qv);
+fetch { "membership_degree": $membership };
 ```
 
 Docs: https://typedb.com/docs/typeql-reference/functions/
 
-Key difference: `fun` returns values, not inferred attribute instances. Queries must
-explicitly call the function instead of matching `has computed_attr $v`.
+Key points:
+- `with fun name($arg: Type) -> ReturnType:` — inline function before `match`
+- `let $var = fun_name(args);` — bind result in match clause
+- `fun` returns values, not inferred attribute instances
+- Multiple `with fun` blocks allowed (each starts a new `with fun`)
+
+## TypeDB 3 Key Query Patterns (from text2typeql)
+
+```typeql
+# Aggregation with filter (HAVING equivalent)
+match $u isa user; rated (user: $u, film: $m), has rating $r;
+reduce $count = count($m), $avg = mean($r) groupby $u;
+match $count >= 3;                    # filter AFTER reduce
+fetch { "user": $u.name, "avg": $avg };
+
+# Arithmetic with let
+let $total = $favorites + $retweets;
+let $diff = abs($a - $b);
+
+# Disjunction — variables inside branches are scoped (GOTCHA)
+# WRONG: { $rel isa A ($x); } or { $rel isa B ($x); };  # $rel is scoped
+# RIGHT: use type variable outside disjunction:
+$rel isa $t ($x);
+{ $t label type_a; } or { $t label type_b; };
+
+# Recursive stream function (transitive closure)
+with fun reachable($start: Node) -> { Node }:
+    match { $start is $n; } or { let $mid in reachable($start); edge ($mid, $n); };
+    return { $n };
+```
 
 ## TypeDB 3 Schema Loading Fix (ros_typedb)
 
