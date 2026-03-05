@@ -1,8 +1,10 @@
 # typedb_tactics
 
+ROS 2 package that exposes a TypeDB-backed knowledge base for runtime adaptation tactics.
+
 ## Models
 
-### Dependencies
+### Schema dependencies
 
 ```mermaid
 graph TB
@@ -49,154 +51,152 @@ graph TB
     fuzzy --> discover_hypo
 ```
 
-Arrows point from each prerequisite model to the model that depends on it.
+Arrows point from prerequisite model to dependent model.
 
-## Docker
+### What each schema is for
 
-### Pull
+- `data_structure`: foundational shared structures used across models.
+- `context_model`: runtime/environment context (measurements, interfaces).
+- `ros_model`: ROS graph/domain entities and relations.
+- `logical_expressions`: base logical expression vocabulary and composition.
+- `fuzzy_expression`: fuzzy extensions over logical/context concepts.
+- `feature_model`: feature definitions; `feature_model_logical_expression` bridges features with logical expressions.
+- `relaxed_model`: relaxed/graded requirement fulfillment semantics.
+- `tactics_model`: adaptation tactics representation and resolution queries.
+- `discover_tactics_model`: tactic discovery and neighborhood reasoning.
+- `discover_hypothetical_req_fulfillment`: hypothetical requirement-fulfillment analysis.
 
-You can get the latest docker image with:
+For agent-focused schema notes and query-writing pointers, see `agent-docs/schema-guide.md`.
 
-```Bash
+## Prerequisites
+
+- Docker
+- ROS 2 Humble (inside container image)
+- TypeDB 3.x (inside container image)
+- `gh` CLI auth if you need to build the image from source with private deps
+
+## Docker workflow
+
+### Pull image
+
+```bash
 docker pull ghcr.io/kas-lab/typedb_tactics:latest
 ```
 
-### Build
+### Build image (optional)
 
-To build the img you need to create a github personal access token to read access to private repos, then log in to gh with gh cli
-
-```Bash
-gh auth login         # if not logged in
+```bash
+gh auth login
+docker build --secret id=gh_token,src=<(gh auth token) \
+  --build-arg DEPS_CACHE_BUSTER=$(date +%s) \
+  -t tactical_retreat:typedb3 .
 ```
 
-Build:
+### Run container
 
-```Bash
-docker build --secret id=gh_token,src=<(gh auth token) --build-arg DEPS_CACHE_BUSTER=${date} -t tactical_retreat:typedb3 .
+Start in background with TypeDB server running:
+
+```bash
+docker run -d --rm --name tactical_retreat \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v $HOME/ros_workspaces/tactical_retreat_3_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics \
+  -v $HOME/ros_workspaces/tactical_retreat_3_ws/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors \
+  tactical_retreat:typedb3 typedb server
 ```
 
-### Run
+If using the registry image, replace `tactical_retreat:typedb3` with `ghcr.io/kas-lab/typedb_tactics:latest`.
 
-```Bash
-xhost +
+If you are also editing `ros_typedb`, include an extra mount:
+
+```bash
+-v $HOME/ros_workspaces/tactical_retreat_3_ws/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb
 ```
 
-Start container in the background with typedb server running:
+### Open shell
 
-```Bash
-docker run -d --rm --name tactical_retreat -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/tactical_retreat_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics tactical_retreat typedb server
-```
-
-```Bash
-docker run -d --rm --name tactical_retreat -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/tactical_retreat_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics tactical_retreat typedb server
-```
-
-With nvidia
-
-```Bash
-docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/tactical_retreat_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics tactical_retreat typedb server
-```
-
-Mount ros_typedb as well:
-
-```Bash
-docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/tactical_retreat_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics -v $HOME/ros_workspaces/tactical_retreat_ws/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb tactical_retreat:typedb3 sudo typedb server
-```
-
-From the `tactical_retreat_ws` folder:
-
-```Bash
-docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v ${PWD}/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics -v $HOME/ros_workspaces/tactical_retreat_ws/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors -v ${PWD}/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb tactical_retreat:typedb3 sudo typedb server
-```
-
-Mount ros_monitors as well:
-
-```Bash
-docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/tactical_retreat_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics -v $HOME/ros_workspaces/tactical_retreat_ws/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors tactical_retreat typedb server
-```
-
-**Note:** Use the correct image name, if you got the img from the github registry use `ghcr.io/kas-lab/typedb_tactics:latest` instead of `tactical_retreat`
-
-Start new terminal in the container:
-
-```Bash
+```bash
 docker exec -it tactical_retreat bash
 ```
 
-### Test
+## Build and test
+
+All commands below run from `src/typedb_tactics`.
+
+### Build package
+
+```bash
+docker exec tactical_retreat bash -lc \
+  "source /opt/ros/humble/setup.bash && \
+   cd /home/ubuntu-user/tactical_retreat_ws && \
+   colcon build --symlink-install --packages-select typedb_tactics"
+```
+
+### Run tests
+
+Run tests:
 
 ```Bash
 colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics
 ```
 
-### Benchmark Query + Initialization Bottlenecks
+Full package tests:
 
-Run from the container in the `scripts` folder:
-
-```Bash
-cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics/scripts
-python3 benchmark_queries.py
+```bash
+scripts/run-tests-docker.sh
 ```
 
-Useful options:
+Focused tests:
 
-```Bash
-# Only hypothetical-fulfillment fixture profile
-python3 benchmark_queries.py --profiles hyp --runs 10
-
-# Only generated dataset
-python3 benchmark_queries.py --profiles generated --runs 10
-
-# JSON output for before/after diffing
-python3 benchmark_queries.py --profiles generated,hyp --runs 10 --format json
+```bash
+scripts/run-tests-docker.sh -k test_ros_model
+scripts/run-tests-docker.sh -k test_hyp
 ```
 
-Output includes:
-- initialization breakdown (`init_no_schema`, per-schema timings, per-data-file timings)
-- query latency stats (`cold`, `warm_avg`, `warm_p50`, `warm_p95`)
-- row count stability across warm runs
-- top 3 slowest query cases (by warm p50)
-- top 3 slowest schema files (by load time)
+Mandatory style checks:
 
-Interpretation notes:
-- `cold` includes first-call overhead; use `warm_p50`/`warm_p95` for steady-state latency.
-- Run with `--no-infer` only for comparison studies; production behavior should be benchmarked with inference enabled.
+```bash
+docker exec tactical_retreat bash -lc \
+  "source /opt/ros/humble/setup.bash && \
+   source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && \
+   colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_flake8"
 
-### Benchmark Interface Methods (`benchmark.py`)
-
-Run from the container in the `scripts` folder:
-
-```Bash
-cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics/scripts
-python3 benchmark.py
+docker exec tactical_retreat bash -lc \
+  "source /opt/ros/humble/setup.bash && \
+   source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && \
+   colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_pep257"
 ```
 
-Useful options:
+## Run the KB node
 
-```Bash
-# Run each benchmark case multiple times
-python3 benchmark.py --runs 10
-
-# Benchmark only specific get_* methods
-python3 benchmark.py --runs 10 --methods get_potential_requirements_fulfillment,get_applicable_tactics
-
-# Limit number of argument combinations per method
-python3 benchmark.py --runs 10 --methods get_potential_requirements_fulfillment --max-combinations 50
+```bash
+ros2 launch typedb_tactics tactical_retreat_kb.launch.py \
+  schema_path:="['schemas/data_structure/data_structure.tql','schemas/context_model/context_model.tql','schemas/ros_model/ros_model.tql']" \
+  data_path:="['test/data/test_ros_model.tql']" \
+  database_name:=tactical_kb \
+  address:=localhost:1729 \
+  force_database:=True \
+  force_data:=True
 ```
 
-What this benchmark measures:
-- `TacticalRetreatInterface` creation time (schema + data load)
-- `get_expression_satisfied` latency for the fixed expression list in the script
-- all `get_*` methods in `TacticalRetreatInterface` (or the subset passed with `--methods`)
+## Benchmarking
 
-Output includes:
-- per-case latency stats (`avg`, `p50`, `p95`)
-- success/failure counts per method call combination
-- result size summary (`avg`, `min`, `max`)
-- methods sorted by decreasing average latency
-- skipped methods (missing input context) and methods with only failed invocations
+Run from container:
 
-Interpretation notes:
-- Use `--methods` to isolate hotspots and reduce runtime when iterating.
-- `--max-combinations` is useful for quick A/B checks on query or rule changes.
-- For full-impact checks, run without `--methods` and without `--max-combinations`.
+```bash
+docker exec tactical_retreat bash -lc \
+  "source /opt/ros/humble/setup.bash && \
+   source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && \
+   cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics/scripts && \
+   python3 benchmark_queries.py --profiles hyp --runs 5"
+
+docker exec tactical_retreat bash -lc \
+  "source /opt/ros/humble/setup.bash && \
+   source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && \
+   cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics/scripts && \
+   python3 benchmark.py --runs 5 --methods get_potential_requirements_fulfillment"
+```
+
+## Notes
+
+- TypeDB result order is not guaranteed; sort in Python when test assertions require deterministic ordering.
+- `infer` is not part of current `typedb_tactics` launch/interface parameters.
