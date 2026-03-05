@@ -26,15 +26,19 @@ graph TB
     data_structure --> fuzzy
     data_structure --> relaxed
     data_structure --> tactics
+    data_structure --> discover_hypo
 
     logical --> fuzzy
     logical --> relaxed
     logical --> tactics
     logical --> feature_logic
+    logical --> discover_hypo
 
     feature --> feature_logic
     feature --> tactics
 
+    context --> ros
+    context --> logical
     context --> fuzzy
     context --> relaxed
     context --> tactics
