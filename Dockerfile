@@ -39,7 +39,7 @@ RUN gpg --export 17507562824cfdcc | sudo tee /etc/apt/trusted.gpg.d/vaticle.gpg 
 RUN echo "deb https://repo.typedb.com/public/public-release/deb/ubuntu trusty main" | tee /etc/apt/sources.list.d/vaticle.list > /dev/null
 
 RUN apt-get update && apt-get install -y \
-    typedb=3.8.0 \
+    typedb \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install "typedb-driver>=3,<4"
@@ -62,9 +62,6 @@ ENV HOME=/home/ubuntu-user
 USER ubuntu-user
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR $HOME
-
-## Create alias for TypeDB studio
-RUN echo 'alias typedb-studio="/opt/typedb-studio/bin/TypeDB\ Studio"' >> ~/.bashrc
 
 ## Create, install deps, and build Tactical Retreat workspace
 RUN mkdir -p tactical_retreat_ws/src
