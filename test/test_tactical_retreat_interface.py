@@ -13,6 +13,7 @@
 # limitations under the License.
 import pytest
 
+from ros_typedb.typedb_interface import TypeDBQueryError
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
@@ -33,8 +34,7 @@ def kb_interface():
         ['schemas/ros_model/ros_model_example.tql',
             'schemas/tactics_model/tactics_example.tql'],
         force_database=True,
-        force_data=True,
-        infer=True)
+        force_data=True)
     yield kb_interface
     kb_interface.delete_database()
 
@@ -218,8 +218,7 @@ def kb_interface_test_model():
             'schemas/discover_tactics_model/discover_tactics_model.tql'],
         ['test/data/test_tactical_retreat_interface.tql'],
         force_database=True,
-        force_data=True,
-        infer=True)
+        force_data=True)
     yield kb_interface_test_model
     kb_interface_test_model.delete_database()
 
@@ -259,3 +258,45 @@ def test_add_measurement(kb_interface_test_model):
         'measure_bool_array', [True, True, False])
     assert kb_interface_test_model.get_latest_measurement(
         'measure_bool_array') == [True, True, False]
+
+
+@pytest.mark.parametrize(
+    'method_name,args',
+    [
+        ('does_tactic_affect_nodes', ('any_tactic', 'any_node', '')),
+        ('get_requirement_in_effect', ('any_requirement',)),
+        ('get_tactic_rule_valid', ('any_rule',)),
+        ('is_feature_selectable', ('any_feature',)),
+        ('is_node_running', ('any_node',)),
+        ('is_set_nodes_parameters_feasible', ('any_node', 'any_param')),
+        ('is_set_lifecycle_state_feasible', ('any_node', 'inactive')),
+        ('get_expression_satisfied', ('any_expression',)),
+    ],
+)
+def test_decision_getters_propagate_query_error(
+        method_name, args, monkeypatch, caplog):
+    kb_interface = TacticalRetreatInterface.__new__(TacticalRetreatInterface)
+    failing_db = type('FailingDB', (), {})()
+
+    def _fail_fetch(_query: str):
+        raise TypeDBQueryError(
+            session_type='data',
+            transaction_type='read',
+            query_type='fetch',
+            query='match $x isa thing; fetch { "x": $x; };')
+
+    def _fail_aggregate(_query: str):
+        raise TypeDBQueryError(
+            session_type='data',
+            transaction_type='read',
+            query_type='get_aggregate',
+            query='match $x isa thing; reduce $c = count;')
+
+    monkeypatch.setattr(failing_db, 'fetch_database', _fail_fetch, raising=False)
+    monkeypatch.setattr(
+        failing_db, 'get_aggregate_database', _fail_aggregate, raising=False)
+    kb_interface.db = failing_db
+
+    with caplog.at_level('ERROR'):
+        with pytest.raises(TypeDBQueryError):
+            getattr(kb_interface, method_name)(*args)

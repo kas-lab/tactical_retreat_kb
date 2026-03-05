@@ -60,8 +60,7 @@ def tactical_kb():
             'schemas/ros_model/ros_model.tql'],
         ['test/data/test_ros_model.tql'],
         force_database=True,
-        force_data=True,
-        infer=True
+        force_data=True
     )
     yield tactical_kb
     tactical_kb.destroy_node()

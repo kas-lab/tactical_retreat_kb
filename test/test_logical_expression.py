@@ -22,16 +22,15 @@ def kb_interface():
         'localhost:1729',
         'test_model_interface',
         ['schemas/data_structure/data_structure.tql',
-            'schemas/context_model/context_model.tql',
-            'schemas/logical_expressions/logical_expression.tql'],
-            # 'schemas/logical_expressions/logical_expression_ext.tql'],
+         'schemas/context_model/context_model.tql',
+         'schemas/logical_expressions/logical_expression.tql'],
+        # 'schemas/logical_expressions/logical_expression_ext.tql'],
         # ['test/data/test_logical_expression.tql',
         #  'test/data/test_logical_expression_compound.tql',
         #  'test/data/test_logical_expression_satisfied.tql'],
         [],
         force_database=True,
-        force_data=True,
-        infer=True)
+        force_data=True)
     yield kb_interface
     kb_interface.delete_database()
 

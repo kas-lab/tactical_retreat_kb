@@ -41,7 +41,6 @@ def profile_schema_load(
     address: str,
     database_name: str,
     schemas: Iterable[str],
-    infer: bool,
 ) -> float:
     interface_init_start = time.perf_counter()
     kb_interface = TacticalRetreatInterface(
@@ -51,7 +50,6 @@ def profile_schema_load(
         [],
         force_database=True,
         force_data=True,
-        infer=infer,
     )
     interface_init_s = time.perf_counter() - interface_init_start
     print(f'interface_init_no_schema={interface_init_s:.6f}s')
@@ -94,18 +92,6 @@ def main():
         default=DEFAULT_SCHEMAS,
         help='Schema paths to load in order (default: benchmark schema list).',
     )
-    parser.add_argument(
-        '--infer',
-        action='store_true',
-        default=True,
-        help='Enable inference while profiling (default: enabled).',
-    )
-    parser.add_argument(
-        '--no-infer',
-        dest='infer',
-        action='store_false',
-        help='Disable inference while profiling.',
-    )
     args = parser.parse_args()
 
     if args.runs < 1:
@@ -123,7 +109,6 @@ def main():
             args.address,
             run_database,
             args.schemas,
-            args.infer,
         )
         run_totals.append(run_total)
 

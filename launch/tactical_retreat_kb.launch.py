@@ -32,7 +32,6 @@ def generate_launch_description():
     address = LaunchConfiguration('address')
     force_data = LaunchConfiguration('force_data')
     force_database = LaunchConfiguration('force_database')
-    infer = LaunchConfiguration('infer')
 
     schema_path_arg = DeclareLaunchArgument(
         'schema_path',
@@ -70,12 +69,6 @@ def generate_launch_description():
         description='if the database data should be overriden.'
     )
 
-    infer_arg = DeclareLaunchArgument(
-        'infer',
-        default_value='True',
-        description='if inference engine should be used.'
-    )
-
     ros_typedb_node = LifecycleNode(
         package='typedb_tactics',
         executable='tactical_retreat',
@@ -89,7 +82,6 @@ def generate_launch_description():
             'address': address,
             'force_data': force_data,
             'force_database': force_database,
-            'infer': infer,
         }]
     )
 
@@ -120,7 +112,6 @@ def generate_launch_description():
         address_arg,
         force_data_arg,
         force_database_arg,
-        infer_arg,
         ros_typedb_node,
         ros_typedb_node_config_event,
         ros_typedb_node_activate_event

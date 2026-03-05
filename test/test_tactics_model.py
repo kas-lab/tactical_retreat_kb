@@ -36,8 +36,7 @@ def kb_interface():
          'schemas/ros_model/ros_model_example.tql',
             'schemas/tactics_model/tactics_example.tql'],
         force_database=True,
-        force_data=True,
-        infer=True)
+        force_data=True)
     yield kb_interface
     kb_interface.delete_database()
 

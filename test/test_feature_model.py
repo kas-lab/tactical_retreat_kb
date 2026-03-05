@@ -25,8 +25,7 @@ def kb_interface():
         ['schemas/feature_model/feature_model.tql'],
         ['test/data/test_feature_model.tql'],
         force_database=True,
-        force_data=True,
-        infer=True)
+        force_data=True)
     yield kb_interface
     kb_interface.delete_database()
 
@@ -51,4 +50,3 @@ def test_feature_selectable(kb_interface):
     assert kb_interface.is_feature_selectable('f_excl_constrained_3') is False
     assert kb_interface.is_feature_selectable('f_excl_constrained_4') is True
     assert kb_interface.is_feature_selectable('f_excl_constrained_5') is False
-

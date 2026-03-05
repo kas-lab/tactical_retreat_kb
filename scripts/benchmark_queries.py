@@ -200,7 +200,6 @@ def benchmark_profile(
     address: str,
     db_name: str,
     runs: int,
-    infer: bool,
 ) -> Dict:
     """Benchmark initialization and query timings for a profile."""
     init_no_schema_start = time.perf_counter()
@@ -211,7 +210,6 @@ def benchmark_profile(
         [],
         force_database=True,
         force_data=True,
-        infer=infer,
     )
     init_no_schema_s = time.perf_counter() - init_no_schema_start
 
@@ -300,7 +298,6 @@ def benchmark_profile(
     return {
         'profile': profile.name,
         'database_name': db_name,
-        'infer': infer,
         'init': {
             'init_no_schema_s': init_no_schema_s,
             'schema_total_s': schema_total_s,
@@ -376,18 +373,6 @@ def main() -> None:
         help='Database name prefix (default: benchmark_queries).',
     )
     parser.add_argument(
-        '--infer',
-        action='store_true',
-        default=True,
-        help='Enable inference while benchmarking (default: enabled).',
-    )
-    parser.add_argument(
-        '--no-infer',
-        dest='infer',
-        action='store_false',
-        help='Disable inference while benchmarking.',
-    )
-    parser.add_argument(
         '--format',
         choices=['text', 'json'],
         default='text',
@@ -419,14 +404,12 @@ def main() -> None:
             address=args.address,
             db_name=db_name,
             runs=args.runs,
-            infer=args.infer,
         )
         reports.append(report)
 
     final_report = {
         'address': args.address,
         'runs': args.runs,
-        'infer': args.infer,
         'profiles': reports,
     }
 

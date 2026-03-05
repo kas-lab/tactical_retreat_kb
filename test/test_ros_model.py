@@ -27,8 +27,7 @@ def kb_interface():
             'schemas/ros_model/ros_model.tql'],
         ['test/data/test_ros_model.tql'],
         force_database=True,
-        force_data=True,
-        infer=True)
+        force_data=True)
     yield kb_interface
     kb_interface.delete_database()
 

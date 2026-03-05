@@ -31,8 +31,7 @@ def kb_interface():
         ['test/data/test_feature_model.tql',
          'test/data/test_feature_model_props.tql'],
         force_database=True,
-        force_data=True,
-        infer=True)
+        force_data=True)
     yield kb_interface
     kb_interface.delete_database()
 

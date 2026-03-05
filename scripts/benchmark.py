@@ -695,8 +695,7 @@ def main(runs: int, methods: Optional[str], max_combinations: Optional[int]):
         DEFAULT_SCHEMAS,
         ['generated.tql'],
         force_database=True,
-        force_data=True,
-        infer=True
+        force_data=True
     )
     interface_creation_time_s = time.perf_counter() - interface_start_time
     print(

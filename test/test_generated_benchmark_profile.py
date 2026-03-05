@@ -37,8 +37,7 @@ def kb_interface():
          'schemas/discover_tactics_model/discover_tactics_model.tql'],
         ['scripts/generated.tql'],
         force_database=True,
-        force_data=True,
-        infer=True)
+        force_data=True)
     yield kb_interface
     kb_interface.delete_database()
 
