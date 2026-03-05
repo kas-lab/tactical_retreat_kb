@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""TypeDB query facade for Tactical Retreat domain operations."""
+
 from dataclasses import dataclass
 from datetime import datetime
 import logging
@@ -39,6 +41,13 @@ class RequirementImpactDict():
 
 
 def create_value_query(value, suffix=''):
+    """
+    Build a TypeQL insert snippet for a scalar ``Value*`` instance.
+
+    :param value: scalar Python value to encode (str, float, bool, or int).
+    :param suffix: optional suffix to make variable names unique.
+    :return: tuple ``(query_snippet, variable_name)`` or ``None`` if unsupported.
+    """
     if not isinstance(value, (str, float, int, bool, list)):
         logger.error(
             'Unsupported type %s for value %s',
@@ -1469,6 +1478,13 @@ class TacticalRetreatInterface:
                 for result in query_result if result.get('expression_name') is not None]
 
     def get_expression_satisfied(self, expression_name):
+        """
+        Fetch the ``expression_satisfied`` flag for a logical expression.
+
+        :param expression_name: expression key (`expression_name` attribute).
+        :return: boolean satisfied flag for the matched expression.
+        :raises TypeDBQueryError: If underlying TypeDB query fails.
+        """
         query = f"""
             match
                 $expr isa logical_expression,

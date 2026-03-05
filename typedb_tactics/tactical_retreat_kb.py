@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""ROS lifecycle node wiring Tactical Retreat queries to runtime interfaces."""
 
 import importlib
 import inspect
@@ -43,6 +44,18 @@ def publish_event(event_type: str):
 
 
 def get_ros_msg_type_from_string(msg_type_string: str, msg_type='msg'):
+    """
+    Resolve a ROS message/service class from a package type string.
+
+    Accepted formats:
+    - ``package/Type`` (uses ``msg_type`` argument, default ``msg``)
+    - ``package/msg/Type`` or ``package/srv/Type`` (overrides ``msg_type``)
+
+    :param msg_type_string: ROS type string.
+    :param msg_type: fallback module segment (``msg`` or ``srv``).
+    :return: Python message/service class.
+    :raises ValueError: If type string format is unsupported.
+    """
     msg_type_list = [part for part in msg_type_string.split('/') if part]
 
     if len(msg_type_list) == 2:
@@ -85,8 +98,13 @@ LIVELINESS_MAP = {
 
 
 def _to_duration(v):
-    # Accept Duration, seconds as int/float, or a dict {"sec": int, "nanosec":
-    # int}
+    """
+    Convert numeric seconds or ``Duration`` to an ``rclpy.duration.Duration``.
+
+    :param v: duration value as ``Duration`` or numeric seconds.
+    :return: ROS duration object.
+    :raises TypeError: If value type is not supported.
+    """
     if isinstance(v, Duration):
         return v
     if isinstance(v, (int, float)):
@@ -97,6 +115,16 @@ def _to_duration(v):
 
 
 def get_qos_from_qos_dict(qos_dict: dict) -> QoSProfile:
+    """
+    Build a ``QoSProfile`` from a dict representation.
+
+    Supported keys include policy names (``reliability``, ``history``,
+    ``durability``, ``liveliness``), ``depth``, and duration fields
+    (``lifespan``, ``deadline``, ``lease_duration`` variants).
+
+    :param qos_dict: QoS configuration dictionary.
+    :return: configured QoS profile (defaults to depth 10 if ``None``).
+    """
     # depth must be provided when KEEP_LAST; default to 10
     if qos_dict is None:
         return QoSProfile(depth=10)
@@ -142,7 +170,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
     """ROS lifecycle node implementing TacticalRetreat's KB."""
 
     def __init__(self, node_name, **kwargs):
-        """Create RosaKB node, inherits from :class:`ROSTypeDBInterface`."""
+        """Create a TacticalRetreatKB node extending :class:`ROSTypeDBInterface`."""
         self.active = False
         super().__init__(node_name, **kwargs)
         self.typedb_interface_class = TacticalRetreatInterface
@@ -152,6 +180,12 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         self.measures_services = {}  # For proxies
 
     def on_activate(self, state: State) -> TransitionCallbackReturn:
+        """
+        Activate the lifecycle node and expose runtime utility services.
+
+        :param state: current lifecycle state.
+        :return: lifecycle transition result.
+        """
         self.get_logger().info(self.get_name() + ': on_activate() is called.')
         self.active = True
         self.get_logger().info(
@@ -201,6 +235,12 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         return super().on_activate(state)
 
     def on_deactivate(self, state: State) -> TransitionCallbackReturn:
+        """
+        Deactivate the lifecycle node and teardown activation-time services.
+
+        :param state: current lifecycle state.
+        :return: lifecycle transition result.
+        """
         self.get_logger().info('on_deactivate() is called.')
         self.active = False
         self.destroy_service(self.measures_service)
@@ -343,6 +383,11 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                     _cb)  # The proxy service
 
     def create_measures_interfaces(self):
+        """
+        Create all configured measurement interfaces from KB definitions.
+
+        :raises Exception: Propagates errors while retrieving or creating interfaces.
+        """
         try:
             measures_interfaces = self.typedb_interface.get_measures_interfaces()
             if (len(measures_interfaces) == 0):
