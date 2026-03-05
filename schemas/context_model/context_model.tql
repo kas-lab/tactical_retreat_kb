@@ -24,10 +24,10 @@ entity MeasureStringArray sub Measure;
 entity MeasureDoubleArray sub Measure;
 
 relation measurement,
-    owns measurement_time,
-    owns latest,
-    relates measure,
-    relates measurement_value;
+    owns measurement_time @card(1),
+    owns latest @card(0..1),
+    relates measure @card(1),
+    relates measurement_value @card(1);
 
 ### connection with data structure model
 Value plays measurement:measurement_value;
@@ -40,15 +40,15 @@ attribute measurement_period, value integer;
 attribute service_request_kwargs, value string;
 
 relation measurement_interface,
-    owns measurement_function_name,
-    owns measurement_function_lib,
-    owns measurement_function_args,
-    owns measurement_proxy,
-    owns measurement_period,
-    owns service_request_kwargs,
-    relates measure,
-    relates source,
-    relates output;
+    owns measurement_function_name @card(1),
+    owns measurement_function_lib @card(1),
+    owns measurement_function_args @card(0..),
+    owns measurement_proxy @card(0..1),
+    owns measurement_period @card(0..1),
+    owns service_request_kwargs @card(0..),
+    relates measure @card(1),
+    relates source @card(1),
+    relates output @card(1);
 
 # rule measurement_latest:
 #     when {

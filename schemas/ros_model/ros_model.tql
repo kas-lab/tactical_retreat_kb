@@ -44,61 +44,61 @@ attribute running, value boolean;
 
 entity ROSNode,
     owns node_name @key,
-    owns namespace,
-    owns start_time,
-    owns end_time,
-    owns running,
-    plays has_interface:node,
-    plays has_parameter:node,
-    plays has_parameter_value:node,
-    plays node_deployment:node,
-    plays process_group:node,
-    plays subnode:subnode;
+    owns namespace @card(0..1),
+    owns start_time @card(1),
+    owns end_time @card(0..1),
+    owns running @card(0..1),
+    plays has_interface:node @card(0..),
+    plays has_parameter:node @card(0..),
+    plays has_parameter_value:node @card(0..),
+    plays node_deployment:node @card(0..1),
+    plays process_group:node @card(0..),
+    plays subnode:subnode @card(0..);
 
 entity LifeCycleNode sub ROSNode,
-    owns lifecycle_state;
+    owns lifecycle_state @card(1);
 
 ### ROS interfaces
 entity ROSInterface @abstract,
-    owns interface_name,
-    owns interface_type,
-    plays has_interface:afferent,
-    plays has_interface:efferent;
+    owns interface_name @card(1),
+    owns interface_type @card(1),
+    plays has_interface:afferent @card(0..),
+    plays has_interface:efferent @card(0..);
 
 entity TopicInterface sub ROSInterface,
-    owns gid,
+    owns gid @card(0..),
     plays has_qos:interface;
 entity Subscriber sub TopicInterface,
-    plays has_topic:subscriber;
+    plays has_topic:subscriber @card(0..);
 entity Publisher sub TopicInterface,
-    plays has_topic:publisher;
+    plays has_topic:publisher @card(0..);
 
 entity QoSProfile,
-    owns reliability,
-    owns history,
-    owns depth,
-    owns durability,
-    owns deadline,
-    owns lifespan,
-    owns liveliness,
-    owns lease_duration,
-    plays has_qos:qos;
+    owns reliability @card(1),
+    owns history @card(1),
+    owns depth @card(1),
+    owns durability @card(1),
+    owns deadline @card(1),
+    owns lifespan @card(1),
+    owns liveliness @card(1),
+    owns lease_duration @card(1),
+    plays has_qos:qos @card(0..);
 
 entity ServiceInterface sub ROSInterface;
 entity ServiceClient sub ServiceInterface,
-    plays has_service:client;
+    plays has_service:client @card(0..);
 entity ServiceServer sub ServiceInterface,
-    plays has_service:server;
+    plays has_service:server @card(0..);
 
 entity ActionInterface sub ROSInterface;
 entity ActionClient sub ActionInterface,
-    plays has_action:client;
+    plays has_action:client @card(0..);
 entity ActionServer sub ActionInterface,
-    plays has_action:server;
+    plays has_action:server @card(0..);
 
 relation has_qos,
-    relates interface,
-    relates qos;
+    relates interface @card(1),
+    relates qos @card(1);
 
 relation has_interface @abstract,
     relates node,
@@ -125,7 +125,7 @@ ActionServer plays measurement_interface:source;
 
 ### Parameter related entities
 entity Parameter,
-    owns parameter_name,
+    owns parameter_name @card(1),
     plays has_parameter:parameter,
     plays has_parameter_value:parameter;
 
@@ -143,27 +143,24 @@ Value plays has_parameter_value:parameter_value;
 
 ## Relations
 relation has_parameter,
-    relates node,
+    relates node @card(1),
     relates parameter @card(0..);
 
 relation has_parameter_value,
-    owns default_value,
-    relates node,
-    relates parameter,
-    relates parameter_value;
+    owns default_value @card(1),
+    relates node @card(1),
+    relates parameter @card(1),
+    relates parameter_value @card(1);
 
 relation node_deployment,
-    owns package,
-    owns executable,
-    relates node;
+    owns package @card(1),
+    owns executable @card(1),
+    relates node @card(1);
 
 relation process_group,
     relates node @card(0..);
 
 relation subnode sub process_group,
     relates subnode @card(0..);
-
-
-## rules
 
 

@@ -123,9 +123,9 @@ $odom_duration_param isa ParameterDouble,
 	parameter:$odom_duration_param) isa has_parameter;
 
 # define default parameters max_velocity
-$default_max_velocity_x isa ValueDouble, has double_value 0.26;
-$default_max_velocity_y isa ValueDouble, has double_value 0.0;
-$default_max_velocity_z isa ValueDouble, has double_value 1.0;
+$default_max_velocity_x isa ValueSingleton, has double_value 0.26;
+$default_max_velocity_y isa ValueSingleton, has double_value 0.0;
+$default_max_velocity_z isa ValueSingleton, has double_value 1.0;
 
 $default_max_velocity_param_value isa ValueArray;
 (array: $default_max_velocity_param_value,
@@ -144,14 +144,14 @@ parameter_value: $default_max_velocity_param_value)
 	isa has_parameter_value, has default_value true;
 
 # default param odom_topic
-$default_odom_topic isa ValueString, has string_value "/odom";
+$default_odom_topic isa ValueSingleton, has string_value "/odom";
 (node: $velocity_smoother_node,
 parameter: $odom_topic_param,
 parameter_value: $default_odom_topic)
 	isa has_parameter_value, has default_value true;
 
 # default odom duration
-$default_odom_duration isa ValueDouble, has double_value 1.0;
+$default_odom_duration isa ValueSingleton, has double_value 1.0;
 (node: $velocity_smoother_node,
 parameter: $odom_duration_param,
 parameter_value: $default_odom_duration)

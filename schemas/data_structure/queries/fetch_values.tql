@@ -26,3 +26,31 @@ match
     $v isa $singleton_types;
 fetch
     $v: attribute;
+
+# New typedb3 query
+match
+  $node isa ROSNode;
+  (node: $node, parameter:$param) isa has_parameter;
+  try {
+    (node: $node, parameter: $param, parameter_value: $param_value) isa has_parameter_value;
+  };
+fetch
+  {
+    "parameter_name":$param.parameter_name,
+    "parameter_value": (
+      match
+      $param_value isa ValueSingleton, has data_value $value;
+      return first $value;
+    ),
+    "parameter_array": [
+      match
+      $param_value isa ValueArray;
+      (array: $param_value, array_value: $v) isa at_index,
+        has index $index;
+      $v isa ValueSingleton;
+      sort $index;
+      fetch {
+        "value": $v.data_value
+      };
+    ]
+  };

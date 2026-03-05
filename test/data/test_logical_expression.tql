@@ -1,27 +1,27 @@
 insert
 
 # values
-$integer_1 isa ValueInteger,
+$integer_1 isa ValueSingleton,
     has integer_value 1;
-$integer_2 isa ValueInteger,
+$integer_2 isa ValueSingleton,
     has integer_value 2;
-$integer_3 isa ValueInteger,
+$integer_3 isa ValueSingleton,
     has integer_value 3;
 
-$double_1_1 isa ValueDouble,
+$double_1_1 isa ValueSingleton,
     has double_value 1.1;
-$double_1_2 isa ValueDouble,
+$double_1_2 isa ValueSingleton,
     has double_value 1.2;
-$double_1_3 isa ValueDouble,
+$double_1_3 isa ValueSingleton,
     has double_value 1.3;
 
-$string_1 isa ValueString,
+$string_1 isa ValueSingleton,
     has string_value '1';
-$string_2 isa ValueString,
+$string_2 isa ValueSingleton,
     has string_value '2';
 
-$bool_false isa ValueBool, has bool_value false;
-$bool_true isa ValueBool, has bool_value true;
+$bool_false isa ValueSingleton, has bool_value false;
+$bool_true isa ValueSingleton, has bool_value true;
 
 # measures
 

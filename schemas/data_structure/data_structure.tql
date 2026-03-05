@@ -1,22 +1,20 @@
 define
 
+attribute data_value @abstract;
+attribute bool_value, sub data_value, value boolean;
+attribute integer_value, sub data_value, value integer;
+attribute double_value, sub data_value,value double;
+attribute string_value, sub data_value, value string;
+
 entity Value @abstract,
-    plays at_index:array_value;
+  plays at_index:array_value;
 
-attribute bool_value, value boolean;
-attribute integer_value, value integer;
-attribute double_value, value double;
-attribute string_value, value string;
-
-entity ValueSingleton sub Value;
-entity ValueBool sub ValueSingleton,
-    owns bool_value;
-entity ValueInteger sub ValueSingleton,
-    owns integer_value;
-entity ValueDouble sub ValueSingleton,
-    owns double_value;
-entity ValueString sub ValueSingleton,
-    owns string_value;
+entity ValueSingleton sub Value,
+  owns data_value @card(1),
+  owns bool_value,
+  owns integer_value,
+  owns double_value,
+  owns string_value;
 
 entity ValueArray sub Value,
     plays at_index:array;
@@ -26,5 +24,7 @@ relation at_index,
     owns index,
     relates array,
     relates array_value;
+
+
 
 

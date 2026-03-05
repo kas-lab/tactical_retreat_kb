@@ -38,17 +38,17 @@ relation relaxed_requirement sub system_requirement,
 
 relation relaxed_expression sub expression,
 	owns fulfillment,
-	relates relaxed_member,
+	relates relaxed_member @card(0..),
 	plays relaxed_requirement:expression;
 
 relation atomic_relaxed_expression sub relaxed_expression,
-	relates expression,
+	relates expression @card(0..),
 	plays shall_expression:expression,
     plays may_expression:expression,
 	plays until_expression:after;
 
 relation compound_relaxed_expression sub relaxed_expression,
-	relates compound_member;
+	relates compound_member @card(0..);
 
 relation shall_expression sub compound_relaxed_expression,
 	relates expression;

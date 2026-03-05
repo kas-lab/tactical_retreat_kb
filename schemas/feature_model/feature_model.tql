@@ -10,7 +10,7 @@ attribute mandatory, value boolean;
 
 # Relations
 relation feature_hierarchy,
-    relates parent,
+    relates parent @card(1),
     relates child @card(0..);
 
 relation alternative sub feature_hierarchy; # exclusive or (XOR)
@@ -18,7 +18,7 @@ relation or_group sub feature_hierarchy;
 
 relation cross_tree_constraint,
     relates constraint @card(0..),
-    relates constrained;
+    relates constrained @card(1);
 
 relation excludes_constraint sub cross_tree_constraint;
 relation requires_constraint sub cross_tree_constraint;
@@ -26,9 +26,9 @@ relation requires_constraint sub cross_tree_constraint;
 # Entities
 entity Feature,
     owns feature_name @key,
-    owns selected,
-    owns selectable,
-    owns mandatory,
+    owns selected @card(0..1),
+    owns selectable @card(0..1),
+    owns mandatory @card(0..1),
     plays feature_hierarchy:parent,
     plays feature_hierarchy:child,
     plays cross_tree_constraint:constraint,

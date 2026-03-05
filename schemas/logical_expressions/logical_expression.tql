@@ -24,11 +24,11 @@ relation atomic_expression sub logical_expression,
     plays or_expression:expression;
 
 relation propositional_expression sub atomic_expression,
-	relates atom;
+	relates atom @card(1);
 
 relation comparison_expression sub atomic_expression,
-    relates lhs_value,
-    relates rhs_value;
+    relates lhs_value @card(1),
+    relates rhs_value @card(1);
 
 relation less_than sub comparison_expression;
 relation less_than_equal sub comparison_expression;
@@ -47,29 +47,41 @@ relation or_expression sub compound_expression,
     relates expression @card(0..),
     plays and_expression:expression;
 
+#### connection with the context model
+##### The measure entity can be interpreted as a Variable
+Measure plays comparison_expression:lhs_value;
+Measure plays comparison_expression:rhs_value;
+
+Value plays comparison_expression:lhs_value;
+Value plays comparison_expression:rhs_value;
+
+# ValueBool plays propositional_expression:atom;
+Value plays propositional_expression:atom;
+Measure plays propositional_expression:atom;
+
 ### Helper types for comparison operand resolution
-relation comparison_double_operand_pair,
-    relates expression,
-    relates lhs_double,
-    relates rhs_double;
-comparison_expression plays comparison_double_operand_pair:expression;
+# relation comparison_double_operand_pair,
+#     relates expression,
+#     relates lhs_double,
+#     relates rhs_double;
+# comparison_expression plays comparison_double_operand_pair:expression;
 
-relation comparison_integer_operand_pair,
-    relates expression,
-    relates lhs_integer,
-    relates rhs_integer;
-comparison_expression plays comparison_integer_operand_pair:expression;
+# relation comparison_integer_operand_pair,
+#     relates expression,
+#     relates lhs_integer,
+#     relates rhs_integer;
+# comparison_expression plays comparison_integer_operand_pair:expression;
 
-relation comparison_string_operand_pair,
-    relates expression,
-    relates lhs_string,
-    relates rhs_string;
-comparison_expression plays comparison_string_operand_pair:expression;
+# relation comparison_string_operand_pair,
+#     relates expression,
+#     relates lhs_string,
+#     relates rhs_string;
+# comparison_expression plays comparison_string_operand_pair:expression;
 
-relation comparison_bool_operand_pair,
-    relates expression,
-    relates lhs_bool,
-    relates rhs_bool;
-comparison_expression plays comparison_bool_operand_pair:expression;
+# relation comparison_bool_operand_pair,
+#     relates expression,
+#     relates lhs_bool,
+#     relates rhs_bool;
+# comparison_expression plays comparison_bool_operand_pair:expression;
 
 ### Rules for comparison expressions
