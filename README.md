@@ -72,7 +72,7 @@ gh auth login         # if not logged in
 Build:
 
 ```Bash
-docker build --secret id=gh_token,src=<(gh auth token) --build-arg DEPS_CACHE_BUSTER=${date} -t tactical_retreat .
+docker build --secret id=gh_token,src=<(gh auth token) --build-arg DEPS_CACHE_BUSTER=${date} -t tactical_retreat:typedb3 .
 ```
 
 ### Run
@@ -100,7 +100,13 @@ docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLA
 Mount ros_typedb as well:
 
 ```Bash
-docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/tactical_retreat_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics -v $HOME/ros_workspaces/tactical_retreat_ws/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors -v $HOME/ros_workspaces/tactical_retreat_ws/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb tactical_retreat typedb server
+docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/tactical_retreat_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics -v $HOME/ros_workspaces/tactical_retreat_ws/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb tactical_retreat:typedb3 sudo typedb server
+```
+
+From the `tactical_retreat_ws` folder:
+
+```Bash
+docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v ${PWD}/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics -v $HOME/ros_workspaces/tactical_retreat_ws/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors -v ${PWD}/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb tactical_retreat:typedb3 sudo typedb server
 ```
 
 Mount ros_monitors as well:

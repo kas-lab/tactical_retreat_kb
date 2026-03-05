@@ -577,7 +577,7 @@ from ros_typedb.typedb_interface import MatchResultDict  # still correct in Type
 
 ## Agent helpers
 
-- `docs/agent-notes.md` has a quick checklist and common failure checks.
+- `agent-docs/agent-notes.md` has a quick checklist and common failure checks.
 - `scripts/run-tests-docker.sh` runs tests in the `tactical_retreat` container (supports `-k`).
 - `scripts/benchmark.py` benchmarks `get_*` interface methods and `get_expression_satisfied`.
 - `scripts/benchmark_queries.py` benchmarks schema/data init and focused query latency by profile.

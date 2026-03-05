@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides Claude Code-specific guidance. For full project documentation see [AGENTS.md](AGENTS.md) and [docs/agent-notes.md](docs/agent-notes.md).
+This file provides Claude Code-specific guidance. For full project documentation see [AGENTS.md](AGENTS.md) and [agent-docs/agent-notes.md](agent-docs/agent-notes.md).
 
 ## Primary Goal
 
@@ -9,7 +9,7 @@ Migrate `typedb_tactics` from TypeDB 2 to **TypeDB 3** and update it to use the 
 ## Read These First
 
 - **[AGENTS.md](AGENTS.md)** — full project overview, dependencies, common commands, Docker setup, TypeDB 3 migration notes, TypeQL pitfalls, and agent helpers.
-- **[docs/agent-notes.md](docs/agent-notes.md)** — quick checklist, code style rules, common failure checks, migration-specific failure checks, and mandatory completion checks.
+- **[agent-docs/agent-notes.md](agent-docs/agent-notes.md)** — quick checklist, code style rules, common failure checks, migration-specific failure checks, and mandatory completion checks.
 
 ## TypeQL Examples — Use text2typeql First
 
