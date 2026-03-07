@@ -296,6 +296,7 @@ def test_or_expression(kb_interface):
     assert kb_interface.get_expression_satisfied('or_expression_1') is True
     assert kb_interface.get_expression_satisfied('or_expression_2') is True
     assert kb_interface.get_expression_satisfied('or_expression_3') is False
+    assert kb_interface.get_expression_satisfied('or_expression_4') is True
 
 
 def test_and_expression(kb_interface):

@@ -48,17 +48,4 @@ relation measurement_interface,
     owns service_request_kwargs @card(0..),
     relates measure @card(1),
     relates source @card(1),
-    relates output @card(1);
-
-# rule measurement_latest:
-#     when {
-#         $measurement (measure: $measure, measurement_value: $mv) isa! measurement,
-#             has measurement_time $time;
-#         not {
-#             (measure: $measure, measurement_value: $nmv) isa! measurement,
-#                 has measurement_time $time2;
-#             $time2 > $time;
-#         };
-#     } then {
-#         $measurement has latest true;
-#     };
+    relates output @card(0..1);

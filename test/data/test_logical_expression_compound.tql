@@ -27,19 +27,25 @@ match
 insert (expression: $or3_a, expression: $or3_b, expression: $or3_c) isa or_expression,
     has expression_name 'or_expression_3';
 
+match
+    $or4_b isa not_expression, has expression_name 'not_true_expr';
+    $or4_c isa not_expression, has expression_name 'not_false_expr';
+insert (expression: $or4_b, expression: $or4_c) isa or_expression,
+    has expression_name 'or_expression_4';
+
 # and expressions
 match
-    $and1_a isa or_expression, has expression_name 'or_expression_1';
-    $and1_b isa or_expression, has expression_name 'or_expression_2';
+    $and1_a isa or_expression, has expression_name 'or_expression_1'; # True
+    $and1_b isa or_expression, has expression_name 'or_expression_2'; # True
 insert (expression: $and1_a, expression: $and1_b) isa and_expression,
     has expression_name 'and_expression_1';
 
 match
-    $and2_a isa or_expression, has expression_name 'or_expression_1';
-    $and2_b isa or_expression, has expression_name 'or_expression_2';
-    $and2_c isa or_expression, has expression_name 'or_expression_3';
+    $and2_a isa or_expression, has expression_name 'or_expression_1'; # True
+    $and2_b isa or_expression, has expression_name 'or_expression_2'; # True
+    $and2_c isa or_expression, has expression_name 'or_expression_3'; # False
 insert (expression: $and2_a, expression: $and2_b, expression: $and2_c) isa and_expression,
-    has expression_name 'and_expression_2';
+    has expression_name 'and_expression_2'; # False
 
 match
     $and3_a isa or_expression, has expression_name 'or_expression_1';

@@ -100,21 +100,105 @@ docker build --secret id=gh_token,src=<(gh auth token) \
 
 Start in background with TypeDB server running:
 
+From the package folder:
+
 ```bash
 docker run -d --rm --name tactical_retreat \
   -v /etc/localtime:/etc/localtime:ro \
-  -v $HOME/ros_workspaces/tactical_retreat_3_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics \
-  -v $HOME/ros_workspaces/tactical_retreat_3_ws/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors \
+  -v $PWD:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics \
   tactical_retreat:typedb3 typedb server
 ```
 
 If using the registry image, replace `tactical_retreat:typedb3` with `ghcr.io/kas-lab/typedb_tactics:latest`.
 
+From the workspace folder:
+
+```bash
+docker run -d --rm --name tactical_retreat \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v $PWD/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics \
+  tactical_retreat:typedb3 sudo typedb server
+```
+
 If you are also editing `ros_typedb`, include an extra mount:
 
 ```bash
--v $HOME/ros_workspaces/tactical_retreat_3_ws/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb
+-v $PWD/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb
 ```
+
+Full command:
+
+```bash
+docker run -d --rm --name tactical_retreat \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v $PWD/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics \
+  -v $PWD/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb \
+  tactical_retreat:typedb3 sudo typedb server
+```
+
+If you are also editing `ros_monitors`, include an extra mount:
+
+```bash
+-v $PWD/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors
+```
+
+Full command:
+
+```bash
+docker run -d --rm --name tactical_retreat \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v $PWD/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics \
+  -v $PWD/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors \
+  tactical_retreat:typedb3 sudo typedb server
+```
+
+If you are editing both `ros_typedb` and `ros_monitors`:
+
+```bash
+docker run -d --rm --name tactical_retreat \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v $PWD/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics \
+  -v $PWD/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb \
+  -v $PWD/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors \
+  tactical_retreat:typedb3 sudo typedb server
+```
+
+#### ypeDB studio
+
+If you want to use the display, for example, for running typedb-studio, include:
+
+```bash
+-e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix
+```
+
+and don't forget to allow the container to have access to xhost:
+
+```bash
+xhost +
+```
+
+If you want to use your nvidia gpu, install nvidia docker toolkit, and include:
+
+```bash
+--runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix
+```
+
+Full command:
+
+```bash
+docker run -d --rm --name tactical_retreat \
+  --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v $PWD/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics \
+  -v $PWD/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb \
+  tactical_retreat:typedb3 sudo typedb server
+```
+
+To connect to the typedb server in typedb-studio, use the following address and credentials:
+
+adress: `http://localhost:8000`
+username: `admin`
+password: `password`
 
 ### Open shell
 
