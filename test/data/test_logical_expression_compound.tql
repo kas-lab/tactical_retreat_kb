@@ -1,9 +1,16 @@
-# not expressions
+# not expressions (wrapping propositional_expression)
 match $ns_false isa propositional_expression, has expression_name 'bool_false_prop_exp';
 insert (expression: $ns_false) isa not_expression, has expression_name 'not_false_expr';
 
 match $ns_true isa propositional_expression, has expression_name 'bool_true_prop_exp';
 insert (expression: $ns_true) isa not_expression, has expression_name 'not_true_expr';
+
+# not expressions (wrapping comparison_expression)
+match $lt_true isa less_than, has expression_name 'vi_2_less_vi_3';
+insert (expression: $lt_true) isa not_expression, has expression_name 'not_lt_true_expr';
+
+match $lt_false isa less_than, has expression_name 'vi_2_less_vi_1';
+insert (expression: $lt_false) isa not_expression, has expression_name 'not_lt_false_expr';
 
 # or expressions
 match
@@ -33,6 +40,19 @@ match
 insert (expression: $or4_b, expression: $or4_c) isa or_expression,
     has expression_name 'or_expression_4';
 
+# or expressions with only comparison_expression members
+match
+    $or_comp_a isa less_than, has expression_name 'vi_2_less_vi_3';
+    $or_comp_b isa less_than, has expression_name 'vi_2_less_vi_1';
+insert (expression: $or_comp_a, expression: $or_comp_b) isa or_expression,
+    has expression_name 'or_comp_true';
+
+match
+    $or_comp_c isa less_than, has expression_name 'vi_2_less_vi_1';
+    $or_comp_d isa equal, has expression_name 'vi_2_equal_vi_3';
+insert (expression: $or_comp_c, expression: $or_comp_d) isa or_expression,
+    has expression_name 'or_comp_false';
+
 # and expressions
 match
     $and1_a isa or_expression, has expression_name 'or_expression_1'; # True
@@ -53,3 +73,17 @@ match
     $and3_c isa not_expression, has expression_name 'not_false_expr';
 insert (expression: $and3_a, expression: $and3_b, expression: $and3_c) isa and_expression,
     has expression_name 'and_expression_3';
+
+# and expressions with comparison_expression members (no or_expression)
+match
+    $and4_a isa less_than, has expression_name 'vi_2_less_vi_3';
+    $and4_b isa propositional_expression, has expression_name 'bool_true_prop_exp';
+    $and4_c isa not_expression, has expression_name 'not_false_expr';
+insert (expression: $and4_a, expression: $and4_b, expression: $and4_c) isa and_expression,
+    has expression_name 'and_expression_4';
+
+match
+    $and5_a isa less_than, has expression_name 'vi_2_less_vi_3';
+    $and5_b isa less_than, has expression_name 'vi_2_less_vi_1';
+insert (expression: $and5_a, expression: $and5_b) isa and_expression,
+    has expression_name 'and_expression_5';

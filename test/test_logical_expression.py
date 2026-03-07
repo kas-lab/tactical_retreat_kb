@@ -45,6 +45,10 @@ def test_not_expression_satisfied(kb_interface):
     assert kb_interface.get_expression_satisfied('not_false_expr') is True
     assert kb_interface.get_expression_satisfied('not_true_expr') is False
 
+    # not wrapping a comparison_expression
+    assert kb_interface.get_expression_satisfied('not_lt_true_expr') is False
+    assert kb_interface.get_expression_satisfied('not_lt_false_expr') is True
+
 
 def test_less_than_satisfied(kb_interface):
     assert kb_interface.get_expression_satisfied('vd_1_2_less_vd_1_3') is True
@@ -298,8 +302,16 @@ def test_or_expression(kb_interface):
     assert kb_interface.get_expression_satisfied('or_expression_3') is False
     assert kb_interface.get_expression_satisfied('or_expression_4') is True
 
+    # or with only comparison_expression members
+    assert kb_interface.get_expression_satisfied('or_comp_true') is True
+    assert kb_interface.get_expression_satisfied('or_comp_false') is False
+
 
 def test_and_expression(kb_interface):
     assert kb_interface.get_expression_satisfied('and_expression_1') is True
     assert kb_interface.get_expression_satisfied('and_expression_2') is False
     assert kb_interface.get_expression_satisfied('and_expression_3') is True
+
+    # and with comparison_expression members (no or_expression)
+    assert kb_interface.get_expression_satisfied('and_expression_4') is True
+    assert kb_interface.get_expression_satisfied('and_expression_5') is False
