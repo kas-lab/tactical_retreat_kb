@@ -1,15 +1,12 @@
 define
 
 attribute expression_name, value string;
-attribute expression_satisfied, value boolean;
 
 relation expression @abstract,
     owns expression_name @unique;  # to make it possible to query the expression
 
 # logical expressions
-relation logical_expression sub expression,
-    owns expression_satisfied,
-    relates operand;
+relation logical_expression @abstract, sub expression;
 
 ## negation expression
 relation not_expression sub logical_expression,
@@ -18,7 +15,7 @@ relation not_expression sub logical_expression,
     plays or_expression:expression;
 
 ## atomic expressions
-relation atomic_expression sub logical_expression,
+relation atomic_expression @abstract, sub logical_expression,
     plays not_expression:expression,
     plays and_expression:expression,
     plays or_expression:expression;
@@ -38,7 +35,7 @@ relation equal sub comparison_expression;
 relation not_equal sub comparison_expression;
 
 ## compound expression
-relation compound_expression sub logical_expression;
+relation compound_expression @abstract, sub logical_expression;
 
 relation and_expression sub compound_expression,
     relates expression @card(0..);
@@ -59,29 +56,137 @@ Value plays comparison_expression:rhs_value;
 Value plays propositional_expression:atom;
 Measure plays propositional_expression:atom;
 
-### Helper types for comparison operand resolution
-# relation comparison_double_operand_pair,
-#     relates expression,
-#     relates lhs_double,
-#     relates rhs_double;
-# comparison_expression plays comparison_double_operand_pair:expression;
+#### Schema-level functions (TypeDB 3 replacement for TypeDB 2 rules)
+#
+# Bounded-depth approach to avoid [FUN9] recursive cycle errors:
+#   propositional_valid / less_than_valid / ... - one function per atomic expression type
+#   base_valid      - dispatcher to the per-type functions above
+#   comp1_valid     - compound with atomic subs (calls base_valid)
+#   expression_valid - compound with 1-level compound subs (calls comp1_valid)
+#
+# Splitting into per-type functions is ~2x faster than a single base_valid with 7 OR branches
+# because TypeDB can plan each function body independently.
+# data_value (abstract) is used for comparisons, matching any concrete subtype at runtime.
 
-# relation comparison_integer_operand_pair,
-#     relates expression,
-#     relates lhs_integer,
-#     relates rhs_integer;
-# comparison_expression plays comparison_integer_operand_pair:expression;
+fun propositional_valid($e: propositional_expression) -> boolean:
+  match
+    $e links (atom: $atom);
+    { $atom has bool_value true; } or {
+      (measure: $atom, measurement_value: $mv) isa measurement, has latest true;
+      $mv has bool_value true;
+    };
+  let $r = true; return first $r;
 
-# relation comparison_string_operand_pair,
-#     relates expression,
-#     relates lhs_string,
-#     relates rhs_string;
-# comparison_expression plays comparison_string_operand_pair:expression;
+fun less_than_valid($e: less_than) -> boolean:
+  match
+    $e links (lhs_value: $lt_lhs); $e links (rhs_value: $lt_rhs);
+    { $lt_lhs has data_value $lt_l; } or {
+      (measure: $lt_lhs, measurement_value: $lt_lmv) isa measurement, has latest true;
+      $lt_lmv has data_value $lt_l;
+    };
+    { $lt_rhs has data_value $lt_r; } or {
+      (measure: $lt_rhs, measurement_value: $lt_rmv) isa measurement, has latest true;
+      $lt_rmv has data_value $lt_r;
+    };
+    $lt_l < $lt_r;
+  let $r = true; return first $r;
 
-# relation comparison_bool_operand_pair,
-#     relates expression,
-#     relates lhs_bool,
-#     relates rhs_bool;
-# comparison_expression plays comparison_bool_operand_pair:expression;
+fun less_than_equal_valid($e: less_than_equal) -> boolean:
+  match
+    $e links (lhs_value: $lte_lhs); $e links (rhs_value: $lte_rhs);
+    { $lte_lhs has data_value $lte_l; } or {
+      (measure: $lte_lhs, measurement_value: $lte_lmv) isa measurement, has latest true;
+      $lte_lmv has data_value $lte_l;
+    };
+    { $lte_rhs has data_value $lte_r; } or {
+      (measure: $lte_rhs, measurement_value: $lte_rmv) isa measurement, has latest true;
+      $lte_rmv has data_value $lte_r;
+    };
+    $lte_l <= $lte_r;
+  let $r = true; return first $r;
 
-### Rules for comparison expressions
+fun greater_than_valid($e: greater_than) -> boolean:
+  match
+    $e links (lhs_value: $gt_lhs); $e links (rhs_value: $gt_rhs);
+    { $gt_lhs has data_value $gt_l; } or {
+      (measure: $gt_lhs, measurement_value: $gt_lmv) isa measurement, has latest true;
+      $gt_lmv has data_value $gt_l;
+    };
+    { $gt_rhs has data_value $gt_r; } or {
+      (measure: $gt_rhs, measurement_value: $gt_rmv) isa measurement, has latest true;
+      $gt_rmv has data_value $gt_r;
+    };
+    $gt_l > $gt_r;
+  let $r = true; return first $r;
+
+fun greater_than_equal_valid($e: greater_than_equal) -> boolean:
+  match
+    $e links (lhs_value: $gte_lhs); $e links (rhs_value: $gte_rhs);
+    { $gte_lhs has data_value $gte_l; } or {
+      (measure: $gte_lhs, measurement_value: $gte_lmv) isa measurement, has latest true;
+      $gte_lmv has data_value $gte_l;
+    };
+    { $gte_rhs has data_value $gte_r; } or {
+      (measure: $gte_rhs, measurement_value: $gte_rmv) isa measurement, has latest true;
+      $gte_rmv has data_value $gte_r;
+    };
+    $gte_l >= $gte_r;
+  let $r = true; return first $r;
+
+fun equal_valid($e: equal) -> boolean:
+  match
+    $e links (lhs_value: $eq_lhs); $e links (rhs_value: $eq_rhs);
+    { $eq_lhs has data_value $eq_l; } or {
+      (measure: $eq_lhs, measurement_value: $eq_lmv) isa measurement, has latest true;
+      $eq_lmv has data_value $eq_l;
+    };
+    { $eq_rhs has data_value $eq_r; } or {
+      (measure: $eq_rhs, measurement_value: $eq_rmv) isa measurement, has latest true;
+      $eq_rmv has data_value $eq_r;
+    };
+    $eq_l == $eq_r;
+  let $r = true; return first $r;
+
+fun not_equal_valid($e: not_equal) -> boolean:
+  match
+    $e links (lhs_value: $ne_lhs); $e links (rhs_value: $ne_rhs);
+    { $ne_lhs has data_value $ne_l; } or {
+      (measure: $ne_lhs, measurement_value: $ne_lmv) isa measurement, has latest true;
+      $ne_lmv has data_value $ne_l;
+    };
+    { $ne_rhs has data_value $ne_r; } or {
+      (measure: $ne_rhs, measurement_value: $ne_rmv) isa measurement, has latest true;
+      $ne_rmv has data_value $ne_r;
+    };
+    not { $ne_l == $ne_r; };
+  let $r = true; return first $r;
+
+fun base_valid($e: logical_expression) -> boolean:
+  match
+    { $e isa propositional_expression; true == propositional_valid($e); } or
+    { $e isa less_than;               true == less_than_valid($e); } or
+    { $e isa less_than_equal;         true == less_than_equal_valid($e); } or
+    { $e isa greater_than;            true == greater_than_valid($e); } or
+    { $e isa greater_than_equal;      true == greater_than_equal_valid($e); } or
+    { $e isa equal;                   true == equal_valid($e); } or
+    { $e isa not_equal;               true == not_equal_valid($e); };
+  let $r = true; return first $r;
+
+# comp1_valid: handles compound expressions whose subs are all atomic.
+fun comp1_valid($e: logical_expression) -> boolean:
+  match
+    { $e isa atomic_expression; true == base_valid($e); } or
+    { $e isa not_expression; $e links (expression: $c1s); not { true == base_valid($c1s); }; } or
+    { $e isa or_expression;  $e links (expression: $c1o); true == base_valid($c1o); } or
+    { $e isa and_expression; not { $e links (expression: $c1a); not { true == base_valid($c1a); }; }; };
+  let $r = true; return first $r;
+
+# expression_valid: handles compound expressions with subs that may be 1-level compound.
+# Covers max depth 3: and -> or -> not -> atomic.
+fun expression_valid($e: logical_expression) -> boolean:
+  match
+    { $e isa atomic_expression; true == base_valid($e); } or
+    { $e isa not_expression; $e links (expression: $evs); not { true == comp1_valid($evs); }; } or
+    { $e isa or_expression;  $e links (expression: $evo); true == comp1_valid($evo); } or
+    { $e isa and_expression; not { $e links (expression: $eva); not { true == comp1_valid($eva); }; }; };
+  let $r = true; return first $r;

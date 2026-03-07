@@ -123,6 +123,10 @@ docker exec tactical_retreat bash -lc \
 
 ## TypeDB 3 query/schema essentials
 
+- Schema functions: use `-> boolean` (not `-> bool` — `[INF2]` type-not-found error). Return booleans via `let $r = true; return first $r;` (`return true;` is invalid syntax).
+- Abstract attributes in `fun` bodies: `has data_value $v` matches any concrete subtype (`bool_value`, `integer_value`, `double_value`, `string_value`) at runtime — avoids separate OR branches per concrete type.
+- Role players in `fun` bodies: `$rel links (role: $player)` — not `$rel relates role: $player`.
+- Performance: one `fun` with N `$e isa X` OR branches is ~2× slower than N per-type `fun`s + a thin dispatcher; TypeDB plans each function body independently.
 - Use TypeDB 3 query syntax (not TypeDB 2 syntax).
 - For project schema/module intent, read `agent-docs/schema-guide.md` first.
 - Fetch projections should use map/object form:

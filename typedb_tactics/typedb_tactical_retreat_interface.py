@@ -1477,28 +1477,30 @@ class TacticalRetreatInterface:
         return [result['expression_name']
                 for result in query_result if result.get('expression_name') is not None]
 
-    def get_expression_satisfied(self, expression_name):
-        """
-        Fetch the ``expression_satisfied`` flag for a logical expression.
+    def get_expression_satisfied(self, expression_name: str) -> bool:
+        """Return whether the logical expression with the given name is satisfied.
 
-        :param expression_name: expression key (`expression_name` attribute).
-        :return: boolean satisfied flag for the matched expression.
-        :raises TypeDBQueryError: If underlying TypeDB query fails.
+        Uses the TypeDB 3 schema function ``expression_valid`` to compute
+        satisfaction dynamically from the expression graph.
+
+        :param expression_name: Unique ``expression_name`` attribute of the expression.
+        :return: ``True`` if the expression evaluates as satisfied, ``False`` otherwise.
+        :raises TypeDBQueryError: If the underlying TypeDB query fails.
         """
         query = f"""
             match
-                $expr isa logical_expression,
-                    has expression_name '{expression_name}',
-                    has expression_satisfied $expression_satisfied;
-            fetch {{ "expression_satisfied": $expression_satisfied }};
+                $e isa logical_expression,
+                    has expression_name '{expression_name}';
+                true == expression_valid($e);
+            fetch {{ "satisfied": true }};
         """
         try:
-            query_result = self._fetch(query)
+            result = self._fetch(query)
         except TypeDBQueryError:
             logger.error(
-                'Failed to fetch expression satisfied status '
+                'Failed to evaluate expression_valid '
                 '(expression_name=%s).',
                 expression_name,
                 exc_info=True)
             raise
-        return query_result[0]['expression_satisfied']
+        return len(result) > 0
