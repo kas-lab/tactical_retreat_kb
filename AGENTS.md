@@ -126,7 +126,8 @@ docker exec tactical_retreat bash -lc \
 - Schema functions: use `-> boolean` (not `-> bool` — `[INF2]` type-not-found error). Return booleans via `let $r = true; return first $r;` (`return true;` is invalid syntax).
 - Abstract attributes in `fun` bodies: `has data_value $v` matches any concrete subtype (`bool_value`, `integer_value`, `double_value`, `string_value`) at runtime — avoids separate OR branches per concrete type.
 - Role players in `fun` bodies: `$rel links (role: $player)` — not `$rel relates role: $player`.
-- Performance: one `fun` with N `$e isa X` OR branches is ~2× slower than N per-type `fun`s + a thin dispatcher; TypeDB plans each function body independently.
+- Performance: keep OR branches **inline** — cross-function dispatch has enormous overhead in TypeDB 3 (splitting `comparison_valid` into 4 sub-functions caused 147× regression). `isa Type` guards in OR branches are neutral/low cost and improve planner clarity.
+- Schema function call graph forms a DAG; adding any reverse edge creates mutual recursion forbidden by `[FUN9]`. Current deps: `and_valid→or_valid`, `or_valid→not_valid` — don't reverse these.
 - Use TypeDB 3 query syntax (not TypeDB 2 syntax).
 - For project schema/module intent, read `agent-docs/schema-guide.md` first.
 - Fetch projections should use map/object form:
@@ -170,3 +171,4 @@ Additional references:
 - `scripts/run-tests-docker.sh`
 - `scripts/benchmark.py`
 - `scripts/benchmark_queries.py`
+- `scripts/benchmark_logical_expression.py`
