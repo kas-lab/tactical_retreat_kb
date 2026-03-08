@@ -3,11 +3,11 @@ insert
 ### measurements
 $m isa Measure, has measure_name "measure", has description "measure for tests";
 
-$mvalue1 isa ValueDouble,
+$mvalue1 isa ValueSingleton,
     has double_value 1.0;
-$mvalue2 isa  ValueDouble,
+$mvalue2 isa  ValueSingleton,
     has double_value 1.1;
-$mvalue3 isa  ValueDouble,
+$mvalue3 isa  ValueSingleton,
     has double_value 1.2;
 
 (measure: $m, measurement_value: $mvalue1) isa measurement,

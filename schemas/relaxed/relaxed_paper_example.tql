@@ -11,7 +11,7 @@ $foodpackage_measure isa Measure,
 	has description "amount of foodpackages";
 
 # just an example, the measurement should be inserted at runtime
-$current_foodpackage isa ValueDouble, has double_value 9.0;
+$current_foodpackage isa ValueSingleton, has double_value 9.0;
 (measure:$foodpackage_measure , measurement_value: $current_foodpackage) isa measurement,
 	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
@@ -27,7 +27,7 @@ $dietplan_measure isa Measure,
 	has measure_name "dietplan_measure",
 	has description "dietplan";
 
-$current_dietplan isa ValueDouble, has double_value 1820.0;
+$current_dietplan isa ValueSingleton, has double_value 1820.0;
 (measure:$dietplan_measure, measurement_value: $current_dietplan) isa measurement,
 	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
@@ -44,7 +44,7 @@ $calorie_consumption_measure isa Measure,
 	has measure_name "calorie_consumption_measure",
 	has description "The fridge adjusts the dietplan in line with Mary's actual calorie consumption. The measure indicates whether the fridge is adapting, its values are true/false";
 
-$current_calorie_consumption isa ValueBool, has bool_value true;
+$current_calorie_consumption isa ValueSingleton, has bool_value true;
 (measure:$calorie_consumption_measure, measurement_value: $current_calorie_consumption) isa measurement,
 	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
@@ -56,7 +56,7 @@ $current_calorie_consumption isa ValueBool, has bool_value true;
 $liquid_intake_measure isa Measure,
 	has measure_name "liquid_intake_measure",
 	has description "The system ensures a liquid intake";
-$current_liquid_intake isa ValueDouble, has double_value 1.9;
+$current_liquid_intake isa ValueSingleton, has double_value 1.9;
 (measure:$liquid_intake_measure, measurement_value: $current_liquid_intake) isa measurement,
 	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
@@ -72,7 +72,7 @@ $liquid_set isa FuzzyTriangular,
 $minimum_liquid_intake_measure isa Measure,
 	has measure_name "minimum_liquid_intake_measure",
 	has description "The system ensures minimum liquid intake";
-$current_minimum_liquid_intake isa ValueDouble, has double_value 1.5;
+$current_minimum_liquid_intake isa ValueSingleton, has double_value 1.5;
 (measure:$minimum_liquid_intake_measure , measurement_value: $current_minimum_liquid_intake) isa measurement,
 	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
@@ -83,7 +83,7 @@ $current_minimum_liquid_intake isa ValueDouble, has double_value 1.5;
 $energy_comsumption_measure isa Measure,
 	has measure_name "energy_comsumption_measure",
 	has description "The system consumes energy during normal operation";
-$current_energy_comsumption isa ValueDouble, has double_value 500;
+$current_energy_comsumption isa ValueSingleton, has double_value 500;
 (measure:$energy_comsumption_measure, measurement_value: $current_energy_comsumption) isa measurement,
 	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 

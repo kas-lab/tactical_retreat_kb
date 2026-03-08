@@ -13,9 +13,9 @@ delete $max_velocity_has_param_value isa has_parameter_value;
 insert
 
 # define default parameters max_velocity
-$medium_max_velocity_x isa ValueDouble, has double_value 0.18;
-$medium_max_velocity_y isa ValueDouble, has double_value 0.0;
-$medium_max_velocity_z isa ValueDouble, has double_value 1.0;
+$medium_max_velocity_x isa ValueSingleton, has double_value 0.18;
+$medium_max_velocity_y isa ValueSingleton, has double_value 0.0;
+$medium_max_velocity_z isa ValueSingleton, has double_value 1.0;
 
 $medium_max_velocity_param_value isa ValueArray;
 (array: $medium_max_velocity_param_value, array_value: $medium_max_velocity_x)

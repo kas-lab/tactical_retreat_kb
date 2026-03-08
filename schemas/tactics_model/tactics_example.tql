@@ -12,18 +12,18 @@ $nearest_object_measure isa Measure, has measure_name "nearest_object_measure"; 
 $movement_power_measure isa Measure, has measure_name "movement_power_measure"; # watt?
 $current_linear_velocity_measure isa Measure, has measure_name "current_linear_velocity_measure"; # m/s
 
-$mvalueonine isa  ValueDouble,
+$mvalueonine isa  ValueSingleton,
     has double_value 0.09;
 
 ## example measurement
 (measure: $nearest_object_measure, measurement_value:$mvalueonine) isa measurement,
         has measurement_time 2025-09-06T12:57:56.666, has latest true;
 
-$current_mv_pwer isa ValueDouble, has double_value 0.3;
+$current_mv_pwer isa ValueSingleton, has double_value 0.3;
 (measure:$movement_power_measure , measurement_value: $current_mv_pwer) isa measurement,
 	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
-$current_vel isa ValueDouble, has double_value 0.22221;
+$current_vel isa ValueSingleton, has double_value 0.22221;
 (measure:$current_linear_velocity_measure , measurement_value: $current_vel) isa measurement,
 	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
@@ -58,60 +58,70 @@ $f_max_speed isa Feature, has feature_name "MAX_SPEED";
 $f_low_speed isa Feature, has feature_name "LOW_SPEED";
 $f_hi_speed isa Feature, has feature_name "HIGH_SPEED";
 $f_med_speed isa Feature, has feature_name "MED_SPEED";
-$alternative (parent: $f_max_speed, child: $f_low_speed, child: $f_med_speed, child: $f_hi_speed) isa alternative;
+$alternative isa alternative,
+    links (parent: $f_max_speed, child: $f_low_speed, child: $f_med_speed, child: $f_hi_speed);
 
-# anonymous feature_adaptations (used as consequent in tactic_rule — cannot be named here)
-(activation: $f_low_speed) isa feature_adaptation;
-(activation: $f_med_speed) isa feature_adaptation;
-(activation: $f_hi_speed) isa feature_adaptation;
+$fa_low_speed isa feature_adaptation,
+    links (activation: $f_low_speed);
+$fa_med_speed isa feature_adaptation,
+    links (activation: $f_med_speed);
+$fa_hi_speed isa feature_adaptation,
+    links (activation: $f_hi_speed);
 
 # define MaxSpeedInternal Tactic
 $ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal";
 
 # nearest_object < 0.1
-$litdouble isa ValueDouble,
+$litdouble isa ValueSingleton,
     has double_value 0.1;
 
-$litdoublefoury isa ValueDouble,
+$litdoublefoury isa ValueSingleton,
     has double_value 40.0;
 
-$litdoublefifteen isa ValueDouble,
+$litdoublefifteen isa ValueSingleton,
     has double_value 0.15;
 
-$litdoublethreenine isa ValueDouble,
+$litdoublethreenine isa ValueSingleton,
     has double_value 39.0;
 
 # anonymous leaf expressions (identified by expression_name for later stages)
-(lhs_value:$nearest_object_measure, rhs_value:$litdouble) isa less_than,
-	has expression_name 'ineq_nearest_lower_than_10';
+$ineq_nearest_lower_than_10 isa less_than,
+    links (lhs_value: $nearest_object_measure, rhs_value: $litdouble),
+    has expression_name 'ineq_nearest_lower_than_10';
 # movement power > 40.0
-(lhs_value:$movement_power_measure, rhs_value:$litdoublefoury) isa greater_than,
-	has expression_name 'ineq_mv_pwer_greater_than_40';
+$ineq_mv_pwer_greater_than_40 isa greater_than,
+    links (lhs_value: $movement_power_measure, rhs_value: $litdoublefoury),
+    has expression_name 'ineq_mv_pwer_greater_than_40';
 # nearest_object > 0.15  (anonymous, identified by expression_name)
-(lhs_value:$nearest_object_measure, rhs_value:$litdoublefifteen) isa greater_than,
-	has expression_name 'ineq_nearest_greater_than_15';
+$ineq_nearest_greater_than_15 isa greater_than,
+    links (lhs_value: $nearest_object_measure, rhs_value: $litdoublefifteen),
+    has expression_name 'ineq_nearest_greater_than_15';
 # movement power < 39.0  (anonymous, identified by expression_name)
-(lhs_value:$movement_power_measure, rhs_value:$litdoublethreenine) isa less_than,
-	has expression_name 'ineq_mv_pwer_lower_than_39';
+$ineq_mv_pwer_lower_than_39 isa less_than,
+    links (lhs_value: $movement_power_measure, rhs_value: $litdoublethreenine),
+    has expression_name 'ineq_mv_pwer_lower_than_39';
 
 ### tactic rules effects (anonymous — identified by measure_name + effect_value)
-$double_0_05 isa ValueDouble,
+$double_0_05 isa ValueSingleton,
     has double_value 0.05;
-$double_0_07 isa ValueDouble,
+$double_0_07 isa ValueSingleton,
     has double_value 0.07;
-$double_0_10 isa ValueDouble,
+$double_0_10 isa ValueSingleton,
     has double_value 0.10;
-(measure: $movement_power_measure, effect_value: $double_0_05) isa relative_effect;
-(measure: $movement_power_measure, effect_value: $double_0_07) isa relative_effect;
-(measure: $movement_power_measure, effect_value: $double_0_10) isa relative_effect;
+$eff_mp_005 isa relative_effect,
+    links (measure: $movement_power_measure, effect_value: $double_0_05);
+$eff_mp_007 isa relative_effect,
+    links (measure: $movement_power_measure, effect_value: $double_0_07);
+$eff_mp_010 isa relative_effect,
+    links (measure: $movement_power_measure, effect_value: $double_0_10);
 
 # define parameter max_speed
 $p_max_speed isa ParameterDoubleArray, has parameter_name "max_velocity";
 
 # define parameter values low
-$p_max_velocity_x_low isa ValueDouble, has double_value 0.10;
-$p_max_velocity_y_low isa ValueDouble, has double_value 0.0;
-$p_max_velocity_z_low isa ValueDouble, has double_value 1.0;
+$p_max_velocity_x_low isa ValueSingleton, has double_value 0.10;
+$p_max_velocity_y_low isa ValueSingleton, has double_value 0.0;
+$p_max_velocity_z_low isa ValueSingleton, has double_value 1.0;
 # define parameter array low
 $p_max_speed_low_array isa ValueArray;
 (array: $p_max_speed_low_array, array_value: $p_max_velocity_x_low) isa at_index, has index 0;
@@ -119,9 +129,9 @@ $p_max_speed_low_array isa ValueArray;
 (array: $p_max_speed_low_array, array_value: $p_max_velocity_z_low) isa at_index, has index 2;
 
 # define parameter values med
-$p_max_velocity_x_med isa ValueDouble, has double_value 0.18;
-$p_max_velocity_y_med isa ValueDouble, has double_value 0.0;
-$p_max_velocity_z_med isa ValueDouble, has double_value 1.0;
+$p_max_velocity_x_med isa ValueSingleton, has double_value 0.18;
+$p_max_velocity_y_med isa ValueSingleton, has double_value 0.0;
+$p_max_velocity_z_med isa ValueSingleton, has double_value 1.0;
 # define parameter array med
 $p_max_speed_med_array isa ValueArray;
 (array: $p_max_speed_med_array, array_value: $p_max_velocity_x_med) isa at_index, has index 0;
@@ -129,9 +139,9 @@ $p_max_speed_med_array isa ValueArray;
 (array: $p_max_speed_med_array, array_value: $p_max_velocity_z_med) isa at_index, has index 2;
 
 # define parameter values high
-$p_max_velocity_x_high isa ValueDouble, has double_value 0.26;
-$p_max_velocity_y_high isa ValueDouble, has double_value 0.0;
-$p_max_velocity_z_high isa ValueDouble, has double_value 1.0;
+$p_max_velocity_x_high isa ValueSingleton, has double_value 0.26;
+$p_max_velocity_y_high isa ValueSingleton, has double_value 0.0;
+$p_max_velocity_z_high isa ValueSingleton, has double_value 1.0;
 # define parameter array high
 $p_max_speed_high_array isa ValueArray;
 (array: $p_max_speed_high_array, array_value: $p_max_velocity_x_high) isa at_index, has index 0;
@@ -139,130 +149,59 @@ $p_max_speed_high_array isa ValueArray;
 (array: $p_max_speed_high_array, array_value: $p_max_velocity_z_high) isa at_index, has index 2;
 
 # anonymous absolute_effects for linear velocity (identified by measure_name + effect_value)
-(measure: $current_linear_velocity_measure, effect_value: $p_max_velocity_x_low) isa absolute_effect;
-(measure: $current_linear_velocity_measure, effect_value: $p_max_velocity_x_med) isa absolute_effect;
-(measure: $current_linear_velocity_measure, effect_value: $p_max_velocity_x_high) isa absolute_effect;
+$eff_vel_x_low isa absolute_effect,
+    links (measure: $current_linear_velocity_measure, effect_value: $p_max_velocity_x_low);
+$eff_vel_x_med isa absolute_effect,
+    links (measure: $current_linear_velocity_measure, effect_value: $p_max_velocity_x_med);
+$eff_vel_x_high isa absolute_effect,
+    links (measure: $current_linear_velocity_measure, effect_value: $p_max_velocity_x_high);
 
 # anonymous set_nodes_parameters (identified by node + parameter + array's first element value)
-(node: $velocity_smoother_node, parameter: $p_max_speed, parameter_value: $p_max_speed_low_array) isa set_nodes_parameters;
-(node: $velocity_smoother_node, parameter: $p_max_speed, parameter_value: $p_max_speed_med_array) isa set_nodes_parameters;
-(node: $velocity_smoother_node, parameter: $p_max_speed, parameter_value: $p_max_speed_high_array) isa set_nodes_parameters;
+$set_nodes_params_low isa set_nodes_parameters,
+    links (node: $velocity_smoother_node, parameter: $p_max_speed, parameter_value: $p_max_speed_low_array);
+$set_nodes_params_med isa set_nodes_parameters,
+    links (node: $velocity_smoother_node, parameter: $p_max_speed, parameter_value: $p_max_speed_med_array);
+$set_nodes_params_high isa set_nodes_parameters,
+    links (node: $velocity_smoother_node, parameter: $p_max_speed, parameter_value: $p_max_speed_high_array);
 
 # Stage 2: match+insert or_expression
-match
-    $s2_a isa less_than, has expression_name 'ineq_nearest_lower_than_10';
-    $s2_b isa greater_than, has expression_name 'ineq_mv_pwer_greater_than_40';
-insert
-    (expression: $s2_a, expression: $s2_b) isa or_expression,
-        has expression_name 'rebetmc_or_expression';
+$or_rebetmc isa or_expression,
+    links (expression: $ineq_nearest_lower_than_10, expression: $ineq_mv_pwer_greater_than_40),
+    has expression_name 'rebetmc_or_expression';
 
 # Stage 3: match+insert and_expression
-match
-    $s3_a isa greater_than, has expression_name 'ineq_nearest_greater_than_15';
-    $s3_b isa less_than, has expression_name 'ineq_mv_pwer_lower_than_39';
-insert
-    (expression: $s3_a, expression: $s3_b) isa and_expression,
-        has expression_name 'rebetmc_and_expression';
+$and_rebetmc isa and_expression,
+    links (expression: $ineq_nearest_greater_than_15, expression: $ineq_mv_pwer_lower_than_39),
+    has expression_name 'rebetmc_and_expression';
 
 # Stage 4a: match+insert tactic_rule MIN
-match
-    $s4a_ta isa Tactic, has tactic_name "MaxSpeedInternal";
-    $s4a_or isa or_expression, has expression_name 'rebetmc_or_expression';
-    $s4a_f_low isa Feature, has feature_name "LOW_SPEED";
-    $s4a_fa_min (activation: $s4a_f_low) isa feature_adaptation;
-    $s4a_meas_mp isa Measure, has measure_name "movement_power_measure";
-    $s4a_ev_005 isa ValueDouble, has double_value 0.05;
-    $s4a_eff_mp_min (measure: $s4a_meas_mp, effect_value: $s4a_ev_005) isa relative_effect;
-    $s4a_meas_vel isa Measure, has measure_name "current_linear_velocity_measure";
-    $s4a_ev_010 isa ValueDouble, has double_value 0.10;
-    $s4a_eff_vel_min (measure: $s4a_meas_vel, effect_value: $s4a_ev_010) isa absolute_effect;
-insert
-    (tactic: $s4a_ta, antecedent: $s4a_or, consequent: $s4a_fa_min,
-        effect: $s4a_eff_mp_min, effect: $s4a_eff_vel_min)
-        isa tactic_rule, has rule_name "MIN";
+$tr_min isa tactic_rule,
+    links (tactic: $ta_max_speed, antecedent: $or_rebetmc, consequent: $fa_low_speed, effect: $eff_mp_005, effect: $eff_vel_x_low),
+    has rule_name "MIN";
 
-# Stage 4b: match+insert tactic_rule MED
-match
-    $s4b_ta isa Tactic, has tactic_name "MaxSpeedInternal";
-    $s4b_ineq isa greater_than, has expression_name 'ineq_nearest_greater_than_15';
-    $s4b_f_med isa Feature, has feature_name "MED_SPEED";
-    $s4b_fa_med (activation: $s4b_f_med) isa feature_adaptation;
-    $s4b_meas_mp isa Measure, has measure_name "movement_power_measure";
-    $s4b_ev_007 isa ValueDouble, has double_value 0.07;
-    $s4b_eff_mp_med (measure: $s4b_meas_mp, effect_value: $s4b_ev_007) isa relative_effect;
-    $s4b_meas_vel isa Measure, has measure_name "current_linear_velocity_measure";
-    $s4b_ev_018 isa ValueDouble, has double_value 0.18;
-    $s4b_eff_vel_med (measure: $s4b_meas_vel, effect_value: $s4b_ev_018) isa absolute_effect;
-insert
-    (tactic: $s4b_ta, antecedent: $s4b_ineq, consequent: $s4b_fa_med,
-        effect: $s4b_eff_mp_med, effect: $s4b_eff_vel_med)
-        isa tactic_rule, has rule_name "MED";
+# Stage 4b: match+tactic_rule MED
+$tr_med isa tactic_rule,
+    links (tactic: $ta_max_speed, antecedent: $ineq_nearest_greater_than_15, consequent: $fa_med_speed, effect: $eff_mp_007, effect: $eff_vel_x_med),
+    has rule_name "MED";
 
-# Stage 4c: match+insert tactic_rule MAX
-match
-    $s4c_ta isa Tactic, has tactic_name "MaxSpeedInternal";
-    $s4c_and isa and_expression, has expression_name 'rebetmc_and_expression';
-    $s4c_f_hi isa Feature, has feature_name "HIGH_SPEED";
-    $s4c_fa_max (activation: $s4c_f_hi) isa feature_adaptation;
-    $s4c_meas_mp isa Measure, has measure_name "movement_power_measure";
-    $s4c_ev_010 isa ValueDouble, has double_value 0.10;
-    $s4c_eff_mp_max (measure: $s4c_meas_mp, effect_value: $s4c_ev_010) isa relative_effect;
-    $s4c_meas_vel isa Measure, has measure_name "current_linear_velocity_measure";
-    $s4c_ev_026 isa ValueDouble, has double_value 0.26;
-    $s4c_eff_vel_max (measure: $s4c_meas_vel, effect_value: $s4c_ev_026) isa absolute_effect;
-insert
-    (tactic: $s4c_ta, antecedent: $s4c_and, consequent: $s4c_fa_max,
-        effect: $s4c_eff_mp_max, effect: $s4c_eff_vel_max)
-        isa tactic_rule, has rule_name "MAX";
+# Stage 4c: match+tactic_rule MAX
+$tr_max isa tactic_rule,
+    links (tactic: $ta_max_speed, antecedent: $and_rebetmc, consequent: $fa_hi_speed, effect: $eff_mp_010, effect: $eff_vel_x_high),
+    has rule_name "MAX";
 
-# Stage 5a: match+insert variant_activation for LOW_SPEED
-match
-    $s5a_node isa LifeCycleNode, has node_name "velocity_smoother";
-    $s5a_param isa ParameterDoubleArray, has parameter_name "max_velocity";
-    $s5a_arr isa ValueArray;
-    $s5a_x_val isa ValueDouble, has double_value 0.10;
-    (array: $s5a_arr, array_value: $s5a_x_val) isa at_index, has index 0;
-    $s5a_sp (node: $s5a_node, parameter: $s5a_param, parameter_value: $s5a_arr) isa set_nodes_parameters;
-    $s5a_feat isa Feature, has feature_name "LOW_SPEED";
-insert
-    (resolution_action: $s5a_sp, variant: $s5a_feat) isa variant_activation,
-        has expression_name 'low_speed_resolution';
+# Stage 5a: match+variant_activation for LOW_SPEED
+$vr_low isa variant_activation,
+    links (resolution_action: $set_nodes_params_low, variant: $f_low_speed);
 
-# Stage 5b: match+insert variant_activation for MED_SPEED
-match
-    $s5b_node isa LifeCycleNode, has node_name "velocity_smoother";
-    $s5b_param isa ParameterDoubleArray, has parameter_name "max_velocity";
-    $s5b_arr isa ValueArray;
-    $s5b_x_val isa ValueDouble, has double_value 0.18;
-    (array: $s5b_arr, array_value: $s5b_x_val) isa at_index, has index 0;
-    $s5b_sp (node: $s5b_node, parameter: $s5b_param, parameter_value: $s5b_arr) isa set_nodes_parameters;
-    $s5b_feat isa Feature, has feature_name "MED_SPEED";
-insert
-    (resolution_action: $s5b_sp, variant: $s5b_feat) isa variant_activation,
-        has expression_name 'med_speed_resolution';
+# Stage 5b: match+variant_activation for MED_SPEED
+$vr_med isa variant_activation,
+    links (resolution_action: $set_nodes_params_med, variant: $f_med_speed);
 
-# Stage 5c: match+insert variant_activation for HIGH_SPEED
-match
-    $s5c_node isa LifeCycleNode, has node_name "velocity_smoother";
-    $s5c_param isa ParameterDoubleArray, has parameter_name "max_velocity";
-    $s5c_arr isa ValueArray;
-    $s5c_x_val isa ValueDouble, has double_value 0.26;
-    (array: $s5c_arr, array_value: $s5c_x_val) isa at_index, has index 0;
-    $s5c_sp (node: $s5c_node, parameter: $s5c_param, parameter_value: $s5c_arr) isa set_nodes_parameters;
-    $s5c_feat isa Feature, has feature_name "HIGH_SPEED";
-insert
-    (resolution_action: $s5c_sp, variant: $s5c_feat) isa variant_activation,
-        has expression_name 'high_speed_resolution';
+# Stage 5c: match+variant_activation for HIGH_SPEED
+$vr_high isa variant_activation,
+    links (resolution_action: $set_nodes_params_high, variant: $f_hi_speed);
 
-# Stage 6: match+insert resolution_model
-match
-    $s6_ta isa Tactic, has tactic_name "MaxSpeedInternal";
-    $s6_low isa variant_activation, has expression_name 'low_speed_resolution';
-    $s6_med isa variant_activation, has expression_name 'med_speed_resolution';
-    $s6_hi isa variant_activation, has expression_name 'high_speed_resolution';
-insert
-    (tactic: $s6_ta,
-        variant_resolution: $s6_low,
-        variant_resolution: $s6_med,
-        variant_resolution: $s6_hi) isa resolution_model,
-        has resolution_model_name "rebetmc", has ros_system "nav2";
+# Stage 6: match+resolution_model
+$res_model isa resolution_model,
+    links (tactic: $ta_max_speed, variant_resolution: $vr_low, variant_resolution: $vr_med, variant_resolution: $vr_high),
+    has resolution_model_name "rebetmc", has ros_system "nav2";

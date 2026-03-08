@@ -1,7 +1,7 @@
 match
     $measure isa Measure, has measure_name "measure";
 insert
-    $value isa ValueDouble,
+    $value isa ValueSingleton,
         has double_value 1232.0;
     (measure: $measure, measurement_value: $value) isa measurement,
         has measurement_time 2025-08-06T12:57:56.666;
