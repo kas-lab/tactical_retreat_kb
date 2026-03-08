@@ -25,9 +25,9 @@ def kb_interface():
         ['schemas/data_structure/data_structure.tql',
          'schemas/context_model/context_model.tql',
          'schemas/logical_expressions/logical_expression.tql',
-         'schemas/logical_expressions/logical_expression_ext.tql',
          'schemas/feature_model/feature_model.tql',
-         'schemas/feature_model/feature_model_logical_expression.tql'],
+         'schemas/feature_model/feature_model_logical_expression.tql',
+         'schemas/feature_model/feature_model_logical_expression_redefine_rule.tql'],
         ['test/data/test_feature_model.tql',
          'test/data/test_feature_model_props.tql'],
         force_database=True,
@@ -37,15 +37,6 @@ def kb_interface():
 
 
 def test_feature_as_proposition_expression(kb_interface):
-    assert kb_interface.fetch_attribute_from_thing(
-        'propositional_expression',
-        [('expression_name', 'true_feature_prop_exp')],
-        'expression_satisfied')[0] is True
-    assert kb_interface.fetch_attribute_from_thing(
-        'propositional_expression',
-        [('expression_name', 'false_feature_prop_exp')],
-        'expression_satisfied')[0] is False
-    assert kb_interface.fetch_attribute_from_thing(
-        'propositional_expression',
-        [('expression_name', 'false_feature_prop_exp_2')],
-        'expression_satisfied')[0] is False
+    assert kb_interface.get_expression_satisfied('true_feature_prop_exp') is True
+    assert kb_interface.get_expression_satisfied('false_feature_prop_exp') is False
+    assert kb_interface.get_expression_satisfied('false_feature_prop_exp_2') is False

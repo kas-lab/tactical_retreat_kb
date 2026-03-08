@@ -2,5 +2,3 @@ define
 
 ## connection with logical_expression model
 Feature plays propositional_expression:atom;
-
-### Rules for propositional_expression

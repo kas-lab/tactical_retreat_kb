@@ -1,14 +1,11 @@
 match $fs1 isa Feature, has feature_name "f_selected_1";
 insert (atom: $fs1) isa propositional_expression,
-    has expression_name 'true_feature_prop_exp',
-    has expression_satisfied true;
+    has expression_name 'true_feature_prop_exp';
 
 match $fn1 isa Feature, has feature_name "f_not_selected_1";
 insert (atom: $fn1) isa propositional_expression,
-    has expression_name 'false_feature_prop_exp',
-    has expression_satisfied false;
+    has expression_name 'false_feature_prop_exp';
 
 match $fn2 isa Feature, has feature_name "f_not_selected_2";
 insert (atom: $fn2) isa propositional_expression,
-    has expression_name 'false_feature_prop_exp_2',
-    has expression_satisfied false;
+    has expression_name 'false_feature_prop_exp_2';
