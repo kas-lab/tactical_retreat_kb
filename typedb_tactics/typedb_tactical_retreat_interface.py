@@ -59,14 +59,14 @@ def create_value_query(value, suffix=''):
 
     value_query = ''
     if isinstance(value, str):
-        value_query = f'{variable_name} isa ValueString, has string_value "{value}";'
+        value_query = f'{variable_name} isa ValueSingleton, has string_value "{value}";'
     elif isinstance(value, float):
-        value_query = f'{variable_name} isa ValueDouble, has double_value {value};'
+        value_query = f'{variable_name} isa ValueSingleton, has double_value {value};'
     elif isinstance(value, bool):
-        value_query = f"""{variable_name} isa ValueBool,
+        value_query = f"""{variable_name} isa ValueSingleton,
             has bool_value {convert_py_type_to_query_type(value)};"""
     elif isinstance(value, int):
-        value_query = f'{variable_name} isa ValueInteger, has integer_value {value};'
+        value_query = f'{variable_name} isa ValueSingleton, has integer_value {value};'
     return value_query, variable_name
 
 
@@ -782,15 +782,7 @@ class TacticalRetreatInterface:
                 $measurement (measure: $measure,
                               measurement_value: $measurement_val) isa measurement,
                     has latest true;
-                {{
-                    $measurement_val isa ValueDouble, has double_value $value;
-                }} or {{
-                    $measurement_val isa ValueInteger, has integer_value $value;
-                }} or {{
-                    $measurement_val isa ValueString, has string_value $value;
-                }} or {{
-                    $measurement_val isa ValueBool, has bool_value $value;
-                }};
+                $measurement_val isa ValueSingleton, has data_value $value;
             fetch {{
                 "value": $value
             }};
@@ -810,15 +802,7 @@ class TacticalRetreatInterface:
                 $measure isa Measure, has measure_name '{measure_name}';
                 $measurement (measure: $measure,
                               measurement_value: $measurement_val) isa measurement;
-                {{
-                    $measurement_val isa ValueDouble, has double_value $value;
-                }} or {{
-                    $measurement_val isa ValueInteger, has integer_value $value;
-                }} or {{
-                    $measurement_val isa ValueString, has string_value $value;
-                }} or {{
-                    $measurement_val isa ValueBool, has bool_value $value;
-                }};
+                $measurement_val isa ValueSingleton, has data_value $value;
             fetch {{
                 "value": $value
             }};
