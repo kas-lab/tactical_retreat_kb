@@ -117,22 +117,23 @@ fun quantified_value_fuzzy_expression($e: fuzzy_expression) -> double:
   match
 	$e isa fuzzy_comparison_expression,
 		links (term: $term);
+	# Measure+double first — hot path at runtime
 	{
-		$term isa ValueSingleton; $term has double_value $value_double;
-		let $value = $value_double;
-	} or {
       $term isa Measure;
       (measure: $term, measurement_value: $mvalue) isa measurement, has latest true;
       $mvalue has double_value $value_double_2;
 	  let $value = $value_double_2;
     } or {
-		$term isa ValueSingleton; $term has integer_value $value_integer;
-		let $value = $value_integer + 0.0; # force conversion to double
-	} or {
       $term isa Measure;
       (measure: $term, measurement_value: $mvalue_integer) isa measurement, has latest true;
       $mvalue_integer has integer_value $value_integer_2;
-	  let $value = $value_integer_2 + 0.0; # force conversion to double
+	  let $value = $value_integer_2 + 0.0;
+    } or {
+		$term isa ValueSingleton; $term has double_value $value_double;
+		let $value = $value_double;
+	} or {
+		$term isa ValueSingleton; $term has integer_value $value_integer;
+		let $value = $value_integer + 0.0;
 	};
 
 	{
@@ -150,54 +151,24 @@ fun logical_expression_membership($e: logical_expression) -> double:
     { not { true == expression_valid($e); }; let $m = 0.0; };
   return first $m;
 
-fun fuzzy_ascend_sigmoid_membership($quantified_value: double, $sigmoid_set: FuzzySigmoid) -> double:
-  match
-	$sigmoid_set isa FuzzySigmoid, has exponent $sig_exponent, has inflection_point $sig_inflection;
-	let $m = 1.0 / (1.0 + 2.71828 ^ (-1.0 * $sig_exponent * ($quantified_value - $sig_inflection)));
-  return first $m;
-
-fun fuzzy_ascend_exponential_membership($quantified_value: double, $exponential_set: FuzzyExponentialSaturation) -> double:
-  match
-	$exponential_set isa FuzzyExponentialSaturation, has exponent $exponent;
-	let $m = 1.0 - 2.71828 ^ (-1.0 * $exponent * $quantified_value);
-  return first $m;
-
-fun fuzzy_ascend_blf_membership($quantified_value: double, $blf_set: FuzzyBoundedLinearFraction) -> double:
-  match
-	$blf_set isa FuzzyBoundedLinearFraction, has curvature $curvature;
-	let $m = $quantified_value / ($quantified_value + $curvature);
-  return first $m;
-
 fun fuzzy_ascend_membership($e: fuzzy_ascend_expression) -> double:
   match
 	$e isa fuzzy_ascend_expression, links (fuzzy_set: $ascend_set);
 	let $quantified_value = quantified_value_fuzzy_expression($e);
 	{
 		$ascend_set isa! FuzzySigmoid;
-		let $m_sigmoid = fuzzy_ascend_sigmoid_membership($quantified_value, $ascend_set);
-		let $membership_degree = $m_sigmoid;
+		$ascend_set has exponent $sig_exponent, has inflection_point $sig_inflection;
+		let $membership_degree = 1.0 / (1.0 + 2.71828 ^ (-1.0 * $sig_exponent * ($quantified_value - $sig_inflection)));
 	} or {
 		$ascend_set isa! FuzzyExponentialSaturation;
-		let $m_exponential = fuzzy_ascend_exponential_membership($quantified_value, $ascend_set);
-		let $membership_degree = $m_exponential;
+		$ascend_set has exponent $exp_exponent;
+		let $membership_degree = 1.0 - 2.71828 ^ (-1.0 * $exp_exponent * $quantified_value);
 	} or {
 		$ascend_set isa! FuzzyBoundedLinearFraction;
-		let $m_blf = fuzzy_ascend_blf_membership($quantified_value, $ascend_set);
-		let $membership_degree = $m_blf;
+		$ascend_set has curvature $blf_curvature;
+		let $membership_degree = $quantified_value / ($quantified_value + $blf_curvature);
 	};
   return first $membership_degree;
-
-fun fuzzy_decay_exponential_membership($quantified_value: double, $exp_set: FuzzyExponentialDecay) -> double:
-  match
-    $exp_set isa FuzzyExponentialDecay, has exponent $exponent;
-    let $m = 2.71828 ^ (-1.0 * $exponent * $quantified_value);
-  return first $m;
-
-fun fuzzy_decay_rational_membership($quantified_value: double, $rat_set: FuzzyRationalDecay) -> double:
-  match
-    $rat_set isa FuzzyRationalDecay, has curvature $curvature;
-    let $m = $curvature / ($quantified_value + $curvature);
-  return first $m;
 
 fun fuzzy_decay_membership($e: fuzzy_decay_expression) -> double:
   match
@@ -205,37 +176,14 @@ fun fuzzy_decay_membership($e: fuzzy_decay_expression) -> double:
     let $quantified_value = quantified_value_fuzzy_expression($e);
     {
       $decay_set isa! FuzzyExponentialDecay;
-      let $m_exp = fuzzy_decay_exponential_membership($quantified_value, $decay_set);
-      let $membership_degree = $m_exp;
+      $decay_set has exponent $decay_exp_exponent;
+      let $membership_degree = 2.71828 ^ (-1.0 * $decay_exp_exponent * $quantified_value);
     } or {
       $decay_set isa! FuzzyRationalDecay;
-      let $m_rat = fuzzy_decay_rational_membership($quantified_value, $decay_set);
-      let $membership_degree = $m_rat;
+      $decay_set has curvature $rat_curvature;
+      let $membership_degree = $rat_curvature / ($quantified_value + $rat_curvature);
     };
   return first $membership_degree;
-
-fun fuzzy_triangular_membership($quantified_value: double, $tri_set: FuzzyTriangular) -> double:
-  match
-    $tri_set isa FuzzyTriangular, has a $tri_a, has b $tri_b, has c $tri_c;
-    { $quantified_value >= $tri_a; $quantified_value <= $tri_b;
-      let $m = ($quantified_value - $tri_a) / ($tri_b - $tri_a);
-    } or {
-      $quantified_value > $tri_b; $quantified_value <= $tri_c;
-      let $m = ($tri_c - $quantified_value) / ($tri_c - $tri_b);
-    } or {
-      $quantified_value < $tri_a;
-      let $m = 0.0;
-    } or {
-      $quantified_value > $tri_c;
-      let $m = 0.0;
-    };
-  return first $m;
-
-fun fuzzy_gaussian_membership($quantified_value: double, $gauss_set: FuzzyGaussian) -> double:
-  match
-    $gauss_set isa FuzzyGaussian, has sigma $sigma, has center $center;
-    let $m = 2.71828 ^ (-0.5 * (($quantified_value - $center) / $sigma) ^ 2);
-  return first $m;
 
 fun fuzzy_unimodal_membership($e: fuzzy_unimodal_expression) -> double:
   match
@@ -243,12 +191,24 @@ fun fuzzy_unimodal_membership($e: fuzzy_unimodal_expression) -> double:
     let $quantified_value = quantified_value_fuzzy_expression($e);
     {
       $unimodal_set isa! FuzzyTriangular;
-      let $m_tri = fuzzy_triangular_membership($quantified_value, $unimodal_set);
-      let $membership_degree = $m_tri;
+      $unimodal_set has a $tri_a, has b $tri_b, has c $tri_c;
+      {
+        $quantified_value >= $tri_a; $quantified_value <= $tri_b;
+        let $membership_degree = ($quantified_value - $tri_a) / ($tri_b - $tri_a);
+      } or {
+        $quantified_value > $tri_b; $quantified_value <= $tri_c;
+        let $membership_degree = ($tri_c - $quantified_value) / ($tri_c - $tri_b);
+      } or {
+        $quantified_value < $tri_a;
+        let $membership_degree = 0.0;
+      } or {
+        $quantified_value > $tri_c;
+        let $membership_degree = 0.0;
+      };
     } or {
       $unimodal_set isa! FuzzyGaussian;
-      let $m_gauss = fuzzy_gaussian_membership($quantified_value, $unimodal_set);
-      let $membership_degree = $m_gauss;
+      $unimodal_set has sigma $gauss_sigma, has center $gauss_center;
+      let $membership_degree = 2.71828 ^ (-0.5 * (($quantified_value - $gauss_center) / $gauss_sigma) ^ 2);
     };
   return first $membership_degree;
 
