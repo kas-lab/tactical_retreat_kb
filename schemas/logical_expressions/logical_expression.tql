@@ -52,14 +52,13 @@ Measure plays comparison_expression:rhs_value;
 Value plays comparison_expression:lhs_value;
 Value plays comparison_expression:rhs_value;
 
-# ValueBool plays propositional_expression:atom;
 Value plays propositional_expression:atom;
 Measure plays propositional_expression:atom;
 
 fun propositional_valid($e: propositional_expression) -> boolean:
   match
     $e links (atom: $atom);
-    { $atom isa Value; $atom has bool_value true; } or {
+    { $atom isa Value, has bool_value true; } or {
       $atom isa Measure;
       (measure: $atom, measurement_value: $mv) isa measurement, has latest true;
       $mv has bool_value true;
