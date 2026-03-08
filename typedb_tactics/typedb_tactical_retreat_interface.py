@@ -720,7 +720,7 @@ class TacticalRetreatInterface:
             match
                 $req isa relaxed_requirement,
                     has requirement_name '{requirement_name}';
-            insert
+            update
                 $req has in_effect {in_effect_tql_type};
         """
         return self._insert(query)
@@ -836,9 +836,8 @@ class TacticalRetreatInterface:
         query = f"""
             match
                 $tr isa tactic_rule, has rule_name '{tactic_rule}';
-            fetch {{
-                "rule_valid": $tr.rule_valid
-            }};
+                true == tactic_rule_valid($tr);
+            fetch {{ "rule_name": $tr.rule_name }};
         """
         return self._fetch(query)
 
@@ -857,7 +856,7 @@ class TacticalRetreatInterface:
                 tactic_rule,
                 exc_info=True)
             raise
-        return query_result[0]['rule_valid']
+        return len(query_result) > 0
 
     def is_feature_selectable(self, feature_name: str) -> bool:
         """
@@ -918,12 +917,12 @@ class TacticalRetreatInterface:
         """
         query = f"""
             match
-                $ra (node: $node, parameter: $parameter) isa set_nodes_parameters;
+                $ra isa set_nodes_parameters;
+                $ra links (node: $node, parameter: $parameter);
                 $node isa ROSNode, has node_name '{node_name}';
                 $parameter isa Parameter, has parameter_name '{parameter_name}';
-            fetch {{
-                "feasible": $ra.feasible
-            }};
+                true == set_nodes_parameters_feasible($ra);
+            fetch {{ "node_name": $node.node_name }};
         """
         try:
             query_result = self._fetch(query)
@@ -935,7 +934,7 @@ class TacticalRetreatInterface:
                 parameter_name,
                 exc_info=True)
             raise
-        return query_result[0]['feasible']
+        return len(query_result) > 0
 
     def is_set_lifecycle_state_feasible(
             self, node_name: str, lifecycle_state: str) -> bool:
@@ -948,11 +947,11 @@ class TacticalRetreatInterface:
         """
         query = f"""
             match
-                $ra (node: $node) isa set_lifecycle_state, has lifecycle_state '{lifecycle_state}';
+                $ra isa set_lifecycle_state, has lifecycle_state '{lifecycle_state}';
+                $ra links (node: $node);
                 $node isa LifeCycleNode, has node_name '{node_name}';
-            fetch {{
-                "feasible": $ra.feasible
-            }};
+                true == set_lifecycle_state_feasible($ra);
+            fetch {{ "node_name": $node.node_name }};
         """
         try:
             query_result = self._fetch(query)
@@ -964,7 +963,7 @@ class TacticalRetreatInterface:
                 lifecycle_state,
                 exc_info=True)
             raise
-        return query_result[0]['feasible']
+        return len(query_result) > 0
 
     def fetch_measures_interfaces(
             self, include_qos: bool = True) -> List[dict]:
@@ -1210,10 +1209,11 @@ class TacticalRetreatInterface:
         query = f"""
             match
                 $tr (effect: $eff) isa tactic_rule, has rule_name '{tactic_rule}';
-                $measure isa Measure, has measure_name '{measure_name}';
-                $eff isa relative_effect, has resulting_effect_value $resulting_effect_value;
-                $eff (measure: $measure);
-            fetch {{ "resulting_effect_value": $resulting_effect_value }};
+                $meas_q isa Measure, has measure_name '{measure_name}';
+                $eff isa relative_effect;
+                $eff links (measure: $meas_q);
+                let $v = resulting_effect_value($eff);
+            fetch {{ "resulting_effect_value": $v }};
         """
         return self._fetch(query)
 
