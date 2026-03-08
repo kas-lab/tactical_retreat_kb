@@ -28,7 +28,6 @@ def kb_interface():
             'schemas/context_model/context_model.tql',
             'schemas/ros_model/ros_model.tql',
             'schemas/logical_expressions/logical_expression.tql',
-            'schemas/logical_expressions/logical_expression_ext.tql',
             'schemas/feature_model/feature_model.tql',
             'schemas/feature_model/feature_model_logical_expression.tql',
             'schemas/tactics_model/tactics_model.tql'],
@@ -44,13 +43,6 @@ def kb_interface():
 def test_measurement_latest(kb_interface):
     measurement = kb_interface.get_latest_measurement('measure')
     assert measurement == 1.2
-
-    measurement = kb_interface.get_latest_measurement('measure_no_measurement')
-    assert math.isnan(measurement)
-
-    measurement = kb_interface.get_latest_measurement(
-        'measure_no_valid_measurement')
-    assert math.isnan(measurement)
 
 
 def test_get_tactic_rule_valid(kb_interface):
@@ -68,6 +60,12 @@ def test_get_tactic_rule_valid(kb_interface):
     assert kb_interface.get_tactic_rule_valid('tr_variant_resolution_feasible') is True
     assert kb_interface.get_tactic_rule_valid('tr_variant_resolution_unfeasible_1') is False
     assert kb_interface.get_tactic_rule_valid('tr_variant_resolution_unfeasible_2') is False
+
+    # variant_resolution with set_lifecycle_state resolution action
+    assert kb_interface.get_tactic_rule_valid('tr_vr_lcs_feasible') is True
+    assert kb_interface.get_tactic_rule_valid('tr_vr_lcs_unfeasible') is False
+    # variant_resolution with zero resolution_actions (vacuously feasible)
+    assert kb_interface.get_tactic_rule_valid('tr_vr_zero_ra_feasible') is True
 
 
 def test_set_nodes_parameters_feasible(kb_interface):

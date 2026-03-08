@@ -13,10 +13,6 @@ attribute tactic_resolution_model, value string;
 
 attribute tactic_select_variant, value string;
 
-attribute rule_valid, value boolean;
-
-attribute feasible, value boolean;
-
 ### Tactic
 entity Tactic,
     owns tactic_name @key,
@@ -25,10 +21,9 @@ entity Tactic,
 
 relation tactic_rule,
     owns rule_name @key,
-    owns rule_valid,
-    relates tactic,
-    relates antecedent @card(0..),
-    relates consequent,
+    relates tactic @card(1),
+    relates antecedent @card(0..),  # should this be 1..?
+    relates consequent @card(0..), # should this be 1..?
     relates effect @card(0..);
 
 ### effect
@@ -47,8 +42,7 @@ relation relative_effect sub effect,
 
 Measure plays effect:measure;
 Value plays absolute_effect:effect_value;
-ValueDouble plays relative_effect:effect_value;
-ValueInteger plays relative_effect:effect_value;
+ValueSingleton plays relative_effect:effect_value;
 
 #### connection with logical_expression model
 logical_expression plays tactic_rule:antecedent;
@@ -72,16 +66,14 @@ relation resolution_model,
     relates variant_resolution @card(0..);
 
 relation variant_resolution @abstract,
-    owns feasible,
-    relates resolution_action,
-    relates variant,
+    relates resolution_action @card(0..),
+    relates variant @card(1),
     plays resolution_model:variant_resolution;
 
 relation variant_activation sub variant_resolution;
 relation variant_deactivation sub variant_resolution;
 
 relation resolution_action @abstract,
-    owns feasible,
     relates node,
     plays variant_resolution:resolution_action;
 
@@ -98,25 +90,69 @@ Value plays set_nodes_parameters:parameter_value;
 relation set_lifecycle_state sub resolution_action,
     owns lifecycle_state;
 
-## Rules to infer whether a tactic rule is valid
+fun set_nodes_parameters_feasible($ra: set_nodes_parameters) -> boolean:
+  match
+    $ra links (node: $node);
+    not { $node has end_time $_; };
+  let $r = true; return first $r;
 
+fun set_lifecycle_state_feasible($ra: set_lifecycle_state) -> boolean:
+  match
+    $ra links (node: $node);
+    $node has lifecycle_state $current;
+    $ra has lifecycle_state $target;
+    { $current == "active";
+      { $target == "active"; } or { $target == "inactive"; } or { $target == "finalized"; };
+    } or {
+      $current == "inactive";
+      { $target == "active"; } or { $target == "inactive"; } or
+      { $target == "unconfigured"; } or { $target == "finalized"; };
+    } or {
+      $current == "unconfigured";
+      { $target == "inactive"; } or { $target == "unconfigured"; } or { $target == "finalized"; };
+    } or {
+      $current == "finalized"; $target == "finalized";
+    };
+  let $r = true; return first $r;
 
+fun resolution_action_feasible($ra: resolution_action) -> boolean:
+  match
+    { $ra isa set_nodes_parameters; true == set_nodes_parameters_feasible($ra); } or
+    { $ra isa set_lifecycle_state;  true == set_lifecycle_state_feasible($ra); };
+  let $r = true; return first $r;
 
+fun variant_resolution_feasible($vr: variant_resolution) -> boolean:
+  match
+    not {
+      $vr links (resolution_action: $ra_vr);
+      not { true == resolution_action_feasible($ra_vr); };
+    };
+  let $r = true; return first $r;
 
+fun resulting_effect_value($eff: relative_effect) -> double:
+  match
+    $eff links (measure: $meas_r, effect_value: $delta_val);
+    (measure: $meas_r, measurement_value: $cur_val) isa measurement, has latest true;
+    $cur_val has double_value $current;
+    $delta_val has double_value $delta;
+    let $result = $current + $delta;
+  return first $result;
 
-## Rules for infering whether a resolution action is feasible
-
-
-### lifecyle state rules. Allows setting the same state
-
-
-
-
-### check whether the parameter types are correct?
-
-## Rules for inferring whether a variant resolution is feasible
-
-
-# Rules for inferring the resulting value of an effect
-
-
+fun tactic_rule_valid($tr: tactic_rule) -> boolean:
+  match
+    not {
+      $tr links (antecedent: $ante);
+      not { true == expression_valid($ante); };
+    };
+    not {
+      $tr links (consequent: $fa_c);
+      $fa_c links (activation: $f_act);
+      $f_act has selectable false;
+    };
+    not {
+      $tr links (consequent: $fa_vr);
+      $fa_vr links (activation: $f_vr);
+      $vr_check links (variant: $f_vr);
+      not { true == variant_resolution_feasible($vr_check); };
+    };
+  let $r = true; return first $r;
