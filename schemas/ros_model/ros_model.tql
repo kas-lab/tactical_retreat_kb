@@ -56,7 +56,7 @@ entity ROSNode,
     plays subnode:subnode @card(0..);
 
 entity LifeCycleNode sub ROSNode,
-    owns lifecycle_state @card(1);
+    owns lifecycle_state @card(0..1);
 
 ### ROS interfaces
 entity ROSInterface @abstract,
