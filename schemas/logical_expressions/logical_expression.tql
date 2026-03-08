@@ -124,8 +124,6 @@ fun and_valid($and_expr: and_expression) -> boolean:
     };
   let $r = true; return first $r;
 
-# expression_valid: handles compound expressions with subs that may be 1-level compound.
-# Covers max depth 3: and -> or -> not -> atomic.
 fun expression_valid($e: logical_expression) -> boolean:
   match
     { $e isa atomic_expression; true == atomic_valid($e); } or

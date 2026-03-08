@@ -1255,11 +1255,21 @@ class TacticalRetreatInterface:
         """
         query = f"""
             match
-                $fe isa fuzzy_expression, has expression_name '{expression_name}',
-                    has membership_degree $membership_degree;
+                $e isa expression,
+                    has expression_name '{expression_name}';
+                let $membership_degree = fuzzy_membership_degree($e);
             fetch {{ "membership_degree": $membership_degree }};
         """
-        return self._fetch(query)
+        try:
+            result = self._fetch(query)
+        except TypeDBQueryError:
+            logger.error(
+                'Failed to evaluate fuzzy_membership_degree '
+                '(expression_name=%s).',
+                expression_name,
+                exc_info=True)
+            raise
+        return result
 
     def get_fuzzy_membership_degree(self, expression_name: str) -> str:
         """
