@@ -1,34 +1,34 @@
 insert
 
 # Values
-$double_minus_0_05 isa ValueDouble,
+$double_minus_0_05 isa ValueSingleton,
     has double_value -0.05;
-$double_minus_0_22 isa ValueDouble,
+$double_minus_0_22 isa ValueSingleton,
     has double_value -0.22;
 
-$double_0_01 isa ValueDouble,
+$double_0_01 isa ValueSingleton,
     has double_value 0.01;
-$double_0_03 isa ValueDouble,
+$double_0_03 isa ValueSingleton,
     has double_value 0.03;
-$double_0_05 isa ValueDouble,
+$double_0_05 isa ValueSingleton,
     has double_value 0.05;
-$double_0_10 isa ValueDouble,
+$double_0_10 isa ValueSingleton,
     has double_value 0.10;
-$double_0_15 isa ValueDouble,
+$double_0_15 isa ValueSingleton,
     has double_value 0.15;
-$double_0_20 isa ValueDouble,
+$double_0_20 isa ValueSingleton,
     has double_value 0.20;
-$double_0_22221 isa ValueDouble,
+$double_0_22221 isa ValueSingleton,
 	has double_value 0.22221;
-$double_0_30 isa ValueDouble,
+$double_0_30 isa ValueSingleton,
     has double_value 0.30;
-$double_1 isa ValueDouble,
+$double_1 isa ValueSingleton,
     has double_value 1.0;
-$double_7 isa ValueDouble,
+$double_7 isa ValueSingleton,
     has double_value 7.0;
-$double_9 isa ValueDouble,
+$double_9 isa ValueSingleton,
     has double_value 9.0;
-$double_50 isa ValueDouble,
+$double_50 isa ValueSingleton,
     has double_value 50.0;
 
 ## measures
@@ -114,7 +114,7 @@ $fuzzy_unimodal_measure isa Measure,
 	has measure_name "fuzzy_unimodal_measure";
 
 # just an example, the measurement should be inserted at runtime
-$current_fuzzy_unimodal_measure isa ValueDouble, has double_value 0.03779;
+$current_fuzzy_unimodal_measure isa ValueSingleton, has double_value 0.03779;
 (measure:$fuzzy_unimodal_measure, measurement_value: $current_fuzzy_unimodal_measure) isa measurement,
     has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
@@ -146,7 +146,7 @@ $rel_effect_unimodal_measure (measure: $fuzzy_unimodal_measure, effect_value: $d
 
 $fuzzy_decay_measure isa Measure,
 	has measure_name "fuzzy_decay_measure";
-$current_fuzzy_decay_measure isa ValueDouble, has double_value 500;
+$current_fuzzy_decay_measure isa ValueSingleton, has double_value 500;
 (measure:$fuzzy_decay_measure, measurement_value: $current_fuzzy_decay_measure) isa measurement,
     has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
@@ -177,7 +177,7 @@ $rel_effect_decay_measure (measure: $fuzzy_decay_measure, effect_value: $double_
 # 	has description "amount of foodpackages";
 
 # just an example, the measurement should be inserted at runtime
-$current_fuzzy_ascend_measure isa ValueDouble, has double_value 9.0;
+$current_fuzzy_ascend_measure isa ValueSingleton, has double_value 9.0;
 (measure:$fuzzy_ascend_measure, measurement_value: $current_fuzzy_ascend_measure) isa measurement,
     has measurement_time 2025-08-06T10:57:56.666, has latest true;
 

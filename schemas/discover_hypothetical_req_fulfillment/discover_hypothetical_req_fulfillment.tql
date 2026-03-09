@@ -102,13 +102,13 @@ relation tr_dependency_lhs_double_operand,
     relates tr_dependency,
     relates lhs_double;
 tactic_rule_dependency plays tr_dependency_lhs_double_operand:tr_dependency;
-ValueDouble plays tr_dependency_lhs_double_operand:lhs_double;
+ValueSingleton plays tr_dependency_lhs_double_operand:lhs_double;
 
 relation tr_dependency_rhs_double_operand,
     relates tr_dependency,
     relates rhs_double;
 tactic_rule_dependency plays tr_dependency_rhs_double_operand:tr_dependency;
-ValueDouble plays tr_dependency_rhs_double_operand:rhs_double;
+ValueSingleton plays tr_dependency_rhs_double_operand:rhs_double;
 
 relation tr_dependency_lhs_effect_operand,
     relates tr_dependency,
