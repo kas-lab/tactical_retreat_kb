@@ -841,12 +841,10 @@ class TacticalRetreatInterface:
 
     def get_latest_measurement(self, measure_name: str) -> Union[float, int, str, bool, List]:
         """
-        Get all tactics that are applicable given an ROS action name and resolution model.
+        Get latest measurement of a measure.
 
-        :param resolution_model: name of the resolution model to check
-        :param action_name: name of the ROS action
-        :param action_name: type of the ROS action
-        :return: list containing all tactic's names that are applicable
+        :param measure_name: measure name
+        :return: latest measurement
         """
         query_result = self.fetch_latest_measurement(measure_name)
 
@@ -854,13 +852,13 @@ class TacticalRetreatInterface:
             return float('nan')
 
         value = query_result[0].get('value', None)
-        if value:
+        if value is not None:
             return value
 
         array_values = query_result[0].get('array_values', None)
-        if array_values:
+        if array_values is not None:
             return [value['value']
-                for value in array_values]
+                    for value in array_values]
 
     def fetch_tactic_rule_valid(
             self, tactic_rule: str) -> List[dict]:
