@@ -21,3 +21,9 @@ Claude-specific notes for this repository.
 
 - Test data files (`test/data/*.tql`) are single `insert` blocks; variables declared earlier in the block are reusable by later statements.
 - When auditing schema function test coverage: check **every OR branch** of every `fun` has at least one test case that hits that branch. Dispatching functions like `quantified_value_fuzzy_expression` (4 branches: ValueSingleton+double/integer, Measure+double/integer) are easy to miss.
+- `ROSNode` has `@card(1..1)` on `start_time` — any test data creating a `ROSNode` must include `has start_time <datetime>`.
+
+## Performance
+
+- `neighbours()` shows **bimodal latency** (~1.8ms warm-JIT vs ~14ms cold) across fresh DB instances; both numbers are valid and unrelated to query changes. Use `benchmark_dtm.py --repeats 3` to distinguish noise from real regressions.
+- Removing redundant `isa` guards when variables are already typed by role position is safe and gives small gains (confirmed for `applicable_tactics`).
