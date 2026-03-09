@@ -1,36 +1,69 @@
 define
 
-### Discover applicable tactics things and rules
-relation neighbours,
-    relates node,
-    relates neighbour @card(0..);
-
-ROSNode plays neighbours:node;
-ROSNode plays neighbours:neighbour;
-
-relation connected_nodes,
-    relates node,
-    relates connected @card(0..);
-
-ROSNode plays connected_nodes:node;
-ROSNode plays connected_nodes:connected;
-
-relation applicable_tactics,
-    relates interface,
-    relates resolution_model,
-    relates tactic_rule @card(0..);
-
-ROSInterface plays applicable_tactics:interface;
-resolution_model plays applicable_tactics:resolution_model;
-tactic_rule plays applicable_tactics:tactic_rule;
-
-
 # This rule could be potentially optimized if we use `has_topic` instead of `has_interface`.
 # However, if we later start considering ServiceClients and ActionClients as neighbours,
 # we would need to re-write the rule
 
+fun neighbours($node: ROSNode) -> { ROSNode }:
+  match
+    {
+      (node: $node, subnode: $nb) isa subnode;
+    } or {
+      (node: $node, client: $b_client) isa has_action;
+      $b_client has interface_name $b_iname, has interface_type $b_itype;
+      $b_server isa ActionServer, has interface_name $b_iname, has interface_type $b_itype;
+      (node: $nb, server: $b_server) isa has_action;
+      not { $nb is $node; };
+    } or {
+      (node: $node, publisher: $c_pub) isa has_topic;
+      $c_pub has interface_name $c_iname, has interface_type $c_itype;
+      $c_sub isa Subscriber, has interface_name $c_iname, has interface_type $c_itype;
+      (node: $nb, subscriber: $c_sub) isa has_topic;
+    } or {
+      (node: $node, subscriber: $d_sub) isa has_topic;
+      $d_sub has interface_name $d_iname, has interface_type $d_itype;
+      $d_pub isa Publisher, has interface_name $d_iname, has interface_type $d_itype;
+      (node: $nb, publisher: $d_pub) isa has_topic;
+    } or {
+      (node: $node, subnode: $e_sn) isa subnode;
+      let $nb in neighbours($e_sn);
+    };
+  return { $nb };
 
+fun connected_nodes($node: ROSNode) -> { ROSNode }:
+  match
+    {
+      let $conn in neighbours($node);
+    } or {
+      let $via in connected_nodes($node);
+      let $conn in neighbours($via);
+    };
+  return { $conn };
 
-
-
-
+fun applicable_tactics($interface: ROSInterface, $rm: resolution_model) -> { tactic_rule }:
+  match
+    {
+      $interface isa ActionServer;
+      (node: $host, server: $interface) isa has_action;
+    } or {
+      $interface isa ServiceServer;
+      (node: $host, server: $interface) isa has_service;
+    } or {
+      $interface isa Publisher;
+      (node: $host, publisher: $interface) isa has_topic;
+    };
+    $rm links (tactic: $rm_tactic, variant_resolution: $vr);
+    $tr isa tactic_rule, links (tactic: $rm_tactic, consequent: $fa);
+    {
+      $fa links (activation: $feat);
+    } or {
+      $fa links (deactivation: $feat);
+    };
+    $vr links (variant: $feat, resolution_action: $ra);
+    {
+      $ra links (node: $host);
+    } or {
+      let $conn in connected_nodes($host);
+      $ra links (node: $conn);
+    };
+  return { $tr };
