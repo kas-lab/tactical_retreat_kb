@@ -1,0 +1,48 @@
+# Test data for discover_tactics_model.tql branch coverage.
+#
+# Covers two applicable_tactics branches NOT exercised by tactics_example.tql:
+#   1. $fa links (deactivation: $feat)  — feature_adaptation via deactivation
+#   2. $ra links (node: $host)          — resolution_action targets the host node directly
+#
+# Graph: cov_host owns /cov_action (ActionServer).
+#        set_nodes_parameters targets cov_host itself (direct, not via connected_nodes).
+#        feature_adaptation uses deactivation (not activation).
+
+insert
+
+# ROS node + ActionServer interface
+$cov_host isa ROSNode, has node_name "cov_host", has namespace "",
+    has start_time 2025-01-01T00:00:00.000;
+$cov_server isa ActionServer,
+    has interface_name "/cov_action",
+    has interface_type "coverage_msgs/action/Coverage";
+(node: $cov_host, server: $cov_server) isa has_action;
+
+# Feature (deactivated by the tactic, not activated)
+$f_cov isa Feature, has feature_name "COV_FEATURE";
+
+# feature_adaptation using DEACTIVATION  ← covers $fa links (deactivation: $feat)
+$fa_deact isa feature_adaptation,
+    links (deactivation: $f_cov);
+
+# Parameter + value for the resolution action
+$p_cov isa Parameter, has parameter_name "cov_param";
+$v_cov isa ValueSingleton, has double_value 1.0;
+
+# resolution_action targeting cov_host DIRECTLY  ← covers $ra links (node: $host)
+$ra_cov isa set_nodes_parameters,
+    links (node: $cov_host, parameter: $p_cov, parameter_value: $v_cov);
+
+# variant_resolution linking feature and resolution_action
+$vr_cov isa variant_activation,
+    links (resolution_action: $ra_cov, variant: $f_cov);
+
+# Tactic + rule + resolution model
+$ta_cov isa Tactic, has tactic_name "CovTactic";
+$tr_cov isa tactic_rule,
+    links (tactic: $ta_cov, consequent: $fa_deact),
+    has rule_name "COV_RULE";
+$rm_cov isa resolution_model,
+    links (tactic: $ta_cov, variant_resolution: $vr_cov),
+    has resolution_model_name "cov_model",
+    has ros_system "cov";

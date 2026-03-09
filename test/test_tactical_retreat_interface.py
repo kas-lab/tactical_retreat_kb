@@ -25,7 +25,6 @@ def kb_interface():
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
             'schemas/logical_expressions/logical_expression.tql',
-            'schemas/logical_expressions/logical_expression_ext.tql',
             'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
             'schemas/feature_model/feature_model_logical_expression.tql',
@@ -208,9 +207,7 @@ def kb_interface_test_model():
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
             'schemas/logical_expressions/logical_expression.tql',
-            'schemas/logical_expressions/logical_expression_ext.tql',
             'schemas/logical_expressions/fuzzy_expression.tql',
-            'schemas/logical_expressions/fuzzy_expression_ext.tql',
             'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
             'schemas/relaxed/relaxed_model.tql',
@@ -258,6 +255,52 @@ def test_add_measurement(kb_interface_test_model):
         'measure_bool_array', [True, True, False])
     assert kb_interface_test_model.get_latest_measurement(
         'measure_bool_array') == [True, True, False]
+
+
+@pytest.fixture(scope='module')
+def kb_dtm_coverage():
+    """Fixture for applicable_tactics branch coverage.
+
+    Covers branches not exercised by the main ros_model+tactics_example data:
+      - feature_adaptation via deactivation (not activation)
+      - resolution_action targeting the host node directly (not via connected_nodes)
+    """
+    kb = TacticalRetreatInterface(
+        'localhost:1729',
+        'test_dtm_coverage',
+        ['schemas/data_structure/data_structure.tql',
+         'schemas/context_model/context_model.tql',
+         'schemas/logical_expressions/logical_expression.tql',
+         'schemas/ros_model/ros_model.tql',
+         'schemas/feature_model/feature_model.tql',
+         'schemas/feature_model/feature_model_logical_expression.tql',
+         'schemas/tactics_model/tactics_model.tql',
+         'schemas/discover_tactics_model/discover_tactics_model.tql'],
+        ['test/data/test_discover_tactics_model_branches.tql'],
+        force_database=True,
+        force_data=True)
+    yield kb
+    kb.delete_database()
+
+
+def test_applicable_tactics_deactivation_branch(kb_dtm_coverage):
+    """applicable_tactics: $fa links (deactivation: $feat) branch.
+
+    COV_RULE uses a feature_adaptation with deactivation (not activation).
+    The query must traverse the deactivation OR-branch to find it.
+    """
+    tactics = kb_dtm_coverage.get_applicable_tactics('cov_model', '/cov_action')
+    assert tactics == ['COV_RULE']
+
+
+def test_applicable_tactics_direct_node_branch(kb_dtm_coverage):
+    """applicable_tactics: $ra links (node: $host) branch (direct, not connected_nodes).
+
+    The resolution_action in cov_model targets cov_host directly — the same node
+    that owns /cov_action — so the direct-node OR-branch must fire.
+    """
+    tactics = kb_dtm_coverage.get_applicable_tactics('cov_model', '/cov_action')
+    assert tactics == ['COV_RULE']
 
 
 @pytest.mark.parametrize(
