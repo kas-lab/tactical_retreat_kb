@@ -1,17 +1,17 @@
 match
     $node isa ROSNode, has node_name 'bt_navigator_navigate_to_pose_rclcpp';
-    $neighbours (node: $node, neighbour: $neighbour) isa neighbours;
+    let $neighbour in neighbours($node);
 fetch
     $neighbour: node_name;
 
 match
     $node isa ROSNode, has node_name 'controller_server';
-    $neighbours (node: $node, neighbour: $neighbour) isa neighbours;
+    let $neighbour in neighbours($node);
 fetch
     $neighbour: node_name;
 
 match
     $node isa ROSNode, has node_name 'bt_navigator';
-    $neighbours (node: $node, neighbour: $neighbour) isa neighbours;
+    let $neighbour in neighbours($node);
 fetch
     $neighbour: node_name;

@@ -250,8 +250,7 @@ def resolve_context(kb_interface: TacticalRetreatInterface) -> Dict[str, List]:
             match
                 $resolution_model isa resolution_model;
                 $interface isa ROSInterface;
-                (interface: $interface, resolution_model: $resolution_model, tactic_rule: $tr)
-                    isa applicable_tactics;
+                let $tr in applicable_tactics($interface, $resolution_model);
             fetch
                 $resolution_model: resolution_model_name;
                 $interface: interface_name;

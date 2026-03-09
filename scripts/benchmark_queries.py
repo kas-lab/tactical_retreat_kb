@@ -124,9 +124,7 @@ def build_raw_potential_query(
                 $ros_interface isa ROSInterface, has interface_name '{action_name}';
                 $resolution_model isa resolution_model,
                     has resolution_model_name '{resolution_model}';
-                (interface: $ros_interface,
-                    resolution_model: $resolution_model,
-                    tactic_rule: $tactic_rule) isa applicable_tactics;
+                let $tactic_rule in applicable_tactics($ros_interface, $resolution_model);
                 {impact_line}
                 $req isa relaxed_requirement, has in_effect true;
             fetch
@@ -217,7 +215,7 @@ def benchmark_profile(
     schema_total_s = 0.0
     for path in profile.schema_paths:
         start = time.perf_counter()
-        kb_interface.load_schema(path)
+        kb_interface.db.load_schema(path)
         elapsed_s = time.perf_counter() - start
         schema_total_s += elapsed_s
         schema_timings.append({'path': path, 'seconds': elapsed_s})
@@ -226,7 +224,7 @@ def benchmark_profile(
     data_total_s = 0.0
     for path in profile.data_paths:
         start = time.perf_counter()
-        kb_interface.load_data(path)
+        kb_interface.db.load_data(path)
         elapsed_s = time.perf_counter() - start
         data_total_s += elapsed_s
         data_timings.append({'path': path, 'seconds': elapsed_s})

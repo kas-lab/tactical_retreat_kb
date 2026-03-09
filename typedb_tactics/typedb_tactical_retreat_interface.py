@@ -507,12 +507,12 @@ class TacticalRetreatInterface:
             match
                 $tactic isa Tactic, has tactic_name '{tactic_name}';
                 (tactic: $tactic, consequent: $fa) isa tactic_rule;
-                $fa ($feature)
-                    isa feature_adaptation;
+                $fa isa feature_adaptation, links ($feature);
                 $feature isa Feature;
-                (variant: $feature, resolution_action: $resolution_action)
+                (variant: $feature, resolution_action: $ra)
                     isa variant_resolution;
-                $resolution_action (node: $node) isa resolution_action;
+                $ra isa resolution_action;
+                $ra links (node: $node);
                 $node isa ROSNode, has node_name '{node_name}',
                     has namespace '{namespace}';
             select $node; reduce $c = count;
@@ -542,8 +542,7 @@ class TacticalRetreatInterface:
             match
                 $node isa ROSNode,
                     has node_name '{node_name}', has namespace '{namespace}';
-                $neighbours (node: $node, neighbour: $neighbour) isa
-                    neighbours;
+                let $neighbour in neighbours($node);
             fetch {{
                 "node_name": $neighbour.node_name,
                 "namespace": $neighbour.namespace
@@ -579,8 +578,7 @@ class TacticalRetreatInterface:
             match
                 $node isa ROSNode, has node_name '{node_name}',
                     has namespace '{namespace}';
-                $connected_nodes (node: $node, connected: $connected)
-                    isa connected_nodes;
+                {{ $connected is $node; }} or {{ let $connected in connected_nodes($node); }};
             fetch {{
                 "node_name": $connected.node_name,
                 "namespace": $connected.namespace
@@ -618,9 +616,7 @@ class TacticalRetreatInterface:
                 $interface isa ROSInterface, has interface_name '{interface_name}';
                 $resolution_model isa resolution_model,
                     has resolution_model_name '{resolution_model}';
-                (interface: $interface,
-                    resolution_model: $resolution_model, tactic_rule: $tactic_rule)
-                    isa applicable_tactics;
+                let $tactic_rule in applicable_tactics($interface, $resolution_model);
             fetch {{
                 "rule_name": $tactic_rule.rule_name
             }};
@@ -784,9 +780,25 @@ class TacticalRetreatInterface:
                 $measurement (measure: $measure,
                               measurement_value: $measurement_val) isa measurement,
                     has latest true;
-                $measurement_val isa ValueSingleton, has data_value $value;
             fetch {{
-                "value": $value
+                "value": (
+                    match
+                        try {{
+                            $measurement_val isa ValueSingleton, has data_value $value;
+                        }};
+                    return first $value;
+                ),
+                "array_values": [
+                    match
+                        $measurement_val isa ValueArray;
+                        (array: $measurement_val, array_value: $v) isa at_index,
+                            has index $index;
+                        $v isa ValueSingleton;
+                        sort $index;
+                    fetch {{
+                        "value": $v.data_value
+                    }};
+                ]
             }};
         """
         return self._fetch(query)
@@ -804,9 +816,25 @@ class TacticalRetreatInterface:
                 $measure isa Measure, has measure_name '{measure_name}';
                 $measurement (measure: $measure,
                               measurement_value: $measurement_val) isa measurement;
-                $measurement_val isa ValueSingleton, has data_value $value;
             fetch {{
-                "value": $value
+                "value": (
+                    match
+                        try {{
+                            $measurement_val isa ValueSingleton, has data_value $value;
+                        }};
+                    return first $value;
+                ),
+                "array_values": [
+                    match
+                        $measurement_val isa ValueArray;
+                        (array: $measurement_val, array_value: $v) isa at_index,
+                            has index $index;
+                        $v isa ValueSingleton;
+                        sort $index;
+                    fetch {{
+                        "value": $v.data_value
+                    }};
+                ]
             }};
         """
         return self._fetch(query)
@@ -825,7 +853,14 @@ class TacticalRetreatInterface:
         if len(query_result) == 0:
             return float('nan')
 
-        return query_result[0]['value']
+        value = query_result[0].get('value', None)
+        if value:
+            return value
+
+        array_values = query_result[0].get('array_values', None)
+        if array_values:
+            return [value['value']
+                for value in array_values]
 
     def fetch_tactic_rule_valid(
             self, tactic_rule: str) -> List[dict]:
@@ -1121,10 +1156,10 @@ class TacticalRetreatInterface:
         delete_query = f"""
             match
                 $measure isa Measure, has measure_name '{measure_name}';
-                $measurement (measure: $measure) isa measurement,
+                (measure: $measure) isa measurement,
                     has latest $latest;
                 $latest == true;
-            delete $measurement has $latest;
+            delete $latest;
         """
         self._delete(delete_query)
 
@@ -1134,8 +1169,7 @@ class TacticalRetreatInterface:
                 $measure isa Measure, has measure_name '{measure_name}';
             insert
                 {value_query}
-                $measurement (measure: $measure, measurement_value: {variable_name})
-                    isa measurement,
+                    (measure: $measure, measurement_value: {variable_name}) isa measurement,
                     has measurement_time {time},
                     has latest true;
         """
@@ -1315,10 +1349,7 @@ class TacticalRetreatInterface:
             match
                 $ros_interface isa ROSInterface, has interface_name '{action_name}';
                 {resolution_model_query}
-                (interface: $ros_interface,
-                    resolution_model: $resolution_model,
-                    tactic_rule: $tactic_rule)
-                    isa applicable_tactics;
+                let $tactic_rule in applicable_tactics($ros_interface, $resolution_model);
                 $tactic_impact (impacted: $req, tactic_rule: $tactic_rule)
                     isa tactic_rule_impacts_requirement_in_effect, has fulfillment $fulfillment;
                 $req isa relaxed_requirement,
@@ -1352,10 +1383,7 @@ class TacticalRetreatInterface:
                 $ros_interface isa ROSInterface, has interface_name '{action_name}';
                 $resolution_model isa resolution_model,
                     has resolution_model_name '{resolution_model}';
-                (interface: $ros_interface,
-                    resolution_model: $resolution_model,
-                    tactic_rule: $tactic_rule)
-                    isa applicable_tactics;
+                let $tactic_rule in applicable_tactics($ros_interface, $resolution_model);
                 $tactic_impact (
                     resolution_model: $resolution_model,
                     tactic_rule: $tactic_rule,
