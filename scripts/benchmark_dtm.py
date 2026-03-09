@@ -12,7 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Focused benchmark for discover_tactics_model.tql functions.
+"""
+Focused benchmark for discover_tactics_model.tql functions.
 
 Benchmarks neighbours(), connected_nodes(), and applicable_tactics()
 using the working ros_model_example + tactics_example data.
@@ -21,8 +22,8 @@ Run with --label to tag variants (e.g. v0, v1v2).
 
 import argparse
 import math
-import time
 from pathlib import Path
+import time
 from typing import Callable, Dict, List
 
 from typedb.driver import Credentials, DriverOptions, TransactionType, TypeDB  # noqa: E501

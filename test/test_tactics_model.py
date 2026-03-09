@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import math
-
 import pytest
 
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface

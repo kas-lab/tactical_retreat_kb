@@ -259,7 +259,8 @@ def test_add_measurement(kb_interface_test_model):
 
 @pytest.fixture(scope='module')
 def kb_dtm_coverage():
-    """Fixture for applicable_tactics branch coverage.
+    """
+    Fixture for applicable_tactics branch coverage.
 
     Covers branches not exercised by the main ros_model+tactics_example data:
       - feature_adaptation via deactivation (not activation)
@@ -284,7 +285,8 @@ def kb_dtm_coverage():
 
 
 def test_applicable_tactics_deactivation_branch(kb_dtm_coverage):
-    """applicable_tactics: $fa links (deactivation: $feat) branch.
+    """
+    applicable_tactics: $fa links (deactivation: $feat) branch.
 
     COV_RULE uses a feature_adaptation with deactivation (not activation).
     The query must traverse the deactivation OR-branch to find it.
@@ -294,7 +296,8 @@ def test_applicable_tactics_deactivation_branch(kb_dtm_coverage):
 
 
 def test_applicable_tactics_direct_node_branch(kb_dtm_coverage):
-    """applicable_tactics: $ra links (node: $host) branch (direct, not connected_nodes).
+    """
+    applicable_tactics: $ra links (node: $host) branch (direct, not connected_nodes).
 
     The resolution_action in cov_model targets cov_host directly — the same node
     that owns /cov_action — so the direct-node OR-branch must fire.

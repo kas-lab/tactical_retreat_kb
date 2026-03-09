@@ -11,7 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Benchmark script for logical_expression.tql schema function variants.
+"""
+Benchmark script for logical_expression.tql schema function variants.
 
 Usage (from inside the Docker container, with ROS and install sourced):
     python3 scripts/benchmark_logical_expression.py

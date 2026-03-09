@@ -1500,7 +1500,8 @@ class TacticalRetreatInterface:
                 for result in query_result if result.get('expression_name') is not None]
 
     def get_expression_satisfied(self, expression_name: str) -> bool:
-        """Return whether the logical expression with the given name is satisfied.
+        """
+        Return whether the logical expression with the given name is satisfied.
 
         Uses the TypeDB 3 schema function ``expression_valid`` to compute
         satisfaction dynamically from the expression graph.
