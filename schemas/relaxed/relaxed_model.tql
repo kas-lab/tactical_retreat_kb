@@ -43,17 +43,17 @@ relation relaxed_expression sub expression,
 
 relation atomic_relaxed_expression sub relaxed_expression,
 	relates expression @card(0..),
-	plays shall_expression:expression,
-    plays may_expression:expression,
+	plays shall_expression:expression @card(0..),
+    plays may_expression:expression @card(0..),
 	plays until_expression:after;
 
 relation compound_relaxed_expression sub relaxed_expression,
 	relates compound_member @card(0..);
 
 relation shall_expression sub compound_relaxed_expression,
-	relates expression;
+	relates expression @card(0..);
 relation may_expression sub compound_relaxed_expression,
-	relates expression,
+	relates expression @card(0..),
 	plays shall_expression:expression;
 
 relation eventually_expression sub atomic_relaxed_expression;
@@ -77,31 +77,32 @@ relation until_expression sub relaxed_expression,
 #### Fuzzy set expression
 
 relation relaxed_fuzzy_expression sub relaxed_expression,
-	owns membership_degree,
 	relates term,
 	plays shall_expression:expression,
 	plays may_expression:expression,
 	plays atomic_relaxed_expression:expression;
 
-# can have any membership function
-relation as_close_as_possible_expression sub relaxed_fuzzy_expression,
-	owns required_value,
+### Intermediate grouping types (reduces branch dispatch from 6→3 in relaxed_leaf_fulfillment)
+relation relaxed_unimodal_expression sub relaxed_fuzzy_expression,
+	relates fuzzy_set;
+relation relaxed_ascend_expression sub relaxed_fuzzy_expression,
+	relates fuzzy_set;
+relation relaxed_decay_expression sub relaxed_fuzzy_expression,
 	relates fuzzy_set;
 
-relation as_many_as_possible_expression sub relaxed_fuzzy_expression,
-	relates fuzzy_set;
-relation as_few_as_possible_expression sub relaxed_fuzzy_expression,
-	relates fuzzy_set;
+# can have any unimodal membership function
+relation as_close_as_possible_expression sub relaxed_unimodal_expression,
+	owns required_value;
 
-# can have any membership function
-relation freq_as_close_as_possible_expression sub relaxed_fuzzy_expression,
-	owns required_period,
-	relates fuzzy_set;
+# can have any unimodal membership function
+relation freq_as_close_as_possible_expression sub relaxed_unimodal_expression,
+	owns required_period;
 
-relation as_early_as_possible_expression sub relaxed_fuzzy_expression,
-	relates fuzzy_set;
-relation as_late_as_possible_expression sub relaxed_fuzzy_expression,
-	relates fuzzy_set;
+relation as_many_as_possible_expression sub relaxed_ascend_expression;
+relation as_late_as_possible_expression sub relaxed_ascend_expression;
+
+relation as_few_as_possible_expression sub relaxed_decay_expression;
+relation as_early_as_possible_expression sub relaxed_decay_expression;
 
 # connection to fuzzy_expression model
 fuzzy_expression relates relaxed_expression;
@@ -110,14 +111,10 @@ relaxed_fuzzy_expression plays fuzzy_and:expression;
 relaxed_fuzzy_expression plays fuzzy_or:expression;
 relaxed_fuzzy_expression plays fuzzy_not:expression;
 
-AscendSet plays as_many_as_possible_expression:fuzzy_set;
-AscendSet plays as_late_as_possible_expression:fuzzy_set;
-
-DecaySet plays as_few_as_possible_expression:fuzzy_set;
-DecaySet plays as_early_as_possible_expression:fuzzy_set;
-
-UnimodalSet plays as_close_as_possible_expression:fuzzy_set;
-UnimodalSet plays freq_as_close_as_possible_expression:fuzzy_set;
+# fuzzy set role players: one declaration per intermediate type
+AscendSet plays relaxed_ascend_expression:fuzzy_set;
+DecaySet plays relaxed_decay_expression:fuzzy_set;
+UnimodalSet plays relaxed_unimodal_expression:fuzzy_set;
 
 # connection to logical_expression model
 # TODO: check if we can just make proposition_expression play the role of a expression in relaxed_expression
@@ -131,8 +128,7 @@ logical_expression plays may_expression:expression;
 propositional_expression plays until_expression:before;
 propositional_expression plays until_expression:after;
 
-ValueInteger plays relaxed_fuzzy_expression:term;
-ValueDouble plays relaxed_fuzzy_expression:term;
+ValueSingleton plays relaxed_fuzzy_expression:term;
 Measure plays relaxed_fuzzy_expression:term;
 
 propositional_expression owns fulfillment;
@@ -142,39 +138,232 @@ fuzzy_operator plays may_expression:expression;
 
 fuzzy_expression owns fulfillment;
 
+fun quantified_relaxed_term($e: relaxed_fuzzy_expression) -> double:
+  match
+    $e links (term: $term);
+    {
+      $term isa Measure;
+      (measure: $term, measurement_value: $mvalue) isa measurement, has latest true;
+      $mvalue has double_value $raw_d;
+      let $raw = $raw_d;
+    } or {
+      $term isa Measure;
+      (measure: $term, measurement_value: $mvalue_int) isa measurement, has latest true;
+      $mvalue_int has integer_value $raw_i;
+      let $raw = $raw_i + 0.0;
+    } or {
+      $term isa ValueSingleton;
+      $term has double_value $vs_d;
+      let $raw = $vs_d;
+    } or {
+      $term isa ValueSingleton;
+      $term has integer_value $vs_i;
+      let $raw = $vs_i + 0.0;
+    };
+    {
+      $e has required_value $rv;
+      let $quantified = $raw - $rv;
+    } or {
+      $e has required_period $rp;
+      let $quantified = $raw - $rp;
+    } or {
+      not { $e has required_value $_; };
+      not { $e has required_period $_; };
+      let $quantified = $raw;
+    };
+  return first $quantified;
 
+fun relaxed_leaf_fulfillment($e: expression) -> double:
+  match
+    {
+      $e isa relaxed_unimodal_expression;
+      $e links (fuzzy_set: $uni_set);
+      let $uni_q = quantified_relaxed_term($e);
+      {
+        $uni_set isa! FuzzyTriangular;
+        $uni_set has a $uni_tri_a, has b $uni_tri_b, has c $uni_tri_c;
+        {
+          $uni_q >= $uni_tri_a; $uni_q <= $uni_tri_b;
+          let $m = ($uni_q - $uni_tri_a) / ($uni_tri_b - $uni_tri_a);
+        } or {
+          $uni_q > $uni_tri_b; $uni_q <= $uni_tri_c;
+          let $m = ($uni_tri_c - $uni_q) / ($uni_tri_c - $uni_tri_b);
+        } or {
+          $uni_q < $uni_tri_a;
+          let $m = 0.0;
+        } or {
+          $uni_q > $uni_tri_c;
+          let $m = 0.0;
+        };
+      } or {
+        $uni_set isa! FuzzyGaussian;
+        $uni_set has sigma $uni_g_sigma, has center $uni_g_center;
+        let $m = 2.71828 ^ (-0.5 * (($uni_q - $uni_g_center) / $uni_g_sigma) ^ 2);
+      };
+    } or {
+      $e isa relaxed_ascend_expression;
+      $e links (fuzzy_set: $asc_set);
+      let $asc_q = quantified_relaxed_term($e);
+      {
+        $asc_set isa! FuzzySigmoid;
+        $asc_set has exponent $asc_sig_exp, has inflection_point $asc_sig_infl;
+        let $m = 1.0 / (1.0 + 2.71828 ^ (-1.0 * $asc_sig_exp * ($asc_q - $asc_sig_infl)));
+      } or {
+        $asc_set isa! FuzzyExponentialSaturation;
+        $asc_set has exponent $asc_sat_exp;
+        let $m = 1.0 - 2.71828 ^ (-1.0 * $asc_sat_exp * $asc_q);
+      } or {
+        $asc_set isa! FuzzyBoundedLinearFraction;
+        $asc_set has curvature $asc_blf_cur;
+        let $m = $asc_q / ($asc_q + $asc_blf_cur);
+      };
+    } or {
+      $e isa relaxed_decay_expression;
+      $e links (fuzzy_set: $dec_set);
+      let $dec_q = quantified_relaxed_term($e);
+      {
+        $dec_set isa! FuzzyExponentialDecay;
+        $dec_set has exponent $dec_exp;
+        let $m = 2.71828 ^ (-1.0 * $dec_exp * $dec_q);
+      } or {
+        $dec_set isa! FuzzyRationalDecay;
+        $dec_set has curvature $dec_rat_cur;
+        let $m = $dec_rat_cur / ($dec_q + $dec_rat_cur);
+      };
+    } or {
+      $e isa logical_expression;
+      let $leaf_log_m = logical_expression_membership($e);
+      let $m = $leaf_log_m;
+    };
+  return first $m;
 
+fun relaxed_fuzzy_not_fulfillment($e: fuzzy_not) -> double:
+  match
+    $e links (expression: $fnf_inner);
+    {
+      $fnf_inner isa relaxed_fuzzy_expression;
+      let $fnf_mrf = relaxed_leaf_fulfillment($fnf_inner);
+      let $fnf_m = 1.0 - $fnf_mrf;
+    } or {
+      $fnf_inner isa logical_expression;
+      let $fnf_ml = logical_expression_membership($fnf_inner);
+      let $fnf_m = 1.0 - $fnf_ml;
+    } or {
+      $fnf_inner isa fuzzy_ascend_expression;
+      let $fnf_ma = fuzzy_ascend_membership($fnf_inner);
+      let $fnf_m = 1.0 - $fnf_ma;
+    } or {
+      $fnf_inner isa fuzzy_decay_expression;
+      let $fnf_md = fuzzy_decay_membership($fnf_inner);
+      let $fnf_m = 1.0 - $fnf_md;
+    } or {
+      $fnf_inner isa fuzzy_unimodal_expression;
+      let $fnf_mu = fuzzy_unimodal_membership($fnf_inner);
+      let $fnf_m = 1.0 - $fnf_mu;
+    };
+  return first $fnf_m;
 
-### as_many_as_possible_fuzzy_expression rules
+fun relaxed_fuzzy_or_fulfillment($e: fuzzy_or) -> double:
+  match
+    $e links (expression: $orf_member);
+    {
+      $orf_member isa relaxed_fuzzy_expression;
+      let $orf_mrf = relaxed_leaf_fulfillment($orf_member);
+      let $orf_m = $orf_mrf;
+    } or {
+      $orf_member isa fuzzy_not;
+      let $orf_mfn = relaxed_fuzzy_not_fulfillment($orf_member);
+      let $orf_m = $orf_mfn;
+    } or {
+      $orf_member isa logical_expression;
+      let $orf_ml = logical_expression_membership($orf_member);
+      let $orf_m = $orf_ml;
+    } or {
+      $orf_member isa fuzzy_ascend_expression;
+      let $orf_ma = fuzzy_ascend_membership($orf_member);
+      let $orf_m = $orf_ma;
+    } or {
+      $orf_member isa fuzzy_decay_expression;
+      let $orf_md = fuzzy_decay_membership($orf_member);
+      let $orf_m = $orf_md;
+    } or {
+      $orf_member isa fuzzy_unimodal_expression;
+      let $orf_mu = fuzzy_unimodal_membership($orf_member);
+      let $orf_m = $orf_mu;
+    };
+  return max($orf_m);
 
+fun may_expression_fulfillment($e: may_expression) -> double:
+  match
+    $e links (expression: $may_member);
+    {
+      $may_member isa relaxed_fuzzy_expression;
+      let $may_mrf = relaxed_leaf_fulfillment($may_member);
+      let $may_m = $may_mrf;
+    } or {
+      $may_member isa logical_expression;
+      let $may_ml = logical_expression_membership($may_member);
+      let $may_m = $may_ml;
+    } or {
+      $may_member isa fuzzy_or;
+      let $may_mo = relaxed_fuzzy_or_fulfillment($may_member);
+      let $may_m = $may_mo;
+    } or {
+      $may_member isa fuzzy_not;
+      let $may_mn = relaxed_fuzzy_not_fulfillment($may_member);
+      let $may_m = $may_mn;
+    };
+  return max($may_m);
 
-### as_few_as_possible_fuzzy_expression rules
+fun shall_expression_fulfillment($e: shall_expression) -> double:
+  match
+    $e links (expression: $shall_member);
+    {
+      $shall_member isa relaxed_fuzzy_expression;
+      let $shall_mrf = relaxed_leaf_fulfillment($shall_member);
+      let $shall_m = $shall_mrf;
+    } or {
+      $shall_member isa logical_expression;
+      let $shall_ml = logical_expression_membership($shall_member);
+      let $shall_m = $shall_ml;
+    } or {
+      $shall_member isa fuzzy_or;
+      let $shall_mo = relaxed_fuzzy_or_fulfillment($shall_member);
+      let $shall_m = $shall_mo;
+    } or {
+      $shall_member isa fuzzy_not;
+      let $shall_mn = relaxed_fuzzy_not_fulfillment($shall_member);
+      let $shall_m = $shall_mn;
+    } or {
+      $shall_member isa may_expression;
+      let $shall_mm = may_expression_fulfillment($shall_member);
+      let $shall_m = $shall_mm;
+    };
+  return min($shall_m);
 
+fun relaxed_expression_fulfillment($e: relaxed_expression) -> double:
+  match
+    {
+      $e isa shall_expression;
+      let $ref_sf = shall_expression_fulfillment($e);
+      let $ref_m = $ref_sf;
+    } or {
+      $e isa may_expression;
+      let $ref_mf = may_expression_fulfillment($e);
+      let $ref_m = $ref_mf;
+    } or {
+      $e isa relaxed_fuzzy_expression;
+      let $ref_ff = relaxed_leaf_fulfillment($e);
+      let $ref_m = $ref_ff;
+    };
+  return first $ref_m;
 
-### TODO: freq_as_close_as_possible_expression rules
-### TODO: as_early_as_possible_expression rules
-### TODO: as_late_as_possible_expression rules
-
-## relaxed_fuzzy_fulfillment
-
-
-
-## expressions fulfillment rules
-
-#  shall_expression: returns min fulfillment among its operands.
-
-# may_expression: returns max fulfillment among its operands.
-
-## TODO: add rule for eventually_expression
-## TODO: add rule for until_expression
-## TODO: add rule for after_expression
-## TODO: add rule for before_expression
-## TODO: add rule for in_expression
-
-## requirement fulfillment
-## interpreting multiple expressions as a fuzzy and with resolution fulfillment = min(fulfillment1, fulfillment2, ...)
-
-## crisp proposition fulfillment
+fun relaxed_requirement_fulfillment($r: relaxed_requirement) -> double:
+  match
+    $r links (expression: $rreq_expr);
+    $rreq_expr isa relaxed_expression;
+    let $rreq_mf = relaxed_expression_fulfillment($rreq_expr);
+  return min($rreq_mf);
 
 
 

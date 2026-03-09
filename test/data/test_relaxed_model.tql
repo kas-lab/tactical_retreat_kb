@@ -2,7 +2,7 @@
 insert
 
 $fake_system isa System, has system_name 'system';
-$fake_req (system: $fake_system) isa relaxed_requirement,
+$fake_req isa relaxed_requirement, links (system: $fake_system),
     has requirement_name 'fake_req';
 
 
@@ -10,8 +10,8 @@ $fake_measure isa Measure,
 	has measure_name "fake_measure",
 	has description "The robot's velocity";
 
-$current_fake_measure isa ValueDouble, has double_value 0.22221;
-(measure:$fake_measure , measurement_value: $current_fake_measure) isa measurement,
+$current_fake_measure isa ValueSingleton, has double_value 0.22221;
+(measure:$fake_measure, measurement_value: $current_fake_measure) isa measurement,
 	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
 $triangular_set isa FuzzyTriangular,
@@ -20,14 +20,15 @@ $triangular_set isa FuzzyTriangular,
 	has c 0.5;
 
 # expected membership 0.92442
-(fuzzy_set: $triangular_set, term: $fake_measure) isa as_close_as_possible_expression,
-	has required_value 0.26,
-	has expression_name 'fake_as_close_expression';
+$fake_as_close_expression isa as_close_as_possible_expression,
+    links (fuzzy_set: $triangular_set, term: $fake_measure),
+    has required_value 0.26,
+    has expression_name 'fake_as_close_expression';
 
 $fake_measure_2 isa Measure,
 	has measure_name "fake_measure_2",
 	has description "The system consumes energy during normal operation";
-$current_fake_measure_2 isa ValueDouble, has double_value 500;
+$current_fake_measure_2 isa ValueSingleton, has double_value 500;
 (measure:$fake_measure_2, measurement_value: $current_fake_measure_2) isa measurement,
 	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
@@ -35,8 +36,9 @@ $fake_measure_2_set isa FuzzyExponentialDecay,
 	has exponent 0.0002107;
 
 # expected membership 0.900009528
-(fuzzy_set: $fake_measure_2_set, term: $fake_measure_2) isa as_few_as_possible_expression,
-	has expression_name 'fake_as_few_as_possible_expr';
+$fake_as_few_as_possible_expr isa as_few_as_possible_expression,
+    links (fuzzy_set: $fake_measure_2_set, term: $fake_measure_2),
+    has expression_name 'fake_as_few_as_possible_expr';
 
 
 $fake_measure_3 isa Measure,
@@ -44,7 +46,7 @@ $fake_measure_3 isa Measure,
 	has description "amount of foodpackages";
 
 # just an example, the measurement should be inserted at runtime
-$current_fake_measure_3 isa ValueDouble, has double_value 9.0;
+$current_fake_measure_3 isa ValueSingleton, has double_value 9.0;
 (measure:$fake_measure_3 , measurement_value: $current_fake_measure_3) isa measurement,
 	has measurement_time 2025-08-06T10:57:56.666, has latest true;
 
@@ -53,31 +55,165 @@ $fake_measure_3_set isa FuzzySigmoid,
 	has exponent 0.5889;
 
 # expected membership 0.913378192
-(fuzzy_set: $fake_measure_3_set, term: $fake_measure_3) isa as_many_as_possible_expression,
-	has expression_name 'as_many_fake_measure_3_as_possible';
+$as_many_fake_measure_3_as_possible isa as_many_as_possible_expression,
+    links (fuzzy_set: $fake_measure_3_set, term: $fake_measure_3),
+    has expression_name 'as_many_fake_measure_3_as_possible';
 
 # Stage 2: Create fake_may_expression and fake_shall_expression referencing the three leaf expressions
-match
-$s2_a isa as_close_as_possible_expression, has expression_name 'fake_as_close_expression';
-$s2_b isa as_few_as_possible_expression, has expression_name 'fake_as_few_as_possible_expr';
-$s2_c isa as_many_as_possible_expression, has expression_name 'as_many_fake_measure_3_as_possible';
-insert
-
 # expected fulfillment max(0.92442, 0.900009528, 0.913378192) = 0.92442
-(expression: $s2_a, expression: $s2_b, expression: $s2_c) isa may_expression,
+$fake_may_expression isa may_expression,
+	links (expression: $fake_as_close_expression, expression: $fake_as_few_as_possible_expr, expression: $as_many_fake_measure_3_as_possible),
     has expression_name 'fake_may_expression';
 
 # expected fulfillment min(0.92442, 0.900009528, 0.913378192) = 0.900009528
-(expression: $s2_a, expression: $s2_b, expression: $s2_c) isa shall_expression,
+(expression: $fake_as_close_expression, expression: $fake_as_few_as_possible_expr, expression: $as_many_fake_measure_3_as_possible) isa shall_expression,
     has expression_name 'fake_shall_expression';
 
 # Stage 3: Create req_1 referencing fake_may_expression
-match
-$s3_sys isa System, has system_name 'system';
-$s3_may isa may_expression, has expression_name 'fake_may_expression';
-insert
-
 ### Requirements
 # expected fulfillment max(0.92442, 0.900009528, 0.913378192) = 0.92442
-(system: $s3_sys, expression: $s3_may) isa relaxed_requirement,
+(system: $fake_system, expression: $fake_may_expression) isa relaxed_requirement,
     has requirement_name 'req_1';
+
+# ── Branch coverage additions ──────────────────────────────────────────────
+
+# as_close_as_possible_expression: triangular descending branch (q ∈ (b, c])
+# q=0.3, a=-0.5, b=0, c=0.5 → (c-q)/(c-b) = 0.2/0.5 = 0.4
+$vs_descending isa ValueSingleton, has double_value 0.3;
+$acap_tri_descending isa as_close_as_possible_expression,
+    links (fuzzy_set: $triangular_set, term: $vs_descending),
+    has expression_name 'acap_tri_descending';
+
+# as_close_as_possible_expression: triangular below branch (q < a) → 0.0
+$vs_below isa ValueSingleton, has double_value -1.0;
+$acap_tri_below isa as_close_as_possible_expression,
+    links (fuzzy_set: $triangular_set, term: $vs_below),
+    has expression_name 'acap_tri_below';
+
+# as_close_as_possible_expression: triangular above branch (q > c) → 0.0
+$vs_above isa ValueSingleton, has double_value 1.0;
+$acap_tri_above isa as_close_as_possible_expression,
+    links (fuzzy_set: $triangular_set, term: $vs_above),
+    has expression_name 'acap_tri_above';
+
+# as_close_as_possible_expression: ValueSingleton+integer term with required_value offset
+# q = 0 - 0.25 = -0.25, triangular_set (a=-0.5,b=0,c=0.5) → (q-a)/(b-a) = 0.25/0.5 = 0.5
+$vs_int_zero isa ValueSingleton, has integer_value 0;
+$acap_vs_int isa as_close_as_possible_expression,
+    links (fuzzy_set: $triangular_set, term: $vs_int_zero),
+    has required_value 0.25,
+    has expression_name 'acap_vs_int';
+
+# freq_as_close_as_possible_expression: Measure+double with required_period offset
+# q = 0.6 - 0.5 = 0.1, FuzzyTriangular(a=-1,b=0,c=1) → (c-q)/(c-b) = 0.9
+$fcap_measure isa Measure,
+    has measure_name "fcap_measure",
+    has description "A frequency measure";
+$fcap_vs isa ValueSingleton, has double_value 0.6;
+(measure: $fcap_measure, measurement_value: $fcap_vs) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+$fcap_tri_set isa FuzzyTriangular,
+    has a -1.0,
+    has b 0.0,
+    has c 1.0;
+$fcap_triangular_expr isa freq_as_close_as_possible_expression,
+    links (fuzzy_set: $fcap_tri_set, term: $fcap_measure),
+    has required_period 0.5,
+    has expression_name 'fcap_triangular_expr';
+
+# as_many_as_possible_expression: FuzzyExponentialSaturation, Measure+double
+# q=1.0, m = 1 - 2.71828^(-2.0*1.0) = 1 - 0.13534 = 0.86466
+$expsat_measure isa Measure,
+    has measure_name "expsat_measure",
+    has description "A measure for ExpSat test";
+$expsat_vs isa ValueSingleton, has double_value 1.0;
+(measure: $expsat_measure, measurement_value: $expsat_vs) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+$expsat_set isa FuzzyExponentialSaturation,
+    has exponent 2.0;
+$amap_expsat_expr isa as_many_as_possible_expression,
+    links (fuzzy_set: $expsat_set, term: $expsat_measure),
+    has expression_name 'amap_expsat_expr';
+
+# as_many_as_possible_expression: FuzzyBoundedLinearFraction, Measure+integer
+# q=7.0, m = 7.0/(7.0+3.0) = 0.7
+$blf_measure isa Measure,
+    has measure_name "blf_measure",
+    has description "A measure for BLF test";
+$blf_vs isa ValueSingleton, has integer_value 7;
+(measure: $blf_measure, measurement_value: $blf_vs) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+$blf_set isa FuzzyBoundedLinearFraction,
+    has curvature 3.0;
+$amap_blf_expr isa as_many_as_possible_expression,
+    links (fuzzy_set: $blf_set, term: $blf_measure),
+    has expression_name 'amap_blf_expr';
+
+# as_late_as_possible_expression: FuzzySigmoid, Measure+double
+# q=2.0, m = 1/(1 + 2.71828^(-1*2.0)) = 1/(1+0.13534) = 0.88080
+$alap_measure isa Measure,
+    has measure_name "alap_measure",
+    has description "A measure for as_late test";
+$alap_vs isa ValueSingleton, has double_value 2.0;
+(measure: $alap_measure, measurement_value: $alap_vs) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+$alap_sigmoid_set isa FuzzySigmoid,
+    has exponent 1.0,
+    has inflection_point 0.0;
+$alap_sigmoid_expr isa as_late_as_possible_expression,
+    links (fuzzy_set: $alap_sigmoid_set, term: $alap_measure),
+    has expression_name 'alap_sigmoid_expr';
+
+# as_early_as_possible_expression: FuzzyExponentialDecay, Measure+double
+# q=1.0, m = 2.71828^(-1.0) = 0.36788
+$aeap_measure isa Measure,
+    has measure_name "aeap_measure",
+    has description "A measure for as_early test";
+$aeap_vs isa ValueSingleton, has double_value 1.0;
+(measure: $aeap_measure, measurement_value: $aeap_vs) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+$aeap_expdecay_set isa FuzzyExponentialDecay,
+    has exponent 1.0;
+$aeap_expdecay_expr isa as_early_as_possible_expression,
+    links (fuzzy_set: $aeap_expdecay_set, term: $aeap_measure),
+    has expression_name 'aeap_expdecay_expr';
+
+# as_few_as_possible_expression: FuzzyRationalDecay, ValueSingleton+integer
+# q=6.0, m = 4.0/(6.0+4.0) = 0.4
+$vs_int_six isa ValueSingleton, has integer_value 6;
+$rational_set isa FuzzyRationalDecay,
+    has curvature 4.0;
+$afap_rational_expr isa as_few_as_possible_expression,
+    links (fuzzy_set: $rational_set, term: $vs_int_six),
+    has expression_name 'afap_rational_expr';
+
+# shall_expression: fuzzy_not member wrapping a relaxed_fuzzy_expression
+# covers relaxed_fuzzy_not_fulfillment branch 1 and shall_expression_fulfillment branch 4
+# fuzzy_not(fake_as_close_expression) = 1.0 - 0.92442 = 0.07558
+$fnf_not_acap isa fuzzy_not,
+    links (expression: $fake_as_close_expression),
+    has expression_name 'fnf_not_acap';
+$shall_not_expr isa shall_expression,
+    links (expression: $fnf_not_acap),
+    has expression_name 'shall_not_expr';
+
+# shall_expression: may_expression member covers shall_expression_fulfillment branch 5
+# may_expression_fulfillment(fake_may_expression) = 0.92442, min(0.92442) = 0.92442
+$shall_with_may_expr isa shall_expression,
+    links (expression: $fake_may_expression),
+    has expression_name 'shall_with_may_expr';
+
+# may_expression: logical_expression member covers may_expression_fulfillment branch 2
+# logical_expression_membership(bool_prop_expr) = 1.0, max(1.0) = 1.0
+$bool_measure isa Measure,
+    has measure_name "bool_measure",
+    has description "A boolean measure";
+$bool_vs isa ValueSingleton, has bool_value true;
+(measure: $bool_measure, measurement_value: $bool_vs) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+$bool_prop_expr isa propositional_expression,
+    links (atom: $bool_measure),
+    has expression_name 'bool_prop_expr';
+$may_with_logical_expr isa may_expression,
+    links (expression: $bool_prop_expr),
+    has expression_name 'may_with_logical_expr';

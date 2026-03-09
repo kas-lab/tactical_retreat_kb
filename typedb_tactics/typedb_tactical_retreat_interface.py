@@ -656,9 +656,10 @@ class TacticalRetreatInterface:
         query = f"""
             match
                 $system isa System, has system_name '{system_name}';
-                (system: $system) isa relaxed_requirement,
-                    has requirement_name '{requirement_name}',
-                    has fulfillment $fulfillment;
+                $req isa relaxed_requirement,
+                    has requirement_name '{requirement_name}';
+                $req links (system: $system);
+                let $fulfillment = relaxed_requirement_fulfillment($req);
             fetch {{ "fulfillment": $fulfillment }};
         """
         return self._fetch(query)
@@ -687,9 +688,10 @@ class TacticalRetreatInterface:
             match
                 $req isa relaxed_requirement,
                     has in_effect true;
+                let $fulfillment = relaxed_requirement_fulfillment($req);
             fetch {
                 "requirement_name": $req.requirement_name,
-                "fulfillment": $req.fulfillment
+                "fulfillment": $fulfillment
             };
         """
         return self._fetch(query)
@@ -1275,8 +1277,8 @@ class TacticalRetreatInterface:
         query = f"""
             match
                 $relaxed_expression isa relaxed_expression,
-                    has expression_name '{expression_name}',
-                    has fulfillment $fulfillment;
+                    has expression_name '{expression_name}';
+                let $fulfillment = relaxed_expression_fulfillment($relaxed_expression);
             fetch {{ "fulfillment": $fulfillment }};
         """
         return self._fetch(query)
