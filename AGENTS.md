@@ -94,26 +94,6 @@ docker exec tactical_retreat bash -lc \
 # limitations under the License.
 ```
 
-## Testing commands
-
-Run full package tests:
-
-```bash
-docker exec tactical_retreat bash -lc \
-  "source /opt/ros/humble/setup.bash && \
-   source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && \
-   colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics"
-```
-
-Run one test pattern:
-
-```bash
-docker exec tactical_retreat bash -lc \
-  "source /opt/ros/humble/setup.bash && \
-   source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && \
-   colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_ros_model"
-```
-
 ## Implementation notes
 
 - TypeDB target is 3.x.
@@ -151,6 +131,57 @@ select $n; reduce $c = count;
 
 - TypeDB 3 does not guarantee fetch order; sort in Python if deterministic order is required by tests.
 - Be careful with relation role cardinalities in schemas. If a role can have multiple players, annotate it explicitly (for example `@card(0..)`), otherwise commits can fail with constraint errors.
+
+## TypeDB 3 query optimization
+
+Source: https://typedb.com/docs/maintenance-operation/troubleshooting/optimizing-queries/
+
+### Optimizer scope
+The optimizer reorders constraints **within a single `match` stage** only. It does NOT cross stage boundaries or subquery (`or`/`not`/function call) boundaries. Splitting one `match` into two pipeline stages disables cross-constraint optimization and creates large intermediate results.
+
+**Bad** (two stages — optimizer can't combine them):
+```typeql
+match $x isa user;
+match $x has username "john_1";
+```
+**Good** (one stage — optimizer picks cheapest order):
+```typeql
+match $x isa user; $x has username "john_1";
+```
+
+### Predicate-pushdown / data-predicate locality
+Declare all constraints on a variable **in the same stage where the variable is first bound**. Do not match data in an early stage and filter it in a later stage.
+
+### OR-branch pattern-pushdown
+Shared expensive patterns inside `or` branches should be **factored out** so they run once, not once per branch. Restructure:
+```typeql
+# Slow: <expensive-pattern1> runs in two branches
+match
+  <shared>;
+  { <expensive-pattern1>; <branch-a>; } or { <expensive-pattern1>; <branch-b>; } or { <branch-c>; };
+```
+```typeql
+# Fast: <expensive-pattern1> runs once
+match
+  <shared>;
+  { <expensive-pattern1>; { <branch-a>; } or { <branch-b>; }; } or { <branch-c>; };
+```
+
+### Negation
+Negations are expensive — they scan the full domain. **Reduce the domain before negating.** Prefer aggregation rewrites over nested `not { not { … } }` patterns.
+
+### Recursive functions (tabling)
+TypeDB uses **tabling**: one table per unique combination of function arguments. Prefer formulations where the recursive argument is **fixed** (always the same value), so only one table is created. The unintuitive "recurse-on-from" pattern (extend from a fixed root) is more efficient than "recurse-on-to" (recurse on varying intermediate nodes):
+
+```typeql
+# Efficient: $from is always the same argument → one table
+fun reachable($from: node) -> { node }:
+match
+  { $_ isa edge (from_: $from, to: $to); }
+  or
+  { let $via in reachable($from); $_ isa edge (from_: $via, to: $to); };
+return { $to };
+```
 
 ## Text2TypeQL reference (recommended)
 
