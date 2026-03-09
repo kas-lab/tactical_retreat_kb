@@ -49,8 +49,8 @@ logical_expression plays tactic_rule:antecedent;
 
 # feature adaptation
 relation feature_adaptation,
-    relates deactivation,
-    relates activation,
+    relates deactivation @card(0..),
+    relates activation @card(0..),
     plays tactic_rule:consequent;
 
 # Connection with feature model
@@ -62,7 +62,7 @@ Feature plays feature_adaptation:deactivation;
 relation resolution_model,
     owns resolution_model_name @key,
     owns ros_system,
-    relates tactic,
+    relates tactic @card(1..),
     relates variant_resolution @card(0..);
 
 relation variant_resolution @abstract,
