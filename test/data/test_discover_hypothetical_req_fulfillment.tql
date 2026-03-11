@@ -360,6 +360,19 @@ $fake_shall_expression isa shall_expression,
         expression: $fuzzy_and_2),
     has expression_name 'fake_shall_expression';
 
+# May Expressions
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> max(0.97558, 0.941764572) -> 0.97558
+# tactic_rule: tactic_rule_rel_effect_measure_lhs (non-related) -> max(0.92442, 0.941764572) -> 0.941764572
+$fake_may_expression isa may_expression,
+    links (expression: $fake_as_close_expression, expression: $fake_as_few_as_possible),
+    has expression_name 'fake_may_expression';
+
+# Direct may-expression lookup regression fixture
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> max(0.97558) -> 0.97558
+$direct_may_expression isa may_expression,
+    links (expression: $fake_as_close_expression),
+    has expression_name 'direct_may_expression';
+
 # Shall Expressions
 # tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.941764572
 $fake_shall_expression_2 isa shall_expression,

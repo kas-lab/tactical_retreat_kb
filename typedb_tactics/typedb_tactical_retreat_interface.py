@@ -1175,49 +1175,22 @@ class TacticalRetreatInterface:
 
     def fetch_tactic_rule_impacts_fulfillment(self, impacted_name: str, tactic_rule_name: str):
         """
-        Fetch hypothetical fulfillment of a expression or requirement given a tactic rule.
+        Fetch hypothetical fulfillment of an expression given a tactic rule.
 
-        :param impacted_name: expression or requirement name
+        :param impacted_name: expression name
         :param rule_name: tactic rule name
         :return: fetch query result
         """
-        expression_query = f"""
-            match {{
+        query = f"""
+            match
                 $impacted isa expression,
                     has expression_name '{impacted_name}';
                 $tr isa tactic_rule,
                     has rule_name '{tactic_rule_name}';
                 let $fulfillment = tactic_rule_impacts_any_expression_fulfillment($tr, $impacted);
-            }};
             fetch {{ "fulfillment": $fulfillment }};
         """
-        query_result = self._fetch(expression_query)
-        if query_result:
-            return query_result
-
-        shall_expression_query = f"""
-            match
-                $impacted isa shall_expression,
-                    has expression_name '{impacted_name}';
-                $tr isa tactic_rule,
-                    has rule_name '{tactic_rule_name}';
-                let $fulfillment = tactic_rule_impacts_shall_fulfillment($tr, $impacted);
-            fetch {{ "fulfillment": $fulfillment }};
-        """
-        query_result = self._fetch(shall_expression_query)
-        if query_result:
-            return query_result
-
-        requirement_query = f"""
-            match
-                $impacted isa relaxed_requirement,
-                    has requirement_name '{impacted_name}';
-                $tr isa tactic_rule,
-                    has rule_name '{tactic_rule_name}';
-                let $fulfillment = tactic_rule_impacts_requirement_fulfillment($tr, $impacted);
-            fetch {{ "fulfillment": $fulfillment }};
-        """
-        return self._fetch(requirement_query)
+        return self._fetch(query)
 
     def fetch_tactic_rule_impacts_requirement(self, impacted_name: str, tactic_rule_name: str):
         """
@@ -1241,9 +1214,9 @@ class TacticalRetreatInterface:
 
     def get_tactic_rule_impacts_requirement(self, impacted_name: str, rule_name: str) -> float:
         """
-        Get hypothetical fulfillment of a expression or requirement given a tactic rule.
+        Get hypothetical fulfillment of a requirement given a tactic rule.
 
-        :param impacted_name: expression or requirement name
+        :param impacted_name: requirement name
         :param rule_name: tactic rule name
         :return: fulfillment
         """

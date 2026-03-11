@@ -356,6 +356,12 @@ fun tactic_rule_impacts_shall_fulfillment($tr: tactic_rule, $e: shall_expression
 
 fun tactic_rule_impacts_any_expression_fulfillment($tr: tactic_rule, $e: expression) -> double:
   match
+    { $e isa may_expression;
+      let $m_ae_may = tactic_rule_impacts_may_fulfillment($tr, $e);
+      let $m_ae = $m_ae_may; } or
+    { $e isa shall_expression;
+      let $m_ae_shall = tactic_rule_impacts_shall_fulfillment($tr, $e);
+      let $m_ae = $m_ae_shall; } or
     { $e isa comparison_expression;
       let $m_ae_cmp = tactic_rule_impacts_comparison_fulfillment($tr, $e);
       let $m_ae = $m_ae_cmp; } or
