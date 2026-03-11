@@ -364,6 +364,3 @@ fun relaxed_requirement_fulfillment($r: relaxed_requirement) -> double:
     $rreq_expr isa relaxed_expression;
     let $rreq_mf = relaxed_expression_fulfillment($rreq_expr);
   return min($rreq_mf);
-
-
-

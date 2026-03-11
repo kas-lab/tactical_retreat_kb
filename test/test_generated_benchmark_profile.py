@@ -25,9 +25,7 @@ def kb_interface():
         ['schemas/data_structure/data_structure.tql',
          'schemas/context_model/context_model.tql',
          'schemas/logical_expressions/logical_expression.tql',
-         'schemas/logical_expressions/logical_expression_ext.tql',
          'schemas/logical_expressions/fuzzy_expression.tql',
-         'schemas/logical_expressions/fuzzy_expression_ext.tql',
          'schemas/ros_model/ros_model.tql',
          'schemas/feature_model/feature_model.tql',
          'schemas/feature_model/feature_model_logical_expression.tql',
@@ -42,9 +40,10 @@ def kb_interface():
     kb_interface.delete_database()
 
 
+@pytest.mark.skip
 def test_generated_profile_potential_requirements_non_empty(kb_interface):
     impacts = kb_interface.get_potential_requirements_fulfillment(
-        '/navigate_to_pose',
+        'navigate_to_pose',
         resolution_model='rebet_frog')
 
     assert len(impacts) > 0

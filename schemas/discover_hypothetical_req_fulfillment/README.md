@@ -13,33 +13,16 @@ before applying reconfiguration actions to the running ROS system.
 
 ## Main files
 
-- `discover_hypothetical_req_fulfillment.tql`: dependency and impact relations,
-  plus stratified impact layers.
+- `discover_hypothetical_req_fulfillment.tql`: function-based hypothetical fulfillment logic.
 
 ## Core modeling concepts
 
-### Direct dependency
+### Function-based evaluation
 
-- `tactic_rule_dependency(tactic_rule, dependent)` connects a tactic rule to expressions or
-  requirements that directly depend on its effects.
-- Stores a `fulfillment` projection for the direct dependency.
-
-### Impact propagation
-
-- `tactic_rule_impacts` represents direct or indirect impacts.
-- Stratified subtypes (`_base`, `_or`, `_and`, `_shall_expression`, `_may_expression`,
-  `_requirement`) avoid negation cycles and separate operator semantics.
-
-### In-effect scoped impacts
-
-- Parallel `*_in_effect` relations keep impact propagation restricted to requirements currently
-  in effect for runtime candidate selection.
-
-### Resolution-model scoped hot path
-
-- `resolution_model_tactic_rule_impacts_requirement_in_effect` denormalizes the most common
-  runtime decision query path: for each `(resolution_model, tactic_rule, requirement in effect)`,
-  store hypothetical fulfillment.
+- The schema computes hypothetical fulfillment directly with functions instead of materializing
+  dependency or impact relations.
+- The hot path is `tactic_rule_impacts_requirement_fulfillment`, which evaluates a requirement
+  under a candidate tactic rule on demand.
 
 ## Dependencies
 
@@ -51,8 +34,6 @@ before applying reconfiguration actions to the running ROS system.
 
 ## Notes for query authors
 
-- This schema is intentionally layered to keep reasoning stratified and maintainable.
-- When extending impact logic, add new subtype layers carefully to avoid semantic cycles.
-- Keep runtime-focused queries aligned with the resolution-model-scoped relation above.
-- Typical consumer pattern: compute impacts per tactic and then optimize an objective
-  (for example mean fulfillment over in-effect requirements).
+- Runtime queries should call the fulfillment functions directly.
+- Typical consumer pattern: evaluate requirements per tactic and then optimize an objective
+  such as mean fulfillment over in-effect requirements.

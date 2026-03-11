@@ -102,19 +102,16 @@ def build_raw_potential_query(
     with_fulfillment: bool,
 ) -> str:
     """Build raw potential-fulfillment query shapes for diagnostics."""
-    impact_line = (
-        '$tactic_impact (impacted: $req, tactic_rule: $tactic_rule) '
-        'isa tactic_rule_impacts_requirement_in_effect;'
-    )
     fetch_lines = [
         '$tactic_rule: rule_name;',
         '$req: requirement_name;',
     ]
+    fulfillment_line = ''
 
     if with_fulfillment:
-        impact_line = (
-            '$tactic_impact (impacted: $req, tactic_rule: $tactic_rule) '
-            'isa tactic_rule_impacts_requirement_in_effect, has fulfillment $fulfillment;'
+        fulfillment_line = (
+            'let $fulfillment = '
+            'tactic_rule_impacts_requirement_fulfillment($tactic_rule, $req);'
         )
         fetch_lines.append('$fulfillment;')
 
@@ -125,8 +122,8 @@ def build_raw_potential_query(
                 $resolution_model isa resolution_model,
                     has resolution_model_name '{resolution_model}';
                 let $tactic_rule in applicable_tactics($ros_interface, $resolution_model);
-                {impact_line}
                 $req isa relaxed_requirement, has in_effect true;
+                {fulfillment_line}
             fetch
                 {fetch_query}
         """
@@ -250,6 +247,22 @@ def benchmark_profile(
             f'{profile.potential_action}|{profile.resolution_model}]'
         ),
         lambda: kb_interface.fetch_potential_requirements_fulfillment(
+            profile.potential_action,
+            resolution_model=profile.resolution_model),
+        runs,
+    ))
+    query_cases.append(benchmark_query_case(
+        f'get_potential_requirements_fulfillment[{profile.potential_action}]',
+        lambda: kb_interface.get_potential_requirements_fulfillment(
+            profile.potential_action),
+        runs,
+    ))
+    query_cases.append(benchmark_query_case(
+        (
+            'get_potential_requirements_fulfillment['
+            f'{profile.potential_action}|{profile.resolution_model}]'
+        ),
+        lambda: kb_interface.get_potential_requirements_fulfillment(
             profile.potential_action,
             resolution_model=profile.resolution_model),
         runs,

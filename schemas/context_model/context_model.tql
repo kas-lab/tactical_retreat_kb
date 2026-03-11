@@ -41,7 +41,7 @@ attribute service_request_kwargs, value string;
 
 relation measurement_interface,
     owns measurement_function_name @card(1),
-    owns measurement_function_lib @card(1),
+    owns measurement_function_lib @card(0..1),
     owns measurement_function_args @card(0..),
     owns measurement_proxy @card(0..1),
     owns measurement_period @card(0..1),

@@ -1,227 +1,401 @@
 define
 
-fuzzy_comparison_expression relates effect @card(0..);
-fuzzy_comparison_expression relates tactic_rule_dependency @card(0..);
-effect plays fuzzy_comparison_expression:effect;
-
-# direct dependency on effect
-relation tactic_rule_dependency,
-    owns fulfillment,
-    relates tactic_rule,
-    relates dependent,
-    plays fuzzy_comparison_expression:tactic_rule_dependency;
-expression plays tactic_rule_dependency:dependent;
-system_requirement plays tactic_rule_dependency:dependent;
-tactic_rule plays tactic_rule_dependency:tactic_rule;
-
-# direct or indirect dependency
-relation tactic_rule_impacts,
-    owns fulfillment,
-    relates tactic_rule;
-tactic_rule plays tactic_rule_impacts:tactic_rule;
-
-# stratified fulfillment subtypes to avoid negation cycles
-relation tactic_rule_impacts_base sub tactic_rule_impacts,
-    relates impacted;
-atomic_expression plays tactic_rule_impacts_base:impacted;
-fuzzy_comparison_expression plays tactic_rule_impacts_base:impacted;
-relaxed_fuzzy_expression plays tactic_rule_impacts_base:impacted;
-not_expression plays tactic_rule_impacts_base:impacted;
-fuzzy_not plays tactic_rule_impacts_base:impacted;
-
-relation tactic_rule_impacts_or sub tactic_rule_impacts,
-    relates impacted;
-or_expression plays tactic_rule_impacts_or:impacted;
-fuzzy_or plays tactic_rule_impacts_or:impacted;
-
-relation tactic_rule_impacts_and sub tactic_rule_impacts,
-    relates impacted;
-and_expression plays tactic_rule_impacts_and:impacted;
-fuzzy_and plays tactic_rule_impacts_and:impacted;
-
-relation tactic_rule_impacts_shall_expression sub tactic_rule_impacts,
-    relates impacted;
-shall_expression plays tactic_rule_impacts_shall_expression:impacted;
-
-relation tactic_rule_impacts_may_expression sub tactic_rule_impacts,
-    relates impacted;
-may_expression plays tactic_rule_impacts_may_expression:impacted;
-
-relation tactic_rule_impacts_requirement sub tactic_rule_impacts,
-    relates impacted;
-relaxed_requirement plays tactic_rule_impacts_requirement:impacted;
-
-# in-effect-scoped tactic_rule impacts used by potential requirement queries
-relation tactic_rule_impacts_in_effect,
-    owns fulfillment,
-    relates tactic_rule;
-tactic_rule plays tactic_rule_impacts_in_effect:tactic_rule;
 
-relation tactic_rule_impacts_base_in_effect sub tactic_rule_impacts_in_effect,
-    relates impacted;
-atomic_expression plays tactic_rule_impacts_base_in_effect:impacted;
-fuzzy_comparison_expression plays tactic_rule_impacts_base_in_effect:impacted;
-relaxed_fuzzy_expression plays tactic_rule_impacts_base_in_effect:impacted;
-not_expression plays tactic_rule_impacts_base_in_effect:impacted;
-fuzzy_not plays tactic_rule_impacts_base_in_effect:impacted;
-
-relation tactic_rule_impacts_or_in_effect sub tactic_rule_impacts_in_effect,
-    relates impacted;
-or_expression plays tactic_rule_impacts_or_in_effect:impacted;
-fuzzy_or plays tactic_rule_impacts_or_in_effect:impacted;
-
-relation tactic_rule_impacts_and_in_effect sub tactic_rule_impacts_in_effect,
-    relates impacted;
-and_expression plays tactic_rule_impacts_and_in_effect:impacted;
-fuzzy_and plays tactic_rule_impacts_and_in_effect:impacted;
-
-relation tactic_rule_impacts_shall_expression_in_effect sub tactic_rule_impacts_in_effect,
-    relates impacted;
-shall_expression plays tactic_rule_impacts_shall_expression_in_effect:impacted;
-
-relation tactic_rule_impacts_may_expression_in_effect sub tactic_rule_impacts_in_effect,
-    relates impacted;
-may_expression plays tactic_rule_impacts_may_expression_in_effect:impacted;
-
-relation tactic_rule_impacts_requirement_in_effect sub tactic_rule_impacts_in_effect,
-    relates impacted;
-relaxed_requirement plays tactic_rule_impacts_requirement_in_effect:impacted;
-
-# resolution-model-scoped in-effect requirement impacts for hot query path
-relation resolution_model_tactic_rule_impacts_requirement_in_effect,
-    owns fulfillment,
-    relates resolution_model,
-    relates tactic_rule,
-    relates impacted;
-resolution_model plays resolution_model_tactic_rule_impacts_requirement_in_effect:resolution_model;
-tactic_rule plays resolution_model_tactic_rule_impacts_requirement_in_effect:tactic_rule;
-relaxed_requirement plays resolution_model_tactic_rule_impacts_requirement_in_effect:impacted;
-
-
-relation tr_dependency_lhs_double_operand,
-    relates tr_dependency,
-    relates lhs_double;
-tactic_rule_dependency plays tr_dependency_lhs_double_operand:tr_dependency;
-ValueSingleton plays tr_dependency_lhs_double_operand:lhs_double;
-
-relation tr_dependency_rhs_double_operand,
-    relates tr_dependency,
-    relates rhs_double;
-tactic_rule_dependency plays tr_dependency_rhs_double_operand:tr_dependency;
-ValueSingleton plays tr_dependency_rhs_double_operand:rhs_double;
-
-relation tr_dependency_lhs_effect_operand,
-    relates tr_dependency,
-    relates lhs_effect;
-tactic_rule_dependency plays tr_dependency_lhs_effect_operand:tr_dependency;
-effect plays tr_dependency_lhs_effect_operand:lhs_effect;
-
-relation tr_dependency_rhs_effect_operand,
-    relates tr_dependency,
-    relates rhs_effect;
-tactic_rule_dependency plays tr_dependency_rhs_effect_operand:tr_dependency;
-effect plays tr_dependency_rhs_effect_operand:rhs_effect;
-
-relation tr_dependency_lhs_measure_without_effect,
-    relates tr_dependency,
-    relates lhs_measure;
-tactic_rule_dependency plays tr_dependency_lhs_measure_without_effect:tr_dependency;
-Measure plays tr_dependency_lhs_measure_without_effect:lhs_measure;
-
-relation tr_dependency_rhs_measure_without_effect,
-    relates tr_dependency,
-    relates rhs_measure;
-tactic_rule_dependency plays tr_dependency_rhs_measure_without_effect:tr_dependency;
-Measure plays tr_dependency_rhs_measure_without_effect:rhs_measure;
-
-
-# Rules for inferring direct dependency on a tactic_rule
-
-
-
-
-# Rules for inferring the hypothetical fulfillment of expressions that directly
-# depend on a tactic rule effect
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# rule fuzzy_decay_tactic_rule_dependency_effect:
-
-
-
-
-### as_close_as_possible_fuzzy_expression rules
-
-
-
-### as_many_as_possible_fuzzy_expression rules
-
-
-
-
-# Rules for tactic_rule_impacts_*
-
-
-
-
-
-
-# rules for evaluating expressions that don't directly depend on the effects of a tactic rule
-# but might have sub-expression that depends on measures impacted by effects
-
-
-
-
-
-
-
-
-
-# In-effect scoped tactic_rule_impacts_* rules for potential requirement queries
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+fun tactic_rule_hypothetical_measure_value($tr: tactic_rule, $m: Measure) -> double:
+  match
+    { $tr links (effect: $eff_a); $eff_a links (measure: $m);
+      $eff_a isa relative_effect;
+      $eff_a links (effect_value: $del_a);
+      (measure: $m, measurement_value: $cur_a) isa measurement, has latest true;
+      $cur_a has double_value $cur_d_a; $del_a has double_value $del_d_a;
+      let $v = $cur_d_a + $del_d_a; } or
+    { $tr links (effect: $eff_b); $eff_b links (measure: $m);
+      $eff_b isa absolute_effect; $eff_b links (effect_value: $abs_ev_d);
+      $abs_ev_d has double_value $abs_d_raw; let $v = $abs_d_raw; } or
+    { $tr links (effect: $eff_bi); $eff_bi links (measure: $m);
+      $eff_bi isa absolute_effect; $eff_bi links (effect_value: $abs_ev_i);
+      $abs_ev_i has integer_value $abs_i_raw; let $v = $abs_i_raw + 0.0; } or
+    { not { $tr links (effect: $eff_c); $eff_c links (measure: $m); };
+      (measure: $m, measurement_value: $mv_d) isa measurement, has latest true;
+      $mv_d has double_value $vd_raw; let $v = $vd_raw; } or
+    { not { $tr links (effect: $eff_ci); $eff_ci links (measure: $m); };
+      (measure: $m, measurement_value: $mv_i) isa measurement, has latest true;
+      $mv_i has integer_value $vi_raw; let $v = $vi_raw + 0.0; };
+  return first $v;
+
+fun tactic_rule_hypothetical_comparison_lhs_value($tr: tactic_rule, $e: comparison_expression) -> double:
+  match
+    { $tr links (effect: $eff_lhs_rel); $eff_lhs_rel links (measure: $meas_lhs_rel);
+      $e links (lhs_value: $meas_lhs_rel); $eff_lhs_rel isa relative_effect;
+      $eff_lhs_rel links (effect_value: $delta_lhs_rel);
+      (measure: $meas_lhs_rel, measurement_value: $cur_lhs_rel) isa measurement, has latest true;
+      $cur_lhs_rel has double_value $cur_d_lhs; $delta_lhs_rel has double_value $del_d_lhs;
+      let $v_cmp_lhs = $cur_d_lhs + $del_d_lhs; } or
+    { $tr links (effect: $eff_lhs_abd); $eff_lhs_abd links (measure: $meas_lhs_abd);
+      $e links (lhs_value: $meas_lhs_abd); $eff_lhs_abd isa absolute_effect;
+      $eff_lhs_abd links (effect_value: $abs_ev_lhs_d); $abs_ev_lhs_d has double_value $abs_d_lhs;
+      let $v_cmp_lhs = $abs_d_lhs; } or
+    { $tr links (effect: $eff_lhs_abi); $eff_lhs_abi links (measure: $meas_lhs_abi);
+      $e links (lhs_value: $meas_lhs_abi); $eff_lhs_abi isa absolute_effect;
+      $eff_lhs_abi links (effect_value: $abs_ev_lhs_i); $abs_ev_lhs_i has integer_value $abs_i_lhs;
+      let $v_cmp_lhs = $abs_i_lhs + 0.0; } or
+    { (measure: $meas_lhs_nad, measurement_value: $mv_lhs_nad) isa measurement, has latest true;
+      $e links (lhs_value: $meas_lhs_nad);
+      not { $tr links (effect: $eff_lhs_nad); $eff_lhs_nad links (measure: $meas_lhs_nad); };
+      $mv_lhs_nad has double_value $vd_lhs; let $v_cmp_lhs = $vd_lhs; } or
+    { (measure: $meas_lhs_nai, measurement_value: $mv_lhs_nai) isa measurement, has latest true;
+      $e links (lhs_value: $meas_lhs_nai);
+      not { $tr links (effect: $eff_lhs_nai); $eff_lhs_nai links (measure: $meas_lhs_nai); };
+      $mv_lhs_nai has integer_value $vi_lhs; let $v_cmp_lhs = $vi_lhs + 0.0; } or
+    { $e links (lhs_value: $lhs_vs_d); $lhs_vs_d isa ValueSingleton;
+      $lhs_vs_d has double_value $lhs_d; let $v_cmp_lhs = $lhs_d; } or
+    { $e links (lhs_value: $lhs_vs_i); $lhs_vs_i isa ValueSingleton;
+      $lhs_vs_i has integer_value $lhs_i; let $v_cmp_lhs = $lhs_i + 0.0; };
+  return first $v_cmp_lhs;
+
+fun tactic_rule_hypothetical_comparison_rhs_value($tr: tactic_rule, $e: comparison_expression) -> double:
+  match
+    { $tr links (effect: $eff_rhs_rel); $eff_rhs_rel links (measure: $meas_rhs_rel);
+      $e links (rhs_value: $meas_rhs_rel); $eff_rhs_rel isa relative_effect;
+      $eff_rhs_rel links (effect_value: $delta_rhs_rel);
+      (measure: $meas_rhs_rel, measurement_value: $cur_rhs_rel) isa measurement, has latest true;
+      $cur_rhs_rel has double_value $cur_d_rhs; $delta_rhs_rel has double_value $del_d_rhs;
+      let $v_cmp_rhs = $cur_d_rhs + $del_d_rhs; } or
+    { $tr links (effect: $eff_rhs_abd); $eff_rhs_abd links (measure: $meas_rhs_abd);
+      $e links (rhs_value: $meas_rhs_abd); $eff_rhs_abd isa absolute_effect;
+      $eff_rhs_abd links (effect_value: $abs_ev_rhs_d); $abs_ev_rhs_d has double_value $abs_d_rhs;
+      let $v_cmp_rhs = $abs_d_rhs; } or
+    { $tr links (effect: $eff_rhs_abi); $eff_rhs_abi links (measure: $meas_rhs_abi);
+      $e links (rhs_value: $meas_rhs_abi); $eff_rhs_abi isa absolute_effect;
+      $eff_rhs_abi links (effect_value: $abs_ev_rhs_i); $abs_ev_rhs_i has integer_value $abs_i_rhs;
+      let $v_cmp_rhs = $abs_i_rhs + 0.0; } or
+    { (measure: $meas_rhs_nad, measurement_value: $mv_rhs_nad) isa measurement, has latest true;
+      $e links (rhs_value: $meas_rhs_nad);
+      not { $tr links (effect: $eff_rhs_nad); $eff_rhs_nad links (measure: $meas_rhs_nad); };
+      $mv_rhs_nad has double_value $vd_rhs; let $v_cmp_rhs = $vd_rhs; } or
+    { (measure: $meas_rhs_nai, measurement_value: $mv_rhs_nai) isa measurement, has latest true;
+      $e links (rhs_value: $meas_rhs_nai);
+      not { $tr links (effect: $eff_rhs_nai); $eff_rhs_nai links (measure: $meas_rhs_nai); };
+      $mv_rhs_nai has integer_value $vi_rhs; let $v_cmp_rhs = $vi_rhs + 0.0; } or
+    { $e links (rhs_value: $rhs_vs_d); $rhs_vs_d isa ValueSingleton;
+      $rhs_vs_d has double_value $rhs_d; let $v_cmp_rhs = $rhs_d; } or
+    { $e links (rhs_value: $rhs_vs_i); $rhs_vs_i isa ValueSingleton;
+      $rhs_vs_i has integer_value $rhs_i; let $v_cmp_rhs = $rhs_i + 0.0; };
+  return first $v_cmp_rhs;
+
+fun tactic_rule_impacts_comparison_fulfillment($tr: tactic_rule, $e: comparison_expression) -> double:
+  match
+    { $e isa less_than;
+      let $lv_lt = tactic_rule_hypothetical_comparison_lhs_value($tr, $e);
+      let $rv_lt = tactic_rule_hypothetical_comparison_rhs_value($tr, $e);
+      { $lv_lt < $rv_lt; let $ok = 1.0; } or { not { $lv_lt < $rv_lt; }; let $ok = 0.0; }; } or
+    { $e isa less_than_equal;
+      let $lv_lte = tactic_rule_hypothetical_comparison_lhs_value($tr, $e);
+      let $rv_lte = tactic_rule_hypothetical_comparison_rhs_value($tr, $e);
+      { $lv_lte <= $rv_lte; let $ok = 1.0; } or { $lv_lte > $rv_lte; let $ok = 0.0; }; } or
+    { $e isa greater_than;
+      let $lv_gt = tactic_rule_hypothetical_comparison_lhs_value($tr, $e);
+      let $rv_gt = tactic_rule_hypothetical_comparison_rhs_value($tr, $e);
+      { $lv_gt > $rv_gt; let $ok = 1.0; } or { not { $lv_gt > $rv_gt; }; let $ok = 0.0; }; } or
+    { $e isa greater_than_equal;
+      let $lv_gte = tactic_rule_hypothetical_comparison_lhs_value($tr, $e);
+      let $rv_gte = tactic_rule_hypothetical_comparison_rhs_value($tr, $e);
+      { $lv_gte >= $rv_gte; let $ok = 1.0; } or { not { $lv_gte >= $rv_gte; }; let $ok = 0.0; }; } or
+    { $e isa equal;
+      let $lv_eq = tactic_rule_hypothetical_comparison_lhs_value($tr, $e);
+      let $rv_eq = tactic_rule_hypothetical_comparison_rhs_value($tr, $e);
+      { $lv_eq == $rv_eq; let $ok = 1.0; } or { not { $lv_eq == $rv_eq; }; let $ok = 0.0; }; } or
+    { $e isa not_equal;
+      let $lv_ne = tactic_rule_hypothetical_comparison_lhs_value($tr, $e);
+      let $rv_ne = tactic_rule_hypothetical_comparison_rhs_value($tr, $e);
+      { not { $lv_ne == $rv_ne; }; let $ok = 1.0; } or { $lv_ne == $rv_ne; let $ok = 0.0; }; };
+  return first $ok;
+
+fun tactic_rule_hypothetical_fuzzy_term($tr: tactic_rule, $e: fuzzy_comparison_expression) -> double:
+  match
+    $e links (term: $term_ft);
+    { $term_ft isa Measure;
+      $tr links (effect: $eff_ft_rel); $eff_ft_rel isa relative_effect;
+      $eff_ft_rel links (measure: $term_ft, effect_value: $del_ft_rel);
+      (measure: $term_ft, measurement_value: $cur_ft_rel) isa measurement, has latest true;
+      $cur_ft_rel has double_value $cur_d_ft; $del_ft_rel has double_value $del_d_ft;
+      let $raw_ft = $cur_d_ft + $del_d_ft; } or
+    { $term_ft isa Measure;
+      $tr links (effect: $eff_ft_abd); $eff_ft_abd isa absolute_effect;
+      $eff_ft_abd links (measure: $term_ft, effect_value: $abs_ev_ft_d);
+      $abs_ev_ft_d has double_value $abs_d_ft; let $raw_ft = $abs_d_ft; } or
+    { $term_ft isa Measure;
+      $tr links (effect: $eff_ft_abi); $eff_ft_abi isa absolute_effect;
+      $eff_ft_abi links (measure: $term_ft, effect_value: $abs_ev_ft_i);
+      $abs_ev_ft_i has integer_value $abs_i_ft; let $raw_ft = $abs_i_ft + 0.0; } or
+    { $term_ft isa Measure;
+      not { $tr links (effect: $eff_ft_nad); $eff_ft_nad links (measure: $term_ft); };
+      (measure: $term_ft, measurement_value: $mv_ft_d) isa measurement, has latest true;
+      $mv_ft_d has double_value $vd_ft; let $raw_ft = $vd_ft; } or
+    { $term_ft isa Measure;
+      not { $tr links (effect: $eff_ft_nai); $eff_ft_nai links (measure: $term_ft); };
+      (measure: $term_ft, measurement_value: $mv_ft_i) isa measurement, has latest true;
+      $mv_ft_i has integer_value $vi_ft; let $raw_ft = $vi_ft + 0.0; } or
+    { $term_ft isa ValueSingleton; $term_ft has double_value $vs_d_ft; let $raw_ft = $vs_d_ft; } or
+    { $term_ft isa ValueSingleton; $term_ft has integer_value $vs_i_ft; let $raw_ft = $vs_i_ft + 0.0; };
+    { $e has offset_value $off_ft; let $q_hft = $raw_ft + $off_ft; } or
+    { not { $e has offset_value $_; }; let $q_hft = $raw_ft; };
+  return first $q_hft;
+
+fun tactic_rule_impacts_fuzzy_leaf_fulfillment($tr: tactic_rule, $e: fuzzy_comparison_expression) -> double:
+  match
+    { $e isa fuzzy_ascend_expression;
+      $e links (fuzzy_set: $asc_set_fl);
+      let $qv_asc_fl = tactic_rule_hypothetical_fuzzy_term($tr, $e);
+      let $m_asc = fuzzy_ascend_set_membership($asc_set_fl, $qv_asc_fl);
+      let $m = $m_asc; } or
+    { $e isa fuzzy_decay_expression;
+      $e links (fuzzy_set: $dec_set_fl);
+      let $qv_dec_fl = tactic_rule_hypothetical_fuzzy_term($tr, $e);
+      let $m_dec = fuzzy_decay_set_membership($dec_set_fl, $qv_dec_fl);
+      let $m = $m_dec; } or
+    { $e isa fuzzy_unimodal_expression;
+      $e links (fuzzy_set: $uni_set_fl);
+      let $qv_uni_fl = tactic_rule_hypothetical_fuzzy_term($tr, $e);
+      let $m_uni = fuzzy_unimodal_set_membership($uni_set_fl, $qv_uni_fl);
+      let $m = $m_uni; };
+  return first $m;
+
+fun tactic_rule_hypothetical_relaxed_term($tr: tactic_rule, $e: relaxed_fuzzy_expression) -> double:
+  match
+    $e links (term: $term_rt);
+    { $term_rt isa Measure;
+      $tr links (effect: $eff_rt_rel); $eff_rt_rel isa relative_effect;
+      $eff_rt_rel links (measure: $term_rt, effect_value: $del_rt_rel);
+      (measure: $term_rt, measurement_value: $cur_rt_rel) isa measurement, has latest true;
+      $cur_rt_rel has double_value $cur_d_rt; $del_rt_rel has double_value $del_d_rt;
+      let $raw_rt = $cur_d_rt + $del_d_rt; } or
+    { $term_rt isa Measure;
+      $tr links (effect: $eff_rt_abd); $eff_rt_abd isa absolute_effect;
+      $eff_rt_abd links (measure: $term_rt, effect_value: $abs_ev_rt_d);
+      $abs_ev_rt_d has double_value $abs_d_rt; let $raw_rt = $abs_d_rt; } or
+    { $term_rt isa Measure;
+      $tr links (effect: $eff_rt_abi); $eff_rt_abi isa absolute_effect;
+      $eff_rt_abi links (measure: $term_rt, effect_value: $abs_ev_rt_i);
+      $abs_ev_rt_i has integer_value $abs_i_rt; let $raw_rt = $abs_i_rt + 0.0; } or
+    { $term_rt isa Measure;
+      not { $tr links (effect: $eff_rt_nad); $eff_rt_nad links (measure: $term_rt); };
+      (measure: $term_rt, measurement_value: $mv_rt_d) isa measurement, has latest true;
+      $mv_rt_d has double_value $vd_rt; let $raw_rt = $vd_rt; } or
+    { $term_rt isa Measure;
+      not { $tr links (effect: $eff_rt_nai); $eff_rt_nai links (measure: $term_rt); };
+      (measure: $term_rt, measurement_value: $mv_rt_i) isa measurement, has latest true;
+      $mv_rt_i has integer_value $vi_rt; let $raw_rt = $vi_rt + 0.0; } or
+    { $term_rt isa ValueSingleton; $term_rt has double_value $vs_d_rt; let $raw_rt = $vs_d_rt; } or
+    { $term_rt isa ValueSingleton; $term_rt has integer_value $vs_i_rt; let $raw_rt = $vs_i_rt + 0.0; };
+    { $e has required_value $rv_rt; let $q_hrt = $raw_rt - $rv_rt; } or
+    { $e has required_period $rp_rt; let $q_hrt = $raw_rt - $rp_rt; } or
+    { not { $e has required_value $_; }; not { $e has required_period $_; };
+      let $q_hrt = $raw_rt; };
+  return first $q_hrt;
+
+fun tactic_rule_impacts_relaxed_leaf_fulfillment($tr: tactic_rule, $e: relaxed_fuzzy_expression) -> double:
+  match
+    { $e isa relaxed_unimodal_expression;
+      $e links (fuzzy_set: $uni_set_rl);
+      let $q_uni_rl = tactic_rule_hypothetical_relaxed_term($tr, $e);
+      let $m_uni_rl = fuzzy_unimodal_set_membership($uni_set_rl, $q_uni_rl);
+      let $m = $m_uni_rl; } or
+    { $e isa relaxed_ascend_expression;
+      $e links (fuzzy_set: $asc_set_rl);
+      let $q_asc_rl = tactic_rule_hypothetical_relaxed_term($tr, $e);
+      let $m_asc_rl = fuzzy_ascend_set_membership($asc_set_rl, $q_asc_rl);
+      let $m = $m_asc_rl; } or
+    { $e isa relaxed_decay_expression;
+      $e links (fuzzy_set: $dec_set_rl);
+      let $q_dec_rl = tactic_rule_hypothetical_relaxed_term($tr, $e);
+      let $m_dec_rl = fuzzy_decay_set_membership($dec_set_rl, $q_dec_rl);
+      let $m = $m_dec_rl; };
+  return first $m;
+
+fun tactic_rule_impacts_not_membership($tr: tactic_rule, $e: not_expression) -> double:
+  match
+    $e links (expression: $inner_ne);
+    { $inner_ne isa comparison_expression;
+      let $cf_ne = tactic_rule_impacts_comparison_fulfillment($tr, $inner_ne);
+      let $neg_ne = 1.0 - $cf_ne; } or
+    { $inner_ne isa logical_expression;
+      not { $inner_ne isa comparison_expression; };
+      let $lm_ne = logical_expression_membership($inner_ne);
+      let $neg_ne = 1.0 - $lm_ne; };
+  return first $neg_ne;
+
+fun tactic_rule_impacts_fuzzy_not_membership($tr: tactic_rule, $e: fuzzy_not) -> double:
+  match
+    $e links (expression: $inner_fn);
+    { $inner_fn isa comparison_expression;
+      let $cf_fn = tactic_rule_impacts_comparison_fulfillment($tr, $inner_fn);
+      let $fnf_m = 1.0 - $cf_fn; } or
+    { $inner_fn isa relaxed_fuzzy_expression;
+      let $rf_fn = tactic_rule_impacts_relaxed_leaf_fulfillment($tr, $inner_fn);
+      let $fnf_m = 1.0 - $rf_fn; } or
+    { $inner_fn isa fuzzy_comparison_expression;
+      let $ff_fn = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $inner_fn);
+      let $fnf_m = 1.0 - $ff_fn; } or
+    { $inner_fn isa logical_expression;
+      not { $inner_fn isa comparison_expression; };
+      let $lm_fn = logical_expression_membership($inner_fn);
+      let $fnf_m = 1.0 - $lm_fn; };
+  return first $fnf_m;
+
+fun tactic_rule_impacts_fuzzy_or_fulfillment($tr: tactic_rule, $e: fuzzy_or) -> double:
+  match
+    $e links (expression: $child_fo);
+    { $child_fo isa fuzzy_not;
+      let $m_fn_fo = tactic_rule_impacts_fuzzy_not_membership($tr, $child_fo);
+      let $m_fo = $m_fn_fo; } or
+    { $child_fo isa comparison_expression;
+      let $m_cmp_fo = tactic_rule_impacts_comparison_fulfillment($tr, $child_fo);
+      let $m_fo = $m_cmp_fo; } or
+    { $child_fo isa not_expression;
+      let $m_not_fo = tactic_rule_impacts_not_membership($tr, $child_fo);
+      let $m_fo = $m_not_fo; } or
+    { $child_fo isa relaxed_fuzzy_expression;
+      let $m_rf_fo = tactic_rule_impacts_relaxed_leaf_fulfillment($tr, $child_fo);
+      let $m_fo = $m_rf_fo; } or
+    { $child_fo isa fuzzy_ascend_expression;
+      let $m_asc_fo = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fo);
+      let $m_fo = $m_asc_fo; } or
+    { $child_fo isa fuzzy_decay_expression;
+      let $m_dec_fo = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fo);
+      let $m_fo = $m_dec_fo; } or
+    { $child_fo isa fuzzy_unimodal_expression;
+      let $m_uni_fo = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fo);
+      let $m_fo = $m_uni_fo; } or
+    { $child_fo isa logical_expression;
+      not { $child_fo isa comparison_expression; };
+      let $m_log_fo = logical_expression_membership($child_fo);
+      let $m_fo = $m_log_fo; };
+  return max($m_fo);
+
+fun tactic_rule_impacts_fuzzy_and_fulfillment($tr: tactic_rule, $e: fuzzy_and) -> double:
+  match
+    $e links (expression: $child_fa);
+    { $child_fa isa fuzzy_not;
+      let $m_fn_fa = tactic_rule_impacts_fuzzy_not_membership($tr, $child_fa);
+      let $m_fa = $m_fn_fa; } or
+    { $child_fa isa comparison_expression;
+      let $m_cmp_fa = tactic_rule_impacts_comparison_fulfillment($tr, $child_fa);
+      let $m_fa = $m_cmp_fa; } or
+    { $child_fa isa not_expression;
+      let $m_not_fa = tactic_rule_impacts_not_membership($tr, $child_fa);
+      let $m_fa = $m_not_fa; } or
+    { $child_fa isa relaxed_fuzzy_expression;
+      let $m_rf_fa = tactic_rule_impacts_relaxed_leaf_fulfillment($tr, $child_fa);
+      let $m_fa = $m_rf_fa; } or
+    { $child_fa isa fuzzy_ascend_expression;
+      let $m_asc_fa = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fa);
+      let $m_fa = $m_asc_fa; } or
+    { $child_fa isa fuzzy_decay_expression;
+      let $m_dec_fa = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fa);
+      let $m_fa = $m_dec_fa; } or
+    { $child_fa isa fuzzy_unimodal_expression;
+      let $m_uni_fa = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fa);
+      let $m_fa = $m_uni_fa; } or
+    { $child_fa isa logical_expression;
+      not { $child_fa isa comparison_expression; };
+      let $m_log_fa = logical_expression_membership($child_fa);
+      let $m_fa = $m_log_fa; };
+  return min($m_fa);
+
+fun tactic_rule_impacts_may_fulfillment($tr: tactic_rule, $e: may_expression) -> double:
+  match
+    $e links (expression: $may_m);
+    { $may_m isa fuzzy_or;
+      let $may_or = tactic_rule_impacts_fuzzy_or_fulfillment($tr, $may_m);
+      let $may_val = $may_or; } or
+    { $may_m isa fuzzy_and;
+      let $may_and = tactic_rule_impacts_fuzzy_and_fulfillment($tr, $may_m);
+      let $may_val = $may_and; } or
+    { $may_m isa fuzzy_not;
+      let $may_not = tactic_rule_impacts_fuzzy_not_membership($tr, $may_m);
+      let $may_val = $may_not; } or
+    { $may_m isa relaxed_fuzzy_expression;
+      let $may_rf = tactic_rule_impacts_relaxed_leaf_fulfillment($tr, $may_m);
+      let $may_val = $may_rf; } or
+    { $may_m isa comparison_expression;
+      let $may_cmp = tactic_rule_impacts_comparison_fulfillment($tr, $may_m);
+      let $may_val = $may_cmp; } or
+    { $may_m isa logical_expression;
+      not { $may_m isa comparison_expression; };
+      let $may_log = logical_expression_membership($may_m);
+      let $may_val = $may_log; };
+  return max($may_val);
+
+fun tactic_rule_impacts_shall_fulfillment($tr: tactic_rule, $e: shall_expression) -> double:
+  match
+    $e links (expression: $shall_m);
+    { $shall_m isa fuzzy_or;
+      let $sh_or = tactic_rule_impacts_fuzzy_or_fulfillment($tr, $shall_m);
+      let $sh_val = $sh_or; } or
+    { $shall_m isa fuzzy_and;
+      let $sh_and = tactic_rule_impacts_fuzzy_and_fulfillment($tr, $shall_m);
+      let $sh_val = $sh_and; } or
+    { $shall_m isa fuzzy_not;
+      let $sh_not = tactic_rule_impacts_fuzzy_not_membership($tr, $shall_m);
+      let $sh_val = $sh_not; } or
+    { $shall_m isa may_expression;
+      let $sh_may = tactic_rule_impacts_may_fulfillment($tr, $shall_m);
+      let $sh_val = $sh_may; } or
+    { $shall_m isa relaxed_fuzzy_expression;
+      let $sh_rf = tactic_rule_impacts_relaxed_leaf_fulfillment($tr, $shall_m);
+      let $sh_val = $sh_rf; } or
+    { $shall_m isa comparison_expression;
+      let $sh_cmp = tactic_rule_impacts_comparison_fulfillment($tr, $shall_m);
+      let $sh_val = $sh_cmp; } or
+    { $shall_m isa logical_expression;
+      not { $shall_m isa comparison_expression; };
+      let $sh_log = logical_expression_membership($shall_m);
+      let $sh_val = $sh_log; };
+  return min($sh_val);
+
+fun tactic_rule_impacts_any_expression_fulfillment($tr: tactic_rule, $e: expression) -> double:
+  match
+    { $e isa comparison_expression;
+      let $m_ae_cmp = tactic_rule_impacts_comparison_fulfillment($tr, $e);
+      let $m_ae = $m_ae_cmp; } or
+    { $e isa relaxed_fuzzy_expression;
+      let $m_ae_rf = tactic_rule_impacts_relaxed_leaf_fulfillment($tr, $e);
+      let $m_ae = $m_ae_rf; } or
+    { $e isa fuzzy_comparison_expression;
+      let $m_ae_f = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $e);
+      let $m_ae = $m_ae_f; } or
+    { $e isa not_expression;
+      let $m_ae_not = tactic_rule_impacts_not_membership($tr, $e);
+      let $m_ae = $m_ae_not; } or
+    { $e isa fuzzy_not;
+      let $m_ae_fn = tactic_rule_impacts_fuzzy_not_membership($tr, $e);
+      let $m_ae = $m_ae_fn; } or
+    { $e isa fuzzy_or;
+      let $m_ae_fo = tactic_rule_impacts_fuzzy_or_fulfillment($tr, $e);
+      let $m_ae = $m_ae_fo; } or
+    { $e isa fuzzy_and;
+      let $m_ae_fa = tactic_rule_impacts_fuzzy_and_fulfillment($tr, $e);
+      let $m_ae = $m_ae_fa; } or
+    { $e isa logical_expression;
+      not { $e isa comparison_expression; };
+      not { $e isa not_expression; };
+      let $m_ae_log = logical_expression_membership($e);
+      let $m_ae = $m_ae_log; };
+  return first $m_ae;
+
+fun tactic_rule_impacts_requirement_fulfillment($tr: tactic_rule, $req: relaxed_requirement) -> double:
+  match
+    { $req links (expression: $rreq_sh);
+      $rreq_sh isa shall_expression;
+      let $req_sh = tactic_rule_impacts_shall_fulfillment($tr, $rreq_sh);
+      let $req_m = $req_sh; } or
+    { $req links (expression: $rreq_may_expr);
+      $rreq_may_expr isa may_expression;
+      let $req_may = tactic_rule_impacts_may_fulfillment($tr, $rreq_may_expr);
+      let $req_m = $req_may; } or
+    { $req links (expression: $rreq_rf_expr);
+      $rreq_rf_expr isa relaxed_fuzzy_expression;
+      let $req_rf = tactic_rule_impacts_relaxed_leaf_fulfillment($tr, $rreq_rf_expr);
+      let $req_m = $req_rf; };
+  return min($req_m);

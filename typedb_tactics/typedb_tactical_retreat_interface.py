@@ -1181,23 +1181,43 @@ class TacticalRetreatInterface:
         :param rule_name: tactic rule name
         :return: fetch query result
         """
-        query = f"""
-            match
-                {{
-                    $impacted isa expression,
-                        has expression_name '{impacted_name}';
-                }} or {{
-                    $impacted isa relaxed_requirement,
-                        has requirement_name '{impacted_name}';
-                }};
+        expression_query = f"""
+            match {{
+                $impacted isa expression,
+                    has expression_name '{impacted_name}';
                 $tr isa tactic_rule,
                     has rule_name '{tactic_rule_name}';
-                $tr_impacts (impacted: $impacted, tactic_rule: $tr) isa tactic_rule_impacts,
-                    has fulfillment $fulfillment;
+                let $fulfillment = tactic_rule_impacts_any_expression_fulfillment($tr, $impacted);
+            }};
             fetch {{ "fulfillment": $fulfillment }};
         """
-        query_result = self._fetch(query)
-        return query_result
+        query_result = self._fetch(expression_query)
+        if query_result:
+            return query_result
+
+        shall_expression_query = f"""
+            match
+                $impacted isa shall_expression,
+                    has expression_name '{impacted_name}';
+                $tr isa tactic_rule,
+                    has rule_name '{tactic_rule_name}';
+                let $fulfillment = tactic_rule_impacts_shall_fulfillment($tr, $impacted);
+            fetch {{ "fulfillment": $fulfillment }};
+        """
+        query_result = self._fetch(shall_expression_query)
+        if query_result:
+            return query_result
+
+        requirement_query = f"""
+            match
+                $impacted isa relaxed_requirement,
+                    has requirement_name '{impacted_name}';
+                $tr isa tactic_rule,
+                    has rule_name '{tactic_rule_name}';
+                let $fulfillment = tactic_rule_impacts_requirement_fulfillment($tr, $impacted);
+            fetch {{ "fulfillment": $fulfillment }};
+        """
+        return self._fetch(requirement_query)
 
     def fetch_tactic_rule_impacts_requirement(self, impacted_name: str, tactic_rule_name: str):
         """
@@ -1213,8 +1233,7 @@ class TacticalRetreatInterface:
                     has requirement_name '{impacted_name}';
                 $tr isa tactic_rule,
                     has rule_name '{tactic_rule_name}';
-                $tr_impacts (impacted: $impacted, tactic_rule: $tr) isa tactic_rule_impacts,
-                    has fulfillment $fulfillment;
+                let $fulfillment = tactic_rule_impacts_requirement_fulfillment($tr, $impacted);
             fetch {{ "fulfillment": $fulfillment }};
         """
         query_result = self._fetch(query)
@@ -1348,11 +1367,10 @@ class TacticalRetreatInterface:
                 $ros_interface isa ROSInterface, has interface_name '{action_name}';
                 {resolution_model_query}
                 let $tactic_rule in applicable_tactics($ros_interface, $resolution_model);
-                $tactic_impact (impacted: $req, tactic_rule: $tactic_rule)
-                    isa tactic_rule_impacts_requirement_in_effect, has fulfillment $fulfillment;
                 $req isa relaxed_requirement,
                     has in_effect true,
                     has requirement_name $requirement_name;
+                let $fulfillment = tactic_rule_impacts_requirement_fulfillment($tactic_rule, $req);
                 $tactic_rule has rule_name $rule_name;
             fetch {{
                 "rule_name": $rule_name,
@@ -1382,13 +1400,12 @@ class TacticalRetreatInterface:
                 $resolution_model isa resolution_model,
                     has resolution_model_name '{resolution_model}';
                 let $tactic_rule in applicable_tactics($ros_interface, $resolution_model);
-                $tactic_impact (
-                    resolution_model: $resolution_model,
-                    tactic_rule: $tactic_rule,
-                    impacted: $req
-                ) isa resolution_model_tactic_rule_impacts_requirement_in_effect,
-                    has fulfillment $fulfillment;
-                $req has requirement_name $requirement_name;
+                $req isa relaxed_requirement,
+                    has in_effect true,
+                    has requirement_name $requirement_name;
+                $resolution_model links (tactic: $rm_tactic);
+                $tactic_rule links (tactic: $rm_tactic);
+                let $fulfillment = tactic_rule_impacts_requirement_fulfillment($tactic_rule, $req);
                 $tactic_rule has rule_name $rule_name;
             fetch {{
                 "rule_name": $rule_name,

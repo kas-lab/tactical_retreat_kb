@@ -45,7 +45,7 @@ attribute running, value boolean;
 entity ROSNode,
     owns node_name @key,
     owns namespace @card(0..1),
-    owns start_time @card(1),
+    owns start_time @card(0..1),
     owns end_time @card(0..1),
     owns running @card(0..1),
     plays has_interface:node @card(0..),
@@ -74,14 +74,14 @@ entity Publisher sub TopicInterface,
     plays has_topic:publisher @card(0..);
 
 entity QoSProfile,
-    owns reliability @card(1),
-    owns history @card(1),
-    owns depth @card(1),
-    owns durability @card(1),
-    owns deadline @card(1),
-    owns lifespan @card(1),
-    owns liveliness @card(1),
-    owns lease_duration @card(1),
+    owns reliability @card(0..1),
+    owns history @card(0..1),
+    owns depth @card(0..1),
+    owns durability @card(0..1),
+    owns deadline @card(0..1),
+    owns lifespan @card(0..1),
+    owns liveliness @card(0..1),
+    owns lease_duration @card(0..1),
     plays has_qos:qos @card(0..);
 
 entity ServiceInterface sub ROSInterface;
