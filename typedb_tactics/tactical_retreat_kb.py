@@ -31,7 +31,7 @@ from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
 
 from std_srvs.srv import Trigger
 from std_msgs.msg import String
-from adapt_x_msgs.srv import FetchApplicable, UpdateRunning, FetchAdaptations, RequirementsFulfillment, UpdateInEffect, SatisfiedTactic, UpdateHasParamValue
+from adapt_x_msgs.srv import FetchApplicable, UpdateRunning, FetchAdaptations, RequirementsFulfillment, UpdateInEffect, SatisfiedTactic, UpdateHasParamValue, HypotheticalReqFulfillment, HypotheticalReqsFulfillment
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 from ros_monitors_functions.factory import MonitorFactory
 from rebet_monitors.rebet_monitors import MovementPowerDraw, PowerBudget, is_too_close
@@ -309,6 +309,39 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 self.get_logger().error("Traceback:\n" + traceback.format_exc())
             return res
 
+        def _fetch_req_hyp_req_cb(req, res):
+            try:
+                start_time = time.perf_counter()
+                self.get_logger().info('Fetching hypothetical requirement fulfillment...')
+
+                fulfillment = self.typedb_interface.get_relaxed_requirement_hypothetical_fulfillment(req.system_name, req.requirement_name, req.rule_name)
+
+                res.fulfillment_value = float(fulfillment)
+                res.success = True
+                elapsed_time = time.perf_counter() - start_time
+                self.get_logger().info(f'Requirements hypothetical fulfillment fetched in {elapsed_time:.4f} seconds.')
+            except Exception as e:
+                self.get_logger().error(
+                    f'Error fetching requirements fulfillment: {e}')
+                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+            return res
+        
+        def _fetch_req_hyp_reqs_cb(req, res):
+            try:
+                start_time = time.perf_counter()
+                self.get_logger().info(f'\n\nFetching hypothetical requirements fulfillment...{str(req.rule_names)}')
+
+                fulfillment = self.typedb_interface.get_relaxed_requirements_hypothetical_fulfillment(req.rule_names, req.system_name)
+
+                res.fulfillment_dict = json.dumps(fulfillment)
+                res.success = True
+                elapsed_time = time.perf_counter() - start_time
+                self.get_logger().info(f'Requirements hypothetical fulfillment fetched in {elapsed_time:.4f} seconds.\n\n')
+            except Exception as e:
+                self.get_logger().error(
+                    f'Error fetching requirements fulfillment: {e}')
+                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+            return res
         # def _fetch_req_fullfillment_ineffect_cb(self, req, res):
         #     try:
         #         start_time = time.perf_counter()
@@ -376,17 +409,31 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             _fetch_req_fullfillment_cb
         )
 
-        self.requirements_fulfillment_ineffect_service = self.create_service(
-            RequirementsFulfillment,
-            self.get_name() + '/fetch_requirements_fulfillment_ineffect',
-            lambda req, res: _fetch_req_fullfillment_ineffect_cb(self, req, res)
+        # self.requirements_fulfillment_ineffect_service = self.create_service(
+        #     RequirementsFulfillment,
+        #     self.get_name() + '/fetch_requirements_fulfillment_ineffect',
+        #     lambda req, res: _fetch_req_fullfillment_ineffect_cb(self, req, res)
+        # )
+
+        self.hyp_requirements_fulfillment_service = self.create_service(
+            HypotheticalReqFulfillment,
+            self.get_name() + '/fetch_hyp_requirement',
+            _fetch_req_hyp_req_cb,
+            callback_group=self.query_cb_group
+        )
+
+        self.hyp_requirements_fulfillment_service = self.create_service(
+            HypotheticalReqsFulfillment,
+            self.get_name() + '/fetch_hyp_requirements',
+            _fetch_req_hyp_reqs_cb,
+            callback_group=self.query_cb_group
         )
 
         self.applicable_valid_adaptations_service = self.create_service(
             SatisfiedTactic,
             self.get_name() + '/satisfied_tactic',
             _fetch_applicable_valid_name_cb,
-            # callback_group=self.query_cb_group
+            callback_group=self.query_cb_group
         )
 
         
@@ -626,13 +673,14 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 self.create_measure_interface(interface)
 
             self.create_timer(1.0, lambda: self.typedb_interface.add_measurements(self.measurements) if self.measurements else None, callback_group=self.query_cb_group)
-            self.create_timer(1.0, self.publish_fulfillments, callback_group=self.query_cb_group)
+            self.create_timer(2.0, self.publish_fulfillments, callback_group=self.query_cb_group)
 
         except Exception as e:
             raise e
 
     def publish_fulfillments(self):
         fulfillments = self.typedb_interface.get_in_effect_requirement_fulfillment()
-        fulfillment_msg = String()
-        fulfillment_msg.data = json.dumps(fulfillments)
-        self.fulfillment_publisher.publish(fulfillment_msg)
+        if(fulfillments):
+            fulfillment_msg = String()
+            fulfillment_msg.data = json.dumps(fulfillments)
+            self.fulfillment_publisher.publish(fulfillment_msg)

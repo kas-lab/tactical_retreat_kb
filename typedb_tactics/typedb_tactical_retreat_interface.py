@@ -1063,10 +1063,11 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query = """
             match
-                $req isa relaxed_requirement,
+                $req (system: $system) isa relaxed_requirement,
                     has in_effect true;
             fetch
                 $req: requirement_name, fulfillment;
+                $system: system_name;
         """
         return self.fetch_database(query)
 
@@ -1079,7 +1080,8 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.fetch_in_effect_requirement_fulfillment()
         query_dict = [
             {'requirement_name': result['req']['requirement_name'][0]['value'],
-             'fulfillment': result['req']['fulfillment'][0]['value']}
+             'fulfillment': result['req']['fulfillment'][0]['value'],
+             'system' : result['system']['system_name'][0]['value']}
             for result in query_result]
         return sorted(query_dict, key=lambda item: item['requirement_name'])
 
@@ -1203,10 +1205,48 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $requirement (system: $system) isa relaxed_requirement,
                     has requirement_name '{requirement_name}';
                 $tr isa tactic_rule, has rule_name '{tactic_rule}';
-                $tactic_impact (tactic_rule: $tr, requirement: $requirement) isa tactic_impact;
+                $tactic_impact (tactic_rule: $tr, impacted: $requirement) isa tactic_rule_impacts_requirement;
             fetch
                 $tactic_impact : fulfillment;
         """
+        return self.fetch_database(query)
+
+    
+    def fetch_relaxed_requirements_hypothetical_fulfillment(
+            self, tactic_rules: List[str], system_name: str
+            ) -> List[dict[str, MatchResultDict]]:
+        """
+        Fetch hypothetical fulfillment of a relaxed requirement after applying a tactic rule.
+
+        :param system_name: system name
+        :param requirement_name: requirement name
+        :param tactic_rule: tactic rule name
+        :return: fetch query result
+        """
+
+        match_block = f"""
+            match
+                $system isa System, has system_name '{system_name}';
+                $requirement (system: $system) isa relaxed_requirement,
+                    has in_effect true;
+        """
+
+        fetch_block = f"""
+        fetch
+
+        """
+        for i, tactic_rule in enumerate(tactic_rules):
+            match_block += f"""
+            $tr_{i} isa tactic_rule, has rule_name '{tactic_rule}';
+            $tactic_impact_{i} (tactic_rule: $tr_{i}, impacted: $requirement) isa tactic_rule_impacts_requirement;
+            """
+
+            fetch_block += f"""
+            $tactic_impact_{i} : fulfillment;
+            $tactic_impact_{i} : fulfillment;
+            """
+        query = match_block + fetch_block
+
         return self.fetch_database(query)
 
     def get_relaxed_requirement_hypothetical_fulfillment(
@@ -1223,6 +1263,28 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.fetch_relaxed_requirement_hypothetical_fulfillment(
             system_name, requirement_name, tactic_rule)
         return query_result[0]['tactic_impact']['fulfillment'][0]['value']
+
+    def get_relaxed_requirements_hypothetical_fulfillment(
+            self, tactic_rules: List[str], system_name: str
+            ) -> List[dict[str, MatchResultDict]]:
+        """
+        Get hypothetical fulfillment of a relaxed requirement after applying a tactic rule.
+
+        :param system_name: system name
+        :param tactic_ruls: tactic rule names
+        :return: fulfillment value
+        """
+        x = {}
+        
+        query_result = self.fetch_relaxed_requirements_hypothetical_fulfillment(
+            tactic_rules, system_name)
+        
+        for rule in tactic_rules: x[rule] = []
+        for singular_query_result in query_result:
+            for i, tactic_rule in enumerate(tactic_rules):
+                x[tactic_rule].append(singular_query_result['tactic_impact_' + str(i)]['fulfillment'][0]['value'])
+
+        return x
 
     def fetch_requirement_in_effect(self, requirement_name: str
                                     ) -> List[dict[str, MatchResultDict]]:
