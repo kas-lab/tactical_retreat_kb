@@ -13,18 +13,17 @@
 # limitations under the License.
 
 import argparse
-from decimal import Decimal
 import inspect
 from itertools import product
 import math
 import time
 
 from typing import Dict
-from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Tuple
 
+from ros_typedb.typedb_interface import TypeDBQueryError
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
@@ -35,43 +34,18 @@ DEFAULT_SCHEMAS = [
     '../schemas/logical_expressions/fuzzy_expression.tql',
     '../schemas/ros_model/ros_model.tql',
     '../schemas/feature_model/feature_model.tql',
-    '../schemas/feature_model/feature_model_logical_expression.tql',
     '../schemas/relaxed/relaxed_model.tql',
     '../schemas/tactics_model/tactics_model.tql',
     '../schemas/discover_hypothetical_req_fulfillment/'
     'discover_hypothetical_req_fulfillment.tql',
     '../schemas/discover_tactics_model/discover_tactics_model.tql',
 ]
-
-
-def float_range(start: float, stop: float, step: float) -> Iterator[float]:
-    if step <= 0:
-        raise ValueError('step must be > 0')
-
-    start_decimal = Decimal(str(start))
-    stop_decimal = Decimal(str(stop))
-    step_decimal = Decimal(str(step))
-    current = start_decimal
-
-    # Include the stop value if it falls exactly on a step.
-    while current <= stop_decimal:
-        yield float(current)
-        current += step_decimal
-
-
-def add_measurements(
-    kb_interface: TacticalRetreatInterface,
-    measure_names_range: List[Tuple[str, float, float, float]],
-):
-    for measure_name, range_start, range_stop, range_step in measure_names_range:
-        measurement_count = 0
-        for measured_value in float_range(range_start, range_stop, range_step):
-            kb_interface.add_measurement(measure_name, measured_value)
-            measurement_count += 1
-
-        print(
-            f'Added {measurement_count} measurements for {measure_name} '
-            f'(from {range_start:.2f} to {range_stop:.2f}, step {range_step:.2f})')
+DEFAULT_DATA = [
+    '../test/data/test_discover_hypothetical_req_fulfillment.tql',
+    '../schemas/ros_model/ros_model_example.tql',
+    '../schemas/tactics_model/tactics_example.tql',
+    '../schemas/relaxed/relaxed_mirte_example.tql',
+]
 
 
 def percentile(values: List[float], fraction: float) -> float:
@@ -100,37 +74,27 @@ def unique_preserve(items: List):
 def fetch_attr_values(
     kb_interface: TacticalRetreatInterface,
     query: str,
-    thing: str,
-    attr: str,
+    key: str,
 ) -> List[str]:
     query_result = kb_interface.fetch_database(query)
     values = []
     for result in query_result:
-        thing_dict = result.get(thing, {})
-        attr_values = thing_dict.get(attr, [])
-        for attr_value in attr_values:
-            value = attr_value.get('value')
-            if value is None:
-                continue
-            values.append(value)
+        value = result.get(key)
+        if value is None:
+            continue
+        values.append(value)
     return unique_preserve(values)
 
 
 def fetch_node_values(
     kb_interface: TacticalRetreatInterface,
     query: str,
-    thing: str,
 ) -> List[Tuple[str, str]]:
     query_result = kb_interface.fetch_database(query)
     nodes: List[Tuple[str, str]] = []
     for result in query_result:
-        thing_dict = result.get(thing, {})
-        node_names = thing_dict.get('node_name', [])
-        namespaces = thing_dict.get('namespace', [])
-        if not node_names or not namespaces:
-            continue
-        node_name = node_names[0].get('value')
-        namespace = namespaces[0].get('value')
+        node_name = result.get('node_name')
+        namespace = result.get('namespace')
         if node_name is None or namespace is None:
             continue
         nodes.append((node_name, namespace))
@@ -140,284 +104,252 @@ def fetch_node_values(
 def fetch_attr_pairs(
     kb_interface: TacticalRetreatInterface,
     query: str,
-    left_thing: str,
-    left_attr: str,
-    right_thing: str,
-    right_attr: str,
+    left_key: str,
+    right_key: str,
 ) -> List[Tuple[str, str]]:
     query_result = kb_interface.fetch_database(query)
     pairs: List[Tuple[str, str]] = []
     for result in query_result:
-        left_dict = result.get(left_thing, {})
-        right_dict = result.get(right_thing, {})
-        left_values = left_dict.get(left_attr, [])
-        right_values = right_dict.get(right_attr, [])
-        if not left_values or not right_values:
-            continue
-        left_value = left_values[0].get('value')
-        right_value = right_values[0].get('value')
+        left_value = result.get(left_key)
+        right_value = result.get(right_key)
         if left_value is None or right_value is None:
             continue
         pairs.append((left_value, right_value))
     return unique_preserve(pairs)
 
 
-def resolve_context(kb_interface: TacticalRetreatInterface) -> Dict[str, List]:
+def resolve_context(
+    kb_interface: TacticalRetreatInterface,
+) -> Tuple[Dict[str, List], List[Dict[str, str]]]:
     context: Dict[str, List] = {}
+    context_errors: List[Dict[str, str]] = []
 
-    context['nodes'] = fetch_node_values(
-        kb_interface,
-        """
-            match
-                $node isa ROSNode;
-            fetch
-                $node: node_name, namespace;
-        """,
-        'node')
-    context['nodes_with_subnode'] = fetch_node_values(
-        kb_interface,
-        """
-            match
-                (node: $node, subnode: $subnode) isa subnode;
-            fetch
-                $node: node_name, namespace;
-        """,
-        'node')
-    context['nodes_with_action_client'] = fetch_node_values(
-        kb_interface,
-        """
-            match
-                (node: $node, client: $client) isa has_action;
-            fetch
-                $node: node_name, namespace;
-        """,
-        'node')
-    context['nodes_with_publisher'] = fetch_node_values(
-        kb_interface,
-        """
-            match
-                (node: $node, publisher: $publisher) isa has_topic;
-            fetch
-                $node: node_name, namespace;
-        """,
-        'node')
+    def safe_context_value(key: str, resolver, default):
+        try:
+            context[key] = resolver()
+        except TypeDBQueryError as err:
+            context[key] = default
+            context_errors.append({
+                'context_key': key,
+                'error': str(err),
+            })
 
-    context['action_client_names'] = fetch_attr_values(
-        kb_interface,
-        """
-            match
-                $action_client isa ActionClient;
-            fetch
-                $action_client: interface_name;
-        """,
-        'action_client',
-        'interface_name')
-    context['action_server_names'] = fetch_attr_values(
-        kb_interface,
-        """
-            match
-                $action_server isa ActionServer;
-            fetch
-                $action_server: interface_name;
-        """,
-        'action_server',
-        'interface_name')
+    safe_context_value(
+        'nodes',
+        lambda: fetch_node_values(
+            kb_interface,
+            """
+                match
+                    $node isa ROSNode;
+                fetch {
+                    "node_name": $node.node_name,
+                    "namespace": $node.namespace
+                };
+            """),
+        [])
+    safe_context_value(
+        'nodes_with_subnode',
+        lambda: fetch_node_values(
+            kb_interface,
+            """
+                match
+                    (node: $node, subnode: $subnode) isa subnode;
+                fetch {
+                    "node_name": $node.node_name,
+                    "namespace": $node.namespace
+                };
+            """),
+        [])
+    safe_context_value(
+        'nodes_with_action_client',
+        lambda: fetch_node_values(
+            kb_interface,
+            """
+                match
+                    $client isa ActionClient;
+                    (node: $node, client: $client) isa has_action;
+                fetch {
+                    "node_name": $node.node_name,
+                    "namespace": $node.namespace
+                };
+            """),
+        [])
+    safe_context_value(
+        'nodes_with_publisher',
+        lambda: fetch_node_values(
+            kb_interface,
+            """
+                match
+                    $publisher isa Publisher;
+                    (node: $node, publisher: $publisher) isa has_topic;
+                fetch {
+                    "node_name": $node.node_name,
+                    "namespace": $node.namespace
+                };
+            """),
+        [])
 
-    context['resolution_models'] = fetch_attr_values(
-        kb_interface,
-        """
-            match
-                $resolution_model isa resolution_model;
-            fetch
-                $resolution_model: resolution_model_name;
-        """,
-        'resolution_model',
-        'resolution_model_name')
-    context['interface_names'] = fetch_attr_values(
-        kb_interface,
-        """
-            match
-                $interface isa ROSInterface;
-            fetch
-                $interface: interface_name;
-        """,
-        'interface',
-        'interface_name')
+    safe_context_value(
+        'action_client_names',
+        lambda: fetch_attr_values(
+            kb_interface,
+            """
+                match
+                    $action_client isa ActionClient;
+                fetch { "interface_name": $action_client.interface_name };
+            """,
+            'interface_name'),
+        [])
+    safe_context_value(
+        'action_server_names',
+        lambda: fetch_attr_values(
+            kb_interface,
+            """
+                match
+                    $action_server isa ActionServer;
+                fetch { "interface_name": $action_server.interface_name };
+            """,
+            'interface_name'),
+        [])
 
-    context['applicable_pairs'] = fetch_attr_pairs(
-        kb_interface,
-        """
-            match
-                $resolution_model isa resolution_model;
-                $interface isa ROSInterface;
-                let $tr in applicable_tactics($interface, $resolution_model);
-            fetch
-                $resolution_model: resolution_model_name;
-                $interface: interface_name;
-        """,
-        'resolution_model',
-        'resolution_model_name',
-        'interface',
-        'interface_name')
+    safe_context_value(
+        'resolution_models',
+        lambda: fetch_attr_values(
+            kb_interface,
+            """
+                match
+                    $resolution_model isa resolution_model;
+                fetch {
+                    "resolution_model_name": $resolution_model.resolution_model_name
+                };
+            """,
+            'resolution_model_name'),
+        [])
+    safe_context_value(
+        'interface_names',
+        lambda: fetch_attr_values(
+            kb_interface,
+            """
+                match
+                    $interface isa ROSInterface;
+                fetch { "interface_name": $interface.interface_name };
+            """,
+            'interface_name'),
+        [])
+
+    safe_context_value(
+        'applicable_pairs',
+        lambda: [],
+        [])
     context['applicable_resolution_models'] = unique_preserve(
         [pair[0] for pair in context['applicable_pairs']])
     context['applicable_interfaces'] = unique_preserve(
         [pair[1] for pair in context['applicable_pairs']])
+    safe_context_value(
+        'system_names',
+        lambda: fetch_attr_values(
+            kb_interface,
+            """
+                match
+                    $system isa System;
+                fetch { "system_name": $system.system_name };
+            """,
+            'system_name'),
+        [])
+    safe_context_value(
+        'requirement_names',
+        lambda: fetch_attr_values(
+            kb_interface,
+            """
+                match
+                    $req isa relaxed_requirement;
+                fetch { "requirement_name": $req.requirement_name };
+            """,
+            'requirement_name'),
+        [])
+    safe_context_value(
+        'in_effect_requirement_names',
+        lambda: fetch_attr_values(
+            kb_interface,
+            """
+                match
+                    $req isa relaxed_requirement, has in_effect true;
+                fetch { "requirement_name": $req.requirement_name };
+            """,
+            'requirement_name'),
+        [])
 
-    context['system_names'] = fetch_attr_values(
-        kb_interface,
-        """
-            match
-                $system isa System;
-            fetch
-                $system: system_name;
-        """,
-        'system',
-        'system_name')
+    safe_context_value(
+        'expression_names',
+        lambda: fetch_attr_values(
+            kb_interface,
+            """
+                match
+                    $expr isa expression;
+                fetch { "expression_name": $expr.expression_name };
+            """,
+            'expression_name'),
+        [])
+    safe_context_value(
+        'logical_expression_names',
+        lambda: fetch_attr_values(
+            kb_interface,
+            """
+                match
+                    $expr isa logical_expression;
+                fetch { "expression_name": $expr.expression_name };
+            """,
+            'expression_name'),
+        [])
+    safe_context_value(
+        'fuzzy_expression_names',
+        lambda: fetch_attr_values(
+            kb_interface,
+            """
+                match
+                    $expr isa fuzzy_expression;
+                fetch { "expression_name": $expr.expression_name };
+            """,
+            'expression_name'),
+        [])
+    safe_context_value(
+        'relaxed_expression_names',
+        lambda: fetch_attr_values(
+            kb_interface,
+            """
+                match
+                    $expr isa relaxed_expression;
+                fetch { "expression_name": $expr.expression_name };
+            """,
+            'expression_name'),
+        [])
 
-    context['requirement_names'] = fetch_attr_values(
-        kb_interface,
-        """
-            match
-                $req isa relaxed_requirement;
-            fetch
-                $req: requirement_name;
-        """,
-        'req',
-        'requirement_name')
-    context['in_effect_requirement_names'] = fetch_attr_values(
-        kb_interface,
-        """
-            match
-                $req isa relaxed_requirement, has in_effect true;
-            fetch
-                $req: requirement_name;
-        """,
-        'req',
-        'requirement_name')
+    safe_context_value(
+        'measure_names',
+        lambda: fetch_attr_values(
+            kb_interface,
+            """
+                match
+                    $measure isa Measure;
+                fetch { "measure_name": $measure.measure_name };
+            """,
+            'measure_name'),
+        [])
+    safe_context_value(
+        'tactic_rule_names',
+        lambda: fetch_attr_values(
+            kb_interface,
+            """
+                match
+                    $tactic_rule isa tactic_rule;
+                fetch { "rule_name": $tactic_rule.rule_name };
+            """,
+            'rule_name'),
+        [])
+    context['tactic_rule_with_valid'] = list(context.get('tactic_rule_names', []))
+    context['effect_pairs'] = []
 
-    context['expression_names'] = fetch_attr_values(
-        kb_interface,
-        """
-            match
-                $expr isa expression;
-            fetch
-                $expr: expression_name;
-        """,
-        'expr',
-        'expression_name')
-    context['logical_expression_names'] = fetch_attr_values(
-        kb_interface,
-        """
-            match
-                $expr isa logical_expression;
-            fetch
-                $expr: expression_name;
-        """,
-        'expr',
-        'expression_name')
-    context['fuzzy_expression_names'] = fetch_attr_values(
-        kb_interface,
-        """
-            match
-                $expr isa fuzzy_expression, has membership_degree $membership_degree;
-            fetch
-                $expr: expression_name;
-        """,
-        'expr',
-        'expression_name')
-    context['relaxed_expression_names'] = fetch_attr_values(
-        kb_interface,
-        """
-            match
-                $expr isa relaxed_expression, has fulfillment $fulfillment;
-            fetch
-                $expr: expression_name;
-        """,
-        'expr',
-        'expression_name')
-
-    context['measure_names'] = fetch_attr_values(
-        kb_interface,
-        """
-            match
-                $measure isa Measure;
-            fetch
-                $measure: measure_name;
-        """,
-        'measure',
-        'measure_name')
-
-    context['tactic_rule_names'] = fetch_attr_values(
-        kb_interface,
-        """
-            match
-                $tactic_rule isa tactic_rule;
-            fetch
-                $tactic_rule: rule_name;
-        """,
-        'tactic_rule',
-        'rule_name')
-    context['tactic_rule_with_valid'] = fetch_attr_values(
-        kb_interface,
-        """
-            match
-                $tactic_rule isa tactic_rule, has rule_valid $rule_valid;
-            fetch
-                $tactic_rule: rule_name;
-        """,
-        'tactic_rule',
-        'rule_name')
-
-    context['fulfillment_pairs'] = fetch_attr_pairs(
-        kb_interface,
-        """
-            match
-                $system isa System;
-                $req (system: $system) isa relaxed_requirement,
-                    has fulfillment $fulfillment;
-            fetch
-                $system: system_name;
-                $req: requirement_name;
-        """,
-        'system',
-        'system_name',
-        'req',
-        'requirement_name')
-
-    context['impact_pairs'] = fetch_attr_pairs(
-        kb_interface,
-        """
-            match
-                $tr isa tactic_rule;
-                $req isa relaxed_requirement;
-                $tr_impacts (tactic_rule: $tr, impacted: $req) isa tactic_rule_impacts;
-            fetch
-                $tr: rule_name;
-                $req: requirement_name;
-        """,
-        'tr',
-        'rule_name',
-        'req',
-        'requirement_name')
-
-    context['effect_pairs'] = fetch_attr_pairs(
-        kb_interface,
-        """
-            match
-                $tactic_rule (effect: $effect) isa tactic_rule;
-                $effect (measure: $measure) isa relative_effect,
-                    has resulting_effect_value $resulting_effect_value;
-            fetch
-                $tactic_rule: rule_name;
-                $measure: measure_name;
-        """,
-        'tactic_rule',
-        'rule_name',
-        'measure',
-        'measure_name')
-
-    return context
+    return context, context_errors
 
 
 def build_method_calls(
@@ -439,13 +371,14 @@ def build_method_calls(
         or context.get('applicable_interfaces', [])
         or context.get('interface_names', [])
     )
+    tactic_interface_names = (
+        unique_preserve(action_client_names + action_server_names)
+        or context.get('applicable_interfaces', [])
+        or context.get('interface_names', [])
+    )
     resolution_models = (
         context.get('resolution_models', [])
         or context.get('applicable_resolution_models', [])
-    )
-    interface_names = (
-        context.get('interface_names', [])
-        or context.get('applicable_interfaces', [])
     )
     system_names = context.get('system_names', [])
     requirement_names = context.get('requirement_names', [])
@@ -465,6 +398,8 @@ def build_method_calls(
     )
     fuzzy_expression_names = context.get('fuzzy_expression_names', [])
     relaxed_expression_names = context.get('relaxed_expression_names', [])
+    applicable_pairs = context.get('applicable_pairs', [])
+    effect_pairs = context.get('effect_pairs', [])
 
     call_specs: List[Tuple[List, Dict]] = []
 
@@ -498,10 +433,17 @@ def build_method_calls(
     elif method_name == 'get_connected_nodes':
         call_specs = [([node_name, namespace], {}) for node_name, namespace in nodes]
     elif method_name == 'get_applicable_tactics':
-        call_specs = [
-            ([resolution_model, interface_name], {})
-            for resolution_model, interface_name in product(resolution_models, interface_names)
-        ]
+        if applicable_pairs:
+            call_specs = [
+                ([resolution_model, interface_name], {})
+                for resolution_model, interface_name in applicable_pairs
+            ]
+        else:
+            call_specs = [
+                ([resolution_model, interface_name], {})
+                for resolution_model, interface_name in product(
+                    resolution_models, tactic_interface_names)
+            ]
     elif method_name == 'get_relaxed_requirement_fulfillment':
         call_specs = [
             ([system_name, requirement_name], {})
@@ -509,12 +451,6 @@ def build_method_calls(
         ]
     elif method_name == 'get_in_effect_requirement_fulfillment':
         call_specs = [([], {})]
-    elif method_name == 'get_relaxed_requirement_hypothetical_fulfillment':
-        call_specs = [
-            ([system_name, requirement_name, tactic_rule], {})
-            for system_name, requirement_name, tactic_rule in product(
-                system_names, requirement_names, tactic_rule_names)
-        ]
     elif method_name == 'get_requirement_in_effect':
         call_specs = [([requirement_name], {}) for requirement_name in in_effect_requirement_names]
     elif method_name == 'get_latest_measurement':
@@ -532,10 +468,13 @@ def build_method_calls(
             for requirement_name, rule_name in product(requirement_names, tactic_rule_names)
         ]
     elif method_name == 'get_resulting_effect_value':
-        call_specs = [
-            ([rule_name, measure_name], {})
-            for rule_name, measure_name in product(tactic_rule_names, measure_names)
-        ]
+        if effect_pairs:
+            call_specs = [
+                ([rule_name, measure_name], {})
+                for rule_name, measure_name in effect_pairs
+            ]
+        else:
+            call_specs = []
     elif method_name == 'get_fuzzy_membership_degree':
         call_specs = [([expression_name], {}) for expression_name in fuzzy_expression_names]
     elif method_name == 'get_expression_satisfied':
@@ -543,11 +482,31 @@ def build_method_calls(
     elif method_name == 'get_relaxed_expression_fulfillment':
         call_specs = [([expression_name], {}) for expression_name in relaxed_expression_names]
     elif method_name == 'get_potential_requirements_fulfillment':
-        call_specs.extend([([action_name], {}) for action_name in interface_names])
-        call_specs.extend(
-            [([action_name], {'resolution_model': resolution_model})
-             for action_name, resolution_model in product(interface_names, resolution_models)]
-        )
+        if applicable_pairs:
+            call_specs.extend(
+                [([action_name], {'resolution_model': resolution_model})
+                 for resolution_model, action_name in applicable_pairs]
+            )
+        elif resolution_models:
+            call_specs.extend(
+                [([action_name], {'resolution_model': resolution_model})
+                 for action_name, resolution_model in product(
+                     tactic_interface_names, resolution_models)]
+            )
+        else:
+            call_specs = [([action_name], {}) for action_name in tactic_interface_names]
+    elif method_name == 'get_potential_requirements_fulfillment_for_resolution_model':
+        if applicable_pairs:
+            call_specs = [
+                ([action_name, resolution_model], {})
+                for resolution_model, action_name in applicable_pairs
+            ]
+        else:
+            call_specs = [
+                ([action_name, resolution_model], {})
+                for action_name, resolution_model in product(
+                    tactic_interface_names, resolution_models)
+            ]
     elif method_name == 'get_all_requirements':
         call_specs = [([], {})]
     elif method_name == 'get_all_expressions':
@@ -573,6 +532,7 @@ def build_method_calls(
 def benchmark_get_methods(
         kb_interface: TacticalRetreatInterface,
         runs: int,
+        context: Dict[str, List],
         selected_methods: Optional[set[str]] = None,
         max_combinations: Optional[int] = None):
     all_method_names = sorted(
@@ -590,10 +550,10 @@ def benchmark_get_methods(
             if method_name in selected_methods
         ]
 
-    context = resolve_context(kb_interface)
     benchmark_results = []
     skipped_methods = []
     error_methods = []
+    filtered_methods = []
 
     for method_name in method_names:
         call_specs = build_method_calls(method_name, context)
@@ -604,13 +564,44 @@ def benchmark_get_methods(
             call_specs = call_specs[:max_combinations]
 
         method = getattr(kb_interface, method_name)
+        valid_call_specs = []
+        invalid_call_specs = []
+        for args, kwargs, call_description in call_specs:
+            try:
+                method(*args, **kwargs)
+            except Exception as err:  # pylint: disable=broad-exception-caught
+                invalid_call_specs.append({
+                    'call': call_description,
+                    'error': str(err),
+                })
+                continue
+            valid_call_specs.append((args, kwargs, call_description))
+
+        if invalid_call_specs:
+            filtered_methods.append({
+                'method_name': method_name,
+                'filtered_combinations': len(invalid_call_specs),
+                'kept_combinations': len(valid_call_specs),
+                'samples': invalid_call_specs[:3],
+            })
+
+        if not valid_call_specs:
+            error_methods.append({
+                'method_name': method_name,
+                'total_combinations': len(call_specs),
+                'failed_combinations': len(call_specs),
+                'failed_invocations': len(invalid_call_specs),
+                'samples': invalid_call_specs[:3],
+            })
+            continue
+
         elapsed_times_s = []
         result_sizes = []
         successful_combinations = 0
         failed_invocations = 0
         error_samples = []
 
-        for args, kwargs, call_description in call_specs:
+        for args, kwargs, call_description in valid_call_specs:
             combination_succeeded = False
 
             for _ in range(runs):
@@ -640,7 +631,7 @@ def benchmark_get_methods(
             if combination_succeeded:
                 successful_combinations += 1
 
-        total_combinations = len(call_specs)
+        total_combinations = len(valid_call_specs)
         failed_combinations = total_combinations - successful_combinations
 
         if not elapsed_times_s:
@@ -683,7 +674,13 @@ def benchmark_get_methods(
         unknown_selected_methods = sorted(
             selected_methods.difference(set(all_method_names))
         )
-    return benchmark_results, skipped_methods, error_methods, unknown_selected_methods
+    return (
+        benchmark_results,
+        skipped_methods,
+        error_methods,
+        unknown_selected_methods,
+        filtered_methods,
+    )
 
 
 def main(runs: int, methods: Optional[str], max_combinations: Optional[int]):
@@ -692,7 +689,7 @@ def main(runs: int, methods: Optional[str], max_combinations: Optional[int]):
         'localhost:1729',
         'benchmark',
         DEFAULT_SCHEMAS,
-        ['generated.tql'],
+        DEFAULT_DATA,
         force_database=True,
         force_data=True
     )
@@ -702,33 +699,24 @@ def main(runs: int, methods: Optional[str], max_combinations: Optional[int]):
         f'{interface_creation_time_s:.6f}s'
     )
 
-    measures_name_range = [
-        ('nearest_object', 0.01, 10.0, 0.01),
-        ('current_velocity', 0.01, 5.0, 0.01),
-        ('power_draw', 1.0, 100.0, 1.0),
-        ('power_budget', 1.0, 100.0, 1.0),
-    ]
+    selected_methods = None
+    if methods is not None and methods.strip() != '':
+        selected_methods = {
+            method_name.strip()
+            for method_name in methods.split(',')
+            if method_name.strip() != ''
+        }
 
-    add_measurements(kb_interface, measures_name_range)
+    context, context_errors = resolve_context(kb_interface)
+    expression_names = (
+        context.get('logical_expression_names', [])
+        or context.get('expression_names', [])
+    )
+    if selected_methods is not None and 'get_expression_satisfied' not in selected_methods:
+        expression_names = []
+    if max_combinations is not None and max_combinations > 0:
+        expression_names = expression_names[:max_combinations]
 
-    kb_interface.add_measurement('nearest_object', 0.09)
-
-    kb_interface.add_measurement('too_close', True)
-    kb_interface.add_measurement('too_close', False)
-
-    kb_interface.add_measurement('power_draw', 50.0)
-
-    kb_interface.add_measurement('power_draw', 50.0)
-
-    expression_names = [
-        'nearest_object_less',
-        'power_draw_greater',
-        'nearest_object_less_1',
-        'power_draw_greater_1',
-        'nearest_object_greater',
-        'power_draw_leq',
-        'current_velocity_less'
-    ]
     expression_results = []
     for expression_name in expression_names:
         expression_elapsed_times_s = []
@@ -756,36 +744,42 @@ def main(runs: int, methods: Optional[str], max_combinations: Optional[int]):
         })
 
     expression_results.sort(key=lambda item: item['avg_time_s'], reverse=True)
-    print('')
-    print(
-        'get_expression_satisfied benchmark over '
-        f'{runs} run(s), sorted by avg_time_s descending:'
-    )
-    for expression_result in expression_results:
+    if expression_results:
+        print('')
         print(
-            f"{expression_result['expression_name']}: "
-            f"avg={expression_result['avg_time_s']:.6f}s, "
-            f"p50={expression_result['p50_time_s']:.6f}s, "
-            f"p95={expression_result['p95_time_s']:.6f}s, "
-            f"satisfied={expression_result['last_satisfied']}"
+            'get_expression_satisfied benchmark over '
+            f'{runs} run(s), sorted by avg_time_s descending:'
         )
+        for expression_result in expression_results:
+            print(
+                f"{expression_result['expression_name']}: "
+                f"avg={expression_result['avg_time_s']:.6f}s, "
+                f"p50={expression_result['p50_time_s']:.6f}s, "
+                f"p95={expression_result['p95_time_s']:.6f}s, "
+                f"satisfied={expression_result['last_satisfied']}"
+            )
+    else:
+        print('')
+        print('No expressions discovered for get_expression_satisfied benchmarking.')
 
-    selected_methods = None
-    if methods is not None and methods.strip() != '':
-        selected_methods = {
-            method_name.strip()
-            for method_name in methods.split(',')
-            if method_name.strip() != ''
-        }
+    if context_errors:
+        print('')
+        print('Context discovery warnings:')
+        for context_error in context_errors:
+            print(
+                f"- {context_error['context_key']}: {context_error['error']}"
+            )
 
     (
         benchmark_results,
         skipped_methods,
         error_methods,
         unknown_selected_methods,
+        filtered_methods,
     ) = benchmark_get_methods(
         kb_interface,
         runs,
+        context,
         selected_methods=selected_methods,
         max_combinations=max_combinations)
 
@@ -823,6 +817,20 @@ def main(runs: int, methods: Optional[str], max_combinations: Optional[int]):
         print('Unknown selected methods:')
         for method_name in unknown_selected_methods:
             print(f'- {method_name}')
+
+    if filtered_methods:
+        print('')
+        print('Filtered invalid benchmark combinations:')
+        for filtered_info in filtered_methods:
+            print(
+                f"- {filtered_info['method_name']}: "
+                f"kept={filtered_info['kept_combinations']}, "
+                f"filtered={filtered_info['filtered_combinations']}"
+            )
+            for sample in filtered_info.get('samples', []):
+                print(
+                    f"  sample: {sample['call']} -> {sample['error']}"
+                )
 
     if error_methods:
         print('')

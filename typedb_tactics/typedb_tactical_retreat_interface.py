@@ -94,8 +94,13 @@ def node_query_to_node_dict(
     """
     # TypeDB 3 fetch projections guarantee a single scalar per key;
     # the old multi-value cardinality guard from TypeDB 2 is no longer needed.
+    seen = set()
     node_dict = []
     for result in query_result:
+        key = (result['node_name'], result['namespace'])
+        if key in seen:
+            continue
+        seen.add(key)
         node_dict.append({
             'node_name': result['node_name'],
             'namespace': result['namespace'],
@@ -148,44 +153,20 @@ class TacticalRetreatInterface:
         return self._fetch(query)
 
     def _fetch(self, query: str) -> List[dict]:
-        """Run a fetch query with contextual query-error logging."""
-        try:
-            return self.db.fetch_database(query)
-        except TypeDBQueryError:
-            logger.error(
-                'TypeDB fetch failed in TacticalRetreatInterface',
-                exc_info=True)
-            raise
+        """Run a fetch query."""
+        return self.db.fetch_database(query)
 
     def _insert(self, query: str) -> Optional[Iterator]:
-        """Run an insert query with contextual query-error logging."""
-        try:
-            return self.db.insert_database(query)
-        except TypeDBQueryError:
-            logger.error(
-                'TypeDB insert failed in TacticalRetreatInterface',
-                exc_info=True)
-            raise
+        """Run an insert query."""
+        return self.db.insert_database(query)
 
     def _delete(self, query: str):
-        """Run a delete query with contextual query-error logging."""
-        try:
-            return self.db.delete_from_database(query)
-        except TypeDBQueryError:
-            logger.error(
-                'TypeDB delete failed in TacticalRetreatInterface',
-                exc_info=True)
-            raise
+        """Run a delete query."""
+        return self.db.delete_from_database(query)
 
     def _aggregate(self, query: str):
-        """Run an aggregate query with contextual query-error logging."""
-        try:
-            return self.db.get_aggregate_database(query)
-        except TypeDBQueryError:
-            logger.error(
-                'TypeDB aggregate failed in TacticalRetreatInterface',
-                exc_info=True)
-            raise
+        """Run an aggregate query."""
+        return self.db.get_aggregate_database(query)
 
     def register_method(self, method_name: str, func) -> None:
         """
@@ -466,6 +447,33 @@ class TacticalRetreatInterface:
         query_result = self.fetch_tactics(resolution_model)
         return [result['tactic_name'] for result in query_result]
 
+    def _fetch_all_resolution_models(self) -> List[dict]:
+        """
+        Fetch all resolution model names.
+
+        :return: fetch query result
+        """
+        query = """
+            match
+                $resolution_model isa resolution_model;
+            fetch {
+                "resolution_model_name": $resolution_model.resolution_model_name
+            };
+        """
+        return self._fetch(query)
+
+    def _get_all_resolution_models(self) -> List[str]:
+        """
+        Get all resolution model names.
+
+        :return: list of resolution model names
+        """
+        query_result = self._fetch_all_resolution_models()
+        return [
+            result['resolution_model_name']
+            for result in query_result
+        ]
+
     def fetch_all_tactic_rules(self) -> List[dict]:
         """
         Fetch all tactic rules names.
@@ -475,9 +483,9 @@ class TacticalRetreatInterface:
         query = """
             match
                 $tactic_rule isa tactic_rule;
-            fetch {{
+            fetch {
                 "rule_name": $tactic_rule.rule_name
-            }};
+            };
         """
         return self._fetch(query)
 
@@ -525,8 +533,7 @@ class TacticalRetreatInterface:
                 '(tactic_name=%s, node_name=%s, namespace=%s).',
                 tactic_name,
                 node_name,
-                namespace,
-                exc_info=True)
+                namespace)
             raise
 
     def fetch_neighbours(
@@ -576,9 +583,10 @@ class TacticalRetreatInterface:
         """
         query = f"""
             match
-                $node isa ROSNode, has node_name '{node_name}',
+                $node isa ROSNode,
+                    has node_name '{node_name}',
                     has namespace '{namespace}';
-                {{ $connected is $node; }} or {{ let $connected in connected_nodes($node); }};
+                let $connected in connected_nodes($node);
             fetch {{
                 "node_name": $connected.node_name,
                 "namespace": $connected.namespace
@@ -597,9 +605,12 @@ class TacticalRetreatInterface:
         :param namespace: namespace of the running node
         :return: list of dictionaries with the node_name and namespace of the neighbour nodes
         """
-        return node_query_to_node_dict(
-            self.fetch_connected_nodes(
-                node_name, namespace))
+        connected_nodes = self.fetch_connected_nodes(node_name, namespace)
+        connected_nodes.append({
+            'node_name': node_name,
+            'namespace': namespace,
+        })
+        return node_query_to_node_dict(connected_nodes)
 
     def fetch_applicable_tactics(self,
                                  resolution_model: str,
@@ -613,12 +624,69 @@ class TacticalRetreatInterface:
         """
         query = f"""
             match
+                $interface isa ROSInterface,
+                    has interface_name '{interface_name}';
+                $rm isa resolution_model,
+                    has resolution_model_name '{resolution_model}';
+                let $tr in applicable_tactics($interface, $rm);
+            fetch {{
+                "rule_name": $tr.rule_name
+            }};
+        """
+        return self._fetch(query)
+
+    def fetch_interface_hosts(self, interface_name: str) -> List[dict]:
+        """
+        Fetch the host nodes for a ROS interface supported by tactic applicability.
+
+        :param interface_name: name of the ROS interface
+        :return: fetch query result
+        """
+        query = f"""
+            match
                 $interface isa ROSInterface, has interface_name '{interface_name}';
+                {{
+                    $interface isa ActionServer;
+                    (node: $host, server: $interface) isa has_action;
+                }} or {{
+                    $interface isa ServiceServer;
+                    (node: $host, server: $interface) isa has_service;
+                }} or {{
+                    $interface isa Publisher;
+                    (node: $host, publisher: $interface) isa has_topic;
+                }};
+            fetch {{
+                "node_name": $host.node_name,
+                "namespace": $host.namespace
+            }};
+        """
+        return self._fetch(query)
+
+    def fetch_resolution_model_tactic_rule_targets(
+            self, resolution_model: str) -> List[dict]:
+        """
+        Fetch tactic rule target nodes for a resolution model.
+
+        :param resolution_model: name of the resolution model
+        :return: fetch query result
+        """
+        query = f"""
+            match
                 $resolution_model isa resolution_model,
                     has resolution_model_name '{resolution_model}';
-                let $tactic_rule in applicable_tactics($interface, $resolution_model);
+                $resolution_model links (tactic: $rm_tactic, variant_resolution: $vr);
+                $tactic_rule isa tactic_rule, links (tactic: $rm_tactic, consequent: $fa);
+                {{
+                    $fa links (activation: $feat);
+                }} or {{
+                    $fa links (deactivation: $feat);
+                }};
+                $vr links (variant: $feat, resolution_action: $ra);
+                $ra links (node: $target);
             fetch {{
-                "rule_name": $tactic_rule.rule_name
+                "rule_name": $tactic_rule.rule_name,
+                "node_name": $target.node_name,
+                "namespace": $target.namespace
             }};
         """
         return self._fetch(query)
@@ -754,8 +822,7 @@ class TacticalRetreatInterface:
             logger.error(
                 'Failed to fetch requirement in_effect status '
                 '(requirement_name=%s).',
-                requirement_name,
-                exc_info=True)
+                requirement_name)
             raise
         if query_result is None or len(query_result) == 0:
             logger.warning(
@@ -888,8 +955,7 @@ class TacticalRetreatInterface:
         except TypeDBQueryError:
             logger.error(
                 'Failed to fetch tactic rule validity (tactic_rule=%s).',
-                tactic_rule,
-                exc_info=True)
+                tactic_rule)
             raise
         return len(query_result) > 0
 
@@ -912,8 +978,7 @@ class TacticalRetreatInterface:
         except TypeDBQueryError:
             logger.error(
                 'Failed to fetch feature selectable status (feature_name=%s).',
-                feature_name,
-                exc_info=True)
+                feature_name)
             raise
         return query_result[0]['selectable']
 
@@ -936,8 +1001,7 @@ class TacticalRetreatInterface:
         except TypeDBQueryError:
             logger.error(
                 'Failed to fetch node running status (node_name=%s).',
-                node_name,
-                exc_info=True)
+                node_name)
             raise
         return query_result[0]['running']
 
@@ -966,8 +1030,7 @@ class TacticalRetreatInterface:
                 'Failed to fetch set_nodes_parameters feasibility '
                 '(node_name=%s, parameter_name=%s).',
                 node_name,
-                parameter_name,
-                exc_info=True)
+                parameter_name)
             raise
         return len(query_result) > 0
 
@@ -995,8 +1058,7 @@ class TacticalRetreatInterface:
                 'Failed to fetch set_lifecycle_state feasibility '
                 '(node_name=%s, lifecycle_state=%s).',
                 node_name,
-                lifecycle_state,
-                exc_info=True)
+                lifecycle_state)
             raise
         return len(query_result) > 0
 
@@ -1274,10 +1336,9 @@ class TacticalRetreatInterface:
             result = self._fetch(query)
         except TypeDBQueryError:
             logger.error(
-                'Failed to evaluate fuzzy_membership_degree '
+                'Failed to evaluate fetch_fuzzy_membership_degree '
                 '(expression_name=%s).',
-                expression_name,
-                exc_info=True)
+                expression_name)
             raise
         return result
 
@@ -1333,25 +1394,23 @@ class TacticalRetreatInterface:
             return self.fetch_potential_requirements_fulfillment_for_resolution_model(
                 action_name, resolution_model)
 
-        resolution_model_query = '$resolution_model isa resolution_model;'
-
         query = f"""
             match
-                $ros_interface isa ROSInterface, has interface_name '{action_name}';
-                {resolution_model_query}
-                let $tactic_rule in applicable_tactics($ros_interface, $resolution_model);
-                $req isa relaxed_requirement,
-                    has in_effect true,
-                    has requirement_name $requirement_name;
-                let $fulfillment = tactic_rule_impacts_requirement_fulfillment($tactic_rule, $req);
-                $tactic_rule has rule_name $rule_name;
+                $interface isa ROSInterface,
+                    has interface_name '{action_name}';
+                $rm isa resolution_model;
+                let $tr in applicable_tactics($interface, $rm);
+                $req isa relaxed_requirement, has in_effect true;
+                let $fulfillment =
+                    tactic_rule_impacts_requirement_fulfillment($tr, $req);
             fetch {{
-                "rule_name": $rule_name,
-                "fulfillment": $fulfillment,
-                "requirement_name": $requirement_name
+                "rule_name": $tr.rule_name,
+                "requirement_name": $req.requirement_name,
+                "fulfillment": $fulfillment
             }};
         """
-        return self._fetch(query)
+        result = self._fetch(query)
+        return self._dedupe_requirement_impact_rows(result)
 
     def fetch_potential_requirements_fulfillment_for_resolution_model(
             self,
@@ -1361,32 +1420,50 @@ class TacticalRetreatInterface:
         """
         Fetch potential relaxed requirement fulfillment using a fixed resolution model.
 
-        This is a strict fast-path for the hot query path.
-
         :param action_name: ROS interface/action name
         :param resolution_model: resolution model name
         :return: fetch query result
         """
         query = f"""
             match
-                $ros_interface isa ROSInterface, has interface_name '{action_name}';
-                $resolution_model isa resolution_model,
+                $interface isa ROSInterface,
+                    has interface_name '{action_name}';
+                $rm isa resolution_model,
                     has resolution_model_name '{resolution_model}';
-                let $tactic_rule in applicable_tactics($ros_interface, $resolution_model);
-                $req isa relaxed_requirement,
-                    has in_effect true,
-                    has requirement_name $requirement_name;
-                $resolution_model links (tactic: $rm_tactic);
-                $tactic_rule links (tactic: $rm_tactic);
-                let $fulfillment = tactic_rule_impacts_requirement_fulfillment($tactic_rule, $req);
-                $tactic_rule has rule_name $rule_name;
+                let $tr in applicable_tactics($interface, $rm);
+                $req isa relaxed_requirement, has in_effect true;
+                let $fulfillment =
+                    tactic_rule_impacts_requirement_fulfillment($tr, $req);
             fetch {{
-                "rule_name": $rule_name,
-                "fulfillment": $fulfillment,
-                "requirement_name": $requirement_name
+                "rule_name": $tr.rule_name,
+                "requirement_name": $req.requirement_name,
+                "fulfillment": $fulfillment
             }};
         """
-        return self._fetch(query)
+        result = self._fetch(query)
+        return self._dedupe_requirement_impact_rows(result)
+
+    @staticmethod
+    def _dedupe_requirement_impact_rows(query_result: List[dict]) -> List[dict]:
+        """Deduplicate requirement impact rows while keeping deterministic order."""
+        seen = set()
+        deduped = []
+        for result in query_result:
+            key = (
+                result['rule_name'],
+                result['requirement_name'],
+                result['fulfillment'],
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(result)
+        deduped.sort(
+            key=lambda item: (
+                item['rule_name'],
+                item['requirement_name'],
+            ))
+        return deduped
 
     @staticmethod
     def _build_requirement_impact_dicts(
@@ -1448,9 +1525,9 @@ class TacticalRetreatInterface:
         query = """
             match
                 $req isa relaxed_requirement;
-            fetch {{
+            fetch {
                 "requirement_name": $req.requirement_name
-            }};
+            };
         """
         return self._fetch(query)
 
@@ -1473,9 +1550,9 @@ class TacticalRetreatInterface:
         query = """
             match
                 $expr isa expression;
-            fetch {{
+            fetch {
                 "expression_name": $expr.expression_name
-            }};
+            };
         """
         return self._fetch(query)
 
@@ -1513,7 +1590,6 @@ class TacticalRetreatInterface:
             logger.error(
                 'Failed to evaluate expression_valid '
                 '(expression_name=%s).',
-                expression_name,
-                exc_info=True)
+                expression_name)
             raise
         return len(result) > 0
