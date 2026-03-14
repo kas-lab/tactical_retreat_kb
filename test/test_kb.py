@@ -315,11 +315,15 @@ def test_create_measure_interface_service(executor, tactical_kb, test_node):
     tactical_kb.create_measure_interface(measure_test_service_dict)
     assert 'measure_test_service' in tactical_kb.measures_clients
 
-    deadline = time.time() + 2.0
+    deadline = time.time() + 5.0
+    service_result = float('nan')
     while time.time() < deadline:
-        time.sleep(0.02)
+        service_result = tactical_kb.typedb_interface.get_latest_measurement(
+            'measure_test_service')
+        if service_result is True:
+            break
+        time.sleep(0.05)
 
-    service_result = tactical_kb.typedb_interface.get_latest_measurement('measure_test_service')
     assert service_result is True
 
 

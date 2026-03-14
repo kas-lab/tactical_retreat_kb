@@ -4,7 +4,7 @@ define
 # However, if we later start considering ServiceClients and ActionClients as neighbours,
 # we would need to re-write the rule
 
-fun neighbours($node: ROSNode) -> { ROSNode }:
+fun direct_neighbours($node: ROSNode) -> { ROSNode }:
   match
     {
       (node: $node, subnode: $nb) isa subnode;
@@ -24,23 +24,31 @@ fun neighbours($node: ROSNode) -> { ROSNode }:
       $d_sub has interface_name $d_iname, has interface_type $d_itype;
       $d_pub isa Publisher, has interface_name $d_iname, has interface_type $d_itype;
       (node: $nb, publisher: $d_pub) isa has_topic;
+    };
+  return { $nb };
+
+fun neighbours($node: ROSNode) -> { ROSNode }:
+  match
+    {
+      let $nb in direct_neighbours($node);
     } or {
       (node: $node, subnode: $e_sn) isa subnode;
       let $nb in neighbours($e_sn);
     };
   return { $nb };
 
-fun connected_nodes($node: ROSNode) -> { ROSNode }:
+fun connected_nodes($root: ROSNode) -> { ROSNode }:
   match
     {
-      let $conn in neighbours($node);
+      let $conn in direct_neighbours($root);
     } or {
-      let $via in connected_nodes($node);
-      let $conn in neighbours($via);
+      let $via in connected_nodes($root);
+      let $conn in direct_neighbours($via);
     };
+    not { $conn is $root; };
   return { $conn };
 
-fun applicable_tactics($interface: ROSInterface, $rm: resolution_model) -> { tactic_rule }:
+fun interface_hosts($interface: ROSInterface) -> { ROSNode }:
   match
     {
       $interface isa ActionServer;
@@ -52,18 +60,43 @@ fun applicable_tactics($interface: ROSInterface, $rm: resolution_model) -> { tac
       $interface isa Publisher;
       (node: $host, publisher: $interface) isa has_topic;
     };
-    $rm links (tactic: $rm_tactic, variant_resolution: $vr);
-    $tr isa tactic_rule, links (tactic: $rm_tactic, consequent: $fa);
+  return { $host };
+
+fun tactic_rule_consequent_features($tr: tactic_rule) -> { Feature }:
+  match
+    $tr links (consequent: $fa);
     {
       $fa links (activation: $feat);
     } or {
       $fa links (deactivation: $feat);
     };
+  return { $feat };
+
+fun resolution_model_tactic_rules($rm: resolution_model) -> { tactic_rule }:
+  match
+    $rm links (tactic: $rm_tactic, variant_resolution: $vr);
+    let $feat in tactic_rule_consequent_features($tr);
+    $tr isa tactic_rule, links (tactic: $rm_tactic);
+    $vr links (variant: $feat);
+  return { $tr };
+
+fun tactic_rule_target_nodes($tr: tactic_rule, $rm: resolution_model) -> { ROSNode }:
+  match
+    let $feat in tactic_rule_consequent_features($tr);
+    $rm links (variant_resolution: $vr);
     $vr links (variant: $feat, resolution_action: $ra);
+    $ra links (node: $target);
+  return { $target };
+
+fun applicable_tactics($interface: ROSInterface, $rm: resolution_model) -> { tactic_rule }:
+  match
+    let $host in interface_hosts($interface);
+    let $tr in resolution_model_tactic_rules($rm);
+    let $target in tactic_rule_target_nodes($tr, $rm);
     {
-      $ra links (node: $host);
+      $target is $host;
     } or {
       let $conn in connected_nodes($host);
-      $ra links (node: $conn);
+      $target is $conn;
     };
   return { $tr };

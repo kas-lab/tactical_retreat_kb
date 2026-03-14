@@ -21,32 +21,39 @@ from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInte
 def kb_interface():
     kb_interface = TacticalRetreatInterface(
         'localhost:1729',
-        'test_generated_benchmark_profile',
+        'test_hyp_benchmark_profile',
         ['schemas/data_structure/data_structure.tql',
          'schemas/context_model/context_model.tql',
          'schemas/logical_expressions/logical_expression.tql',
          'schemas/logical_expressions/fuzzy_expression.tql',
          'schemas/ros_model/ros_model.tql',
          'schemas/feature_model/feature_model.tql',
-         'schemas/feature_model/feature_model_logical_expression.tql',
          'schemas/relaxed/relaxed_model.tql',
          'schemas/tactics_model/tactics_model.tql',
          'schemas/discover_hypothetical_req_fulfillment/discover_hypothetical_req_fulfillment.tql',
          'schemas/discover_tactics_model/discover_tactics_model.tql'],
-        ['scripts/generated.tql'],
+        ['test/data/test_discover_hypothetical_req_fulfillment.tql',
+         'schemas/ros_model/ros_model_example.tql',
+         'schemas/tactics_model/tactics_example.tql',
+         'schemas/relaxed/relaxed_mirte_example.tql'],
         force_database=True,
         force_data=True)
     yield kb_interface
     kb_interface.delete_database()
 
 
-@pytest.mark.skip
-def test_generated_profile_potential_requirements_non_empty(kb_interface):
+def test_hyp_profile_potential_requirements_non_empty(kb_interface):
     impacts = kb_interface.get_potential_requirements_fulfillment(
-        'navigate_to_pose',
-        resolution_model='rebet_frog')
+        '/navigate_to_pose',
+        resolution_model='rebetmc')
+    impacts_for_resolution_model = (
+        kb_interface.get_potential_requirements_fulfillment_for_resolution_model(
+            '/navigate_to_pose',
+            'rebetmc')
+    )
 
     assert len(impacts) > 0
+    assert impacts_for_resolution_model == impacts
     for impact in impacts:
         assert impact.tactic_rule
         assert impact.requirement_name

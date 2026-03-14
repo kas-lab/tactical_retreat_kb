@@ -542,3 +542,10 @@ def test_potential_requirements_fulfillment(kb_interface):
     assert len(result_with_resolution_model) == len(result)
     for impact in result:
         assert impact in result_with_resolution_model
+
+    direct_result = (
+        kb_interface.get_potential_requirements_fulfillment_for_resolution_model(
+            '/navigate_to_pose', 'rebetmc'))
+    assert len(direct_result) == len(result)
+    for impact in result:
+        assert impact in direct_result

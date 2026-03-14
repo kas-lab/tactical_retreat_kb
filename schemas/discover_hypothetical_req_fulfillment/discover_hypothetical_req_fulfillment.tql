@@ -3,84 +3,58 @@ define
 
 fun tactic_rule_hypothetical_measure_value($tr: tactic_rule, $m: Measure) -> double:
   match
-    { $tr links (effect: $eff_a); $eff_a links (measure: $m);
+    {
+      $tr links (effect: $eff_a); $eff_a links (measure: $m);
       $eff_a isa relative_effect;
       $eff_a links (effect_value: $del_a);
       (measure: $m, measurement_value: $cur_a) isa measurement, has latest true;
       $cur_a has double_value $cur_d_a; $del_a has double_value $del_d_a;
-      let $v = $cur_d_a + $del_d_a; } or
-    { $tr links (effect: $eff_b); $eff_b links (measure: $m);
+      let $v = $cur_d_a + $del_d_a;
+    } or {
+      $tr links (effect: $eff_b); $eff_b links (measure: $m);
       $eff_b isa absolute_effect; $eff_b links (effect_value: $abs_ev_d);
-      $abs_ev_d has double_value $abs_d_raw; let $v = $abs_d_raw; } or
-    { $tr links (effect: $eff_bi); $eff_bi links (measure: $m);
+      $abs_ev_d has double_value $abs_d_raw; let $v = $abs_d_raw;
+    } or {
+      $tr links (effect: $eff_bi); $eff_bi links (measure: $m);
       $eff_bi isa absolute_effect; $eff_bi links (effect_value: $abs_ev_i);
-      $abs_ev_i has integer_value $abs_i_raw; let $v = $abs_i_raw + 0.0; } or
-    { not { $tr links (effect: $eff_c); $eff_c links (measure: $m); };
+      $abs_ev_i has integer_value $abs_i_raw; let $v = $abs_i_raw + 0.0;
+    } or {
+      not { $tr links (effect: $eff_c); $eff_c links (measure: $m); };
       (measure: $m, measurement_value: $mv_d) isa measurement, has latest true;
-      $mv_d has double_value $vd_raw; let $v = $vd_raw; } or
-    { not { $tr links (effect: $eff_ci); $eff_ci links (measure: $m); };
+      $mv_d has double_value $vd_raw; let $v = $vd_raw;
+    } or {
+      not { $tr links (effect: $eff_ci); $eff_ci links (measure: $m); };
       (measure: $m, measurement_value: $mv_i) isa measurement, has latest true;
-      $mv_i has integer_value $vi_raw; let $v = $vi_raw + 0.0; };
+      $mv_i has integer_value $vi_raw; let $v = $vi_raw + 0.0;
+    };
   return first $v;
 
 fun tactic_rule_hypothetical_comparison_lhs_value($tr: tactic_rule, $e: comparison_expression) -> double:
   match
-    { $tr links (effect: $eff_lhs_rel); $eff_lhs_rel links (measure: $meas_lhs_rel);
-      $e links (lhs_value: $meas_lhs_rel); $eff_lhs_rel isa relative_effect;
-      $eff_lhs_rel links (effect_value: $delta_lhs_rel);
-      (measure: $meas_lhs_rel, measurement_value: $cur_lhs_rel) isa measurement, has latest true;
-      $cur_lhs_rel has double_value $cur_d_lhs; $delta_lhs_rel has double_value $del_d_lhs;
-      let $v_cmp_lhs = $cur_d_lhs + $del_d_lhs; } or
-    { $tr links (effect: $eff_lhs_abd); $eff_lhs_abd links (measure: $meas_lhs_abd);
-      $e links (lhs_value: $meas_lhs_abd); $eff_lhs_abd isa absolute_effect;
-      $eff_lhs_abd links (effect_value: $abs_ev_lhs_d); $abs_ev_lhs_d has double_value $abs_d_lhs;
-      let $v_cmp_lhs = $abs_d_lhs; } or
-    { $tr links (effect: $eff_lhs_abi); $eff_lhs_abi links (measure: $meas_lhs_abi);
-      $e links (lhs_value: $meas_lhs_abi); $eff_lhs_abi isa absolute_effect;
-      $eff_lhs_abi links (effect_value: $abs_ev_lhs_i); $abs_ev_lhs_i has integer_value $abs_i_lhs;
-      let $v_cmp_lhs = $abs_i_lhs + 0.0; } or
-    { (measure: $meas_lhs_nad, measurement_value: $mv_lhs_nad) isa measurement, has latest true;
-      $e links (lhs_value: $meas_lhs_nad);
-      not { $tr links (effect: $eff_lhs_nad); $eff_lhs_nad links (measure: $meas_lhs_nad); };
-      $mv_lhs_nad has double_value $vd_lhs; let $v_cmp_lhs = $vd_lhs; } or
-    { (measure: $meas_lhs_nai, measurement_value: $mv_lhs_nai) isa measurement, has latest true;
-      $e links (lhs_value: $meas_lhs_nai);
-      not { $tr links (effect: $eff_lhs_nai); $eff_lhs_nai links (measure: $meas_lhs_nai); };
-      $mv_lhs_nai has integer_value $vi_lhs; let $v_cmp_lhs = $vi_lhs + 0.0; } or
-    { $e links (lhs_value: $lhs_vs_d); $lhs_vs_d isa ValueSingleton;
-      $lhs_vs_d has double_value $lhs_d; let $v_cmp_lhs = $lhs_d; } or
-    { $e links (lhs_value: $lhs_vs_i); $lhs_vs_i isa ValueSingleton;
-      $lhs_vs_i has integer_value $lhs_i; let $v_cmp_lhs = $lhs_i + 0.0; };
+    $e links (lhs_value: $lhs_term);
+    { $lhs_term isa Measure;
+      let $lhs_measure_value = tactic_rule_hypothetical_measure_value($tr, $lhs_term);
+      let $v_cmp_lhs = $lhs_measure_value; } or
+    { $lhs_term isa ValueSingleton;
+      $lhs_term has double_value $lhs_d;
+      let $v_cmp_lhs = $lhs_d; } or
+    { $lhs_term isa ValueSingleton;
+      $lhs_term has integer_value $lhs_i;
+      let $v_cmp_lhs = $lhs_i + 0.0; };
   return first $v_cmp_lhs;
 
 fun tactic_rule_hypothetical_comparison_rhs_value($tr: tactic_rule, $e: comparison_expression) -> double:
   match
-    { $tr links (effect: $eff_rhs_rel); $eff_rhs_rel links (measure: $meas_rhs_rel);
-      $e links (rhs_value: $meas_rhs_rel); $eff_rhs_rel isa relative_effect;
-      $eff_rhs_rel links (effect_value: $delta_rhs_rel);
-      (measure: $meas_rhs_rel, measurement_value: $cur_rhs_rel) isa measurement, has latest true;
-      $cur_rhs_rel has double_value $cur_d_rhs; $delta_rhs_rel has double_value $del_d_rhs;
-      let $v_cmp_rhs = $cur_d_rhs + $del_d_rhs; } or
-    { $tr links (effect: $eff_rhs_abd); $eff_rhs_abd links (measure: $meas_rhs_abd);
-      $e links (rhs_value: $meas_rhs_abd); $eff_rhs_abd isa absolute_effect;
-      $eff_rhs_abd links (effect_value: $abs_ev_rhs_d); $abs_ev_rhs_d has double_value $abs_d_rhs;
-      let $v_cmp_rhs = $abs_d_rhs; } or
-    { $tr links (effect: $eff_rhs_abi); $eff_rhs_abi links (measure: $meas_rhs_abi);
-      $e links (rhs_value: $meas_rhs_abi); $eff_rhs_abi isa absolute_effect;
-      $eff_rhs_abi links (effect_value: $abs_ev_rhs_i); $abs_ev_rhs_i has integer_value $abs_i_rhs;
-      let $v_cmp_rhs = $abs_i_rhs + 0.0; } or
-    { (measure: $meas_rhs_nad, measurement_value: $mv_rhs_nad) isa measurement, has latest true;
-      $e links (rhs_value: $meas_rhs_nad);
-      not { $tr links (effect: $eff_rhs_nad); $eff_rhs_nad links (measure: $meas_rhs_nad); };
-      $mv_rhs_nad has double_value $vd_rhs; let $v_cmp_rhs = $vd_rhs; } or
-    { (measure: $meas_rhs_nai, measurement_value: $mv_rhs_nai) isa measurement, has latest true;
-      $e links (rhs_value: $meas_rhs_nai);
-      not { $tr links (effect: $eff_rhs_nai); $eff_rhs_nai links (measure: $meas_rhs_nai); };
-      $mv_rhs_nai has integer_value $vi_rhs; let $v_cmp_rhs = $vi_rhs + 0.0; } or
-    { $e links (rhs_value: $rhs_vs_d); $rhs_vs_d isa ValueSingleton;
-      $rhs_vs_d has double_value $rhs_d; let $v_cmp_rhs = $rhs_d; } or
-    { $e links (rhs_value: $rhs_vs_i); $rhs_vs_i isa ValueSingleton;
-      $rhs_vs_i has integer_value $rhs_i; let $v_cmp_rhs = $rhs_i + 0.0; };
+    $e links (rhs_value: $rhs_term);
+    { $rhs_term isa Measure;
+      let $rhs_measure_value = tactic_rule_hypothetical_measure_value($tr, $rhs_term);
+      let $v_cmp_rhs = $rhs_measure_value; } or
+    { $rhs_term isa ValueSingleton;
+      $rhs_term has double_value $rhs_d;
+      let $v_cmp_rhs = $rhs_d; } or
+    { $rhs_term isa ValueSingleton;
+      $rhs_term has integer_value $rhs_i;
+      let $v_cmp_rhs = $rhs_i + 0.0; };
   return first $v_cmp_rhs;
 
 fun tactic_rule_impacts_comparison_fulfillment($tr: tactic_rule, $e: comparison_expression) -> double:
@@ -115,27 +89,8 @@ fun tactic_rule_hypothetical_fuzzy_term($tr: tactic_rule, $e: fuzzy_comparison_e
   match
     $e links (term: $term_ft);
     { $term_ft isa Measure;
-      $tr links (effect: $eff_ft_rel); $eff_ft_rel isa relative_effect;
-      $eff_ft_rel links (measure: $term_ft, effect_value: $del_ft_rel);
-      (measure: $term_ft, measurement_value: $cur_ft_rel) isa measurement, has latest true;
-      $cur_ft_rel has double_value $cur_d_ft; $del_ft_rel has double_value $del_d_ft;
-      let $raw_ft = $cur_d_ft + $del_d_ft; } or
-    { $term_ft isa Measure;
-      $tr links (effect: $eff_ft_abd); $eff_ft_abd isa absolute_effect;
-      $eff_ft_abd links (measure: $term_ft, effect_value: $abs_ev_ft_d);
-      $abs_ev_ft_d has double_value $abs_d_ft; let $raw_ft = $abs_d_ft; } or
-    { $term_ft isa Measure;
-      $tr links (effect: $eff_ft_abi); $eff_ft_abi isa absolute_effect;
-      $eff_ft_abi links (measure: $term_ft, effect_value: $abs_ev_ft_i);
-      $abs_ev_ft_i has integer_value $abs_i_ft; let $raw_ft = $abs_i_ft + 0.0; } or
-    { $term_ft isa Measure;
-      not { $tr links (effect: $eff_ft_nad); $eff_ft_nad links (measure: $term_ft); };
-      (measure: $term_ft, measurement_value: $mv_ft_d) isa measurement, has latest true;
-      $mv_ft_d has double_value $vd_ft; let $raw_ft = $vd_ft; } or
-    { $term_ft isa Measure;
-      not { $tr links (effect: $eff_ft_nai); $eff_ft_nai links (measure: $term_ft); };
-      (measure: $term_ft, measurement_value: $mv_ft_i) isa measurement, has latest true;
-      $mv_ft_i has integer_value $vi_ft; let $raw_ft = $vi_ft + 0.0; } or
+      let $measure_value_ft = tactic_rule_hypothetical_measure_value($tr, $term_ft);
+      let $raw_ft = $measure_value_ft; } or
     { $term_ft isa ValueSingleton; $term_ft has double_value $vs_d_ft; let $raw_ft = $vs_d_ft; } or
     { $term_ft isa ValueSingleton; $term_ft has integer_value $vs_i_ft; let $raw_ft = $vs_i_ft + 0.0; };
     { $e has offset_value $off_ft; let $q_hft = $raw_ft + $off_ft; } or
@@ -165,27 +120,8 @@ fun tactic_rule_hypothetical_relaxed_term($tr: tactic_rule, $e: relaxed_fuzzy_ex
   match
     $e links (term: $term_rt);
     { $term_rt isa Measure;
-      $tr links (effect: $eff_rt_rel); $eff_rt_rel isa relative_effect;
-      $eff_rt_rel links (measure: $term_rt, effect_value: $del_rt_rel);
-      (measure: $term_rt, measurement_value: $cur_rt_rel) isa measurement, has latest true;
-      $cur_rt_rel has double_value $cur_d_rt; $del_rt_rel has double_value $del_d_rt;
-      let $raw_rt = $cur_d_rt + $del_d_rt; } or
-    { $term_rt isa Measure;
-      $tr links (effect: $eff_rt_abd); $eff_rt_abd isa absolute_effect;
-      $eff_rt_abd links (measure: $term_rt, effect_value: $abs_ev_rt_d);
-      $abs_ev_rt_d has double_value $abs_d_rt; let $raw_rt = $abs_d_rt; } or
-    { $term_rt isa Measure;
-      $tr links (effect: $eff_rt_abi); $eff_rt_abi isa absolute_effect;
-      $eff_rt_abi links (measure: $term_rt, effect_value: $abs_ev_rt_i);
-      $abs_ev_rt_i has integer_value $abs_i_rt; let $raw_rt = $abs_i_rt + 0.0; } or
-    { $term_rt isa Measure;
-      not { $tr links (effect: $eff_rt_nad); $eff_rt_nad links (measure: $term_rt); };
-      (measure: $term_rt, measurement_value: $mv_rt_d) isa measurement, has latest true;
-      $mv_rt_d has double_value $vd_rt; let $raw_rt = $vd_rt; } or
-    { $term_rt isa Measure;
-      not { $tr links (effect: $eff_rt_nai); $eff_rt_nai links (measure: $term_rt); };
-      (measure: $term_rt, measurement_value: $mv_rt_i) isa measurement, has latest true;
-      $mv_rt_i has integer_value $vi_rt; let $raw_rt = $vi_rt + 0.0; } or
+      let $measure_value_rt = tactic_rule_hypothetical_measure_value($tr, $term_rt);
+      let $raw_rt = $measure_value_rt; } or
     { $term_rt isa ValueSingleton; $term_rt has double_value $vs_d_rt; let $raw_rt = $vs_d_rt; } or
     { $term_rt isa ValueSingleton; $term_rt has integer_value $vs_i_rt; let $raw_rt = $vs_i_rt + 0.0; };
     { $e has required_value $rv_rt; let $q_hrt = $raw_rt - $rv_rt; } or
@@ -258,15 +194,9 @@ fun tactic_rule_impacts_fuzzy_or_fulfillment($tr: tactic_rule, $e: fuzzy_or) -> 
     { $child_fo isa relaxed_fuzzy_expression;
       let $m_rf_fo = tactic_rule_impacts_relaxed_leaf_fulfillment($tr, $child_fo);
       let $m_fo = $m_rf_fo; } or
-    { $child_fo isa fuzzy_ascend_expression;
-      let $m_asc_fo = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fo);
-      let $m_fo = $m_asc_fo; } or
-    { $child_fo isa fuzzy_decay_expression;
-      let $m_dec_fo = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fo);
-      let $m_fo = $m_dec_fo; } or
-    { $child_fo isa fuzzy_unimodal_expression;
-      let $m_uni_fo = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fo);
-      let $m_fo = $m_uni_fo; } or
+    { $child_fo isa fuzzy_comparison_expression;
+      let $m_leaf_fo = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fo);
+      let $m_fo = $m_leaf_fo; } or
     { $child_fo isa logical_expression;
       not { $child_fo isa comparison_expression; };
       let $m_log_fo = logical_expression_membership($child_fo);
@@ -288,15 +218,9 @@ fun tactic_rule_impacts_fuzzy_and_fulfillment($tr: tactic_rule, $e: fuzzy_and) -
     { $child_fa isa relaxed_fuzzy_expression;
       let $m_rf_fa = tactic_rule_impacts_relaxed_leaf_fulfillment($tr, $child_fa);
       let $m_fa = $m_rf_fa; } or
-    { $child_fa isa fuzzy_ascend_expression;
-      let $m_asc_fa = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fa);
-      let $m_fa = $m_asc_fa; } or
-    { $child_fa isa fuzzy_decay_expression;
-      let $m_dec_fa = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fa);
-      let $m_fa = $m_dec_fa; } or
-    { $child_fa isa fuzzy_unimodal_expression;
-      let $m_uni_fa = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fa);
-      let $m_fa = $m_uni_fa; } or
+    { $child_fa isa fuzzy_comparison_expression;
+      let $m_leaf_fa = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fa);
+      let $m_fa = $m_leaf_fa; } or
     { $child_fa isa logical_expression;
       not { $child_fa isa comparison_expression; };
       let $m_log_fa = logical_expression_membership($child_fa);
