@@ -335,6 +335,64 @@ $tactic_rule_as_few_as_abs isa tactic_rule,
     links (tactic: $tactic_1, effect: $abs_effect_as_few_as_measure),
     has rule_name "tactic_rule_as_few_as_meas_0_15";
 
+# --- Balanced benchmark data for tactic_rule_hypothetical_fuzzy_term ---
+# VS_double term (no offset)
+$bench_fuzzy_vs_d_1 isa fuzzy_ascend_expression,
+    links (fuzzy_set: $fuzzy_ascend_sigmoid_set, term: $double_0_10),
+    has expression_name 'bench_fuzzy_vs_d_1';
+
+# VS_double term (no offset)
+$bench_fuzzy_vs_d_2 isa fuzzy_decay_expression,
+    links (fuzzy_set: $fuzzy_decay_exp_set, term: $double_0_30),
+    has expression_name 'bench_fuzzy_vs_d_2';
+
+# VS_integer term (no offset)
+$bench_fuzzy_vs_i_1 isa fuzzy_unimodal_expression,
+    links (fuzzy_set: $fuzzy_unimodal_triangular_set, term: $int_singleton_5),
+    has expression_name 'bench_fuzzy_vs_i_1';
+
+# Measure term WITH offset_value
+$bench_fuzzy_offset_1 isa fuzzy_unimodal_expression,
+    links (fuzzy_set: $fuzzy_unimodal_gaussian_set, term: $fuzzy_unimodal_measure),
+    has expression_name 'bench_fuzzy_offset_1',
+    has offset_value 0.05;
+
+# Measure term WITH offset_value
+$bench_fuzzy_offset_2 isa fuzzy_ascend_expression,
+    links (fuzzy_set: $fuzzy_ascend_blf_set, term: $fuzzy_ascend_measure),
+    has expression_name 'bench_fuzzy_offset_2',
+    has offset_value -0.1;
+
+# --- Balanced benchmark data for tactic_rule_hypothetical_relaxed_term ---
+# VS_double term, required_value (as_close_as_possible owns required_value)
+$bench_relaxed_vs_d_rv isa as_close_as_possible_expression,
+    links (fuzzy_set: $fuzzy_unimodal_triangular_set, term: $double_0_22221),
+    has expression_name 'bench_relaxed_vs_d_rv',
+    has required_value 0.20;
+
+# Measure term, required_period (freq_as_close_as_possible owns required_period)
+$bench_relaxed_rp_1 isa freq_as_close_as_possible_expression,
+    links (fuzzy_set: $fuzzy_unimodal_triangular_set, term: $as_close_as_measure),
+    has expression_name 'bench_relaxed_rp_1',
+    has required_period 1.0;
+
+# Measure term, required_period
+$bench_relaxed_rp_2 isa freq_as_close_as_possible_expression,
+    links (fuzzy_set: $fuzzy_unimodal_gaussian_set, term: $as_close_as_measure),
+    has expression_name 'bench_relaxed_rp_2',
+    has required_period 0.5;
+
+# Measure term, required_value (extra)
+$bench_relaxed_rv_2 isa as_close_as_possible_expression,
+    links (fuzzy_set: $fuzzy_unimodal_triangular_set, term: $as_close_as_measure),
+    has expression_name 'bench_relaxed_rv_2',
+    has required_value 0.30;
+
+# Measure term, neither (extra)
+$bench_relaxed_neither_1 isa as_many_as_possible_expression,
+    links (fuzzy_set: $fuzzy_ascend_sigmoid_set, term: $as_many_as_measure),
+    has expression_name 'bench_relaxed_neither_1';
+
 # Not Expressions Hypothetical Fulfillment
 
 # tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.10 <= 0.10 -> 1.0 -> not_expr = 0.0

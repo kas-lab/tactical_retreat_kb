@@ -103,13 +103,26 @@ fun tactic_rule_hypothetical_relaxed_term($tr: tactic_rule, $e: relaxed_fuzzy_ex
 fun tactic_rule_hypothetical_fuzzy_term($tr: tactic_rule, $e: fuzzy_comparison_expression) -> double:
   match
     $e links (term: $term_ft);
-    { $term_ft isa Measure;
+    {
+      $term_ft isa Measure;
       let $measure_value_ft = tactic_rule_hypothetical_measure_value($tr, $term_ft);
-      let $raw_ft = $measure_value_ft; } or
-    { $term_ft isa ValueSingleton; $term_ft has double_value $vs_d_ft; let $raw_ft = $vs_d_ft; } or
-    { $term_ft isa ValueSingleton; $term_ft has integer_value $vs_i_ft; let $raw_ft = $vs_i_ft + 0.0; };
-    { $e has offset_value $off_ft; let $q_hft = $raw_ft + $off_ft; } or
-    { not { $e has offset_value $_; }; let $q_hft = $raw_ft; };
+      let $raw_ft = $measure_value_ft;
+    } or {
+      $term_ft isa ValueSingleton;
+      $term_ft has double_value $vs_d_ft;
+      let $raw_ft = $vs_d_ft;
+    } or {
+      $term_ft isa ValueSingleton;
+      $term_ft has integer_value $vs_i_ft;
+      let $raw_ft = $vs_i_ft + 0.0;
+    };
+    {
+      $e has offset_value $off_ft;
+      let $q_hft = $raw_ft + $off_ft;
+    } or {
+      not { $e has offset_value $_; };
+      let $q_hft = $raw_ft;
+    };
   return first $q_hft;
 
 fun tactic_rule_impacts_comparison_fulfillment($tr: tactic_rule, $e: comparison_expression) -> double:
