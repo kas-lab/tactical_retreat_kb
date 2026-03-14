@@ -18,6 +18,7 @@ This is the single source of truth for agent workflow and commands.
 - `schemas/`: TypeDB schemas.
 - `test/`: package tests.
 - `scripts/run-tests-docker.sh`: standard Docker test entrypoint.
+- `scripts/benchmark/`: user-facing benchmark scripts and `benchmark.tql`.
 
 ## Development environment
 
@@ -53,6 +54,15 @@ docker exec tactical_retreat bash -lc \
 scripts/run-tests-docker.sh
 scripts/run-tests-docker.sh -k test_hyp
 ```
+
+Default package test note:
+
+- `colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics`
+  should finish in roughly 45-50 seconds in the current container setup.
+- Benchmark-validation tests under `test/test_benchmark*.py` are intentionally
+  opt-in for the default package suite.
+- To run those benchmark tests explicitly, select the files directly or set
+  `TYPEDB_TACTICS_RUN_BENCHMARK_TESTS=1`.
 
 3. Run mandatory quality checks:
 
@@ -183,6 +193,14 @@ match
 return { $to };
 ```
 
+Repository-specific graph note:
+
+- In `discover_tactics_model.tql`, keep `connected_nodes()` recursive over
+  `direct_neighbours()`, not over the already-recursive `neighbours()`.
+- Recursing `connected_nodes()` through `neighbours()` caused package tests to
+  stall for minutes; the current `direct_neighbours` split restored normal
+  runtime.
+
 ## Text2TypeQL reference (recommended)
 
 Before writing/rewriting TypeQL, search the local validated examples in `ros_typedb`:
@@ -200,6 +218,8 @@ Additional references:
 ## Helper scripts
 
 - `scripts/run-tests-docker.sh`
-- `scripts/benchmark.py`
-- `scripts/benchmark_queries.py`
-- `scripts/benchmark_logical_expression.py`
+- `scripts/benchmark/benchmark.py`
+- `scripts/benchmark/benchmark_queries.py`
+- `scripts/benchmark/benchmark_requirement_impact_functions.py`
+- `scripts/benchmark/README.md`
+- `scripts/benchmark/benchmark_logical_expression.py`
