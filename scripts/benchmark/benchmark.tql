@@ -1760,4 +1760,79 @@ $bench_measure_10 isa Measure,
     has measurement_function_lib "bench_measure_lib",
     has measurement_function_args "bench_measure_args_10";
 
+# --- Data gaps for comparison_fulfillment ---
+# greater_than_equal: 2 instances
+$bench_gap_gte_1 isa greater_than_equal,
+    links (lhs_value: $measure_lhs_comparison, rhs_value: $double_0_05),
+    has expression_name 'bench_gap_gte_1';
+$bench_gap_gte_2 isa greater_than_equal,
+    links (lhs_value: $measure_lhs_comparison, rhs_value: $double_0_10),
+    has expression_name 'bench_gap_gte_2';
+
+# equal (1 instance)
+$bench_gap_eq_1 isa equal,
+    links (lhs_value: $measure_lhs_comparison, rhs_value: $double_0_10),
+    has expression_name 'bench_gap_eq_1';
+
+# not_equal (1 instance)
+$bench_gap_ne_1 isa not_equal,
+    links (lhs_value: $measure_lhs_comparison, rhs_value: $double_0_15),
+    has expression_name 'bench_gap_ne_1';
+
+# --- Data gap for not_membership ---
+# not_expression with inner propositional_expression (logical, non-comparison)
+$bench_gap_not_logical isa not_expression,
+    links (expression: $propositional_expression),
+    has expression_name 'bench_gap_not_logical';
+
+# --- Data gaps for fuzzy_not_membership ---
+# fuzzy_not with inner relaxed_fuzzy_expression
+$bench_gap_fnot_relaxed isa fuzzy_not,
+    links (expression: $fake_as_close_expression),
+    has expression_name 'bench_gap_fnot_relaxed';
+
+# fuzzy_not with inner fuzzy_comparison_expression
+$bench_gap_fnot_fuzzy isa fuzzy_not,
+    links (expression: $fuzzy_ascend_expression_1),
+    has expression_name 'bench_gap_fnot_fuzzy';
+
+# fuzzy_not with inner logical (non-comparison: propositional_expression)
+$bench_gap_fnot_logical isa fuzzy_not,
+    links (expression: $propositional_expression),
+    has expression_name 'bench_gap_fnot_logical';
+
+# --- Data gap for fuzzy_or_fulfillment ---
+# fuzzy_or with a fuzzy_comparison_expression child
+$bench_gap_fuzzy_or_leaf isa fuzzy_or,
+    links (expression: $fuzzy_ascend_expression_1, expression: $fake_as_close_expression),
+    has expression_name 'bench_gap_fuzzy_or_leaf';
+
+# --- Data gaps for fuzzy_and_fulfillment ---
+$bench_gap_fuzzy_and_full isa fuzzy_and,
+    links (expression: $fuzzy_not, expression: $not_expr, expression: $fuzzy_ascend_expression_1, expression: $fake_as_close_expression),
+    has expression_name 'bench_gap_fuzzy_and_full';
+
+# --- Data gaps for may_fulfillment ---
+$bench_gap_may_full isa may_expression,
+    links (expression: $fuzzy_or_1, expression: $fuzzy_and_1, expression: $fuzzy_not, expression: $less_than_equal, expression: $propositional_expression),
+    has expression_name 'bench_gap_may_full';
+
+# --- Data gaps for shall_fulfillment ---
+$bench_gap_shall_full isa shall_expression,
+    links (expression: $fuzzy_not, expression: $bench_gap_may_full, expression: $less_than_equal, expression: $propositional_expression),
+    has expression_name 'bench_gap_shall_full';
+
+# --- Data gaps for requirement_fulfillment ---
+$bench_gap_req_may isa relaxed_requirement,
+    links (system: $fake_system, expression: $bench_gap_may_full),
+    has requirement_name 'bench_gap_req_may',
+    has in_effect true,
+    has description 'Benchmark gap requirement for may_expression branch.';
+
+$bench_gap_req_relaxed isa relaxed_requirement,
+    links (system: $fake_system, expression: $fake_as_close_expression),
+    has requirement_name 'bench_gap_req_relaxed',
+    has in_effect true,
+    has description 'Benchmark gap requirement for relaxed_fuzzy_expression branch.';
+
 # END BENCHMARK COMBO EXPANSION
