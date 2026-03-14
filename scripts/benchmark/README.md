@@ -122,13 +122,28 @@ What it reports:
 
 - one representative tactic rule for the whole run
 - one representative valid input per function
-- `cold`, `warm_avg`, `warm_p50`, and `warm_p95`
+- `cold_avg`, `cold_p50`, `cold_p95` — relative cold (discovery-warmed DB)
+- `true_cold_avg`, `true_cold_p50`, `true_cold_p95` — true cold (fresh DB, no
+  warmup); only shown when `--true-cold-runs` is set
+- `warm_avg`, `warm_p50`, `warm_p95`
 - each function’s warm p50 as a percentage of the final requirement function,
   when that final function is included
 
+Two cold measurement modes:
+
+- **Relative cold** (`--cold-runs N`): each run uses a fresh DB that has first
+  been warmed by re-running the discovery queries, reproducing the state TypeDB
+  is in right after schema load in production.  This is the most useful metric
+  for comparing schema rewrites because it reflects real first-query latency.
+- **True cold** (`--true-cold-runs N`): each run uses a completely fresh DB
+  with no prior queries, measuring the absolute worst-case first-query cost
+  (includes TypeDB query planning overhead).
+
 Useful options:
 
-- `--warm-runs N`: number of warm timed runs after one cold run
+- `--cold-runs N`: number of relative cold runs (default: 1)
+- `--true-cold-runs N`: number of true cold runs (default: 0, disabled)
+- `--warm-runs N`: number of warm runs after cold runs (default: 5)
 - `-k REGEX` / `--function-regex REGEX`: benchmark only functions whose names
   match the regex
 - `--db-name NAME`: database name for the run
@@ -139,8 +154,10 @@ Examples:
 ```bash
 python3 benchmark_requirement_impact_functions.py
 python3 benchmark_requirement_impact_functions.py --warm-runs 10
+python3 benchmark_requirement_impact_functions.py --cold-runs 5
+python3 benchmark_requirement_impact_functions.py --cold-runs 5 --true-cold-runs 3 --warm-runs 20
 python3 benchmark_requirement_impact_functions.py -k tactic_rule_hypothetical_measure_
-python3 benchmark_requirement_impact_functions.py -k 'tactic_rule_impacts_(shall|may|requirement)'
+python3 benchmark_requirement_impact_functions.py -k ‘tactic_rule_impacts_(shall|may|requirement)’
 ```
 
 When to use it:

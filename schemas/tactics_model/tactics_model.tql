@@ -28,9 +28,9 @@ relation tactic_rule,
 
 ### effect
 
-attribute resulting_effect_value, value double;
+# attribute resulting_effect_value, value double;
 relation effect @abstract,
-    owns resulting_effect_value,
+    # owns resulting_effect_value,
     relates measure,
     plays tactic_rule:effect;
 

@@ -1,31 +1,37 @@
 define
 
-
 fun tactic_rule_hypothetical_measure_value($tr: tactic_rule, $m: Measure) -> double:
   match
     {
-      $tr links (effect: $eff_a); $eff_a links (measure: $m);
-      $eff_a isa relative_effect;
-      $eff_a links (effect_value: $del_a);
-      (measure: $m, measurement_value: $cur_a) isa measurement, has latest true;
-      $cur_a has double_value $cur_d_a; $del_a has double_value $del_d_a;
-      let $v = $cur_d_a + $del_d_a;
+      not {
+        $tr links (effect: $eff_c);
+        $eff_c links (measure: $m);
+      };
+      (measure: $m, measurement_value: $measurement_value) isa measurement, has latest true;
+      {
+        $measurement_value has double_value $value_double;
+        let $v = $value_double;
+      } or {
+        $measurement_value has integer_value $value_int;
+        let $v = $value_int + 0.0;
+      };
     } or {
-      $tr links (effect: $eff_b); $eff_b links (measure: $m);
-      $eff_b isa absolute_effect; $eff_b links (effect_value: $abs_ev_d);
-      $abs_ev_d has double_value $abs_d_raw; let $v = $abs_d_raw;
+      $tr links (effect: $effect_absolute);
+      $effect_absolute isa absolute_effect, links (measure: $m, effect_value: $effect_value_ent);
+      {
+        $effect_value_ent has double_value $abs_d_raw;
+        let $v = $abs_d_raw;
+      } or {
+        $effect_value_ent has integer_value $abs_i_raw;
+        let $v = $abs_i_raw + 0.0;
+      };
     } or {
-      $tr links (effect: $eff_bi); $eff_bi links (measure: $m);
-      $eff_bi isa absolute_effect; $eff_bi links (effect_value: $abs_ev_i);
-      $abs_ev_i has integer_value $abs_i_raw; let $v = $abs_i_raw + 0.0;
-    } or {
-      not { $tr links (effect: $eff_c); $eff_c links (measure: $m); };
-      (measure: $m, measurement_value: $mv_d) isa measurement, has latest true;
-      $mv_d has double_value $vd_raw; let $v = $vd_raw;
-    } or {
-      not { $tr links (effect: $eff_ci); $eff_ci links (measure: $m); };
-      (measure: $m, measurement_value: $mv_i) isa measurement, has latest true;
-      $mv_i has integer_value $vi_raw; let $v = $vi_raw + 0.0;
+      $tr links (effect: $eff_a);
+      $eff_a isa relative_effect, links (measure: $m, effect_value: $rel_effect_value_ent);
+      $rel_effect_value_ent has double_value $rel_effect_value_double;
+      (measure: $m, measurement_value: $current_measurement) isa measurement, has latest true;
+      $current_measurement has double_value $current_measurement_value;
+      let $v = $current_measurement_value + $rel_effect_value_double;
     };
   return first $v;
 

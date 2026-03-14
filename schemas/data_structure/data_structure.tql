@@ -1,9 +1,11 @@
 define
 
 attribute data_value @abstract;
+attribute numerical_value @abstract, sub data_value;
+attribute integer_value, sub numerical_value, value integer;
+attribute double_value, sub numerical_value, value double;
+
 attribute bool_value, sub data_value, value boolean;
-attribute integer_value, sub data_value, value integer;
-attribute double_value, sub data_value,value double;
 attribute string_value, sub data_value, value string;
 
 entity Value @abstract,
@@ -11,6 +13,7 @@ entity Value @abstract,
 
 entity ValueSingleton sub Value,
   owns data_value @card(1),
+  owns numerical_value,
   owns bool_value,
   owns integer_value,
   owns double_value,
