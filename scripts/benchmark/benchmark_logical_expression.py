@@ -15,16 +15,25 @@
 Benchmark script for logical_expression.tql schema function variants.
 
 Usage (from inside the Docker container, with ROS and install sourced):
-    python3 scripts/benchmark_logical_expression.py
+    python3 scripts/benchmark/benchmark_logical_expression.py
 
 Prints a per-variant, per-expression-type latency table (mean ± stddev, ms).
 """
 
 import os
+from pathlib import Path
 import statistics
 import time
 
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_DIR = SCRIPT_DIR.parent.parent
+
+
+def abs_path(rel_path):
+    return str((REPO_DIR / rel_path).resolve())
 
 
 BASE_SCHEMAS = [
@@ -85,8 +94,8 @@ def benchmark_variant(label, schema_file):
         iface = TacticalRetreatInterface(
             'localhost:1729',
             db_name,
-            BASE_SCHEMAS + [schema_file],
-            DATA_FILES,
+            [abs_path(path) for path in BASE_SCHEMAS] + [abs_path(schema_file)],
+            [abs_path(path) for path in DATA_FILES],
             force_database=True,
             force_data=True,
         )

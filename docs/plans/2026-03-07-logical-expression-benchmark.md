@@ -44,7 +44,7 @@ expression_valid → atomic_valid (7 OR branches: 1 propositional + 6 comparison
 ## Task 1: Write the Benchmark Script
 
 **Files:**
-- Create: `scripts/benchmark_logical_expression.py`
+- Create: `scripts/benchmark/benchmark_logical_expression.py`
 
 The script drives all four variants in sequence. It creates a fresh DB per variant, warms up with 10 queries, then times 200 repetitions per expression name.
 
@@ -58,7 +58,7 @@ The script drives all four variants in sequence. It creates a fresh DB per varia
 """Benchmark script for logical_expression.tql schema function variants.
 
 Usage (from inside the Docker container, with ROS and install sourced):
-    python3 scripts/benchmark_logical_expression.py
+    python3 scripts/benchmark/benchmark_logical_expression.py
 
 Prints a per-variant, per-expression-type latency table (mean ± stddev, ms).
 """
@@ -196,14 +196,14 @@ docker exec tactical_retreat bash -lc \
   "source /opt/ros/humble/setup.bash && \
    source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && \
    cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics && \
-   python3 -c 'import ast; ast.parse(open(\"scripts/benchmark_logical_expression.py\").read()); print(\"OK\")'"
+   python3 -c 'import ast; ast.parse(open(\"scripts/benchmark/benchmark_logical_expression.py\").read()); print(\"OK\")'"
 ```
 Expected: `OK`
 
 **Step 3: Commit**
 
 ```bash
-git add scripts/benchmark_logical_expression.py
+git add scripts/benchmark/benchmark_logical_expression.py
 git commit -m "feat: add logical-expression function benchmark script"
 ```
 
@@ -220,7 +220,7 @@ docker exec tactical_retreat bash -lc \
   "source /opt/ros/humble/setup.bash && \
    source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && \
    cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics && \
-   python3 scripts/benchmark_logical_expression.py 2>/dev/null"
+   python3 scripts/benchmark/benchmark_logical_expression.py 2>/dev/null"
 ```
 
 **Step 2: Record baseline numbers**
@@ -330,7 +330,7 @@ docker exec tactical_retreat bash -lc \
   "source /opt/ros/humble/setup.bash && \
    source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && \
    cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics && \
-   python3 scripts/benchmark_logical_expression.py 2>/dev/null"
+   python3 scripts/benchmark/benchmark_logical_expression.py 2>/dev/null"
 ```
 
 **Step 2: Record variant A numbers** in `docs/plans/2026-03-07-benchmark-results.md`.
@@ -417,7 +417,7 @@ docker exec tactical_retreat bash -lc \
   "source /opt/ros/humble/setup.bash && \
    source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && \
    cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics && \
-   python3 scripts/benchmark_logical_expression.py 2>/dev/null"
+   python3 scripts/benchmark/benchmark_logical_expression.py 2>/dev/null"
 ```
 
 **Step 2: Record variant D numbers** in `docs/plans/2026-03-07-benchmark-results.md`.
@@ -478,7 +478,7 @@ docker exec tactical_retreat bash -lc \
   "source /opt/ros/humble/setup.bash && \
    source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && \
    cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics && \
-   python3 scripts/benchmark_logical_expression.py 2>/dev/null"
+   python3 scripts/benchmark/benchmark_logical_expression.py 2>/dev/null"
 ```
 
 **Step 2: Fill in the results table** in `docs/plans/2026-03-07-benchmark-results.md`:

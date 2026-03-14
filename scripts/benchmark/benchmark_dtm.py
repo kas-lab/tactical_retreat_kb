@@ -29,7 +29,7 @@ from typing import Callable, Dict, List
 from typedb.driver import Credentials, DriverOptions, TransactionType, TypeDB  # noqa: E501
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_DIR = SCRIPT_DIR.parent
+REPO_DIR = SCRIPT_DIR.parent.parent
 
 SCHEMAS = [
     'schemas/data_structure/data_structure.tql',

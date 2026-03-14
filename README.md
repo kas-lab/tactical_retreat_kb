@@ -163,7 +163,7 @@ docker run -d --rm --name tactical_retreat \
   tactical_retreat:typedb3 sudo typedb server
 ```
 
-#### ypeDB studio
+#### TypeDB studio
 
 If you want to use the display, for example, for running typedb-studio, include:
 
@@ -274,13 +274,13 @@ Run from container:
 docker exec tactical_retreat bash -lc \
   "source /opt/ros/humble/setup.bash && \
    source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && \
-   cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics/scripts && \
-   python3 benchmark_queries.py --profiles hyp --runs 5"
+   cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics/scripts/benchmark && \
+   python3 benchmark_queries.py --data-profile benchmark --runs 5"
 
 docker exec tactical_retreat bash -lc \
   "source /opt/ros/humble/setup.bash && \
    source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && \
-   cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics/scripts && \
+   cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics/scripts/benchmark && \
    python3 benchmark.py --runs 5 --methods get_potential_requirements_fulfillment"
 ```
 

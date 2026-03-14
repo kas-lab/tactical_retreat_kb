@@ -1,0 +1,1676 @@
+insert
+
+
+# Values
+$double_minus_0_05 isa ValueSingleton,
+    has double_value -0.05;
+$double_minus_0_22 isa ValueSingleton,
+    has double_value -0.22;
+
+$double_0_01 isa ValueSingleton,
+    has double_value 0.01;
+$double_0_03 isa ValueSingleton,
+    has double_value 0.03;
+$double_0_05 isa ValueSingleton,
+    has double_value 0.05;
+$double_0_10 isa ValueSingleton,
+    has double_value 0.10;
+$double_0_15 isa ValueSingleton,
+    has double_value 0.15;
+$double_0_20 isa ValueSingleton,
+    has double_value 0.20;
+$double_0_22221 isa ValueSingleton,
+    has double_value 0.22221;
+$double_0_30 isa ValueSingleton,
+    has double_value 0.30;
+$double_1 isa ValueSingleton,
+    has double_value 1.0;
+$double_7 isa ValueSingleton,
+    has double_value 7.0;
+$double_9 isa ValueSingleton,
+    has double_value 9.0;
+$double_50 isa ValueSingleton,
+    has double_value 50.0;
+
+# Measures
+
+$measure_bool_false isa Measure, has measure_name 'measure_bool_false';
+
+# Propositional Expressions
+$propositional_expression isa propositional_expression,
+    links (atom: $measure_bool_false),
+    has expression_name 'propositional_expression';
+
+# Comparison Expressions
+$measure_lhs_comparison isa Measure, has measure_name 'measure_lhs_comparison';
+(measure: $measure_lhs_comparison, measurement_value:$double_0_15) isa measurement,
+        has measurement_time 2025-09-06T12:57:56.666, has latest true;
+
+$measure_rhs_comparison isa Measure, has measure_name 'measure_rhs_comparison';
+(measure: $measure_rhs_comparison, measurement_value:$double_0_10) isa measurement,
+        has measurement_time 2025-09-06T12:57:56.666, has latest true;
+#  0.15 <= 0.10
+$less_than_equal isa less_than_equal,
+    links (lhs_value: $measure_lhs_comparison, rhs_value: $measure_rhs_comparison),
+    has expression_name 'less_than_equal';
+$less_than_equal_2 isa less_than_equal,
+    links (lhs_value: $measure_lhs_comparison, rhs_value: $double_0_10),
+    has expression_name 'less_than_equal_2';
+
+# Fuzzy Comparison Expressions
+$fuzzy_ascend_sigmoid_set isa FuzzySigmoid,
+    has inflection_point 5.0,
+    has exponent 0.5889;
+
+$fuzzy_ascend_measure isa Measure,
+    has measure_name 'fuzzy_ascend_measure';
+
+# expected membership 0.913378192
+$fuzzy_ascend_expression_1 isa fuzzy_ascend_expression,
+    links (fuzzy_set: $fuzzy_ascend_sigmoid_set, term: $fuzzy_ascend_measure),
+    has expression_name 'fuzzy_ascend_sigmoid_expression';
+
+# Tactics
+
+# Tactic Rules That Impact `less_than_equal`
+$rel_effect_measure_lhs isa relative_effect, links (measure: $measure_lhs_comparison, effect_value: $double_minus_0_05);
+$abs_effect_measure_lhs isa absolute_effect, links (measure: $measure_lhs_comparison, effect_value: $double_minus_0_05);
+$abs_effect_measure_lhs_0_20 isa absolute_effect, links (measure: $measure_lhs_comparison, effect_value: $double_0_20);
+
+$rel_effect_measure_rhs isa relative_effect, links (measure: $measure_rhs_comparison, effect_value: $double_0_05);
+$abs_effect_measure_rhs_0_15 isa absolute_effect, links (measure: $measure_rhs_comparison, effect_value: $double_0_15);
+$abs_effect_measure_rhs_0_05 isa absolute_effect, links (measure: $measure_rhs_comparison, effect_value: $double_0_05);
+
+$tactic_1 isa Tactic, has tactic_name "tactic_1";
+
+# 0.10 <= 0.10
+$tactic_rule_rel_effect_lhs isa tactic_rule,
+    links (tactic: $tactic_1, effect: $rel_effect_measure_lhs),
+    has rule_name "tactic_rule_rel_effect_measure_lhs";
+
+# 0.05 <= 0.10
+$tactic_rule_abs_effect_lhs isa tactic_rule,
+    links (tactic: $tactic_1, effect: $abs_effect_measure_lhs),
+    has rule_name "tactic_rule_abs_effect_measure_lhs";
+
+# 0.15 <= 0.15
+$tactic_rule_rel_effect_rhs isa tactic_rule,
+    links (tactic: $tactic_1, effect: $rel_effect_measure_rhs),
+    has rule_name "tactic_rule_rel_effect_measure_rhs";
+
+# 0.15 <= 0.15
+$tactic_rule_abs_effect_rhs isa tactic_rule,
+    links (tactic: $tactic_1, effect: $abs_effect_measure_rhs_0_15),
+    has rule_name "tactic_rule_abs_effect_measure_rhs";
+
+# -0.05 <= 0.05
+$tactic_rule_abs_effect_lhs_rhs isa tactic_rule,
+    links (tactic: $tactic_1, effect: $abs_effect_measure_lhs, effect: $abs_effect_measure_rhs_0_05),
+    has rule_name "tactic_rule_abs_effect_measure_lhs_rhs";
+
+# 0.20 <= 0.10
+$tactic_rule_lhs_0_20 isa tactic_rule,
+    links (tactic: $tactic_1, effect: $abs_effect_measure_lhs_0_20),
+    has rule_name "tactic_rule_lhs_0_20_rhs_0_10";
+
+# 0.15 <= 0.05
+$tactic_rule_lhs_0_15 isa tactic_rule,
+    links (tactic: $tactic_1, effect: $abs_effect_measure_rhs_0_05),
+    has rule_name "tactic_rule_lhs_0_15_rhs_0_05";
+
+# 0.10 <= 0.05
+$tactic_rule_lhs_0_10 isa tactic_rule,
+    links (tactic: $tactic_1, effect: $rel_effect_measure_lhs, effect: $abs_effect_measure_rhs_0_05),
+    has rule_name "tactic_rule_lhs_0_10_rhs_0_05";
+
+# Fuzzy Expressions
+
+$fuzzy_unimodal_measure isa Measure,
+    has measure_name "fuzzy_unimodal_measure";
+
+# just an example, the measurement should be inserted at runtime
+$current_fuzzy_unimodal_measure isa ValueSingleton, has double_value 0.03779;
+(measure:$fuzzy_unimodal_measure, measurement_value: $current_fuzzy_unimodal_measure) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+$fuzzy_unimodal_triangular_set isa FuzzyTriangular,
+    has a -0.5,
+    has b 0.0,
+    has c 0.5;
+
+$fuzzy_unimodal_gaussian_set isa FuzzyGaussian,
+    has center 0.0,
+    has sigma 0.1;
+
+# expected membership 0.92442
+$fuzzy_unimodal_expr_1 isa fuzzy_unimodal_expression,
+    links (fuzzy_set: $fuzzy_unimodal_triangular_set, term: $fuzzy_unimodal_measure),
+    has expression_name 'fuzzy_unimodal_triangular_expression';
+
+# expected membership 0.931085511
+$fuzzy_unimodal_expr_2 isa fuzzy_unimodal_expression,
+    links (fuzzy_set: $fuzzy_unimodal_gaussian_set, term: $fuzzy_unimodal_measure),
+    has expression_name 'fuzzy_unimodal_gaussian_expression';
+
+$rel_effect_unimodal_measure isa relative_effect, links (measure: $fuzzy_unimodal_measure, effect_value: $double_0_01);
+
+# expected fulfillment
+# fuzzy_unimodal_triangular_expression 0.90442
+# fuzzy_unimodal_gaussian_expression 0.89208476
+$tactic_rule_unimodal isa tactic_rule,
+    links (tactic: $tactic_1, effect: $rel_effect_unimodal_measure),
+    has rule_name "tactic_rule_unimodal_meas_0_04779";
+
+
+$fuzzy_decay_measure isa Measure,
+    has measure_name "fuzzy_decay_measure";
+$current_fuzzy_decay_measure isa ValueSingleton, has double_value 500;
+(measure:$fuzzy_decay_measure, measurement_value: $current_fuzzy_decay_measure) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+$fuzzy_decay_exp_set isa FuzzyExponentialDecay,
+    has exponent 0.0002107;
+
+$fuzzy_decay_rational_set isa FuzzyRationalDecay,
+    has curvature 2000;
+
+# expected membership 0.9
+$fuzzy_decay_expr_1 isa fuzzy_decay_expression,
+    links (fuzzy_set: $fuzzy_decay_exp_set, term: $fuzzy_decay_measure),
+    has expression_name 'fuzzy_decay_exp_expression';
+
+# expected membership 0.8
+$fuzzy_decay_expr_2 isa fuzzy_decay_expression,
+    links (fuzzy_set: $fuzzy_decay_rational_set, term: $fuzzy_decay_measure),
+    has expression_name 'fuzzy_decay_rational_expression';
+
+$rel_effect_decay_measure isa relative_effect, links (measure: $fuzzy_decay_measure, effect_value: $double_50);
+
+# expected fulfillment
+# fuzzy_decay_exp_expression 0.890577703
+# fuzzy_decay_rational_expression 0.784313725
+$tactic_rule_decay isa tactic_rule,
+    links (tactic: $tactic_1, effect: $rel_effect_decay_measure),
+    has rule_name "tactic_rule_decay_meas_550";
+
+# just an example, the measurement should be inserted at runtime
+$current_fuzzy_ascend_measure isa ValueSingleton, has double_value 9.0;
+(measure:$fuzzy_ascend_measure, measurement_value: $current_fuzzy_ascend_measure) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+$fuzzy_ascend_exponential_saturation_set isa FuzzyExponentialSaturation,
+    has exponent 0.2;
+
+$fuzzy_ascend_blf_set isa FuzzyBoundedLinearFraction,
+    has curvature 0.5;
+
+# expected membership 0.834700912
+$fuzzy_ascend_expression_2 isa fuzzy_ascend_expression,
+    links (fuzzy_set: $fuzzy_ascend_exponential_saturation_set, term: $fuzzy_ascend_measure),
+    has expression_name 'fuzzy_ascend_exp_saturation_expression';
+
+# expected membership 0.947368421
+$fuzzy_ascend_expression_3 isa fuzzy_ascend_expression,
+    links (fuzzy_set: $fuzzy_ascend_blf_set, term: $fuzzy_ascend_measure),
+    has expression_name 'fuzzy_ascend_blf_expression';
+
+$rel_effect_ascend_measure isa relative_effect, links (measure: $fuzzy_ascend_measure, effect_value: $double_1);
+
+# expected fulfillment
+# fuzzy_ascend_sigmoid_expression 0.950002804
+# fuzzy_ascend_exp_saturation_expression 0.864664535
+# fuzzy_ascend_blf_expression 0.952380952
+$tactic_rule_ascend isa tactic_rule,
+    links (tactic: $tactic_1, effect: $rel_effect_ascend_measure),
+    has rule_name "tactic_rule_ascend_meas_10";
+
+# Relaxed Fuzzy Expressions
+
+# As-Close-As-Possible Expressions
+$as_close_as_measure isa Measure,
+    has measure_name 'as_close_as_measure';
+
+(measure:$as_close_as_measure, measurement_value: $double_0_22221) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+# expected fulfillment 0.92442
+$fake_as_close_expression isa as_close_as_possible_expression,
+    links (fuzzy_set: $fuzzy_unimodal_triangular_set, term: $as_close_as_measure),
+    has expression_name 'fake_as_close_expression',
+    has required_value 0.26;
+
+$rel_effect_as_close_as_measure isa relative_effect, links (measure: $as_close_as_measure, effect_value: $double_0_05);
+$abs_effect_as_close_as_measure isa absolute_effect, links (measure: $as_close_as_measure, effect_value: $double_0_20);
+
+# expected fulfillment 0.97558
+$tactic_rule_as_close_as_rel isa tactic_rule,
+    links (tactic: $tactic_1, effect: $rel_effect_as_close_as_measure),
+    has rule_name "tactic_rule_as_close_as_meas_0_27221";
+
+# expected fulfillment 0.88
+$tactic_rule_as_close_as_abs isa tactic_rule,
+    links (tactic: $tactic_1, effect: $abs_effect_as_close_as_measure),
+    has rule_name "tactic_rule_as_close_as_meas_0_20";
+
+# As-Many-As-Possible Expressions
+$as_many_as_measure isa Measure,
+    has measure_name 'as_many_as_measure';
+
+(measure:$as_many_as_measure, measurement_value: $double_9) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+# expected fulfillment 0.913378192
+$fake_as_many_as_possible isa as_many_as_possible_expression,
+    links (fuzzy_set: $fuzzy_ascend_sigmoid_set, term: $as_many_as_measure),
+    has expression_name 'fake_as_many_as_possible';
+
+$rel_effect_as_many_as_measure isa relative_effect, links (measure: $as_many_as_measure, effect_value: $double_1);
+$abs_effect_as_many_as_measure isa absolute_effect, links (measure: $as_many_as_measure, effect_value: $double_7);
+
+# expected fulfillment 0.950002804
+$tactic_rule_as_many_as_rel isa tactic_rule,
+    links (tactic: $tactic_1, effect: $rel_effect_as_many_as_measure),
+    has rule_name "tactic_rule_as_many_as_meas_10";
+
+# expected fulfillment 0.764551865
+$tactic_rule_as_many_as_abs isa tactic_rule,
+    links (tactic: $tactic_1, effect: $abs_effect_as_many_as_measure),
+    has rule_name "tactic_rule_as_many_as_meas_7";
+
+# As-Few-As-Possible Expressions
+
+$as_few_as_measure isa Measure,
+    has measure_name 'as_few_as_measure';
+
+(measure:$as_few_as_measure, measurement_value: $double_0_30) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+$fuzzy_exp_decay_set isa FuzzyExponentialDecay,
+    has exponent 0.2;
+
+# expected fulfillment 0.941764572
+$fake_as_few_as_possible isa as_few_as_possible_expression,
+    links (fuzzy_set: $fuzzy_exp_decay_set, term: $as_few_as_measure),
+    has expression_name 'fake_as_few_as_possible';
+
+$rel_effect_as_few_as_measure isa relative_effect, links (measure: $as_few_as_measure, effect_value: $double_minus_0_22);
+$abs_effect_as_few_as_measure isa absolute_effect, links (measure: $as_few_as_measure, effect_value: $double_0_15);
+
+# expected fulfillment 0.984127331
+$tactic_rule_as_few_as_rel isa tactic_rule,
+    links (tactic: $tactic_1, effect: $rel_effect_as_few_as_measure),
+    has rule_name "tactic_rule_as_few_as_meas_0_08";
+
+# expected fulfillment 0.970445553
+$tactic_rule_as_few_as_abs isa tactic_rule,
+    links (tactic: $tactic_1, effect: $abs_effect_as_few_as_measure),
+    has rule_name "tactic_rule_as_few_as_meas_0_15";
+
+# Not Expressions Hypothetical Fulfillment
+
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.10 <= 0.10 -> 1.0 -> not_expr = 0.0
+# tactic_rule: tactic_rule_lhs_0_10_rhs_0_05 -> 0.10 <= 0.05 -> 0.0 -> not_expr = 1.0
+# tactic_rule: tactic_rule_decay_meas_550 (non-related rule) -> 0.15 <= 0.10 -> 0.0 -> not_expr = 1.0
+$not_expr isa not_expression,
+    links (expression: $less_than_equal),
+    has expression_name 'not_expr';
+$fuzzy_not isa fuzzy_not,
+    links (expression: $less_than_equal),
+    has expression_name 'fuzzy_not';
+
+# OR Expressions
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.10 <= 0.10 -> 1.0 | 0.0 | 0.0 | 0.0 -> 1.0
+# tactic_rule: tactic_rule_lhs_0_10_rhs_0_05 -> 0.10 <= 0.05 -> 0.0 | 0.0 | 1.0 | 1.0 -> 1.0
+# tactic_rule: tactic_rule_decay_meas_550 (non-related rule) -> 0.15 <= 0.10 -> 0.0 | 0.0 | 1.0 | 1.0 -> 1.0
+$fuzzy_or_1 isa fuzzy_or,
+    links (expression: $less_than_equal, expression: $propositional_expression, expression: $not_expr, expression: $fuzzy_not),
+    has expression_name 'fuzzy_or_1';
+
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> 0.97558 | 0.913378192 | 0.941764572 -> 0.97558
+# tactic_rule: tactic_rule_as_many_as_meas_10 -> 0.92442 | 0.950002804 | 0.941764572 -> 0.950002804
+# tactic_rule: tactic_rule_as_few_as_meas_0_08 -> 0.92442 | 0.913378192 | 0.984127331 -> 0.984127331
+# tactic_rule: tactic_rule_rel_effect_measure_lhs (non-related) -> 0.92442 | 0.913378192 | 0.941764572 -> 0.941764572
+$fuzzy_or_2 isa fuzzy_or,
+    links (expression: $fake_as_close_expression, expression: $fake_as_many_as_possible, expression: $fake_as_few_as_possible),
+    has expression_name 'fuzzy_or_2';
+
+# AND Expressions
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.10 <= 0.10 -> 1.0 && 1.0 -> 1.0
+# tactic_rule: tactic_rule_lhs_0_10_rhs_0_05 -> 0.10 <= 0.05 -> 0.0 && 1.0 -> 0.0
+# tactic_rule: tactic_rule_decay_meas_550 (non-related rule) -> 0.15 <= 0.10 -> 0.0 && 1.0 -> 0.0
+$fuzzy_and_1 isa fuzzy_and,
+    links (expression: $less_than_equal, expression: $fuzzy_or_1),
+    has expression_name 'fuzzy_and_1';
+
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> 0.97558 && 0.913378192 && 0.941764572 -> 0.913378192
+# tactic_rule: tactic_rule_as_many_as_meas_10 -> 0.92442 && 0.950002804 && 0.941764572 -> 0.92442
+# tactic_rule: tactic_rule_as_few_as_meas_0_08 -> 0.92442 && 0.913378192 && 0.984127331 -> 0.913378192
+# tactic_rule: tactic_rule_rel_effect_measure_lhs (non-related) -> 0.92442 && 0.913378192 && 0.941764572 -> 0.913378192
+$fuzzy_and_2 isa fuzzy_and,
+    links (expression: $fake_as_close_expression, expression: $fake_as_many_as_possible, expression: $fake_as_few_as_possible),
+    has expression_name 'fuzzy_and_2';
+
+# Shall Expressions
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.92442 && 1.0 && 0.941764572 && 1.0 && 0.913378192 -> 0.913378192
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> 0.97558 && 1.0 && 0.97558 && 0.0 && 0.913378192 -> 0.0
+$fake_shall_expression isa shall_expression,
+    links (expression: $fake_as_close_expression,
+        expression: $fuzzy_or_1,
+        expression: $fuzzy_or_2,
+        expression: $fuzzy_and_1,
+        expression: $fuzzy_and_2),
+    has expression_name 'fake_shall_expression';
+
+# May Expressions
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> max(0.97558, 0.941764572) -> 0.97558
+# tactic_rule: tactic_rule_rel_effect_measure_lhs (non-related) -> max(0.92442, 0.941764572) -> 0.941764572
+$fake_may_expression isa may_expression,
+    links (expression: $fake_as_close_expression, expression: $fake_as_few_as_possible),
+    has expression_name 'fake_may_expression';
+
+# Direct may-expression lookup regression fixture
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> max(0.97558) -> 0.97558
+$direct_may_expression isa may_expression,
+    links (expression: $fake_as_close_expression),
+    has expression_name 'direct_may_expression';
+
+# Shall Expressions
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.941764572
+$fake_shall_expression_2 isa shall_expression,
+    links (expression: $fake_as_few_as_possible),
+    has expression_name 'fake_shall_expression_2';
+
+# Requirements
+$fake_system isa System, has system_name 'system';
+
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.913378192 && 0.941764572 -> 0.913378192
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> 0.0 && 0.941764572 -> 0.0
+$req_1 isa relaxed_requirement,
+    links (system: $fake_system, expression: $fake_shall_expression, expression: $fake_shall_expression_2),
+    has requirement_name 'req_1';
+
+
+## Define ROS nodes
+
+### Mirte exemplar nodes
+$mirte_bt_node isa LifeCycleNode,
+	has node_name "mirte_bt",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $mirte_bt_node) isa node_deployment,
+	has package "LifeCycleNode",
+	has executable "mirte_bt";
+
+### Nav2 nodes
+$amcl_node isa LifeCycleNode,
+	has node_name "amcl",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $amcl_node) isa node_deployment,
+	has package "nav2_amcl",
+	has executable "amcl";
+
+$behavior_server_node isa LifeCycleNode,
+	has node_name "behavior_server",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $behavior_server_node) isa node_deployment,
+	has package "nav2_behaviors",
+	has executable "behavior_server";
+
+$bt_navigator_node isa LifeCycleNode,
+	has node_name "bt_navigator",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $bt_navigator_node) isa node_deployment,
+	has package "nav2_bt_navigator",
+	has executable "bt_navigator";
+
+$bt_navigator_navigate_through_poses_rclcpp_node isa ROSNode,
+	has node_name "bt_navigator_navigate_through_poses_rclcpp",
+	has namespace "",
+	has start_time 2025-08-06T10:56:12.111;
+
+$bt_navigator_navigate_to_pose_rclcpp_node isa ROSNode,
+	has node_name "bt_navigator_navigate_to_pose_rclcpp",
+	has namespace "",
+	has start_time 2025-08-06T10:56:12.111;
+
+(node: $bt_navigator_node,
+	subnode: $bt_navigator_navigate_through_poses_rclcpp_node,
+	subnode: $bt_navigator_navigate_to_pose_rclcpp_node) isa subnode;
+
+$controller_server_node isa LifeCycleNode,
+	has node_name "controller_server",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $controller_server_node) isa node_deployment,
+	has package "nav2_controller",
+	has executable "controller_server";
+
+$map_server_node isa LifeCycleNode,
+	has node_name "map_server",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $map_server_node) isa node_deployment,
+	has package "nav2_map_server",
+	has executable "nav2_map_server";
+
+
+$planner_server_node isa LifeCycleNode,
+	has node_name "planner_server",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $planner_server_node) isa node_deployment,
+	has package "nav2_planner",
+	has executable "planner_server";
+
+$smoother_server_node isa LifeCycleNode,
+	has node_name "smoother_server",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $smoother_server_node) isa node_deployment,
+	has package "nav2_smoother",
+	has executable "smoother_server";
+
+$velocity_smoother_node isa LifeCycleNode,
+	has node_name "velocity_smoother",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $velocity_smoother_node) isa node_deployment,
+	has package "nav2_velocity_smoother",
+	has executable "velocity_smoother";
+
+$relay_node isa ROSNode,
+	has node_name "relay_node_cmd_vel",
+	has namespace "",
+	has start_time 2025-08-06T10:57:56.666;
+(node: $relay_node) isa node_deployment,
+	has package "topic_tools",
+	has executable "relay";
+
+## How to model these nodes?
+# /controller_manager Where is this node launched from?
+# /global_costmap/global_costmap [LifeCycle] Where is this node launched from?
+# /local_costmap/local_costmap [LifeCycle] Where is this node launched from?
+
+## Define parameters
+
+### velocity_smoother_node parameters
+$max_velocity_param isa ParameterDoubleArray,
+	has parameter_name "max_velocity";
+
+$odom_topic_param isa ParameterString,
+	has parameter_name "odom_topic";
+
+$odom_duration_param isa ParameterDouble,
+	has parameter_name "odom_duration";
+
+(
+	node: $velocity_smoother_node,
+	parameter:$max_velocity_param,
+	parameter:$odom_topic_param,
+	parameter:$odom_duration_param) isa has_parameter;
+
+# define default parameters max_velocity
+$default_max_velocity_x isa ValueSingleton, has double_value 0.26;
+$default_max_velocity_y isa ValueSingleton, has double_value 0.0;
+$default_max_velocity_z isa ValueSingleton, has double_value 1.0;
+
+$default_max_velocity_param_value isa ValueArray;
+(array: $default_max_velocity_param_value,
+array_value: $default_max_velocity_x)
+	isa at_index, has index 0;
+(array: $default_max_velocity_param_value,
+array_value: $default_max_velocity_y)
+	isa at_index, has index 1;
+(array: $default_max_velocity_param_value,
+array_value: $default_max_velocity_z)
+	isa at_index, has index 2;
+
+(node: $velocity_smoother_node,
+parameter: $max_velocity_param,
+parameter_value: $default_max_velocity_param_value)
+	isa has_parameter_value, has default_value true;
+
+# default param odom_topic
+$default_odom_topic isa ValueSingleton, has string_value "/odom";
+(node: $velocity_smoother_node,
+parameter: $odom_topic_param,
+parameter_value: $default_odom_topic)
+	isa has_parameter_value, has default_value true;
+
+# default odom duration
+$default_odom_duration isa ValueSingleton, has double_value 1.0;
+(node: $velocity_smoother_node,
+parameter: $odom_duration_param,
+parameter_value: $default_odom_duration)
+	isa has_parameter_value, has default_value true;
+
+## Define ROS services
+
+### set_initial_pose service
+$amcl_init_pose_server isa ServiceServer,
+	has interface_name "/set_initial_pose",
+	has interface_type "nav2_msgs/srv/SetInitialPose";
+(node: $amcl_node, server: $amcl_init_pose_server) isa has_service;
+
+$mirte_bt_init_pose_client isa ServiceClient,
+	has interface_name "/set_initial_pose",
+	has interface_type "nav2_msgs/srv/SetInitialPose";
+(node: $mirte_bt_node, client: $mirte_bt_init_pose_client) isa has_service;
+
+## Define ROS actions
+
+### navigate_to_pose action
+$bt_navigator_navigate_to_pose_server isa ActionServer,
+	has interface_name "/navigate_to_pose",
+	has interface_type "nav2_msgs/action/NavigateToPose";
+(node: $bt_navigator_node, server: $bt_navigator_navigate_to_pose_server) isa has_action;
+
+$bt_navigator_navigate_to_pose_client isa ActionClient,
+	has interface_name "/navigate_to_pose",
+	has interface_type "nav2_msgs/action/NavigateToPose";
+(node: $bt_navigator_node, client: $bt_navigator_navigate_to_pose_client) isa has_action;
+
+$mirte_bt_navigate_to_pose_client isa ActionClient,
+	has interface_name "/navigate_to_pose",
+	has interface_type "nav2_msgs/action/NavigateToPose";
+(node: $mirte_bt_node, client: $mirte_bt_navigate_to_pose_client) isa has_action;
+
+### compute_path_to_pose action
+$planner_server_compute_path_to_pose_server isa ActionServer,
+	has interface_name "/compute_path_to_pose",
+	has interface_type "nav2_msgs/action/ComputePathToPose";
+(node: $planner_server_node, server: $planner_server_compute_path_to_pose_server) isa has_action;
+
+$bt_navigator_compute_path_to_pose_client isa ActionClient,
+	has interface_name "/compute_path_to_pose",
+	has interface_type "nav2_msgs/action/ComputePathToPose";
+(node: $bt_navigator_navigate_to_pose_rclcpp_node, client: $bt_navigator_compute_path_to_pose_client) isa has_action;
+
+### follow_path action
+$controller_server_follow_path_server isa ActionServer,
+	has interface_name "/follow_path",
+	has interface_type "nav2_msgs/action/FollowPath";
+(node: $controller_server_node, server: $controller_server_follow_path_server) isa has_action;
+
+$bt_navigator_navigate_to_pose_follow_path_client isa ActionClient,
+	has interface_name "/follow_path",
+	has interface_type "nav2_msgs/action/FollowPath";
+(node: $bt_navigator_navigate_to_pose_rclcpp_node, client: $bt_navigator_navigate_to_pose_follow_path_client) isa has_action;
+
+$bt_navigator_navigate_through_poses_follow_path_client isa ActionClient,
+	has interface_name "/follow_path",
+	has interface_type "nav2_msgs/action/FollowPath";
+(node: $bt_navigator_navigate_through_poses_rclcpp_node, client: $bt_navigator_navigate_through_poses_follow_path_client) isa has_action;
+
+## Define ROS topics
+
+$cmd_vel_qos isa QoSProfile,
+	has reliability "RELIABLE",
+	has history "KEEP_LAST",
+	has depth 10,
+	has durability "VOLATILE",
+	has lifespan 0,
+	has deadline 0,
+	has liveliness "AUTOMATIC",
+	has lease_duration 0;
+
+### cmd_vel topic
+$velocity_smoother_cmd_vel_pub isa Publisher,
+	has interface_name "/cmd_vel",
+	has interface_type "geometry_msgs/msg/Twist";
+(interface: $velocity_smoother_cmd_vel_pub, qos: $cmd_vel_qos) isa has_qos;
+(node: $velocity_smoother_node, publisher: $velocity_smoother_cmd_vel_pub) isa has_topic;
+
+$behavior_server_cmd_vel_sub isa Subscriber,
+	has interface_name "/cmd_vel",
+	has interface_type "geometry_msgs/msg/Twist";
+(interface: $behavior_server_cmd_vel_sub, qos: $cmd_vel_qos) isa has_qos;
+(node: $behavior_server_node, subscriber: $behavior_server_cmd_vel_sub) isa has_topic;
+
+$relay_node_cmd_vel_sub isa Subscriber,
+	has interface_name "/cmd_vel",
+	has interface_type "geometry_msgs/msg/Twist";
+(interface: $relay_node_cmd_vel_sub, qos: $cmd_vel_qos) isa has_qos;
+(node: $relay_node, subscriber: $relay_node_cmd_vel_sub) isa has_topic;
+
+### cmd_vel_nav topic
+$controller_server_cmd_vel_nav_pub isa Publisher,
+	has interface_name "/cmd_vel_nav",
+	has interface_type "geometry_msgs/msg/Twist";
+(interface: $controller_server_cmd_vel_nav_pub, qos: $cmd_vel_qos) isa has_qos;
+(node: $controller_server_node, publisher: $controller_server_cmd_vel_nav_pub) isa has_topic;
+
+$velocity_smoother_cmd_vel_nav_sub isa Subscriber,
+	has interface_name "/cmd_vel_nav",
+	has interface_type "geometry_msgs/msg/Twist";
+(interface: $velocity_smoother_cmd_vel_nav_sub, qos: $cmd_vel_qos) isa has_qos;
+(node: $velocity_smoother_node, subscriber: $velocity_smoother_cmd_vel_nav_sub) isa has_topic;
+
+
+## bt_navigator node (from generated.tql)
+
+$bt_navigator_node_sub isa Subscriber,
+has interface_name "goal_pose",
+has interface_type "geometry_msgs/PoseStamped";
+(node: $bt_navigator_node, subscriber: $bt_navigator_node_sub) isa has_topic;
+
+$bt_navigator_node_sub_1 isa Subscriber,
+has interface_name "odom",
+has interface_type "nav_msgs/Odometry";
+(node: $bt_navigator_node, subscriber: $bt_navigator_node_sub_1) isa has_topic;
+
+$bt_navigator_node_sub_2 isa Subscriber,
+has interface_name "tf",
+has interface_type "tf2_msgs/TFMessage";
+(node: $bt_navigator_node, subscriber: $bt_navigator_node_sub_2) isa has_topic;
+
+$bt_navigator_node_sub_3 isa Subscriber,
+has interface_name "tf_static",
+has interface_type "tf2_msgs/TFMessage";
+(node: $bt_navigator_node, subscriber: $bt_navigator_node_sub_3) isa has_topic;
+
+$bt_navigator_node_pub isa Publisher,
+has interface_name "~/transition_event",
+has interface_type "lifecycle_msgs/TransitionEvent";
+(node: $bt_navigator_node, publisher: $bt_navigator_node_pub) isa has_topic;
+
+$bt_navigator_node_service_server isa ServiceServer,
+has interface_name "~/change_state",
+has interface_type "lifecycle_msgs/ChangeState";
+(node: $bt_navigator_node, server: $bt_navigator_node_service_server) isa has_service;
+
+$bt_navigator_node_service_server_1 isa ServiceServer,
+has interface_name "~/get_available_states",
+has interface_type "lifecycle_msgs/GetAvailableStates";
+(node: $bt_navigator_node, server: $bt_navigator_node_service_server_1) isa has_service;
+
+$bt_navigator_node_service_server_2 isa ServiceServer,
+has interface_name "~/get_available_transitions",
+has interface_type "lifecycle_msgs/GetAvailableTransitions";
+(node: $bt_navigator_node, server: $bt_navigator_node_service_server_2) isa has_service;
+
+$bt_navigator_node_service_server_3 isa ServiceServer,
+has interface_name "~/get_state",
+has interface_type "lifecycle_msgs/GetState";
+(node: $bt_navigator_node, server: $bt_navigator_node_service_server_3) isa has_service;
+
+$bt_navigator_node_service_server_4 isa ServiceServer,
+has interface_name "~/get_transition_graph",
+has interface_type "lifecycle_msgs/GetAvailableTransitions";
+(node: $bt_navigator_node, server: $bt_navigator_node_service_server_4) isa has_service;
+
+# Stage 1: match velocity_smoother_node, insert all safe entities/relations
+# and all anonymous leaf relations (no var used as both creator and role player).
+# match
+
+# $velocity_smoother_node isa LifeCycleNode,
+# 	has node_name "velocity_smoother";
+
+# insert
+
+# context model
+$nearest_object_measure isa Measure, has measure_name "nearest_object_measure"; # meter
+$movement_power_measure isa Measure, has measure_name "movement_power_measure"; # watt?
+$current_linear_velocity_measure isa Measure, has measure_name "current_linear_velocity_measure"; # m/s
+
+$mvalueonine isa  ValueSingleton,
+    has double_value 0.09;
+
+## example measurement
+(measure: $nearest_object_measure, measurement_value:$mvalueonine) isa measurement,
+        has measurement_time 2025-09-06T12:57:56.666, has latest true;
+
+$current_mv_pwer isa ValueSingleton, has double_value 0.3;
+(measure:$movement_power_measure , measurement_value: $current_mv_pwer) isa measurement,
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+$current_vel isa ValueSingleton, has double_value 0.22221;
+(measure:$current_linear_velocity_measure , measurement_value: $current_vel) isa measurement,
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+## Nearest object
+$scan_filtered_pub isa Publisher,
+	has interface_name '/scan_filtered',
+    	has interface_type 'sensor_msgs/msg/LaserScan';
+$sensor_qos isa QoSProfile,
+	has reliability 'BEST_EFFORT',
+	has history 'KEEP_LAST',
+	has depth 5,
+	has durability 'VOLATILE',
+	has lifespan 0,
+	has deadline 0,
+	has liveliness 'SYSTEM_DEFAULT',
+	has lease_duration 0;
+
+$nearest_object_pub isa Publisher,
+	has interface_name '/nearest_object',
+	has interface_type 'std_msgs/msg/Float32';
+
+
+(interface: $scan_filtered_pub, qos: $sensor_qos) isa has_qos;
+
+(measure: $nearest_object_measure, source: $scan_filtered_pub, output: $nearest_object_pub) isa measurement_interface,
+    has measurement_function_name 'get_nearest_scan_distance_in_base',
+    has measurement_function_lib 'ros_monitors.laser_scan_functions',
+    has measurement_function_args 'base_link';
+
+# define Feature Model
+$f_max_speed isa Feature, has feature_name "MAX_SPEED";
+$f_low_speed isa Feature, has feature_name "LOW_SPEED";
+$f_hi_speed isa Feature, has feature_name "HIGH_SPEED";
+$f_med_speed isa Feature, has feature_name "MED_SPEED";
+$alternative isa alternative,
+    links (parent: $f_max_speed, child: $f_low_speed, child: $f_med_speed, child: $f_hi_speed);
+
+$fa_low_speed isa feature_adaptation,
+    links (activation: $f_low_speed);
+$fa_med_speed isa feature_adaptation,
+    links (activation: $f_med_speed);
+$fa_hi_speed isa feature_adaptation,
+    links (activation: $f_hi_speed);
+
+# define MaxSpeedInternal Tactic
+$ta_max_speed isa Tactic, has tactic_name "MaxSpeedInternal";
+
+# nearest_object < 0.1
+$litdouble isa ValueSingleton,
+    has double_value 0.1;
+
+$litdoublefoury isa ValueSingleton,
+    has double_value 40.0;
+
+$litdoublefifteen isa ValueSingleton,
+    has double_value 0.15;
+
+$litdoublethreenine isa ValueSingleton,
+    has double_value 39.0;
+
+# anonymous leaf expressions (identified by expression_name for later stages)
+$ineq_nearest_lower_than_10 isa less_than,
+    links (lhs_value: $nearest_object_measure, rhs_value: $litdouble),
+    has expression_name 'ineq_nearest_lower_than_10';
+# movement power > 40.0
+$ineq_mv_pwer_greater_than_40 isa greater_than,
+    links (lhs_value: $movement_power_measure, rhs_value: $litdoublefoury),
+    has expression_name 'ineq_mv_pwer_greater_than_40';
+# nearest_object > 0.15  (anonymous, identified by expression_name)
+$ineq_nearest_greater_than_15 isa greater_than,
+    links (lhs_value: $nearest_object_measure, rhs_value: $litdoublefifteen),
+    has expression_name 'ineq_nearest_greater_than_15';
+# movement power < 39.0  (anonymous, identified by expression_name)
+$ineq_mv_pwer_lower_than_39 isa less_than,
+    links (lhs_value: $movement_power_measure, rhs_value: $litdoublethreenine),
+    has expression_name 'ineq_mv_pwer_lower_than_39';
+
+### tactic rules effects (anonymous — identified by measure_name + effect_value)
+$double_0_05 isa ValueSingleton,
+    has double_value 0.05;
+$double_0_07 isa ValueSingleton,
+    has double_value 0.07;
+$double_0_10 isa ValueSingleton,
+    has double_value 0.10;
+$eff_mp_005 isa relative_effect,
+    links (measure: $movement_power_measure, effect_value: $double_0_05);
+$eff_mp_007 isa relative_effect,
+    links (measure: $movement_power_measure, effect_value: $double_0_07);
+$eff_mp_010 isa relative_effect,
+    links (measure: $movement_power_measure, effect_value: $double_0_10);
+
+# define parameter max_speed
+$p_max_speed isa ParameterDoubleArray, has parameter_name "max_velocity";
+
+# define parameter values low
+$p_max_velocity_x_low isa ValueSingleton, has double_value 0.10;
+$p_max_velocity_y_low isa ValueSingleton, has double_value 0.0;
+$p_max_velocity_z_low isa ValueSingleton, has double_value 1.0;
+# define parameter array low
+$p_max_speed_low_array isa ValueArray;
+(array: $p_max_speed_low_array, array_value: $p_max_velocity_x_low) isa at_index, has index 0;
+(array: $p_max_speed_low_array, array_value: $p_max_velocity_y_low) isa at_index, has index 1;
+(array: $p_max_speed_low_array, array_value: $p_max_velocity_z_low) isa at_index, has index 2;
+
+# define parameter values med
+$p_max_velocity_x_med isa ValueSingleton, has double_value 0.18;
+$p_max_velocity_y_med isa ValueSingleton, has double_value 0.0;
+$p_max_velocity_z_med isa ValueSingleton, has double_value 1.0;
+# define parameter array med
+$p_max_speed_med_array isa ValueArray;
+(array: $p_max_speed_med_array, array_value: $p_max_velocity_x_med) isa at_index, has index 0;
+(array: $p_max_speed_med_array, array_value: $p_max_velocity_y_med) isa at_index, has index 1;
+(array: $p_max_speed_med_array, array_value: $p_max_velocity_z_med) isa at_index, has index 2;
+
+# define parameter values high
+$p_max_velocity_x_high isa ValueSingleton, has double_value 0.26;
+$p_max_velocity_y_high isa ValueSingleton, has double_value 0.0;
+$p_max_velocity_z_high isa ValueSingleton, has double_value 1.0;
+# define parameter array high
+$p_max_speed_high_array isa ValueArray;
+(array: $p_max_speed_high_array, array_value: $p_max_velocity_x_high) isa at_index, has index 0;
+(array: $p_max_speed_high_array, array_value: $p_max_velocity_y_high) isa at_index, has index 1;
+(array: $p_max_speed_high_array, array_value: $p_max_velocity_z_high) isa at_index, has index 2;
+
+# anonymous absolute_effects for linear velocity (identified by measure_name + effect_value)
+$eff_vel_x_low isa absolute_effect,
+    links (measure: $current_linear_velocity_measure, effect_value: $p_max_velocity_x_low);
+$eff_vel_x_med isa absolute_effect,
+    links (measure: $current_linear_velocity_measure, effect_value: $p_max_velocity_x_med);
+$eff_vel_x_high isa absolute_effect,
+    links (measure: $current_linear_velocity_measure, effect_value: $p_max_velocity_x_high);
+
+# anonymous set_nodes_parameters (identified by node + parameter + array's first element value)
+$set_nodes_params_low isa set_nodes_parameters,
+    links (node: $velocity_smoother_node, parameter: $p_max_speed, parameter_value: $p_max_speed_low_array);
+$set_nodes_params_med isa set_nodes_parameters,
+    links (node: $velocity_smoother_node, parameter: $p_max_speed, parameter_value: $p_max_speed_med_array);
+$set_nodes_params_high isa set_nodes_parameters,
+    links (node: $velocity_smoother_node, parameter: $p_max_speed, parameter_value: $p_max_speed_high_array);
+
+# Stage 2: match+insert or_expression
+$or_rebetmc isa or_expression,
+    links (expression: $ineq_nearest_lower_than_10, expression: $ineq_mv_pwer_greater_than_40),
+    has expression_name 'rebetmc_or_expression';
+
+# Stage 3: match+insert and_expression
+$and_rebetmc isa and_expression,
+    links (expression: $ineq_nearest_greater_than_15, expression: $ineq_mv_pwer_lower_than_39),
+    has expression_name 'rebetmc_and_expression';
+
+# Stage 4a: match+insert tactic_rule MIN
+$tr_min isa tactic_rule,
+    links (tactic: $ta_max_speed, antecedent: $or_rebetmc, consequent: $fa_low_speed, effect: $eff_mp_005, effect: $eff_vel_x_low),
+    has rule_name "MIN";
+
+# Stage 4b: match+tactic_rule MED
+$tr_med isa tactic_rule,
+    links (tactic: $ta_max_speed, antecedent: $ineq_nearest_greater_than_15, consequent: $fa_med_speed, effect: $eff_mp_007, effect: $eff_vel_x_med),
+    has rule_name "MED";
+
+# Stage 4c: match+tactic_rule MAX
+$tr_max isa tactic_rule,
+    links (tactic: $ta_max_speed, antecedent: $and_rebetmc, consequent: $fa_hi_speed, effect: $eff_mp_010, effect: $eff_vel_x_high),
+    has rule_name "MAX";
+
+# Stage 5a: match+variant_activation for LOW_SPEED
+$vr_low isa variant_activation,
+    links (resolution_action: $set_nodes_params_low, variant: $f_low_speed);
+
+# Stage 5b: match+variant_activation for MED_SPEED
+$vr_med isa variant_activation,
+    links (resolution_action: $set_nodes_params_med, variant: $f_med_speed);
+
+# Stage 5c: match+variant_activation for HIGH_SPEED
+$vr_high isa variant_activation,
+    links (resolution_action: $set_nodes_params_high, variant: $f_hi_speed);
+
+# Stage 6: match+resolution_model
+$res_model isa resolution_model,
+    links (tactic: $ta_max_speed, variant_resolution: $vr_low, variant_resolution: $vr_med, variant_resolution: $vr_high),
+    has resolution_model_name "rebetmc", has ros_system "nav2";
+
+# match
+
+# $nearest_object_measure isa Measure,
+# 	has measure_name "nearest_object_measure";
+
+# $movement_power_measure isa Measure,
+# 	has measure_name "movement_power_measure";
+
+# $current_linear_velocity_measure isa Measure,
+# 	has measure_name "current_linear_velocity_measure";
+
+# insert
+
+## Examples Mirte's MVP use case
+$mirte isa System, has system_name "Mirte";
+
+## Measures + measurements
+
+$double_0_18 isa ValueSingleton,
+    has double_value 0.18;
+
+## Layer 1: leaf relations (anonymous), entities, and value objects
+
+# object is too close if nearest_object < 0.18
+# with current measurement 0.10 -> 0.10 < 0.18 -> true
+$objects_close_measure_expr isa less_than,
+    links (lhs_value: $nearest_object_measure, rhs_value: $double_0_18),
+    has expression_name "objects_close_measure_expr";
+
+# R1.1 Velocity
+
+$velocity_set isa FuzzyTriangular,
+	has a -0.5,
+	has b 0.0,
+	has c 0.5;
+
+$velocity_as_close_expression isa as_close_as_possible_expression,
+    links (fuzzy_set: $velocity_set, term: $current_linear_velocity_measure),
+    has required_value 0.26,
+    has expression_name "velocity_as_close_expression";
+
+## R1.2 Velocity with obstacles
+
+# tactic MIN -> vel = 0.10, mv_pwr = 0.05 -> 0.84
+# tactic MED -> vel = 0.18, mv_pwr = 0.07 -> 1.0
+# tactic MAX -> vel = 0.26, mv_pwr = 0.10 -> 0.84
+$velocity_as_close_expression_2 isa as_close_as_possible_expression,
+    links (fuzzy_set: $velocity_set, term: $current_linear_velocity_measure),
+    has required_value 0.18,
+    has expression_name 'velocity_as_close_expression_2';
+
+# fake mirte requirement
+$mv_pwr_fuzzy_set isa FuzzyExponentialDecay,
+	has exponent 0.2;
+
+$as_few_mv_pwr_as_possible isa as_few_as_possible_expression,
+    links (fuzzy_set: $mv_pwr_fuzzy_set, term: $movement_power_measure),
+    has expression_name "as_few_mv_pwr_as_possible";
+
+## Layer 2: relations that depend on Layer 1 (fetched via match)
+
+# not true -> false
+$not_objects_close_exp isa not_expression,
+    links (expression: $objects_close_measure_expr),
+    has expression_name "not_objects_close_exp";
+
+# R1.1 Velocity shall expression
+$velocity_shall_expression isa shall_expression,
+    links (expression: $velocity_as_close_expression),
+    has expression_name 'velocity_shall_expression';  # used for tests only
+
+# R1.2 as_few shall expression
+$mv_pwr_shall_expression isa shall_expression,
+    links (expression: $as_few_mv_pwr_as_possible),
+    has expression_name "mv_pwr_shall_expression";
+
+## Layer 3: relations that depend on Layer 2
+
+# tactic MIN -> 0.0 or 0.84 -> 0.84
+# tactic MED -> 0.0 or 1.0  -> 1.0
+# tactic MAX -> 0.0 or 0.84 -> 0.84
+$not_objects_or_velocity isa fuzzy_or,
+    links (expression: $not_objects_close_exp, expression: $velocity_as_close_expression_2),
+    has expression_name "not_objects_or_velocity";
+
+## Layer 4: relations that depend on Layer 3
+
+# tactic MIN -> 0.84
+# tactic MED -> 1.0
+# tactic MAX -> 0.84
+$velocity_shall_expression_2 isa shall_expression,
+    links (expression: $not_objects_or_velocity),
+    has expression_name 'velocity_shall_expression_2';  # used for tests only
+
+## Layer 5: relaxed_requirements (depend on shall_expressions + mirte)
+
+# expected fulfillment 0.92442
+$req_r1_1 isa relaxed_requirement,
+    links (system: $mirte, expression: $velocity_shall_expression),
+    has requirement_name "R1.1 Velocity",
+    has in_effect true,
+    has description "The robot SHALL maintain its velocity AS CLOSE AS POSSIBLE TO 0.26 m/s.";
+
+# expected fulfillment max(1- 1.0, m(0.22221 - 0.18)  ) = max(0.0, 0.91558) = 0.91558
+# tactic MIN -> 0.84
+# tactic MED -> 1.0
+# tactic MAX -> 0.84
+$req_r1_2 isa relaxed_requirement,
+    links (system: $mirte, expression: $velocity_shall_expression_2),
+    has requirement_name "R1.2 Velocity with obstacles",
+    has in_effect true,
+    has description "The robot SHALL, when objects are too close, bring its velocity AS CLOSE AS POSSIBLE TO 0.18 m/s";
+
+# fake mirte requirement
+$req_r1_3 isa relaxed_requirement,
+    links (system: $mirte, expression: $mv_pwr_shall_expression),
+    has requirement_name "R1.3 Movement Power",
+    has in_effect true,
+    has description "The robot SHALL maintain its movement power AS FEW AS POSSIBLE.";
+
+$benchmark_out_of_effect_requirement isa relaxed_requirement,
+    links (system: $mirte, expression: $velocity_shall_expression),
+    has requirement_name "Benchmark Out Of Effect",
+    has in_effect false,
+    has description "Benchmark-only requirement that stays out of effect.";
+
+# BEGIN BENCHMARK COMBO EXPANSION
+
+# Shared host and QoS profile for benchmark-only ROS interfaces.
+$bench_host_node isa ROSNode,
+    has node_name "bench_host_node",
+    has namespace "",
+    has running true;
+
+$bench_qos_profile isa QoSProfile,
+    has reliability "RELIABLE",
+    has history "KEEP_LAST",
+    has depth 10,
+    has durability "VOLATILE";
+
+# Add extra resolution models so fetch_tactics/fetch_resolution_model_tactic_rule_targets
+# have at least 10 valid model inputs.
+$bench_res_model_1 isa resolution_model,
+    links (tactic: $ta_max_speed,
+           variant_resolution: $vr_low,
+           variant_resolution: $vr_med,
+           variant_resolution: $vr_high),
+    has resolution_model_name "bench_rebetmc_1",
+    has ros_system "nav2";
+
+$bench_res_model_2 isa resolution_model,
+    links (tactic: $ta_max_speed,
+           variant_resolution: $vr_low,
+           variant_resolution: $vr_med,
+           variant_resolution: $vr_high),
+    has resolution_model_name "bench_rebetmc_2",
+    has ros_system "nav2";
+
+$bench_res_model_3 isa resolution_model,
+    links (tactic: $ta_max_speed,
+           variant_resolution: $vr_low,
+           variant_resolution: $vr_med,
+           variant_resolution: $vr_high),
+    has resolution_model_name "bench_rebetmc_3",
+    has ros_system "nav2";
+
+$bench_res_model_4 isa resolution_model,
+    links (tactic: $ta_max_speed,
+           variant_resolution: $vr_low,
+           variant_resolution: $vr_med,
+           variant_resolution: $vr_high),
+    has resolution_model_name "bench_rebetmc_4",
+    has ros_system "nav2";
+
+$bench_res_model_5 isa resolution_model,
+    links (tactic: $ta_max_speed,
+           variant_resolution: $vr_low,
+           variant_resolution: $vr_med,
+           variant_resolution: $vr_high),
+    has resolution_model_name "bench_rebetmc_5",
+    has ros_system "nav2";
+
+$bench_res_model_6 isa resolution_model,
+    links (tactic: $ta_max_speed,
+           variant_resolution: $vr_low,
+           variant_resolution: $vr_med,
+           variant_resolution: $vr_high),
+    has resolution_model_name "bench_rebetmc_6",
+    has ros_system "nav2";
+
+$bench_res_model_7 isa resolution_model,
+    links (tactic: $ta_max_speed,
+           variant_resolution: $vr_low,
+           variant_resolution: $vr_med,
+           variant_resolution: $vr_high),
+    has resolution_model_name "bench_rebetmc_7",
+    has ros_system "nav2";
+
+$bench_res_model_8 isa resolution_model,
+    links (tactic: $ta_max_speed,
+           variant_resolution: $vr_low,
+           variant_resolution: $vr_med,
+           variant_resolution: $vr_high),
+    has resolution_model_name "bench_rebetmc_8",
+    has ros_system "nav2";
+
+$bench_res_model_9 isa resolution_model,
+    links (tactic: $ta_max_speed,
+           variant_resolution: $vr_low,
+           variant_resolution: $vr_med,
+           variant_resolution: $vr_high),
+    has resolution_model_name "bench_rebetmc_9",
+    has ros_system "nav2";
+
+# Add benchmark-only fuzzy expressions to keep >=10 valid fuzzy-membership queries.
+$bench_fuzzy_expression_01 isa fuzzy_unimodal_expression,
+    links (fuzzy_set: $fuzzy_unimodal_triangular_set, term: $fuzzy_unimodal_measure),
+    has expression_name "bench_fuzzy_expression_01";
+
+$bench_fuzzy_expression_02 isa fuzzy_unimodal_expression,
+    links (fuzzy_set: $fuzzy_unimodal_gaussian_set, term: $fuzzy_unimodal_measure),
+    has expression_name "bench_fuzzy_expression_02";
+
+# Expand requirement universe and in-effect requirements to >=10 rows/cases.
+$bench_requirement_1 isa relaxed_requirement,
+    links (system: $mirte, expression: $velocity_shall_expression),
+    has requirement_name "Benchmark Requirement 1",
+    has in_effect true,
+    has description "Benchmark-only in-effect requirement 1.";
+
+$bench_requirement_2 isa relaxed_requirement,
+    links (system: $mirte, expression: $velocity_shall_expression),
+    has requirement_name "Benchmark Requirement 2",
+    has in_effect true,
+    has description "Benchmark-only in-effect requirement 2.";
+
+$bench_requirement_3 isa relaxed_requirement,
+    links (system: $mirte, expression: $velocity_shall_expression),
+    has requirement_name "Benchmark Requirement 3",
+    has in_effect true,
+    has description "Benchmark-only in-effect requirement 3.";
+
+$bench_requirement_4 isa relaxed_requirement,
+    links (system: $mirte, expression: $velocity_shall_expression),
+    has requirement_name "Benchmark Requirement 4",
+    has in_effect true,
+    has description "Benchmark-only in-effect requirement 4.";
+
+$bench_requirement_5 isa relaxed_requirement,
+    links (system: $mirte, expression: $velocity_shall_expression),
+    has requirement_name "Benchmark Requirement 5",
+    has in_effect true,
+    has description "Benchmark-only in-effect requirement 5.";
+
+$bench_requirement_6 isa relaxed_requirement,
+    links (system: $mirte, expression: $velocity_shall_expression),
+    has requirement_name "Benchmark Requirement 6",
+    has in_effect true,
+    has description "Benchmark-only in-effect requirement 6.";
+
+$bench_requirement_7 isa relaxed_requirement,
+    links (system: $mirte, expression: $velocity_shall_expression),
+    has requirement_name "Benchmark Requirement 7",
+    has in_effect true,
+    has description "Benchmark-only in-effect requirement 7.";
+
+$bench_requirement_8 isa relaxed_requirement,
+    links (system: $mirte, expression: $velocity_shall_expression),
+    has requirement_name "Benchmark Requirement 8",
+    has in_effect true,
+    has description "Benchmark-only in-effect requirement 8.";
+
+# Add 10 benchmark ROS node/interface families for action/subnode/topic fetch combinations.
+$bench_node_01 isa ROSNode,
+    has node_name "bench_node_01",
+    has namespace "",
+    has running true;
+
+$bench_subnode_01 isa ROSNode,
+    has node_name "bench_node_01_sub",
+    has namespace "",
+    has running true;
+
+(node: $bench_node_01, subnode: $bench_subnode_01) isa subnode;
+
+$bench_action_client_01 isa ActionClient,
+    has interface_name "/bench_action_01",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_node_01, client: $bench_action_client_01) isa has_action;
+
+$bench_action_server_01 isa ActionServer,
+    has interface_name "/bench_action_01",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_host_node, server: $bench_action_server_01) isa has_action;
+
+$bench_publisher_01 isa Publisher,
+    has interface_name "/bench_topic_01",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_node_01, publisher: $bench_publisher_01) isa has_topic;
+(interface: $bench_publisher_01, qos: $bench_qos_profile) isa has_qos;
+
+$bench_subscriber_01 isa Subscriber,
+    has interface_name "/bench_topic_01",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_host_node, subscriber: $bench_subscriber_01) isa has_topic;
+
+$bench_measure_01 isa Measure,
+    has measure_name "bench_measure_01";
+
+(measure: $bench_measure_01, measurement_value: $double_0_10) isa measurement,
+    has measurement_time 2025-09-06T12:57:56.666,
+    has latest true;
+
+(measure: $bench_measure_01, source: $bench_publisher_01) isa measurement_interface,
+    has measurement_function_name "bench_measure_fn_01",
+    has measurement_function_lib "bench_measure_lib",
+    has measurement_function_args "bench_measure_args_01";
+
+$bench_node_02 isa ROSNode,
+    has node_name "bench_node_02",
+    has namespace "",
+    has running true;
+
+$bench_subnode_02 isa ROSNode,
+    has node_name "bench_node_02_sub",
+    has namespace "",
+    has running true;
+
+(node: $bench_node_02, subnode: $bench_subnode_02) isa subnode;
+
+$bench_action_client_02 isa ActionClient,
+    has interface_name "/bench_action_02",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_node_02, client: $bench_action_client_02) isa has_action;
+
+$bench_action_server_02 isa ActionServer,
+    has interface_name "/bench_action_02",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_host_node, server: $bench_action_server_02) isa has_action;
+
+$bench_publisher_02 isa Publisher,
+    has interface_name "/bench_topic_02",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_node_02, publisher: $bench_publisher_02) isa has_topic;
+(interface: $bench_publisher_02, qos: $bench_qos_profile) isa has_qos;
+
+$bench_subscriber_02 isa Subscriber,
+    has interface_name "/bench_topic_02",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_host_node, subscriber: $bench_subscriber_02) isa has_topic;
+
+$bench_measure_02 isa Measure,
+    has measure_name "bench_measure_02";
+
+(measure: $bench_measure_02, measurement_value: $double_0_10) isa measurement,
+    has measurement_time 2025-09-06T12:57:56.666,
+    has latest true;
+
+(measure: $bench_measure_02, source: $bench_publisher_02) isa measurement_interface,
+    has measurement_function_name "bench_measure_fn_02",
+    has measurement_function_lib "bench_measure_lib",
+    has measurement_function_args "bench_measure_args_02";
+
+$bench_node_03 isa ROSNode,
+    has node_name "bench_node_03",
+    has namespace "",
+    has running true;
+
+$bench_subnode_03 isa ROSNode,
+    has node_name "bench_node_03_sub",
+    has namespace "",
+    has running true;
+
+(node: $bench_node_03, subnode: $bench_subnode_03) isa subnode;
+
+$bench_action_client_03 isa ActionClient,
+    has interface_name "/bench_action_03",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_node_03, client: $bench_action_client_03) isa has_action;
+
+$bench_action_server_03 isa ActionServer,
+    has interface_name "/bench_action_03",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_host_node, server: $bench_action_server_03) isa has_action;
+
+$bench_publisher_03 isa Publisher,
+    has interface_name "/bench_topic_03",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_node_03, publisher: $bench_publisher_03) isa has_topic;
+(interface: $bench_publisher_03, qos: $bench_qos_profile) isa has_qos;
+
+$bench_subscriber_03 isa Subscriber,
+    has interface_name "/bench_topic_03",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_host_node, subscriber: $bench_subscriber_03) isa has_topic;
+
+$bench_measure_03 isa Measure,
+    has measure_name "bench_measure_03";
+
+(measure: $bench_measure_03, measurement_value: $double_0_10) isa measurement,
+    has measurement_time 2025-09-06T12:57:56.666,
+    has latest true;
+
+(measure: $bench_measure_03, source: $bench_publisher_03) isa measurement_interface,
+    has measurement_function_name "bench_measure_fn_03",
+    has measurement_function_lib "bench_measure_lib",
+    has measurement_function_args "bench_measure_args_03";
+
+$bench_node_04 isa ROSNode,
+    has node_name "bench_node_04",
+    has namespace "",
+    has running true;
+
+$bench_subnode_04 isa ROSNode,
+    has node_name "bench_node_04_sub",
+    has namespace "",
+    has running true;
+
+(node: $bench_node_04, subnode: $bench_subnode_04) isa subnode;
+
+$bench_action_client_04 isa ActionClient,
+    has interface_name "/bench_action_04",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_node_04, client: $bench_action_client_04) isa has_action;
+
+$bench_action_server_04 isa ActionServer,
+    has interface_name "/bench_action_04",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_host_node, server: $bench_action_server_04) isa has_action;
+
+$bench_publisher_04 isa Publisher,
+    has interface_name "/bench_topic_04",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_node_04, publisher: $bench_publisher_04) isa has_topic;
+(interface: $bench_publisher_04, qos: $bench_qos_profile) isa has_qos;
+
+$bench_subscriber_04 isa Subscriber,
+    has interface_name "/bench_topic_04",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_host_node, subscriber: $bench_subscriber_04) isa has_topic;
+
+$bench_measure_04 isa Measure,
+    has measure_name "bench_measure_04";
+
+(measure: $bench_measure_04, measurement_value: $double_0_10) isa measurement,
+    has measurement_time 2025-09-06T12:57:56.666,
+    has latest true;
+
+(measure: $bench_measure_04, source: $bench_publisher_04) isa measurement_interface,
+    has measurement_function_name "bench_measure_fn_04",
+    has measurement_function_lib "bench_measure_lib",
+    has measurement_function_args "bench_measure_args_04";
+
+$bench_node_05 isa ROSNode,
+    has node_name "bench_node_05",
+    has namespace "",
+    has running true;
+
+$bench_subnode_05 isa ROSNode,
+    has node_name "bench_node_05_sub",
+    has namespace "",
+    has running true;
+
+(node: $bench_node_05, subnode: $bench_subnode_05) isa subnode;
+
+$bench_action_client_05 isa ActionClient,
+    has interface_name "/bench_action_05",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_node_05, client: $bench_action_client_05) isa has_action;
+
+$bench_action_server_05 isa ActionServer,
+    has interface_name "/bench_action_05",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_host_node, server: $bench_action_server_05) isa has_action;
+
+$bench_publisher_05 isa Publisher,
+    has interface_name "/bench_topic_05",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_node_05, publisher: $bench_publisher_05) isa has_topic;
+(interface: $bench_publisher_05, qos: $bench_qos_profile) isa has_qos;
+
+$bench_subscriber_05 isa Subscriber,
+    has interface_name "/bench_topic_05",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_host_node, subscriber: $bench_subscriber_05) isa has_topic;
+
+$bench_measure_05 isa Measure,
+    has measure_name "bench_measure_05";
+
+(measure: $bench_measure_05, measurement_value: $double_0_10) isa measurement,
+    has measurement_time 2025-09-06T12:57:56.666,
+    has latest true;
+
+(measure: $bench_measure_05, source: $bench_publisher_05) isa measurement_interface,
+    has measurement_function_name "bench_measure_fn_05",
+    has measurement_function_lib "bench_measure_lib",
+    has measurement_function_args "bench_measure_args_05";
+
+$bench_node_06 isa ROSNode,
+    has node_name "bench_node_06",
+    has namespace "",
+    has running true;
+
+$bench_subnode_06 isa ROSNode,
+    has node_name "bench_node_06_sub",
+    has namespace "",
+    has running true;
+
+(node: $bench_node_06, subnode: $bench_subnode_06) isa subnode;
+
+$bench_action_client_06 isa ActionClient,
+    has interface_name "/bench_action_06",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_node_06, client: $bench_action_client_06) isa has_action;
+
+$bench_action_server_06 isa ActionServer,
+    has interface_name "/bench_action_06",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_host_node, server: $bench_action_server_06) isa has_action;
+
+$bench_publisher_06 isa Publisher,
+    has interface_name "/bench_topic_06",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_node_06, publisher: $bench_publisher_06) isa has_topic;
+(interface: $bench_publisher_06, qos: $bench_qos_profile) isa has_qos;
+
+$bench_subscriber_06 isa Subscriber,
+    has interface_name "/bench_topic_06",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_host_node, subscriber: $bench_subscriber_06) isa has_topic;
+
+$bench_measure_06 isa Measure,
+    has measure_name "bench_measure_06";
+
+(measure: $bench_measure_06, measurement_value: $double_0_10) isa measurement,
+    has measurement_time 2025-09-06T12:57:56.666,
+    has latest true;
+
+(measure: $bench_measure_06, source: $bench_publisher_06) isa measurement_interface,
+    has measurement_function_name "bench_measure_fn_06",
+    has measurement_function_lib "bench_measure_lib",
+    has measurement_function_args "bench_measure_args_06";
+
+$bench_node_07 isa ROSNode,
+    has node_name "bench_node_07",
+    has namespace "",
+    has running true;
+
+$bench_subnode_07 isa ROSNode,
+    has node_name "bench_node_07_sub",
+    has namespace "",
+    has running true;
+
+(node: $bench_node_07, subnode: $bench_subnode_07) isa subnode;
+
+$bench_action_client_07 isa ActionClient,
+    has interface_name "/bench_action_07",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_node_07, client: $bench_action_client_07) isa has_action;
+
+$bench_action_server_07 isa ActionServer,
+    has interface_name "/bench_action_07",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_host_node, server: $bench_action_server_07) isa has_action;
+
+$bench_publisher_07 isa Publisher,
+    has interface_name "/bench_topic_07",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_node_07, publisher: $bench_publisher_07) isa has_topic;
+(interface: $bench_publisher_07, qos: $bench_qos_profile) isa has_qos;
+
+$bench_subscriber_07 isa Subscriber,
+    has interface_name "/bench_topic_07",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_host_node, subscriber: $bench_subscriber_07) isa has_topic;
+
+$bench_measure_07 isa Measure,
+    has measure_name "bench_measure_07";
+
+(measure: $bench_measure_07, measurement_value: $double_0_10) isa measurement,
+    has measurement_time 2025-09-06T12:57:56.666,
+    has latest true;
+
+(measure: $bench_measure_07, source: $bench_publisher_07) isa measurement_interface,
+    has measurement_function_name "bench_measure_fn_07",
+    has measurement_function_lib "bench_measure_lib",
+    has measurement_function_args "bench_measure_args_07";
+
+$bench_node_08 isa ROSNode,
+    has node_name "bench_node_08",
+    has namespace "",
+    has running true;
+
+$bench_subnode_08 isa ROSNode,
+    has node_name "bench_node_08_sub",
+    has namespace "",
+    has running true;
+
+(node: $bench_node_08, subnode: $bench_subnode_08) isa subnode;
+
+$bench_action_client_08 isa ActionClient,
+    has interface_name "/bench_action_08",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_node_08, client: $bench_action_client_08) isa has_action;
+
+$bench_action_server_08 isa ActionServer,
+    has interface_name "/bench_action_08",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_host_node, server: $bench_action_server_08) isa has_action;
+
+$bench_publisher_08 isa Publisher,
+    has interface_name "/bench_topic_08",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_node_08, publisher: $bench_publisher_08) isa has_topic;
+(interface: $bench_publisher_08, qos: $bench_qos_profile) isa has_qos;
+
+$bench_subscriber_08 isa Subscriber,
+    has interface_name "/bench_topic_08",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_host_node, subscriber: $bench_subscriber_08) isa has_topic;
+
+$bench_measure_08 isa Measure,
+    has measure_name "bench_measure_08";
+
+(measure: $bench_measure_08, measurement_value: $double_0_10) isa measurement,
+    has measurement_time 2025-09-06T12:57:56.666,
+    has latest true;
+
+(measure: $bench_measure_08, source: $bench_publisher_08) isa measurement_interface,
+    has measurement_function_name "bench_measure_fn_08",
+    has measurement_function_lib "bench_measure_lib",
+    has measurement_function_args "bench_measure_args_08";
+
+$bench_node_09 isa ROSNode,
+    has node_name "bench_node_09",
+    has namespace "",
+    has running true;
+
+$bench_subnode_09 isa ROSNode,
+    has node_name "bench_node_09_sub",
+    has namespace "",
+    has running true;
+
+(node: $bench_node_09, subnode: $bench_subnode_09) isa subnode;
+
+$bench_action_client_09 isa ActionClient,
+    has interface_name "/bench_action_09",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_node_09, client: $bench_action_client_09) isa has_action;
+
+$bench_action_server_09 isa ActionServer,
+    has interface_name "/bench_action_09",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_host_node, server: $bench_action_server_09) isa has_action;
+
+$bench_publisher_09 isa Publisher,
+    has interface_name "/bench_topic_09",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_node_09, publisher: $bench_publisher_09) isa has_topic;
+(interface: $bench_publisher_09, qos: $bench_qos_profile) isa has_qos;
+
+$bench_subscriber_09 isa Subscriber,
+    has interface_name "/bench_topic_09",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_host_node, subscriber: $bench_subscriber_09) isa has_topic;
+
+$bench_measure_09 isa Measure,
+    has measure_name "bench_measure_09";
+
+(measure: $bench_measure_09, measurement_value: $double_0_10) isa measurement,
+    has measurement_time 2025-09-06T12:57:56.666,
+    has latest true;
+
+(measure: $bench_measure_09, source: $bench_publisher_09) isa measurement_interface,
+    has measurement_function_name "bench_measure_fn_09",
+    has measurement_function_lib "bench_measure_lib",
+    has measurement_function_args "bench_measure_args_09";
+
+$bench_node_10 isa ROSNode,
+    has node_name "bench_node_10",
+    has namespace "",
+    has running true;
+
+$bench_subnode_10 isa ROSNode,
+    has node_name "bench_node_10_sub",
+    has namespace "",
+    has running true;
+
+(node: $bench_node_10, subnode: $bench_subnode_10) isa subnode;
+
+$bench_action_client_10 isa ActionClient,
+    has interface_name "/bench_action_10",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_node_10, client: $bench_action_client_10) isa has_action;
+
+$bench_action_server_10 isa ActionServer,
+    has interface_name "/bench_action_10",
+    has interface_type "nav2_msgs/action/NavigateToPose";
+
+(node: $bench_host_node, server: $bench_action_server_10) isa has_action;
+
+$bench_publisher_10 isa Publisher,
+    has interface_name "/bench_topic_10",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_node_10, publisher: $bench_publisher_10) isa has_topic;
+(interface: $bench_publisher_10, qos: $bench_qos_profile) isa has_qos;
+
+$bench_subscriber_10 isa Subscriber,
+    has interface_name "/bench_topic_10",
+    has interface_type "std_msgs/msg/String";
+
+(node: $bench_host_node, subscriber: $bench_subscriber_10) isa has_topic;
+
+$bench_measure_10 isa Measure,
+    has measure_name "bench_measure_10";
+
+(measure: $bench_measure_10, measurement_value: $double_0_10) isa measurement,
+    has measurement_time 2025-09-06T12:57:56.666,
+    has latest true;
+
+(measure: $bench_measure_10, source: $bench_publisher_10) isa measurement_interface,
+    has measurement_function_name "bench_measure_fn_10",
+    has measurement_function_lib "bench_measure_lib",
+    has measurement_function_args "bench_measure_args_10";
+
+# END BENCHMARK COMBO EXPANSION
