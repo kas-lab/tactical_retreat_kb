@@ -38,30 +38,79 @@ fun tactic_rule_hypothetical_measure_value($tr: tactic_rule, $m: Measure) -> dou
 fun tactic_rule_hypothetical_comparison_lhs_value($tr: tactic_rule, $e: comparison_expression) -> double:
   match
     $e links (lhs_value: $lhs_term);
-    { $lhs_term isa Measure;
+    {
+      $lhs_term isa Measure;
       let $lhs_measure_value = tactic_rule_hypothetical_measure_value($tr, $lhs_term);
-      let $v_cmp_lhs = $lhs_measure_value; } or
-    { $lhs_term isa ValueSingleton;
+      let $v_cmp_lhs = $lhs_measure_value;
+    } or {
+      $lhs_term isa ValueSingleton;
       $lhs_term has double_value $lhs_d;
-      let $v_cmp_lhs = $lhs_d; } or
-    { $lhs_term isa ValueSingleton;
+      let $v_cmp_lhs = $lhs_d;
+    } or {
+      $lhs_term isa ValueSingleton;
       $lhs_term has integer_value $lhs_i;
-      let $v_cmp_lhs = $lhs_i + 0.0; };
+      let $v_cmp_lhs = $lhs_i + 0.0;
+    };
   return first $v_cmp_lhs;
 
 fun tactic_rule_hypothetical_comparison_rhs_value($tr: tactic_rule, $e: comparison_expression) -> double:
   match
     $e links (rhs_value: $rhs_term);
-    { $rhs_term isa Measure;
+    {
+      $rhs_term isa Measure;
       let $rhs_measure_value = tactic_rule_hypothetical_measure_value($tr, $rhs_term);
-      let $v_cmp_rhs = $rhs_measure_value; } or
-    { $rhs_term isa ValueSingleton;
+      let $v_cmp_rhs = $rhs_measure_value;
+    } or {
+      $rhs_term isa ValueSingleton;
       $rhs_term has double_value $rhs_d;
-      let $v_cmp_rhs = $rhs_d; } or
-    { $rhs_term isa ValueSingleton;
+      let $v_cmp_rhs = $rhs_d;
+    } or {
+      $rhs_term isa ValueSingleton;
       $rhs_term has integer_value $rhs_i;
-      let $v_cmp_rhs = $rhs_i + 0.0; };
+      let $v_cmp_rhs = $rhs_i + 0.0;
+    };
   return first $v_cmp_rhs;
+
+fun tactic_rule_hypothetical_relaxed_term($tr: tactic_rule, $e: relaxed_fuzzy_expression) -> double:
+  match
+    $e links (term: $term_rt);
+    {
+      $term_rt isa Measure;
+      let $measure_value_rt = tactic_rule_hypothetical_measure_value($tr, $term_rt);
+      let $raw_rt = $measure_value_rt;
+    } or {
+      $term_rt isa ValueSingleton;
+      $term_rt has double_value $vs_d_rt;
+      let $raw_rt = $vs_d_rt;
+    } or {
+      $term_rt isa ValueSingleton;
+      $term_rt has integer_value $vs_i_rt;
+      let $raw_rt = $vs_i_rt + 0.0;
+    };
+    {
+      $e has required_value $rv_rt;
+      let $q_hrt = $raw_rt - $rv_rt;
+    } or {
+      $e has required_period $rp_rt;
+      let $q_hrt = $raw_rt - $rp_rt;
+    } or{
+      not { $e has required_value $_; };
+      not { $e has required_period $_; };
+      let $q_hrt = $raw_rt;
+    };
+  return first $q_hrt;
+
+fun tactic_rule_hypothetical_fuzzy_term($tr: tactic_rule, $e: fuzzy_comparison_expression) -> double:
+  match
+    $e links (term: $term_ft);
+    { $term_ft isa Measure;
+      let $measure_value_ft = tactic_rule_hypothetical_measure_value($tr, $term_ft);
+      let $raw_ft = $measure_value_ft; } or
+    { $term_ft isa ValueSingleton; $term_ft has double_value $vs_d_ft; let $raw_ft = $vs_d_ft; } or
+    { $term_ft isa ValueSingleton; $term_ft has integer_value $vs_i_ft; let $raw_ft = $vs_i_ft + 0.0; };
+    { $e has offset_value $off_ft; let $q_hft = $raw_ft + $off_ft; } or
+    { not { $e has offset_value $_; }; let $q_hft = $raw_ft; };
+  return first $q_hft;
 
 fun tactic_rule_impacts_comparison_fulfillment($tr: tactic_rule, $e: comparison_expression) -> double:
   match
@@ -91,18 +140,6 @@ fun tactic_rule_impacts_comparison_fulfillment($tr: tactic_rule, $e: comparison_
       { not { $lv_ne == $rv_ne; }; let $ok = 1.0; } or { $lv_ne == $rv_ne; let $ok = 0.0; }; };
   return first $ok;
 
-fun tactic_rule_hypothetical_fuzzy_term($tr: tactic_rule, $e: fuzzy_comparison_expression) -> double:
-  match
-    $e links (term: $term_ft);
-    { $term_ft isa Measure;
-      let $measure_value_ft = tactic_rule_hypothetical_measure_value($tr, $term_ft);
-      let $raw_ft = $measure_value_ft; } or
-    { $term_ft isa ValueSingleton; $term_ft has double_value $vs_d_ft; let $raw_ft = $vs_d_ft; } or
-    { $term_ft isa ValueSingleton; $term_ft has integer_value $vs_i_ft; let $raw_ft = $vs_i_ft + 0.0; };
-    { $e has offset_value $off_ft; let $q_hft = $raw_ft + $off_ft; } or
-    { not { $e has offset_value $_; }; let $q_hft = $raw_ft; };
-  return first $q_hft;
-
 fun tactic_rule_impacts_fuzzy_leaf_fulfillment($tr: tactic_rule, $e: fuzzy_comparison_expression) -> double:
   match
     { $e isa fuzzy_ascend_expression;
@@ -121,20 +158,6 @@ fun tactic_rule_impacts_fuzzy_leaf_fulfillment($tr: tactic_rule, $e: fuzzy_compa
       let $m_uni = fuzzy_unimodal_set_membership($uni_set_fl, $qv_uni_fl);
       let $m = $m_uni; };
   return first $m;
-
-fun tactic_rule_hypothetical_relaxed_term($tr: tactic_rule, $e: relaxed_fuzzy_expression) -> double:
-  match
-    $e links (term: $term_rt);
-    { $term_rt isa Measure;
-      let $measure_value_rt = tactic_rule_hypothetical_measure_value($tr, $term_rt);
-      let $raw_rt = $measure_value_rt; } or
-    { $term_rt isa ValueSingleton; $term_rt has double_value $vs_d_rt; let $raw_rt = $vs_d_rt; } or
-    { $term_rt isa ValueSingleton; $term_rt has integer_value $vs_i_rt; let $raw_rt = $vs_i_rt + 0.0; };
-    { $e has required_value $rv_rt; let $q_hrt = $raw_rt - $rv_rt; } or
-    { $e has required_period $rp_rt; let $q_hrt = $raw_rt - $rp_rt; } or
-    { not { $e has required_value $_; }; not { $e has required_period $_; };
-      let $q_hrt = $raw_rt; };
-  return first $q_hrt;
 
 fun tactic_rule_impacts_relaxed_leaf_fulfillment($tr: tactic_rule, $e: relaxed_fuzzy_expression) -> double:
   match

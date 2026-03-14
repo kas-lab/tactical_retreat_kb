@@ -57,6 +57,35 @@ $less_than_equal_2 isa less_than_equal,
     links (lhs_value: $measure_lhs_comparison, rhs_value: $double_0_10),
     has expression_name 'less_than_equal_2';
 
+# Additional comparison expressions for balanced benchmark coverage
+# New integer ValueSingletons
+$int_singleton_5 isa ValueSingleton, has integer_value 5;
+$int_singleton_10 isa ValueSingleton, has integer_value 10;
+
+# VS_double lhs (adds lhs diversity: branch 2 in lhs_value function)
+$expr_lhs_vs_d_1 isa less_than,
+    links (lhs_value: $double_0_15, rhs_value: $measure_rhs_comparison),
+    has expression_name 'expr_lhs_vs_d_1';
+$expr_lhs_vs_d_2 isa less_than_equal,
+    links (lhs_value: $double_0_05, rhs_value: $double_0_10),
+    has expression_name 'expr_lhs_vs_d_2';
+
+# VS_integer lhs (adds lhs diversity: branch 3 in lhs_value function)
+$expr_lhs_vs_i_1 isa less_than,
+    links (lhs_value: $int_singleton_5, rhs_value: $measure_rhs_comparison),
+    has expression_name 'expr_lhs_vs_i_1';
+$expr_lhs_vs_i_2 isa less_than_equal,
+    links (lhs_value: $int_singleton_10, rhs_value: $double_0_10),
+    has expression_name 'expr_lhs_vs_i_2';
+
+# VS_integer rhs (adds rhs diversity: branch 3 in rhs_value function)
+$expr_rhs_vs_i_1 isa less_than,
+    links (lhs_value: $measure_lhs_comparison, rhs_value: $int_singleton_5),
+    has expression_name 'expr_rhs_vs_i_1';
+$expr_rhs_vs_i_2 isa less_than_equal,
+    links (lhs_value: $measure_lhs_comparison, rhs_value: $int_singleton_10),
+    has expression_name 'expr_rhs_vs_i_2';
+
 # Fuzzy Comparison Expressions
 $fuzzy_ascend_sigmoid_set isa FuzzySigmoid,
     has inflection_point 5.0,
