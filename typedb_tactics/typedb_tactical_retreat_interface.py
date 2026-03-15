@@ -143,6 +143,62 @@ class TacticalRetreatInterface:
         """Delete the database."""
         self.db.delete_database()
 
+    def warm_up(self) -> None:
+        """
+        Prime TypeDB JIT by executing representative queries once at startup.
+
+        Queries succeed with empty results when no measurements exist — the
+        NOT-branch ('no effect') in hypothetical functions still fires and
+        triggers JIT compilation for the full call chain.
+        """
+        logger.info('TypeDB warm-up: starting.')
+
+        # Fetch static entity names loaded during on_configure.
+        rules = []
+        reqs = []
+        try:
+            rules = self.get_all_tactic_rules()
+        except Exception as e:
+            logger.warning('TypeDB warm-up: get_all_tactic_rules failed: %s', e)
+        try:
+            reqs = self.get_all_requirements()
+        except Exception as e:
+            logger.warning('TypeDB warm-up: get_all_requirements failed: %s', e)
+
+        # 1. Hypothetical requirement fulfillment — transitively invokes all 16
+        #    schema functions in discover_hypothetical_req_fulfillment.tql.
+        if rules and reqs:
+            try:
+                self.fetch_tactic_rule_impacts_requirement(reqs[0], rules[0])
+            except Exception as e:
+                logger.warning(
+                    'TypeDB warm-up: fetch_tactic_rule_impacts_requirement failed: %s', e)
+
+        # 2. Applicable tactics — structural query, works regardless of measurements.
+        try:
+            models = self._get_all_resolution_models()
+            interfaces = self._get_all_ros_interfaces()
+            if models and interfaces:
+                self.fetch_applicable_tactics(models[0], interfaces[0])
+        except Exception as e:
+            logger.warning('TypeDB warm-up: fetch_applicable_tactics failed: %s', e)
+
+        # 3. Current (non-hypothetical) requirement fulfillment.
+        try:
+            self.fetch_in_effect_requirement_fulfillment()
+        except Exception as e:
+            logger.warning(
+                'TypeDB warm-up: fetch_in_effect_requirement_fulfillment failed: %s', e)
+
+        # 4. Tactic validity check.
+        if rules:
+            try:
+                self.fetch_tactic_rule_valid(rules[0])
+            except Exception as e:
+                logger.warning('TypeDB warm-up: fetch_tactic_rule_valid failed: %s', e)
+
+        logger.info('TypeDB warm-up: complete.')
+
     def fetch_database(self, query: str) -> List[dict]:
         """
         Delegate fetch query to the underlying TypeDBInterface.
@@ -473,6 +529,30 @@ class TacticalRetreatInterface:
             result['resolution_model_name']
             for result in query_result
         ]
+
+    def _fetch_all_ros_interfaces(self) -> List[dict]:
+        """
+        Fetch all ROSInterface names.
+
+        :return: fetch query result
+        """
+        query = """
+            match
+                $interface isa ROSInterface;
+            fetch {
+                "interface_name": $interface.interface_name
+            };
+        """
+        return self._fetch(query)
+
+    def _get_all_ros_interfaces(self) -> List[str]:
+        """
+        Get all ROSInterface names.
+
+        :return: list of ROSInterface names
+        """
+        query_result = self._fetch_all_ros_interfaces()
+        return [result['interface_name'] for result in query_result]
 
     def fetch_all_tactic_rules(self) -> List[dict]:
         """

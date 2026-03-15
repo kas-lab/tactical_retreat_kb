@@ -289,7 +289,8 @@ def build_cases(
     selected_function_names: Optional[set[str]] = None,
     all_inputs: bool = False,
 ) -> tuple[List[BenchmarkCase], Optional[str]]:
-    """Build one benchmark case per function.
+    """
+    Build one benchmark case per function.
 
     When all_inputs=False (default), each case uses a single representative
     (tactic_rule, input) pair — fast, good for warm-latency profiling.
@@ -435,7 +436,8 @@ def benchmark_case(
     warm_runs: int,
     _shared_interface: Optional[TacticalRetreatInterface] = None,
 ) -> BenchmarkResult:
-    """Benchmark one function case with relative cold, true cold, and warm runs.
+    """
+    Benchmark one function case with relative cold, true cold, and warm runs.
 
     Relative cold runs (cold_runs):
       Each measurement is taken on a fresh DB that has first been warmed by
@@ -512,7 +514,8 @@ def benchmark_case(
         cold_p50_ms=percentile(cold_values, 0.50),
         cold_p95_ms=percentile(cold_values, 0.95),
         true_cold_runs=true_cold_runs,
-        true_cold_avg_ms=sum(true_cold_values) / len(true_cold_values) if true_cold_values else 0.0,
+        true_cold_avg_ms=(
+            sum(true_cold_values) / len(true_cold_values) if true_cold_values else 0.0),
         true_cold_p50_ms=percentile(true_cold_values, 0.50) if true_cold_values else 0.0,
         true_cold_p95_ms=percentile(true_cold_values, 0.95) if true_cold_values else 0.0,
         warm_avg_ms=sum(warm_values) / len(warm_values),

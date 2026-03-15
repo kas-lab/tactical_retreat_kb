@@ -38,3 +38,10 @@ Claude-specific notes for this repository.
 - **Benchmark noise floor**: `fun` benchmarks have ~1ms run-to-run noise at the 35–40ms scale. Use `--warm-runs 100` (not 30) before declaring a winner — short runs can produce misleading rankings.
 - Benchmark variant results for `tactic_rule_hypothetical_measure_value` (V0–V24): `scripts/benchmark/results/tactic_rule_hypothetical_measure_value.md`.
 - Benchmark variant results for `tactic_rule_hypothetical_comparison_lhs/rhs_value` (V0–V9, V0 wins): `scripts/benchmark/results/tactic_rule_hypothetical_comparison_values.md`.
+- **OR branch ordering only helps `return first` functions.** For `return min`/`return max` aggregators, TypeDB evaluates ALL branches — early-exit does not apply. Exception: join ordering within a branch still benefits from most-common-first when child types vary (confirmed small gain for `fuzzy_or`/`fuzzy_and`).
+- **Always benchmark functions in isolation**, not combined. Combined tests can mask or amplify effects when functions share benchmark data; a combined V1 showed uniform regression that isolated testing revealed was confined to specific functions.
+- **Narrow direct dispatch beats broad delegation.** Routing `requirement_fulfillment` through a 10-branch `any_expression_fulfillment` was 8% slower than the original 3-branch direct dispatch. Fewer branches = less work per call.
+- `required_period` is only owned by `freq_as_close_as_possible_expression` (not `as_many_as_possible_expression` or `as_few_as_possible_expression`). Use this type when adding benchmark data covering that attribute.
+- `comparison_expression` cannot play the `relaxed_requirement:expression` role — use `relaxed_fuzzy_expression` subtypes instead.
+- Benchmark variant results for `tactic_rule_hypothetical_term` functions (V0–V6, V0 wins): `scripts/benchmark/results/tactic_rule_hypothetical_term_functions.md`.
+- Benchmark variant results for all `tactic_rule_impacts_*` functions (V0 baseline wins except `fuzzy_or`/`fuzzy_and` relaxed-first −4%): `scripts/benchmark/results/tactic_rule_impacts_*.md`.
