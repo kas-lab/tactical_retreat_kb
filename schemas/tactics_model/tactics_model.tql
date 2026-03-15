@@ -5,11 +5,9 @@ attribute ros_system, value string;
 attribute target_lifecycle_state, value string,
     regex "^(unconfigured|inactive|active|finalized)$";
 
-attribute name @abstract, value string;
-
-attribute resolution_model_name sub name;
-attribute tactic_name sub name;
-attribute rule_name sub name;
+attribute resolution_model_name, value string;
+attribute tactic_name, value string;
+attribute rule_name, value string;
 
 ### Tactic
 entity Tactic,
