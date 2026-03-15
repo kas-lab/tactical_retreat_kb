@@ -24,6 +24,17 @@ Claude-specific notes for this repository.
 - `ROSNode` has `@card(1..1)` on `start_time` — any test data creating a `ROSNode` must include `has start_time <datetime>`.
 - The benchmark-validation tests are opt-in for the default package suite. Run them directly, or set `TYPEDB_TACTICS_RUN_BENCHMARK_TESTS=1` if you intentionally want them included in a full pytest/colcon pass.
 
+## Warm-up
+
+- `warm_up()` in `TacticalRetreatInterface` primes TypeDB JIT at `on_configure` time (~270ms). Controlled by `warm_up_on_configure` ROS param (default true). Validate with `python3 scripts/benchmark/validate_warmup.py`.
+- **JIT is function-level, not data-level.** One representative call per function is sufficient — looping over all interfaces/pairs adds no JIT benefit but explodes warm-up cost (one-interface `fetch_potential_requirements_fulfillment` = 16.7s cold vs 270ms single-pair).
+- **`get_all_requirements()[0]` returns non-`in_effect` requirements** (e.g. 'req_1') which cause ~450ms traversals due to deep expression trees. Use `_get_in_effect_requirement_names()` for performance-sensitive warm-up or benchmark queries — same pattern as `benchmark_requirement_impact_functions.py`'s `requirement_pair_query()`.
+
+## Code style
+
+- pep257 D213: multi-line docstrings must have the summary on the **second** line (after the opening `"""`), not the first. Affects all new public methods.
+- flake8 I100: stdlib imports must be alphabetically ordered within the same group (`from pathlib import Path` before `import time`).
+
 ## Performance
 
 - `neighbours()` shows **bimodal latency** (~1.8ms warm-JIT vs ~14ms cold) across fresh DB instances; both numbers are valid and unrelated to query changes. Use `scripts/benchmark/benchmark_dtm.py --repeats 3` to distinguish noise from real regressions.
