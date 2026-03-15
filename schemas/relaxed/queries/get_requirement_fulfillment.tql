@@ -1,14 +1,17 @@
+# Fetch fulfillment of a specific requirement
 match
     $system isa System, has system_name 'Mirte';
-    (system: $system) isa relaxed_requirement,
-        has requirement_name 'R1.1 Velocity',
-        has fulfillment $fulfillment;
-fetch $fulfillment;
+    $req (system: $system) isa relaxed_requirement,
+        has requirement_name 'R1.1 Velocity';
+    let $fulfillment = relaxed_requirement_fulfillment($req);
+fetch { $fulfillment };
 
 
-# Fetch the fulfillment of all requirements in effect
+# Fetch fulfillment of all requirements in effect
 match
     $req isa relaxed_requirement,
         has in_effect true;
+    let $fulfillment = relaxed_requirement_fulfillment($req);
 fetch
-    $req: requirement_name, fulfillment;
+    $req: requirement_name;
+    $fulfillment;

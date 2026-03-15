@@ -9,8 +9,6 @@ attribute requirement_name, value string;
 attribute description, value string;
 attribute in_effect, value boolean;
 
-attribute fulfillment, value double;
-
 ### event expr attributes
 attribute event_duration, value double;  # what unit should we use? seconds?
 attribute event_end_duration, value double;
@@ -33,18 +31,16 @@ relation system_requirement @abstract,
 relation relaxed_requirement sub system_requirement,
 	owns requirement_name @key,
 	owns description,
-	owns fulfillment,
 	relates expression @card(0..);
 
 relation relaxed_expression sub expression,
-	owns fulfillment,
 	relates relaxed_member @card(0..),
 	plays relaxed_requirement:expression;
 
 relation atomic_relaxed_expression sub relaxed_expression,
 	relates expression @card(0..),
 	plays shall_expression:expression @card(0..),
-    plays may_expression:expression @card(0..),
+  plays may_expression:expression @card(0..),
 	plays until_expression:after;
 
 relation compound_relaxed_expression sub relaxed_expression,
@@ -131,12 +127,8 @@ propositional_expression plays until_expression:after;
 ValueSingleton plays relaxed_fuzzy_expression:term;
 Measure plays relaxed_fuzzy_expression:term;
 
-propositional_expression owns fulfillment;
-
 fuzzy_operator plays shall_expression:expression;
 fuzzy_operator plays may_expression:expression;
-
-fuzzy_expression owns fulfillment;
 
 fun quantified_relaxed_term($e: relaxed_fuzzy_expression) -> double:
   match
