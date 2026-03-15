@@ -207,9 +207,10 @@ $vr2 isa variant_activation,
 $vr3 isa variant_activation,
     links (resolution_action: $set_nodes_params_running, resolution_action: $set_nodes_params_not_running, variant: $f_vr_3); # feasible false
 
+$sys_test isa System, has system_name "system";
 $res_model isa resolution_model,
-    links (tactic: $t, variant_resolution: $vr1, variant_resolution: $vr2, variant_resolution: $vr3),
-    has resolution_model_name "res_model", has ros_system "system";
+    links (tactic: $t, variant_resolution: $vr1, variant_resolution: $vr2, variant_resolution: $vr3, system: $sys_test),
+    has resolution_model_name "res_model";
 
 ## Additional coverage: variant_resolution with set_lifecycle_state resolution actions
 

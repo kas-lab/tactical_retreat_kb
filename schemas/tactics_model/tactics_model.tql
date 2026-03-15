@@ -1,8 +1,12 @@
 define
 
-attribute ros_system, value string;
+attribute system_name, value string;
 
 attribute target_lifecycle_state, value string @regex("^(unconfigured|inactive|active|finalized)$");
+
+entity System,
+    owns system_name @key,
+    plays resolution_model:system;
 
 attribute resolution_model_name, value string;
 attribute tactic_name, value string;
@@ -56,7 +60,7 @@ Feature plays feature_adaptation:deactivation;
 #### resolution model
 relation resolution_model,
     owns resolution_model_name @key,
-    owns ros_system,
+    relates system @card(1),
     relates tactic @card(1..),
     relates variant_resolution @card(0..);
 

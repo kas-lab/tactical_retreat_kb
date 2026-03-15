@@ -81,7 +81,9 @@ $res_mock isa resolution_model,
 		variant_resolution:$f2_res_inactive,
 		variant_resolution:$f3_res_active,
 		variant_resolution:$f3_res_inactive),
-    has resolution_model_name "res_mock", has ros_system "mock";
+    has resolution_model_name "res_mock";
+$sys_mock isa System, has system_name "mock";
+$res_mock links (system: $sys_mock);
 
 # test add_measurements
 $measure_string isa Measure, has measure_name "measure_string";

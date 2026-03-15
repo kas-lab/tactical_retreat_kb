@@ -42,7 +42,7 @@ $ta_cov isa Tactic, has tactic_name "CovTactic";
 $tr_cov isa tactic_rule,
     links (tactic: $ta_cov, consequent: $fa_deact),
     has rule_name "COV_RULE";
+$sys_cov isa System, has system_name "cov";
 $rm_cov isa resolution_model,
-    links (tactic: $ta_cov, variant_resolution: $vr_cov),
-    has resolution_model_name "cov_model",
-    has ros_system "cov";
+    links (tactic: $ta_cov, variant_resolution: $vr_cov, system: $sys_cov),
+    has resolution_model_name "cov_model";

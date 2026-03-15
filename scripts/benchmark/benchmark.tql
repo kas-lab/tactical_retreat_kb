@@ -993,9 +993,10 @@ $vr_high isa variant_activation,
     links (resolution_action: $set_nodes_params_high, variant: $f_hi_speed);
 
 # Stage 6: match+resolution_model
+$sys_nav2 isa System, has system_name "nav2";
 $res_model isa resolution_model,
-    links (tactic: $ta_max_speed, variant_resolution: $vr_low, variant_resolution: $vr_med, variant_resolution: $vr_high),
-    has resolution_model_name "rebetmc", has ros_system "nav2";
+    links (tactic: $ta_max_speed, variant_resolution: $vr_low, variant_resolution: $vr_med, variant_resolution: $vr_high, system: $sys_nav2),
+    has resolution_model_name "rebetmc";
 
 # match
 
@@ -1143,73 +1144,73 @@ $bench_res_model_1 isa resolution_model,
     links (tactic: $ta_max_speed,
            variant_resolution: $vr_low,
            variant_resolution: $vr_med,
-           variant_resolution: $vr_high),
-    has resolution_model_name "bench_rebetmc_1",
-    has ros_system "nav2";
+           variant_resolution: $vr_high,
+           system: $sys_nav2),
+    has resolution_model_name "bench_rebetmc_1";
 
 $bench_res_model_2 isa resolution_model,
     links (tactic: $ta_max_speed,
            variant_resolution: $vr_low,
            variant_resolution: $vr_med,
-           variant_resolution: $vr_high),
-    has resolution_model_name "bench_rebetmc_2",
-    has ros_system "nav2";
+           variant_resolution: $vr_high,
+           system: $sys_nav2),
+    has resolution_model_name "bench_rebetmc_2";
 
 $bench_res_model_3 isa resolution_model,
     links (tactic: $ta_max_speed,
            variant_resolution: $vr_low,
            variant_resolution: $vr_med,
-           variant_resolution: $vr_high),
-    has resolution_model_name "bench_rebetmc_3",
-    has ros_system "nav2";
+           variant_resolution: $vr_high,
+           system: $sys_nav2),
+    has resolution_model_name "bench_rebetmc_3";
 
 $bench_res_model_4 isa resolution_model,
     links (tactic: $ta_max_speed,
            variant_resolution: $vr_low,
            variant_resolution: $vr_med,
-           variant_resolution: $vr_high),
-    has resolution_model_name "bench_rebetmc_4",
-    has ros_system "nav2";
+           variant_resolution: $vr_high,
+           system: $sys_nav2),
+    has resolution_model_name "bench_rebetmc_4";
 
 $bench_res_model_5 isa resolution_model,
     links (tactic: $ta_max_speed,
            variant_resolution: $vr_low,
            variant_resolution: $vr_med,
-           variant_resolution: $vr_high),
-    has resolution_model_name "bench_rebetmc_5",
-    has ros_system "nav2";
+           variant_resolution: $vr_high,
+           system: $sys_nav2),
+    has resolution_model_name "bench_rebetmc_5";
 
 $bench_res_model_6 isa resolution_model,
     links (tactic: $ta_max_speed,
            variant_resolution: $vr_low,
            variant_resolution: $vr_med,
-           variant_resolution: $vr_high),
-    has resolution_model_name "bench_rebetmc_6",
-    has ros_system "nav2";
+           variant_resolution: $vr_high,
+           system: $sys_nav2),
+    has resolution_model_name "bench_rebetmc_6";
 
 $bench_res_model_7 isa resolution_model,
     links (tactic: $ta_max_speed,
            variant_resolution: $vr_low,
            variant_resolution: $vr_med,
-           variant_resolution: $vr_high),
-    has resolution_model_name "bench_rebetmc_7",
-    has ros_system "nav2";
+           variant_resolution: $vr_high,
+           system: $sys_nav2),
+    has resolution_model_name "bench_rebetmc_7";
 
 $bench_res_model_8 isa resolution_model,
     links (tactic: $ta_max_speed,
            variant_resolution: $vr_low,
            variant_resolution: $vr_med,
-           variant_resolution: $vr_high),
-    has resolution_model_name "bench_rebetmc_8",
-    has ros_system "nav2";
+           variant_resolution: $vr_high,
+           system: $sys_nav2),
+    has resolution_model_name "bench_rebetmc_8";
 
 $bench_res_model_9 isa resolution_model,
     links (tactic: $ta_max_speed,
            variant_resolution: $vr_low,
            variant_resolution: $vr_med,
-           variant_resolution: $vr_high),
-    has resolution_model_name "bench_rebetmc_9",
-    has ros_system "nav2";
+           variant_resolution: $vr_high,
+           system: $sys_nav2),
+    has resolution_model_name "bench_rebetmc_9";
 
 # Add benchmark-only fuzzy expressions to keep >=10 valid fuzzy-membership queries.
 $bench_fuzzy_expression_01 isa fuzzy_unimodal_expression,

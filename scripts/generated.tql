@@ -2933,11 +2933,12 @@
     links (node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $max_velocity_param_p_array_value);
  $hi_speed_resolution_act isa variant_activation,
     links (resolution_action: $sp_max_velocity_2, variant: $f_hi_speed);
+ $sys_rebet_frog isa System, has system_name "rebet_frog";
  $res_rebet_frog isa resolution_model,
     links (tactic: $ta_frogmaxspeed, variant_resolution: $low_speed_resolution_act,
   variant_resolution:$med_speed_resolution_act,
-  variant_resolution:$hi_speed_resolution_act),
-    has resolution_model_name "rebet_frog", has ros_system "rebet_frog";
+  variant_resolution:$hi_speed_resolution_act, system: $sys_rebet_frog),
+    has resolution_model_name "rebet_frog";
 
  $rebetmc isa System, has system_name "rebetmc";
  $movequickly_as_close_set isa FuzzyTriangular,

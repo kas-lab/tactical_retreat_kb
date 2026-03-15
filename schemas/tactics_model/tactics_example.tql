@@ -202,6 +202,7 @@ $vr_high isa variant_activation,
     links (resolution_action: $set_nodes_params_high, variant: $f_hi_speed);
 
 # Stage 6: match+resolution_model
+$sys_nav2 isa System, has system_name "nav2";
 $res_model isa resolution_model,
-    links (tactic: $ta_max_speed, variant_resolution: $vr_low, variant_resolution: $vr_med, variant_resolution: $vr_high),
-    has resolution_model_name "rebetmc", has ros_system "nav2";
+    links (tactic: $ta_max_speed, variant_resolution: $vr_low, variant_resolution: $vr_med, variant_resolution: $vr_high, system: $sys_nav2),
+    has resolution_model_name "rebetmc";

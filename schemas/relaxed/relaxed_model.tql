@@ -1,7 +1,6 @@
 define
 
 ## Attributes
-attribute system_name, value string;
 attribute start_time, value datetime;
 
 ### requirement attributes
@@ -18,10 +17,6 @@ attribute required_value, value double;
 attribute required_period, value double;
 
 ## Entities
-entity System,
-	owns system_name @key,
-	owns start_time,
-	plays system_requirement:system;
 
 ## Relations
 relation system_requirement @abstract,
@@ -128,6 +123,9 @@ Measure plays relaxed_fuzzy_expression:term;
 
 fuzzy_operator plays shall_expression:expression;
 fuzzy_operator plays may_expression:expression;
+
+# System is defined in tactics_model.tql, which must be loaded before relaxed_model.tql
+System plays system_requirement:system;
 
 fun quantified_relaxed_term($e: relaxed_fuzzy_expression) -> double:
   match
