@@ -46,8 +46,8 @@ DEFAULT_SCHEMAS = to_abs_paths([
     'schemas/logical_expressions/fuzzy_expression.tql',
     'schemas/ros_model/ros_model.tql',
     'schemas/feature_model/feature_model.tql',
-    'schemas/relaxed/relaxed_model.tql',
     'schemas/tactics_model/tactics_model.tql',
+    'schemas/relaxed/relaxed_model.tql',
     'schemas/discover_hypothetical_req_fulfillment/'
     'discover_hypothetical_req_fulfillment.tql',
     'schemas/discover_tactics_model/discover_tactics_model.tql',
