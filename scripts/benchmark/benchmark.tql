@@ -584,13 +584,13 @@ $relay_node isa ROSNode,
 ## Define parameters
 
 ### velocity_smoother_node parameters
-$max_velocity_param isa ParameterDoubleArray,
+$max_velocity_param isa Parameter,
 	has parameter_name "max_velocity";
 
-$odom_topic_param isa ParameterString,
+$odom_topic_param isa Parameter,
 	has parameter_name "odom_topic";
 
-$odom_duration_param isa ParameterDouble,
+$odom_duration_param isa Parameter,
 	has parameter_name "odom_duration";
 
 (
@@ -907,7 +907,7 @@ $eff_mp_010 isa relative_effect,
     links (measure: $movement_power_measure, effect_value: $double_0_10);
 
 # define parameter max_speed
-$p_max_speed isa ParameterDoubleArray, has parameter_name "max_velocity";
+$p_max_speed isa Parameter, has parameter_name "max_velocity";
 
 # define parameter values low
 $p_max_velocity_x_low isa ValueSingleton, has double_value 0.10;

@@ -125,15 +125,6 @@ entity Parameter,
     plays has_parameter:parameter,
     plays has_parameter_value:parameter;
 
-entity ParameterBool sub Parameter;
-entity ParameterInteger sub Parameter;
-entity ParameterDouble sub Parameter;
-entity ParameterString sub Parameter;
-
-entity ParameterBoolArray sub Parameter;
-entity ParameterIntegerArray sub Parameter;
-entity ParameterStringArray sub Parameter;
-entity ParameterDoubleArray sub Parameter;
 
 Value plays has_parameter_value:parameter_value;
 

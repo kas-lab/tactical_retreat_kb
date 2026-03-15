@@ -13,15 +13,6 @@ entity Measure,
     plays measurement:measure,
     plays measurement_interface:measure;
 
-entity MeasureBool sub Measure;
-entity MeasureInteger sub Measure;
-entity MeasureDouble sub Measure;
-entity MeasureString sub Measure;
-
-entity MeasureBoolArray sub Measure;
-entity MeasureIntegerArray sub Measure;
-entity MeasureStringArray sub Measure;
-entity MeasureDoubleArray sub Measure;
 
 relation measurement,
     owns measurement_time @card(1),

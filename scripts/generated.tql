@@ -4,27 +4,27 @@
  $map_server_node isa LifeCycleNode,
  has node_name "/map_server",
  has namespace "";
- $bond_disable_heartbeat_timeout_param isa ParameterBool,
+ $bond_disable_heartbeat_timeout_param isa Parameter,
  	has parameter_name "/bond_disable_heartbeat_timeout";
  $bond_disable_heartbeat_timeout_param_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_1 isa has_parameter_value,
     links (node: $map_server_node, parameter: $bond_disable_heartbeat_timeout_param, parameter_value: $bond_disable_heartbeat_timeout_param_pvalue), has default_value true;
- $frame_id_param isa ParameterString,
+ $frame_id_param isa Parameter,
  	has parameter_name "frame_id";
  $frame_id_param_pvalue isa ValueSingleton, has string_value "map";
  $has_parameter_value_2 isa has_parameter_value,
     links (node: $map_server_node, parameter: $frame_id_param, parameter_value: $frame_id_param_pvalue), has default_value true;
- $topic_name_param isa ParameterString,
+ $topic_name_param isa Parameter,
  	has parameter_name "topic_name";
  $topic_name_param_pvalue isa ValueSingleton, has string_value "map";
  $has_parameter_value_3 isa has_parameter_value,
     links (node: $map_server_node, parameter: $topic_name_param, parameter_value: $topic_name_param_pvalue), has default_value true;
- $use_sim_time_param isa ParameterBool,
+ $use_sim_time_param isa Parameter,
  	has parameter_name "use_sim_time";
  $use_sim_time_param_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_4 isa has_parameter_value,
     links (node: $map_server_node, parameter: $use_sim_time_param, parameter_value: $use_sim_time_param_pvalue), has default_value true;
- $yaml_filename_param isa ParameterString,
+ $yaml_filename_param isa Parameter,
  	has parameter_name "yaml_filename";
  $yaml_filename_param_pvalue isa ValueSingleton, has string_value "/home/ega/rebet_ws/install/rebet_frog/share/rebet_frog/config/acsos2024_map.yaml";
  $has_parameter_value_5 isa has_parameter_value,
@@ -133,237 +133,237 @@
  $amcl_node isa LifeCycleNode,
  has node_name "/amcl",
  has namespace "";
- $bond_disable_heartbeat_timeout_param_1 isa ParameterBool,
+ $bond_disable_heartbeat_timeout_param_1 isa Parameter,
  	has parameter_name "/bond_disable_heartbeat_timeout";
  $bond_disable_heartbeat_timeout_param_1_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_6 isa has_parameter_value,
     links (node: $amcl_node, parameter: $bond_disable_heartbeat_timeout_param_1, parameter_value: $bond_disable_heartbeat_timeout_param_1_pvalue), has default_value true;
- $alpha1_param isa ParameterDouble,
+ $alpha1_param isa Parameter,
  	has parameter_name "alpha1";
  $alpha1_param_pvalue isa ValueSingleton, has double_value 0.2;
  $has_parameter_value_7 isa has_parameter_value,
     links (node: $amcl_node, parameter: $alpha1_param, parameter_value: $alpha1_param_pvalue), has default_value true;
- $alpha2_param isa ParameterDouble,
+ $alpha2_param isa Parameter,
  	has parameter_name "alpha2";
  $alpha2_param_pvalue isa ValueSingleton, has double_value 0.2;
  $has_parameter_value_8 isa has_parameter_value,
     links (node: $amcl_node, parameter: $alpha2_param, parameter_value: $alpha2_param_pvalue), has default_value true;
- $alpha3_param isa ParameterDouble,
+ $alpha3_param isa Parameter,
  	has parameter_name "alpha3";
  $alpha3_param_pvalue isa ValueSingleton, has double_value 0.2;
  $has_parameter_value_9 isa has_parameter_value,
     links (node: $amcl_node, parameter: $alpha3_param, parameter_value: $alpha3_param_pvalue), has default_value true;
- $alpha4_param isa ParameterDouble,
+ $alpha4_param isa Parameter,
  	has parameter_name "alpha4";
  $alpha4_param_pvalue isa ValueSingleton, has double_value 0.2;
  $has_parameter_value_10 isa has_parameter_value,
     links (node: $amcl_node, parameter: $alpha4_param, parameter_value: $alpha4_param_pvalue), has default_value true;
- $alpha5_param isa ParameterDouble,
+ $alpha5_param isa Parameter,
  	has parameter_name "alpha5";
  $alpha5_param_pvalue isa ValueSingleton, has double_value 0.2;
  $has_parameter_value_11 isa has_parameter_value,
     links (node: $amcl_node, parameter: $alpha5_param, parameter_value: $alpha5_param_pvalue), has default_value true;
- $always_reset_initial_pose_param isa ParameterBool,
+ $always_reset_initial_pose_param isa Parameter,
  	has parameter_name "always_reset_initial_pose";
  $always_reset_initial_pose_param_pvalue isa ValueSingleton, has bool_value false;
  $has_parameter_value_12 isa has_parameter_value,
     links (node: $amcl_node, parameter: $always_reset_initial_pose_param, parameter_value: $always_reset_initial_pose_param_pvalue), has default_value true;
- $base_frame_id_param isa ParameterString,
+ $base_frame_id_param isa Parameter,
  	has parameter_name "base_frame_id";
  $base_frame_id_param_pvalue isa ValueSingleton, has string_value "base_footprint";
  $has_parameter_value_13 isa has_parameter_value,
     links (node: $amcl_node, parameter: $base_frame_id_param, parameter_value: $base_frame_id_param_pvalue), has default_value true;
- $beam_skip_distance_param isa ParameterDouble,
+ $beam_skip_distance_param isa Parameter,
  	has parameter_name "beam_skip_distance";
  $beam_skip_distance_param_pvalue isa ValueSingleton, has double_value 0.5;
  $has_parameter_value_14 isa has_parameter_value,
     links (node: $amcl_node, parameter: $beam_skip_distance_param, parameter_value: $beam_skip_distance_param_pvalue), has default_value true;
- $beam_skip_error_threshold_param isa ParameterDouble,
+ $beam_skip_error_threshold_param isa Parameter,
  	has parameter_name "beam_skip_error_threshold";
  $beam_skip_error_threshold_param_pvalue isa ValueSingleton, has double_value 0.9;
  $has_parameter_value_15 isa has_parameter_value,
     links (node: $amcl_node, parameter: $beam_skip_error_threshold_param, parameter_value: $beam_skip_error_threshold_param_pvalue), has default_value true;
- $beam_skip_threshold_param isa ParameterDouble,
+ $beam_skip_threshold_param isa Parameter,
  	has parameter_name "beam_skip_threshold";
  $beam_skip_threshold_param_pvalue isa ValueSingleton, has double_value 0.3;
  $has_parameter_value_16 isa has_parameter_value,
     links (node: $amcl_node, parameter: $beam_skip_threshold_param, parameter_value: $beam_skip_threshold_param_pvalue), has default_value true;
- $do_beamskip_param isa ParameterBool,
+ $do_beamskip_param isa Parameter,
  	has parameter_name "do_beamskip";
  $do_beamskip_param_pvalue isa ValueSingleton, has bool_value false;
  $has_parameter_value_17 isa has_parameter_value,
     links (node: $amcl_node, parameter: $do_beamskip_param, parameter_value: $do_beamskip_param_pvalue), has default_value true;
- $first_map_only_param isa ParameterBool,
+ $first_map_only_param isa Parameter,
  	has parameter_name "first_map_only";
  $first_map_only_param_pvalue isa ValueSingleton, has bool_value false;
  $has_parameter_value_18 isa has_parameter_value,
     links (node: $amcl_node, parameter: $first_map_only_param, parameter_value: $first_map_only_param_pvalue), has default_value true;
- $global_frame_id_param isa ParameterString,
+ $global_frame_id_param isa Parameter,
  	has parameter_name "global_frame_id";
  $global_frame_id_param_pvalue isa ValueSingleton, has string_value "map";
  $has_parameter_value_19 isa has_parameter_value,
     links (node: $amcl_node, parameter: $global_frame_id_param, parameter_value: $global_frame_id_param_pvalue), has default_value true;
- $initial_pose_x_param isa ParameterDouble,
+ $initial_pose_x_param isa Parameter,
  	has parameter_name "initial_pose.x";
  $initial_pose_x_param_pvalue isa ValueSingleton, has double_value 0;
  $has_parameter_value_20 isa has_parameter_value,
     links (node: $amcl_node, parameter: $initial_pose_x_param, parameter_value: $initial_pose_x_param_pvalue), has default_value true;
- $initial_pose_y_param isa ParameterDouble,
+ $initial_pose_y_param isa Parameter,
  	has parameter_name "initial_pose.y";
  $initial_pose_y_param_pvalue isa ValueSingleton, has double_value 0;
  $has_parameter_value_21 isa has_parameter_value,
     links (node: $amcl_node, parameter: $initial_pose_y_param, parameter_value: $initial_pose_y_param_pvalue), has default_value true;
- $initial_pose_yaw_param isa ParameterDouble,
+ $initial_pose_yaw_param isa Parameter,
  	has parameter_name "initial_pose.yaw";
  $initial_pose_yaw_param_pvalue isa ValueSingleton, has double_value 0;
  $has_parameter_value_22 isa has_parameter_value,
     links (node: $amcl_node, parameter: $initial_pose_yaw_param, parameter_value: $initial_pose_yaw_param_pvalue), has default_value true;
- $initial_pose_z_param isa ParameterDouble,
+ $initial_pose_z_param isa Parameter,
  	has parameter_name "initial_pose.z";
  $initial_pose_z_param_pvalue isa ValueSingleton, has double_value 0;
  $has_parameter_value_23 isa has_parameter_value,
     links (node: $amcl_node, parameter: $initial_pose_z_param, parameter_value: $initial_pose_z_param_pvalue), has default_value true;
- $lambda_short_param isa ParameterDouble,
+ $lambda_short_param isa Parameter,
  	has parameter_name "lambda_short";
  $lambda_short_param_pvalue isa ValueSingleton, has double_value 0.1;
  $has_parameter_value_24 isa has_parameter_value,
     links (node: $amcl_node, parameter: $lambda_short_param, parameter_value: $lambda_short_param_pvalue), has default_value true;
- $laser_likelihood_max_dist_param isa ParameterDouble,
+ $laser_likelihood_max_dist_param isa Parameter,
  	has parameter_name "laser_likelihood_max_dist";
  $laser_likelihood_max_dist_param_pvalue isa ValueSingleton, has double_value 2;
  $has_parameter_value_25 isa has_parameter_value,
     links (node: $amcl_node, parameter: $laser_likelihood_max_dist_param, parameter_value: $laser_likelihood_max_dist_param_pvalue), has default_value true;
- $laser_max_range_param isa ParameterDouble,
+ $laser_max_range_param isa Parameter,
  	has parameter_name "laser_max_range";
  $laser_max_range_param_pvalue isa ValueSingleton, has double_value 100;
  $has_parameter_value_26 isa has_parameter_value,
     links (node: $amcl_node, parameter: $laser_max_range_param, parameter_value: $laser_max_range_param_pvalue), has default_value true;
- $laser_min_range_param isa ParameterDouble,
+ $laser_min_range_param isa Parameter,
  	has parameter_name "laser_min_range";
  $laser_min_range_param_pvalue isa ValueSingleton, has double_value -1;
  $has_parameter_value_27 isa has_parameter_value,
     links (node: $amcl_node, parameter: $laser_min_range_param, parameter_value: $laser_min_range_param_pvalue), has default_value true;
- $laser_model_type_param isa ParameterString,
+ $laser_model_type_param isa Parameter,
  	has parameter_name "laser_model_type";
  $laser_model_type_param_pvalue isa ValueSingleton, has string_value "likelihood_field";
  $has_parameter_value_28 isa has_parameter_value,
     links (node: $amcl_node, parameter: $laser_model_type_param, parameter_value: $laser_model_type_param_pvalue), has default_value true;
- $map_topic_param isa ParameterString,
+ $map_topic_param isa Parameter,
  	has parameter_name "map_topic";
  $map_topic_param_pvalue isa ValueSingleton, has string_value "map";
  $has_parameter_value_29 isa has_parameter_value,
     links (node: $amcl_node, parameter: $map_topic_param, parameter_value: $map_topic_param_pvalue), has default_value true;
- $max_beams_param isa ParameterInteger,
+ $max_beams_param isa Parameter,
  	has parameter_name "max_beams";
  $max_beams_param_pvalue isa ValueSingleton, has integer_value 60;
  $has_parameter_value_30 isa has_parameter_value,
     links (node: $amcl_node, parameter: $max_beams_param, parameter_value: $max_beams_param_pvalue), has default_value true;
- $max_particles_param isa ParameterInteger,
+ $max_particles_param isa Parameter,
  	has parameter_name "max_particles";
  $max_particles_param_pvalue isa ValueSingleton, has integer_value 2000;
  $has_parameter_value_31 isa has_parameter_value,
     links (node: $amcl_node, parameter: $max_particles_param, parameter_value: $max_particles_param_pvalue), has default_value true;
- $min_particles_param isa ParameterInteger,
+ $min_particles_param isa Parameter,
  	has parameter_name "min_particles";
  $min_particles_param_pvalue isa ValueSingleton, has integer_value 500;
  $has_parameter_value_32 isa has_parameter_value,
     links (node: $amcl_node, parameter: $min_particles_param, parameter_value: $min_particles_param_pvalue), has default_value true;
- $odom_frame_id_param isa ParameterString,
+ $odom_frame_id_param isa Parameter,
  	has parameter_name "odom_frame_id";
  $odom_frame_id_param_pvalue isa ValueSingleton, has string_value "odom";
  $has_parameter_value_33 isa has_parameter_value,
     links (node: $amcl_node, parameter: $odom_frame_id_param, parameter_value: $odom_frame_id_param_pvalue), has default_value true;
- $pf_err_param isa ParameterDouble,
+ $pf_err_param isa Parameter,
  	has parameter_name "pf_err";
  $pf_err_param_pvalue isa ValueSingleton, has double_value 0.05;
  $has_parameter_value_34 isa has_parameter_value,
     links (node: $amcl_node, parameter: $pf_err_param, parameter_value: $pf_err_param_pvalue), has default_value true;
- $pf_z_param isa ParameterDouble,
+ $pf_z_param isa Parameter,
  	has parameter_name "pf_z";
  $pf_z_param_pvalue isa ValueSingleton, has double_value 0.99;
  $has_parameter_value_35 isa has_parameter_value,
     links (node: $amcl_node, parameter: $pf_z_param, parameter_value: $pf_z_param_pvalue), has default_value true;
- $recovery_alpha_fast_param isa ParameterDouble,
+ $recovery_alpha_fast_param isa Parameter,
  	has parameter_name "recovery_alpha_fast";
  $recovery_alpha_fast_param_pvalue isa ValueSingleton, has double_value 0;
  $has_parameter_value_36 isa has_parameter_value,
     links (node: $amcl_node, parameter: $recovery_alpha_fast_param, parameter_value: $recovery_alpha_fast_param_pvalue), has default_value true;
- $recovery_alpha_slow_param isa ParameterDouble,
+ $recovery_alpha_slow_param isa Parameter,
  	has parameter_name "recovery_alpha_slow";
  $recovery_alpha_slow_param_pvalue isa ValueSingleton, has double_value 0;
  $has_parameter_value_37 isa has_parameter_value,
     links (node: $amcl_node, parameter: $recovery_alpha_slow_param, parameter_value: $recovery_alpha_slow_param_pvalue), has default_value true;
- $resample_interval_param isa ParameterInteger,
+ $resample_interval_param isa Parameter,
  	has parameter_name "resample_interval";
  $resample_interval_param_pvalue isa ValueSingleton, has integer_value 1;
  $has_parameter_value_38 isa has_parameter_value,
     links (node: $amcl_node, parameter: $resample_interval_param, parameter_value: $resample_interval_param_pvalue), has default_value true;
- $robot_model_type_param isa ParameterString,
+ $robot_model_type_param isa Parameter,
  	has parameter_name "robot_model_type";
  $robot_model_type_param_pvalue isa ValueSingleton, has string_value "nav2_amcl::DifferentialMotionModel";
  $has_parameter_value_39 isa has_parameter_value,
     links (node: $amcl_node, parameter: $robot_model_type_param, parameter_value: $robot_model_type_param_pvalue), has default_value true;
- $save_pose_rate_param isa ParameterDouble,
+ $save_pose_rate_param isa Parameter,
  	has parameter_name "save_pose_rate";
  $save_pose_rate_param_pvalue isa ValueSingleton, has double_value 0.5;
  $has_parameter_value_40 isa has_parameter_value,
     links (node: $amcl_node, parameter: $save_pose_rate_param, parameter_value: $save_pose_rate_param_pvalue), has default_value true;
- $scan_topic_param isa ParameterString,
+ $scan_topic_param isa Parameter,
  	has parameter_name "scan_topic";
  $scan_topic_param_pvalue isa ValueSingleton, has string_value "scan";
  $has_parameter_value_41 isa has_parameter_value,
     links (node: $amcl_node, parameter: $scan_topic_param, parameter_value: $scan_topic_param_pvalue), has default_value true;
- $set_initial_pose_param isa ParameterBool,
+ $set_initial_pose_param isa Parameter,
  	has parameter_name "set_initial_pose";
  $set_initial_pose_param_pvalue isa ValueSingleton, has bool_value false;
  $has_parameter_value_42 isa has_parameter_value,
     links (node: $amcl_node, parameter: $set_initial_pose_param, parameter_value: $set_initial_pose_param_pvalue), has default_value true;
- $sigma_hit_param isa ParameterDouble,
+ $sigma_hit_param isa Parameter,
  	has parameter_name "sigma_hit";
  $sigma_hit_param_pvalue isa ValueSingleton, has double_value 0.2;
  $has_parameter_value_43 isa has_parameter_value,
     links (node: $amcl_node, parameter: $sigma_hit_param, parameter_value: $sigma_hit_param_pvalue), has default_value true;
- $tf_broadcast_param isa ParameterBool,
+ $tf_broadcast_param isa Parameter,
  	has parameter_name "tf_broadcast";
  $tf_broadcast_param_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_44 isa has_parameter_value,
     links (node: $amcl_node, parameter: $tf_broadcast_param, parameter_value: $tf_broadcast_param_pvalue), has default_value true;
- $transform_tolerance_param isa ParameterDouble,
+ $transform_tolerance_param isa Parameter,
  	has parameter_name "transform_tolerance";
  $transform_tolerance_param_pvalue isa ValueSingleton, has double_value 1;
  $has_parameter_value_45 isa has_parameter_value,
     links (node: $amcl_node, parameter: $transform_tolerance_param, parameter_value: $transform_tolerance_param_pvalue), has default_value true;
- $update_min_a_param isa ParameterDouble,
+ $update_min_a_param isa Parameter,
  	has parameter_name "update_min_a";
  $update_min_a_param_pvalue isa ValueSingleton, has double_value 0.2;
  $has_parameter_value_46 isa has_parameter_value,
     links (node: $amcl_node, parameter: $update_min_a_param, parameter_value: $update_min_a_param_pvalue), has default_value true;
- $update_min_d_param isa ParameterDouble,
+ $update_min_d_param isa Parameter,
  	has parameter_name "update_min_d";
  $update_min_d_param_pvalue isa ValueSingleton, has double_value 0.25;
  $has_parameter_value_47 isa has_parameter_value,
     links (node: $amcl_node, parameter: $update_min_d_param, parameter_value: $update_min_d_param_pvalue), has default_value true;
- $use_sim_time_param_1 isa ParameterBool,
+ $use_sim_time_param_1 isa Parameter,
  	has parameter_name "use_sim_time";
  $use_sim_time_param_1_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_48 isa has_parameter_value,
     links (node: $amcl_node, parameter: $use_sim_time_param_1, parameter_value: $use_sim_time_param_1_pvalue), has default_value true;
- $z_hit_param isa ParameterDouble,
+ $z_hit_param isa Parameter,
  	has parameter_name "z_hit";
  $z_hit_param_pvalue isa ValueSingleton, has double_value 0.5;
  $has_parameter_value_49 isa has_parameter_value,
     links (node: $amcl_node, parameter: $z_hit_param, parameter_value: $z_hit_param_pvalue), has default_value true;
- $z_max_param isa ParameterDouble,
+ $z_max_param isa Parameter,
  	has parameter_name "z_max";
  $z_max_param_pvalue isa ValueSingleton, has double_value 0.05;
  $has_parameter_value_50 isa has_parameter_value,
     links (node: $amcl_node, parameter: $z_max_param, parameter_value: $z_max_param_pvalue), has default_value true;
- $z_rand_param isa ParameterDouble,
+ $z_rand_param isa Parameter,
  	has parameter_name "z_rand";
  $z_rand_param_pvalue isa ValueSingleton, has double_value 0.5;
  $has_parameter_value_51 isa has_parameter_value,
     links (node: $amcl_node, parameter: $z_rand_param, parameter_value: $z_rand_param_pvalue), has default_value true;
- $z_short_param isa ParameterDouble,
+ $z_short_param isa Parameter,
  	has parameter_name "z_short";
  $z_short_param_pvalue isa ValueSingleton, has double_value 0.05;
  $has_parameter_value_52 isa has_parameter_value,
@@ -845,57 +845,57 @@
  $smoother_server_node isa LifeCycleNode,
  has node_name "/smoother_server",
  has namespace "";
- $bond_disable_heartbeat_timeout_param_2 isa ParameterBool,
+ $bond_disable_heartbeat_timeout_param_2 isa Parameter,
  	has parameter_name "/bond_disable_heartbeat_timeout";
  $bond_disable_heartbeat_timeout_param_2_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_53 isa has_parameter_value,
     links (node: $smoother_server_node, parameter: $bond_disable_heartbeat_timeout_param_2, parameter_value: $bond_disable_heartbeat_timeout_param_2_pvalue), has default_value true;
- $costmap_topic_param isa ParameterString,
+ $costmap_topic_param isa Parameter,
  	has parameter_name "costmap_topic";
  $costmap_topic_param_pvalue isa ValueSingleton, has string_value "global_costmap/costmap_raw";
  $has_parameter_value_54 isa has_parameter_value,
     links (node: $smoother_server_node, parameter: $costmap_topic_param, parameter_value: $costmap_topic_param_pvalue), has default_value true;
- $footprint_topic_param isa ParameterString,
+ $footprint_topic_param isa Parameter,
  	has parameter_name "footprint_topic";
  $footprint_topic_param_pvalue isa ValueSingleton, has string_value "global_costmap/published_footprint";
  $has_parameter_value_55 isa has_parameter_value,
     links (node: $smoother_server_node, parameter: $footprint_topic_param, parameter_value: $footprint_topic_param_pvalue), has default_value true;
- $robot_base_frame_param isa ParameterString,
+ $robot_base_frame_param isa Parameter,
  	has parameter_name "robot_base_frame";
  $robot_base_frame_param_pvalue isa ValueSingleton, has string_value "base_link";
  $has_parameter_value_56 isa has_parameter_value,
     links (node: $smoother_server_node, parameter: $robot_base_frame_param, parameter_value: $robot_base_frame_param_pvalue), has default_value true;
- $simple_smoother_do_refinement_param isa ParameterBool,
+ $simple_smoother_do_refinement_param isa Parameter,
  	has parameter_name "simple_smoother.do_refinement";
  $simple_smoother_do_refinement_param_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_57 isa has_parameter_value,
     links (node: $smoother_server_node, parameter: $simple_smoother_do_refinement_param, parameter_value: $simple_smoother_do_refinement_param_pvalue), has default_value true;
- $simple_smoother_max_its_param isa ParameterInteger,
+ $simple_smoother_max_its_param isa Parameter,
  	has parameter_name "simple_smoother.max_its";
  $simple_smoother_max_its_param_pvalue isa ValueSingleton, has integer_value 1000;
  $has_parameter_value_58 isa has_parameter_value,
     links (node: $smoother_server_node, parameter: $simple_smoother_max_its_param, parameter_value: $simple_smoother_max_its_param_pvalue), has default_value true;
- $simple_smoother_plugin_param isa ParameterString,
+ $simple_smoother_plugin_param isa Parameter,
  	has parameter_name "simple_smoother.plugin";
  $simple_smoother_plugin_param_pvalue isa ValueSingleton, has string_value "nav2_smoother::SimpleSmoother";
  $has_parameter_value_59 isa has_parameter_value,
     links (node: $smoother_server_node, parameter: $simple_smoother_plugin_param, parameter_value: $simple_smoother_plugin_param_pvalue), has default_value true;
- $simple_smoother_tolerance_param isa ParameterDouble,
+ $simple_smoother_tolerance_param isa Parameter,
  	has parameter_name "simple_smoother.tolerance";
  $simple_smoother_tolerance_param_pvalue isa ValueSingleton, has double_value 0.0000000001;
  $has_parameter_value_60 isa has_parameter_value,
     links (node: $smoother_server_node, parameter: $simple_smoother_tolerance_param, parameter_value: $simple_smoother_tolerance_param_pvalue), has default_value true;
- $simple_smoother_w_data_param isa ParameterDouble,
+ $simple_smoother_w_data_param isa Parameter,
  	has parameter_name "simple_smoother.w_data";
  $simple_smoother_w_data_param_pvalue isa ValueSingleton, has double_value 0.2;
  $has_parameter_value_61 isa has_parameter_value,
     links (node: $smoother_server_node, parameter: $simple_smoother_w_data_param, parameter_value: $simple_smoother_w_data_param_pvalue), has default_value true;
- $simple_smoother_w_smooth_param isa ParameterDouble,
+ $simple_smoother_w_smooth_param isa Parameter,
  	has parameter_name "simple_smoother.w_smooth";
  $simple_smoother_w_smooth_param_pvalue isa ValueSingleton, has double_value 0.3;
  $has_parameter_value_62 isa has_parameter_value,
     links (node: $smoother_server_node, parameter: $simple_smoother_w_smooth_param, parameter_value: $simple_smoother_w_smooth_param_pvalue), has default_value true;
- $smoother_plugins_param isa ParameterStringArray,
+ $smoother_plugins_param isa Parameter,
  	has parameter_name "smoother_plugins";
  $smoother_plugins_param_p_array_value isa ValueArray;
  $smoother_plugins_param_pvalue isa ValueSingleton, has string_value "simple_smoother";
@@ -905,12 +905,12 @@
 
  $has_parameter_value_63 isa has_parameter_value,
     links (node: $smoother_server_node, parameter: $smoother_plugins_param, parameter_value: $smoother_plugins_param_p_array_value), has default_value true;
- $transform_tolerance_param_1 isa ParameterDouble,
+ $transform_tolerance_param_1 isa Parameter,
  	has parameter_name "transform_tolerance";
  $transform_tolerance_param_1_pvalue isa ValueSingleton, has double_value 0.1;
  $has_parameter_value_64 isa has_parameter_value,
     links (node: $smoother_server_node, parameter: $transform_tolerance_param_1, parameter_value: $transform_tolerance_param_1_pvalue), has default_value true;
- $use_sim_time_param_2 isa ParameterBool,
+ $use_sim_time_param_2 isa Parameter,
  	has parameter_name "use_sim_time";
  $use_sim_time_param_2_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_65 isa has_parameter_value,
@@ -1035,117 +1035,117 @@
  $planner_server_node isa LifeCycleNode,
  has node_name "/planner_server",
  has namespace "";
- $bond_disable_heartbeat_timeout_param_3 isa ParameterBool,
+ $bond_disable_heartbeat_timeout_param_3 isa Parameter,
  	has parameter_name "/bond_disable_heartbeat_timeout";
  $bond_disable_heartbeat_timeout_param_3_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_66 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $bond_disable_heartbeat_timeout_param_3, parameter_value: $bond_disable_heartbeat_timeout_param_3_pvalue), has default_value true;
- $GridBased_allow_unknown_param isa ParameterBool,
+ $GridBased_allow_unknown_param isa Parameter,
  	has parameter_name "GridBased.allow_unknown";
  $GridBased_allow_unknown_param_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_67 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $GridBased_allow_unknown_param, parameter_value: $GridBased_allow_unknown_param_pvalue), has default_value true;
- $GridBased_plugin_param isa ParameterString,
+ $GridBased_plugin_param isa Parameter,
  	has parameter_name "GridBased.plugin";
  $GridBased_plugin_param_pvalue isa ValueSingleton, has string_value "nav2_navfn_planner/NavfnPlanner";
  $has_parameter_value_68 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $GridBased_plugin_param, parameter_value: $GridBased_plugin_param_pvalue), has default_value true;
- $GridBased_tolerance_param isa ParameterDouble,
+ $GridBased_tolerance_param isa Parameter,
  	has parameter_name "GridBased.tolerance";
  $GridBased_tolerance_param_pvalue isa ValueSingleton, has double_value 0.5;
  $has_parameter_value_69 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $GridBased_tolerance_param, parameter_value: $GridBased_tolerance_param_pvalue), has default_value true;
- $GridBased_use_astar_param isa ParameterBool,
+ $GridBased_use_astar_param isa Parameter,
  	has parameter_name "GridBased.use_astar";
  $GridBased_use_astar_param_pvalue isa ValueSingleton, has bool_value false;
  $has_parameter_value_70 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $GridBased_use_astar_param, parameter_value: $GridBased_use_astar_param_pvalue), has default_value true;
- $GridBased_use_final_approach_orientation_param isa ParameterBool,
+ $GridBased_use_final_approach_orientation_param isa Parameter,
  	has parameter_name "GridBased.use_final_approach_orientation";
  $GridBased_use_final_approach_orientation_param_pvalue isa ValueSingleton, has bool_value false;
  $has_parameter_value_71 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $GridBased_use_final_approach_orientation_param, parameter_value: $GridBased_use_final_approach_orientation_param_pvalue), has default_value true;
- $SMAC_allow_unknown_param isa ParameterBool,
+ $SMAC_allow_unknown_param isa Parameter,
  	has parameter_name "SMAC.allow_unknown";
  $SMAC_allow_unknown_param_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_72 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_allow_unknown_param, parameter_value: $SMAC_allow_unknown_param_pvalue), has default_value true;
- $SMAC_cost_travel_multiplier_param isa ParameterDouble,
+ $SMAC_cost_travel_multiplier_param isa Parameter,
  	has parameter_name "SMAC.cost_travel_multiplier";
  $SMAC_cost_travel_multiplier_param_pvalue isa ValueSingleton, has double_value 2;
  $has_parameter_value_73 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_cost_travel_multiplier_param, parameter_value: $SMAC_cost_travel_multiplier_param_pvalue), has default_value true;
- $SMAC_downsample_costmap_param isa ParameterBool,
+ $SMAC_downsample_costmap_param isa Parameter,
  	has parameter_name "SMAC.downsample_costmap";
  $SMAC_downsample_costmap_param_pvalue isa ValueSingleton, has bool_value false;
  $has_parameter_value_74 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_downsample_costmap_param, parameter_value: $SMAC_downsample_costmap_param_pvalue), has default_value true;
- $SMAC_downsampling_factor_param isa ParameterInteger,
+ $SMAC_downsampling_factor_param isa Parameter,
  	has parameter_name "SMAC.downsampling_factor";
  $SMAC_downsampling_factor_param_pvalue isa ValueSingleton, has integer_value 1;
  $has_parameter_value_75 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_downsampling_factor_param, parameter_value: $SMAC_downsampling_factor_param_pvalue), has default_value true;
- $SMAC_max_iterations_param isa ParameterInteger,
+ $SMAC_max_iterations_param isa Parameter,
  	has parameter_name "SMAC.max_iterations";
  $SMAC_max_iterations_param_pvalue isa ValueSingleton, has integer_value 1000000;
  $has_parameter_value_76 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_max_iterations_param, parameter_value: $SMAC_max_iterations_param_pvalue), has default_value true;
- $SMAC_max_on_approach_iterations_param isa ParameterInteger,
+ $SMAC_max_on_approach_iterations_param isa Parameter,
  	has parameter_name "SMAC.max_on_approach_iterations";
  $SMAC_max_on_approach_iterations_param_pvalue isa ValueSingleton, has integer_value 1000;
  $has_parameter_value_77 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_max_on_approach_iterations_param, parameter_value: $SMAC_max_on_approach_iterations_param_pvalue), has default_value true;
- $SMAC_max_planning_time_param isa ParameterDouble,
+ $SMAC_max_planning_time_param isa Parameter,
  	has parameter_name "SMAC.max_planning_time";
  $SMAC_max_planning_time_param_pvalue isa ValueSingleton, has double_value 2;
  $has_parameter_value_78 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_max_planning_time_param, parameter_value: $SMAC_max_planning_time_param_pvalue), has default_value true;
- $SMAC_plugin_param isa ParameterString,
+ $SMAC_plugin_param isa Parameter,
  	has parameter_name "SMAC.plugin";
  $SMAC_plugin_param_pvalue isa ValueSingleton, has string_value "nav2_smac_planner/SmacPlanner2D";
  $has_parameter_value_79 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_plugin_param, parameter_value: $SMAC_plugin_param_pvalue), has default_value true;
- $SMAC_smoother_do_refinement_param isa ParameterBool,
+ $SMAC_smoother_do_refinement_param isa Parameter,
  	has parameter_name "SMAC.smoother.do_refinement";
  $SMAC_smoother_do_refinement_param_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_80 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_smoother_do_refinement_param, parameter_value: $SMAC_smoother_do_refinement_param_pvalue), has default_value true;
- $SMAC_smoother_max_iterations_param isa ParameterInteger,
+ $SMAC_smoother_max_iterations_param isa Parameter,
  	has parameter_name "SMAC.smoother.max_iterations";
  $SMAC_smoother_max_iterations_param_pvalue isa ValueSingleton, has integer_value 1000;
  $has_parameter_value_81 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_smoother_max_iterations_param, parameter_value: $SMAC_smoother_max_iterations_param_pvalue), has default_value true;
- $SMAC_smoother_tolerance_param isa ParameterDouble,
+ $SMAC_smoother_tolerance_param isa Parameter,
  	has parameter_name "SMAC.smoother.tolerance";
  $SMAC_smoother_tolerance_param_pvalue isa ValueSingleton, has double_value 0.0000000001;
  $has_parameter_value_82 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_smoother_tolerance_param, parameter_value: $SMAC_smoother_tolerance_param_pvalue), has default_value true;
- $SMAC_smoother_w_data_param isa ParameterDouble,
+ $SMAC_smoother_w_data_param isa Parameter,
  	has parameter_name "SMAC.smoother.w_data";
  $SMAC_smoother_w_data_param_pvalue isa ValueSingleton, has double_value 0.2;
  $has_parameter_value_83 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_smoother_w_data_param, parameter_value: $SMAC_smoother_w_data_param_pvalue), has default_value true;
- $SMAC_smoother_w_smooth_param isa ParameterDouble,
+ $SMAC_smoother_w_smooth_param isa Parameter,
  	has parameter_name "SMAC.smoother.w_smooth";
  $SMAC_smoother_w_smooth_param_pvalue isa ValueSingleton, has double_value 0.3;
  $has_parameter_value_84 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_smoother_w_smooth_param, parameter_value: $SMAC_smoother_w_smooth_param_pvalue), has default_value true;
- $SMAC_tolerance_param isa ParameterDouble,
+ $SMAC_tolerance_param isa Parameter,
  	has parameter_name "SMAC.tolerance";
  $SMAC_tolerance_param_pvalue isa ValueSingleton, has double_value 0.125;
  $has_parameter_value_85 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_tolerance_param, parameter_value: $SMAC_tolerance_param_pvalue), has default_value true;
- $SMAC_use_final_approach_orientation_param isa ParameterBool,
+ $SMAC_use_final_approach_orientation_param isa Parameter,
  	has parameter_name "SMAC.use_final_approach_orientation";
  $SMAC_use_final_approach_orientation_param_pvalue isa ValueSingleton, has bool_value false;
  $has_parameter_value_86 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $SMAC_use_final_approach_orientation_param, parameter_value: $SMAC_use_final_approach_orientation_param_pvalue), has default_value true;
- $expected_planner_frequency_param isa ParameterDouble,
+ $expected_planner_frequency_param isa Parameter,
  	has parameter_name "expected_planner_frequency";
  $expected_planner_frequency_param_pvalue isa ValueSingleton, has double_value 20;
  $has_parameter_value_87 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $expected_planner_frequency_param, parameter_value: $expected_planner_frequency_param_pvalue), has default_value true;
- $planner_plugins_param isa ParameterStringArray,
+ $planner_plugins_param isa Parameter,
  	has parameter_name "planner_plugins";
  $planner_plugins_param_p_array_value isa ValueArray;
  $planner_plugins_param_pvalue isa ValueSingleton, has string_value "GridBased";
@@ -1159,7 +1159,7 @@
 
  $has_parameter_value_88 isa has_parameter_value,
     links (node: $planner_server_node, parameter: $planner_plugins_param, parameter_value: $planner_plugins_param_p_array_value), has default_value true;
- $use_sim_time_param_3 isa ParameterBool,
+ $use_sim_time_param_3 isa Parameter,
  	has parameter_name "use_sim_time";
  $use_sim_time_param_3_pvalue isa ValueSingleton, has bool_value false;
  $has_parameter_value_89 isa has_parameter_value,
@@ -1493,62 +1493,62 @@
  $bt_navigator_node isa LifeCycleNode,
  has node_name "/bt_navigator",
  has namespace "";
- $bond_disable_heartbeat_timeout_param_4 isa ParameterBool,
+ $bond_disable_heartbeat_timeout_param_4 isa Parameter,
  	has parameter_name "/bond_disable_heartbeat_timeout";
  $bond_disable_heartbeat_timeout_param_4_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_90 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $bond_disable_heartbeat_timeout_param_4, parameter_value: $bond_disable_heartbeat_timeout_param_4_pvalue), has default_value true;
- $always_reload_bt_xml_param isa ParameterBool,
+ $always_reload_bt_xml_param isa Parameter,
  	has parameter_name "always_reload_bt_xml";
  $always_reload_bt_xml_param_pvalue isa ValueSingleton, has bool_value false;
  $has_parameter_value_91 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $always_reload_bt_xml_param, parameter_value: $always_reload_bt_xml_param_pvalue), has default_value true;
- $bt_loop_duration_param isa ParameterInteger,
+ $bt_loop_duration_param isa Parameter,
  	has parameter_name "bt_loop_duration";
  $bt_loop_duration_param_pvalue isa ValueSingleton, has integer_value 10;
  $has_parameter_value_92 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $bt_loop_duration_param, parameter_value: $bt_loop_duration_param_pvalue), has default_value true;
- $default_nav_through_poses_bt_xml_param isa ParameterString,
+ $default_nav_through_poses_bt_xml_param isa Parameter,
  	has parameter_name "default_nav_through_poses_bt_xml";
  $default_nav_through_poses_bt_xml_param_pvalue isa ValueSingleton, has string_value "/opt/ros/humble/share/nav2_bt_navigator/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml";
  $has_parameter_value_93 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $default_nav_through_poses_bt_xml_param, parameter_value: $default_nav_through_poses_bt_xml_param_pvalue), has default_value true;
- $default_nav_to_pose_bt_xml_param isa ParameterString,
+ $default_nav_to_pose_bt_xml_param isa Parameter,
  	has parameter_name "default_nav_to_pose_bt_xml";
  $default_nav_to_pose_bt_xml_param_pvalue isa ValueSingleton, has string_value "/home/ega/rebet_ws/install/rebet_frog/share/rebet_frog/trees/nav2/frog_navigate_to_pose.xml";
  $has_parameter_value_94 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $default_nav_to_pose_bt_xml_param, parameter_value: $default_nav_to_pose_bt_xml_param_pvalue), has default_value true;
- $default_server_timeout_param isa ParameterInteger,
+ $default_server_timeout_param isa Parameter,
  	has parameter_name "default_server_timeout";
  $default_server_timeout_param_pvalue isa ValueSingleton, has integer_value 20;
  $has_parameter_value_95 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $default_server_timeout_param, parameter_value: $default_server_timeout_param_pvalue), has default_value true;
- $global_frame_param isa ParameterString,
+ $global_frame_param isa Parameter,
  	has parameter_name "global_frame";
  $global_frame_param_pvalue isa ValueSingleton, has string_value "map";
  $has_parameter_value_96 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $global_frame_param, parameter_value: $global_frame_param_pvalue), has default_value true;
- $goal_blackboard_id_param isa ParameterString,
+ $goal_blackboard_id_param isa Parameter,
  	has parameter_name "goal_blackboard_id";
  $goal_blackboard_id_param_pvalue isa ValueSingleton, has string_value "goal";
  $has_parameter_value_97 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $goal_blackboard_id_param, parameter_value: $goal_blackboard_id_param_pvalue), has default_value true;
- $goals_blackboard_id_param isa ParameterString,
+ $goals_blackboard_id_param isa Parameter,
  	has parameter_name "goals_blackboard_id";
  $goals_blackboard_id_param_pvalue isa ValueSingleton, has string_value "goals";
  $has_parameter_value_98 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $goals_blackboard_id_param, parameter_value: $goals_blackboard_id_param_pvalue), has default_value true;
- $odom_topic_param isa ParameterString,
+ $odom_topic_param isa Parameter,
  	has parameter_name "odom_topic";
  $odom_topic_param_pvalue isa ValueSingleton, has string_value "/odom";
  $has_parameter_value_99 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $odom_topic_param, parameter_value: $odom_topic_param_pvalue), has default_value true;
- $path_blackboard_id_param isa ParameterString,
+ $path_blackboard_id_param isa Parameter,
  	has parameter_name "path_blackboard_id";
  $path_blackboard_id_param_pvalue isa ValueSingleton, has string_value "path";
  $has_parameter_value_100 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $path_blackboard_id_param, parameter_value: $path_blackboard_id_param_pvalue), has default_value true;
- $plugin_lib_names_param isa ParameterStringArray,
+ $plugin_lib_names_param isa Parameter,
  	has parameter_name "plugin_lib_names";
  $plugin_lib_names_param_p_array_value isa ValueArray;
  $plugin_lib_names_param_pvalue isa ValueSingleton, has string_value "nav2_compute_path_to_pose_action_bt_node";
@@ -1742,22 +1742,22 @@
 
  $has_parameter_value_101 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $plugin_lib_names_param, parameter_value: $plugin_lib_names_param_p_array_value), has default_value true;
- $robot_base_frame_param_1 isa ParameterString,
+ $robot_base_frame_param_1 isa Parameter,
  	has parameter_name "robot_base_frame";
  $robot_base_frame_param_1_pvalue isa ValueSingleton, has string_value "base_link";
  $has_parameter_value_102 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $robot_base_frame_param_1, parameter_value: $robot_base_frame_param_1_pvalue), has default_value true;
- $transform_tolerance_param_2 isa ParameterDouble,
+ $transform_tolerance_param_2 isa Parameter,
  	has parameter_name "transform_tolerance";
  $transform_tolerance_param_2_pvalue isa ValueSingleton, has double_value 0.1;
  $has_parameter_value_103 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $transform_tolerance_param_2, parameter_value: $transform_tolerance_param_2_pvalue), has default_value true;
- $use_sim_time_param_4 isa ParameterBool,
+ $use_sim_time_param_4 isa Parameter,
  	has parameter_name "use_sim_time";
  $use_sim_time_param_4_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_104 isa has_parameter_value,
     links (node: $bt_navigator_node, parameter: $use_sim_time_param_4, parameter_value: $use_sim_time_param_4_pvalue), has default_value true;
- $wait_for_service_timeout_param isa ParameterInteger,
+ $wait_for_service_timeout_param isa Parameter,
  	has parameter_name "wait_for_service_timeout";
  $wait_for_service_timeout_param_pvalue isa ValueSingleton, has integer_value 1000;
  $has_parameter_value_105 isa has_parameter_value,
@@ -1974,42 +1974,42 @@
  $waypoint_follower_node isa LifeCycleNode,
  has node_name "/waypoint_follower",
  has namespace "";
- $bond_disable_heartbeat_timeout_param_5 isa ParameterBool,
+ $bond_disable_heartbeat_timeout_param_5 isa Parameter,
  	has parameter_name "/bond_disable_heartbeat_timeout";
  $bond_disable_heartbeat_timeout_param_5_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_106 isa has_parameter_value,
     links (node: $waypoint_follower_node, parameter: $bond_disable_heartbeat_timeout_param_5, parameter_value: $bond_disable_heartbeat_timeout_param_5_pvalue), has default_value true;
- $loop_rate_param isa ParameterInteger,
+ $loop_rate_param isa Parameter,
  	has parameter_name "loop_rate";
  $loop_rate_param_pvalue isa ValueSingleton, has integer_value 20;
  $has_parameter_value_107 isa has_parameter_value,
     links (node: $waypoint_follower_node, parameter: $loop_rate_param, parameter_value: $loop_rate_param_pvalue), has default_value true;
- $stop_on_failure_param isa ParameterBool,
+ $stop_on_failure_param isa Parameter,
  	has parameter_name "stop_on_failure";
  $stop_on_failure_param_pvalue isa ValueSingleton, has bool_value false;
  $has_parameter_value_108 isa has_parameter_value,
     links (node: $waypoint_follower_node, parameter: $stop_on_failure_param, parameter_value: $stop_on_failure_param_pvalue), has default_value true;
- $use_sim_time_param_5 isa ParameterBool,
+ $use_sim_time_param_5 isa Parameter,
  	has parameter_name "use_sim_time";
  $use_sim_time_param_5_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_109 isa has_parameter_value,
     links (node: $waypoint_follower_node, parameter: $use_sim_time_param_5, parameter_value: $use_sim_time_param_5_pvalue), has default_value true;
- $wait_at_waypoint_enabled_param isa ParameterBool,
+ $wait_at_waypoint_enabled_param isa Parameter,
  	has parameter_name "wait_at_waypoint.enabled";
  $wait_at_waypoint_enabled_param_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_110 isa has_parameter_value,
     links (node: $waypoint_follower_node, parameter: $wait_at_waypoint_enabled_param, parameter_value: $wait_at_waypoint_enabled_param_pvalue), has default_value true;
- $wait_at_waypoint_plugin_param isa ParameterString,
+ $wait_at_waypoint_plugin_param isa Parameter,
  	has parameter_name "wait_at_waypoint.plugin";
  $wait_at_waypoint_plugin_param_pvalue isa ValueSingleton, has string_value "nav2_waypoint_follower::WaitAtWaypoint";
  $has_parameter_value_111 isa has_parameter_value,
     links (node: $waypoint_follower_node, parameter: $wait_at_waypoint_plugin_param, parameter_value: $wait_at_waypoint_plugin_param_pvalue), has default_value true;
- $wait_at_waypoint_waypoint_pause_duration_param isa ParameterInteger,
+ $wait_at_waypoint_waypoint_pause_duration_param isa Parameter,
  	has parameter_name "wait_at_waypoint.waypoint_pause_duration";
  $wait_at_waypoint_waypoint_pause_duration_param_pvalue isa ValueSingleton, has integer_value 200;
  $has_parameter_value_112 isa has_parameter_value,
     links (node: $waypoint_follower_node, parameter: $wait_at_waypoint_waypoint_pause_duration_param, parameter_value: $wait_at_waypoint_waypoint_pause_duration_param_pvalue), has default_value true;
- $waypoint_task_executor_plugin_param isa ParameterString,
+ $waypoint_task_executor_plugin_param isa Parameter,
  	has parameter_name "waypoint_task_executor_plugin";
  $waypoint_task_executor_plugin_param_pvalue isa ValueSingleton, has string_value "wait_at_waypoint";
  $has_parameter_value_113 isa has_parameter_value,
@@ -2104,12 +2104,12 @@
  $velocity_smoother_node isa LifeCycleNode,
  has node_name "/velocity_smoother",
  has namespace "";
- $bond_disable_heartbeat_timeout_param_6 isa ParameterBool,
+ $bond_disable_heartbeat_timeout_param_6 isa Parameter,
  	has parameter_name "/bond_disable_heartbeat_timeout";
  $bond_disable_heartbeat_timeout_param_6_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_114 isa has_parameter_value,
     links (node: $velocity_smoother_node, parameter: $bond_disable_heartbeat_timeout_param_6, parameter_value: $bond_disable_heartbeat_timeout_param_6_pvalue), has default_value true;
- $deadband_velocity_param isa ParameterDoubleArray,
+ $deadband_velocity_param isa Parameter,
  	has parameter_name "deadband_velocity";
  $deadband_velocity_param_p_array_value isa ValueArray;
  $deadband_velocity_param_pvalue isa ValueSingleton, has double_value 0;
@@ -2127,12 +2127,12 @@
 
  $has_parameter_value_115 isa has_parameter_value,
     links (node: $velocity_smoother_node, parameter: $deadband_velocity_param, parameter_value: $deadband_velocity_param_p_array_value), has default_value true;
- $feedback_param isa ParameterString,
+ $feedback_param isa Parameter,
  	has parameter_name "feedback";
  $feedback_param_pvalue isa ValueSingleton, has string_value "OPEN_LOOP";
  $has_parameter_value_116 isa has_parameter_value,
     links (node: $velocity_smoother_node, parameter: $feedback_param, parameter_value: $feedback_param_pvalue), has default_value true;
- $max_accel_param isa ParameterDoubleArray,
+ $max_accel_param isa Parameter,
  	has parameter_name "max_accel";
  $max_accel_param_p_array_value isa ValueArray;
  $max_accel_param_pvalue isa ValueSingleton, has double_value 2.5;
@@ -2150,7 +2150,7 @@
 
  $has_parameter_value_117 isa has_parameter_value,
     links (node: $velocity_smoother_node, parameter: $max_accel_param, parameter_value: $max_accel_param_p_array_value), has default_value true;
- $max_decel_param isa ParameterDoubleArray,
+ $max_decel_param isa Parameter,
  	has parameter_name "max_decel";
  $max_decel_param_p_array_value isa ValueArray;
  $max_decel_param_pvalue isa ValueSingleton, has double_value -2.5;
@@ -2168,7 +2168,7 @@
 
  $has_parameter_value_118 isa has_parameter_value,
     links (node: $velocity_smoother_node, parameter: $max_decel_param, parameter_value: $max_decel_param_p_array_value), has default_value true;
- $max_velocity_param isa ParameterDoubleArray,
+ $max_velocity_param isa Parameter,
  	has parameter_name "max_velocity";
  $max_velocity_param_p_array_value isa ValueArray;
  $max_velocity_param_pvalue isa ValueSingleton, has double_value 0.26;
@@ -2186,7 +2186,7 @@
 
  $has_parameter_value_119 isa has_parameter_value,
     links (node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $max_velocity_param_p_array_value), has default_value true;
- $min_velocity_param isa ParameterDoubleArray,
+ $min_velocity_param isa Parameter,
  	has parameter_name "min_velocity";
  $min_velocity_param_p_array_value isa ValueArray;
  $min_velocity_param_pvalue isa ValueSingleton, has double_value -0.26;
@@ -2204,32 +2204,32 @@
 
  $has_parameter_value_120 isa has_parameter_value,
     links (node: $velocity_smoother_node, parameter: $min_velocity_param, parameter_value: $min_velocity_param_p_array_value), has default_value true;
- $odom_duration_param isa ParameterDouble,
+ $odom_duration_param isa Parameter,
  	has parameter_name "odom_duration";
  $odom_duration_param_pvalue isa ValueSingleton, has double_value 0.1;
  $has_parameter_value_121 isa has_parameter_value,
     links (node: $velocity_smoother_node, parameter: $odom_duration_param, parameter_value: $odom_duration_param_pvalue), has default_value true;
- $odom_topic_param_1 isa ParameterString,
+ $odom_topic_param_1 isa Parameter,
  	has parameter_name "odom_topic";
  $odom_topic_param_1_pvalue isa ValueSingleton, has string_value "odom";
  $has_parameter_value_122 isa has_parameter_value,
     links (node: $velocity_smoother_node, parameter: $odom_topic_param_1, parameter_value: $odom_topic_param_1_pvalue), has default_value true;
- $scale_velocities_param isa ParameterBool,
+ $scale_velocities_param isa Parameter,
  	has parameter_name "scale_velocities";
  $scale_velocities_param_pvalue isa ValueSingleton, has bool_value false;
  $has_parameter_value_123 isa has_parameter_value,
     links (node: $velocity_smoother_node, parameter: $scale_velocities_param, parameter_value: $scale_velocities_param_pvalue), has default_value true;
- $smoothing_frequency_param isa ParameterDouble,
+ $smoothing_frequency_param isa Parameter,
  	has parameter_name "smoothing_frequency";
  $smoothing_frequency_param_pvalue isa ValueSingleton, has double_value 20;
  $has_parameter_value_124 isa has_parameter_value,
     links (node: $velocity_smoother_node, parameter: $smoothing_frequency_param, parameter_value: $smoothing_frequency_param_pvalue), has default_value true;
- $use_sim_time_param_6 isa ParameterBool,
+ $use_sim_time_param_6 isa Parameter,
  	has parameter_name "use_sim_time";
  $use_sim_time_param_6_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_125 isa has_parameter_value,
     links (node: $velocity_smoother_node, parameter: $use_sim_time_param_6, parameter_value: $use_sim_time_param_6_pvalue), has default_value true;
- $velocity_timeout_param isa ParameterDouble,
+ $velocity_timeout_param isa Parameter,
  	has parameter_name "velocity_timeout";
  $velocity_timeout_param_pvalue isa ValueSingleton, has double_value 1;
  $has_parameter_value_126 isa has_parameter_value,
@@ -2343,42 +2343,42 @@
  $lifecycle_manager_navigation_node isa ROSNode,
  has node_name "/lifecycle_manager_navigation",
  has namespace "";
- $bond_disable_heartbeat_timeout_param_7 isa ParameterBool,
+ $bond_disable_heartbeat_timeout_param_7 isa Parameter,
  	has parameter_name "/bond_disable_heartbeat_timeout";
  $bond_disable_heartbeat_timeout_param_7_pvalue isa ValueSingleton, has bool_value false;
  $has_parameter_value_127 isa has_parameter_value,
     links (node: $lifecycle_manager_navigation_node, parameter: $bond_disable_heartbeat_timeout_param_7, parameter_value: $bond_disable_heartbeat_timeout_param_7_pvalue), has default_value true;
- $attempt_respawn_reconnection_param isa ParameterBool,
+ $attempt_respawn_reconnection_param isa Parameter,
  	has parameter_name "attempt_respawn_reconnection";
  $attempt_respawn_reconnection_param_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_128 isa has_parameter_value,
     links (node: $lifecycle_manager_navigation_node, parameter: $attempt_respawn_reconnection_param, parameter_value: $attempt_respawn_reconnection_param_pvalue), has default_value true;
- $autostart_param isa ParameterBool,
+ $autostart_param isa Parameter,
  	has parameter_name "autostart";
  $autostart_param_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_129 isa has_parameter_value,
     links (node: $lifecycle_manager_navigation_node, parameter: $autostart_param, parameter_value: $autostart_param_pvalue), has default_value true;
- $bond_respawn_max_duration_param isa ParameterDouble,
+ $bond_respawn_max_duration_param isa Parameter,
  	has parameter_name "bond_respawn_max_duration";
  $bond_respawn_max_duration_param_pvalue isa ValueSingleton, has double_value 10;
  $has_parameter_value_130 isa has_parameter_value,
     links (node: $lifecycle_manager_navigation_node, parameter: $bond_respawn_max_duration_param, parameter_value: $bond_respawn_max_duration_param_pvalue), has default_value true;
- $bond_timeout_param isa ParameterDouble,
+ $bond_timeout_param isa Parameter,
  	has parameter_name "bond_timeout";
  $bond_timeout_param_pvalue isa ValueSingleton, has double_value 4;
  $has_parameter_value_131 isa has_parameter_value,
     links (node: $lifecycle_manager_navigation_node, parameter: $bond_timeout_param, parameter_value: $bond_timeout_param_pvalue), has default_value true;
- $diagnostic_updater_period_param isa ParameterDouble,
+ $diagnostic_updater_period_param isa Parameter,
  	has parameter_name "diagnostic_updater.period";
  $diagnostic_updater_period_param_pvalue isa ValueSingleton, has double_value 1;
  $has_parameter_value_132 isa has_parameter_value,
     links (node: $lifecycle_manager_navigation_node, parameter: $diagnostic_updater_period_param, parameter_value: $diagnostic_updater_period_param_pvalue), has default_value true;
- $diagnostic_updater_use_fqn_param isa ParameterBool,
+ $diagnostic_updater_use_fqn_param isa Parameter,
  	has parameter_name "diagnostic_updater.use_fqn";
  $diagnostic_updater_use_fqn_param_pvalue isa ValueSingleton, has bool_value false;
  $has_parameter_value_133 isa has_parameter_value,
     links (node: $lifecycle_manager_navigation_node, parameter: $diagnostic_updater_use_fqn_param, parameter_value: $diagnostic_updater_use_fqn_param_pvalue), has default_value true;
- $node_names_param isa ParameterStringArray,
+ $node_names_param isa Parameter,
  	has parameter_name "node_names";
  $node_names_param_p_array_value isa ValueArray;
  $node_names_param_pvalue isa ValueSingleton, has string_value "controller_server";
@@ -2412,7 +2412,7 @@
 
  $has_parameter_value_134 isa has_parameter_value,
     links (node: $lifecycle_manager_navigation_node, parameter: $node_names_param, parameter_value: $node_names_param_p_array_value), has default_value true;
- $use_sim_time_param_7 isa ParameterBool,
+ $use_sim_time_param_7 isa Parameter,
  	has parameter_name "use_sim_time";
  $use_sim_time_param_7_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_135 isa has_parameter_value,
@@ -2647,7 +2647,7 @@
  $turtlebot3_diff_drive_node isa ROSNode,
  has node_name "turtlebot3_diff_drive",
  has namespace "";
- $use_sim_time_param_8 isa ParameterBool,
+ $use_sim_time_param_8 isa Parameter,
  	has parameter_name "use_sim_time";
  $use_sim_time_param_8_pvalue isa ValueSingleton, has bool_value true;
  $has_parameter_value_136 isa has_parameter_value,

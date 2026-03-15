@@ -2,7 +2,7 @@ match
 
 $velocity_smoother_node isa LifeCycleNode,
     has node_name "velocity_smoother";
-$max_velocity_param isa ParameterDoubleArray,
+$max_velocity_param isa Parameter,
     has parameter_name "max_velocity";
 $max_velocity_has_param_value (node: $velocity_smoother,
     parameter: $max_velocity_param)

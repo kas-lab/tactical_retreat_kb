@@ -84,12 +84,12 @@ $res_mock isa resolution_model,
     has resolution_model_name "res_mock", has ros_system "mock";
 
 # test add_measurements
-$measure_string isa MeasureString, has measure_name "measure_string";
-$measure_double isa MeasureDouble, has measure_name "measure_double";
-$measure_integer isa MeasureInteger, has measure_name "measure_integer";
-$measure_bool isa MeasureBool, has measure_name "measure_bool";
+$measure_string isa Measure, has measure_name "measure_string";
+$measure_double isa Measure, has measure_name "measure_double";
+$measure_integer isa Measure, has measure_name "measure_integer";
+$measure_bool isa Measure, has measure_name "measure_bool";
 
-$measure_string_array isa MeasureStringArray, has measure_name "measure_string_array";
-$measure_double_array isa MeasureDoubleArray, has measure_name "measure_double_array";
-$measure_integer_array isa MeasureIntegerArray, has measure_name "measure_integer_array";
-$measure_bool_array isa MeasureBoolArray, has measure_name "measure_bool_array";
+$measure_string_array isa Measure, has measure_name "measure_string_array";
+$measure_double_array isa Measure, has measure_name "measure_double_array";
+$measure_integer_array isa Measure, has measure_name "measure_integer_array";
+$measure_bool_array isa Measure, has measure_name "measure_bool_array";

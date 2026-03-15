@@ -107,13 +107,13 @@ $relay_node isa ROSNode,
 ## Define parameters
 
 ### velocity_smoother_node parameters
-$max_velocity_param isa ParameterDoubleArray,
+$max_velocity_param isa Parameter,
 	has parameter_name "max_velocity";
 
-$odom_topic_param isa ParameterString,
+$odom_topic_param isa Parameter,
 	has parameter_name "odom_topic";
 
-$odom_duration_param isa ParameterDouble,
+$odom_duration_param isa Parameter,
 	has parameter_name "odom_duration";
 
 (

@@ -51,7 +51,7 @@ $node_not_running isa ROSNode,
 	has start_time 2025-09-06T11:57:56.666,
 	has end_time 2025-09-07T11:57:56.666;
 
-$parameter isa ParameterDouble, has parameter_name "parameter";
+$parameter isa Parameter, has parameter_name "parameter";
 $parameter_value isa ValueSingleton, has double_value 0.10;
 # anonymous set_nodes_parameters (identified later by node_name)
 $set_nodes_params_running isa set_nodes_parameters,
