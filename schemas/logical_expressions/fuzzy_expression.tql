@@ -3,8 +3,7 @@ define
 attribute offset_value, value double;
 
 ### fuzzy membership entity ("functions")
-entity FuzzySet @abstract,
-	owns offset_value;
+entity FuzzySet @abstract;
 
 entity AscendSet sub FuzzySet,
 	plays fuzzy_ascend_expression:fuzzy_set;
