@@ -159,6 +159,7 @@ class TacticalRetreatInterface:
         #    16 schema functions in discover_hypothetical_req_fulfillment.tql.
         #    JIT compilation is function-level; one call per function suffices.
         #    in_effect requirements are used to avoid slow non-effect traversals.
+        rules = None
         try:
             rules = self.get_all_tactic_rules()
             reqs = self._get_in_effect_requirement_names()
@@ -178,16 +179,17 @@ class TacticalRetreatInterface:
         except Exception as e:
             logger.warning('TypeDB warm-up: fetch_applicable_tactics failed: %s', e)
 
-        # 2. Current (non-hypothetical) requirement fulfillment.
+        # 3. Current (non-hypothetical) requirement fulfillment.
         try:
             self.fetch_in_effect_requirement_fulfillment()
         except Exception as e:
             logger.warning(
                 'TypeDB warm-up: fetch_in_effect_requirement_fulfillment failed: %s', e)
 
-        # 3. Structural tactic validity check.
+        # 4. Structural tactic validity check.
         try:
-            rules = self.get_all_tactic_rules()
+            if rules is None:
+                rules = self.get_all_tactic_rules()
             if rules:
                 self.fetch_tactic_rule_valid(rules[0])
         except Exception as e:

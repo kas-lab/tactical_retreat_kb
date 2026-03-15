@@ -206,9 +206,9 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         # TODO: pass the measure name as a string argument to fetch specific measurements
         def _fetch_all_measurements_cb(_, res):
             try:
-                self.get_logger().info('Creating measures interfaces...')
+                self.get_logger().info('Fetching all measurements...')
                 x = self.typedb_interface.fetch_all_measurements('current_velocity')
-                self.get_logger().info('Measures interfaces created.')
+                self.get_logger().info('Measurements fetched.')
                 res.success = True
                 res.message = str(x)
             except Exception as e:
@@ -246,6 +246,19 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         self.get_logger().info('on_deactivate() is called.')
         self.active = False
         self.destroy_service(self.measures_service)
+        self.destroy_service(self.all_measurements_service)
+        for sub in self.measures_subscribers.values():
+            self.destroy_subscription(sub)
+        self.measures_subscribers.clear()
+        for timer in self.measures_timers.values():
+            self.destroy_timer(timer)
+        self.measures_timers.clear()
+        for client in self.measures_clients.values():
+            self.destroy_client(client)
+        self.measures_clients.clear()
+        for svc in self.measures_services.values():
+            self.destroy_service(svc)
+        self.measures_services.clear()
         return super().on_deactivate(state)
 
     def on_configure(self, state: State) -> TransitionCallbackReturn:
@@ -333,7 +346,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 service_request_kwargs = {}
                 if service_request_kwargs_str:
                     for kwarg in service_request_kwargs_str.split(','):
-                        key, value = kwarg.split('=')
+                        key, _, value = kwarg.partition('=')
                         service_request_kwargs[key.strip()] = value.strip()
                 if (interface.get('measurement_period')):
                     self.measures_clients[measure_name] = self.create_client(
@@ -392,15 +405,11 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
         :raises Exception: Propagates errors while retrieving or creating interfaces.
         """
-        try:
-            measures_interfaces = self.typedb_interface.get_measures_interfaces()
-            if (len(measures_interfaces) == 0):
-                raise Exception('No measures interfaces to create.')
+        measures_interfaces = self.typedb_interface.get_measures_interfaces()
+        if len(measures_interfaces) == 0:
+            raise Exception('No measures interfaces to create.')
 
-            for interface in measures_interfaces:
-                self.get_logger().info(
-                    f'Creating measure interface: {interface}')
-                self.create_measure_interface(interface)
-
-        except Exception as e:
-            raise e
+        for interface in measures_interfaces:
+            self.get_logger().info(
+                f'Creating measure interface: {interface}')
+            self.create_measure_interface(interface)
