@@ -43,7 +43,7 @@ relation atomic_relaxed_expression sub relaxed_expression,
   plays may_expression:expression @card(0..),
 	plays until_expression:after;
 
-relation compound_relaxed_expression @abstract sub relaxed_expression;
+relation compound_relaxed_expression sub relaxed_expression;
 
 relation shall_expression sub compound_relaxed_expression,
 	relates expression @card(0..);
