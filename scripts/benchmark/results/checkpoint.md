@@ -1,7 +1,7 @@
 # Benchmark Optimization Campaign Checkpoint
 
-**Date**: 2026-03-14
-**Status**: COMPLETE — all phases done
+**Date**: 2026-03-15 (updated)
+**Status**: COMPLETE — isolated + structural variant campaign done
 
 ## Phase 0: Pre-flight Test
 - Result: 11/11 PASS
@@ -90,6 +90,55 @@ Schema file NOT committed (no changes from V0).
 2. **relaxed_requirement:expression role constraint**: Only `relaxed_expression` subtypes can play this role. `comparison_expression` (logical subtype) cannot.
 
 3. **Data gap correction**: Initial benchmark.tql data gap for `bench_gap_req_comparison` used wrong expression type — fixed to `bench_gap_req_relaxed` using `relaxed_fuzzy_expression`.
+
+## Campaign 3: Isolated + Structural Variants (2026-03-15)
+
+**New winners found**: D-V1 (fuzzy_or relaxed-first) and D2-V1 (fuzzy_and relaxed-first) — both −4% isolated.
+**Schema changed**: fuzzy_or and fuzzy_and branch order updated to relaxed-first.
+**Tests**: 11/11 PASS after applying winners.
+
+### Ordering variants tested in isolation (each function only, others at V0):
+
+| Function | Variant | Result |
+|---|---|---|
+| `any_expression_fulfillment` | A-V1 most-frequent-first | 1601ms (+0.2%, noise) |
+| `any_expression_fulfillment` | A-V2 cheap-leaves-first | 1613ms (+1.0%) |
+| `any_expression_fulfillment` | A-V3 relaxed-first-then-V0 | 1618ms (+1.3%) |
+| `shall_fulfillment` | C-V1 relaxed-first | 479ms (+0.6%, noise) |
+| `fuzzy_or_fulfillment` | **D-V1 relaxed-first** | **149ms (−4%) WINNER** |
+| `fuzzy_and_fulfillment` | **D2-V1 relaxed-first** | **114ms (−4%) WINNER** |
+| `fuzzy_leaf_fulfillment` | G-V1 unimodal-first | 65ms (−1.5%, noise) |
+| `relaxed_leaf_fulfillment` | G2-V1 unimodal,decay,ascend | 66ms (−1.5%, noise) |
+
+### Structural variants:
+
+| Variant | Description | Result |
+|---|---|---|
+| S-V1 | Inline leaf functions into any_expression | 1617ms (+1.2%) |
+| R-V1 | requirement_fulfillment via any_expression | 12908ms (+8%) |
+
+**Key insight from R-V1**: Narrower direct dispatch (3 types in requirement) beats delegating to
+broader dispatcher (10 types in any_expression) even when both reach the same leaf functions.
+This aligns with Campaign 2's finding that function call overhead is negligible but type-scope
+broadening is costly.
+
+### Long benchmark (100 warm) with D-V1+D2-V1 applied:
+
+| Function | warm_p50 |
+|---|---|
+| `tactic_rule_impacts_requirement_fulfillment` | 13057ms |
+| `tactic_rule_impacts_any_expression_fulfillment` | 1633ms |
+| `tactic_rule_impacts_shall_fulfillment` | 474ms |
+| `tactic_rule_impacts_may_fulfillment` | 202ms |
+| `tactic_rule_impacts_fuzzy_or_fulfillment` | 150ms |
+| `tactic_rule_impacts_fuzzy_and_fulfillment` | 115ms |
+| `tactic_rule_impacts_comparison_fulfillment` | 88ms |
+| `tactic_rule_impacts_relaxed_leaf_fulfillment` | 67ms |
+| `tactic_rule_impacts_fuzzy_leaf_fulfillment` | 66ms |
+| `tactic_rule_impacts_not_membership` | 38ms |
+| `tactic_rule_impacts_fuzzy_not_membership` | 38ms |
+
+Result files: `tactic_rule_impacts_isolated_variants.md`, `tactic_rule_impacts_structural_variants.md`
 
 ## Previously Completed (pre-campaign)
 - `tactic_rule_hypothetical_measure_value` — V24 applied (NOT-first, −37%)

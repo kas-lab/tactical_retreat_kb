@@ -224,21 +224,22 @@ fun tactic_rule_impacts_fuzzy_not_membership($tr: tactic_rule, $e: fuzzy_not) ->
 fun tactic_rule_impacts_fuzzy_or_fulfillment($tr: tactic_rule, $e: fuzzy_or) -> double:
   match
     $e links (expression: $child_fo);
-    { $child_fo isa fuzzy_not;
-      let $m_fn_fo = tactic_rule_impacts_fuzzy_not_membership($tr, $child_fo);
-      let $m_fo = $m_fn_fo; } or
-    { $child_fo isa comparison_expression;
-      let $m_cmp_fo = tactic_rule_impacts_comparison_fulfillment($tr, $child_fo);
-      let $m_fo = $m_cmp_fo; } or
-    { $child_fo isa not_expression;
-      let $m_not_fo = tactic_rule_impacts_not_membership($tr, $child_fo);
-      let $m_fo = $m_not_fo; } or
+    # D-V1: relaxed-first (most common children first)
     { $child_fo isa relaxed_fuzzy_expression;
       let $m_rf_fo = tactic_rule_impacts_relaxed_leaf_fulfillment($tr, $child_fo);
       let $m_fo = $m_rf_fo; } or
     { $child_fo isa fuzzy_comparison_expression;
       let $m_leaf_fo = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fo);
       let $m_fo = $m_leaf_fo; } or
+    { $child_fo isa comparison_expression;
+      let $m_cmp_fo = tactic_rule_impacts_comparison_fulfillment($tr, $child_fo);
+      let $m_fo = $m_cmp_fo; } or
+    { $child_fo isa fuzzy_not;
+      let $m_fn_fo = tactic_rule_impacts_fuzzy_not_membership($tr, $child_fo);
+      let $m_fo = $m_fn_fo; } or
+    { $child_fo isa not_expression;
+      let $m_not_fo = tactic_rule_impacts_not_membership($tr, $child_fo);
+      let $m_fo = $m_not_fo; } or
     { $child_fo isa logical_expression;
       not { $child_fo isa comparison_expression; };
       let $m_log_fo = logical_expression_membership($child_fo);
@@ -248,21 +249,22 @@ fun tactic_rule_impacts_fuzzy_or_fulfillment($tr: tactic_rule, $e: fuzzy_or) -> 
 fun tactic_rule_impacts_fuzzy_and_fulfillment($tr: tactic_rule, $e: fuzzy_and) -> double:
   match
     $e links (expression: $child_fa);
-    { $child_fa isa fuzzy_not;
-      let $m_fn_fa = tactic_rule_impacts_fuzzy_not_membership($tr, $child_fa);
-      let $m_fa = $m_fn_fa; } or
-    { $child_fa isa comparison_expression;
-      let $m_cmp_fa = tactic_rule_impacts_comparison_fulfillment($tr, $child_fa);
-      let $m_fa = $m_cmp_fa; } or
-    { $child_fa isa not_expression;
-      let $m_not_fa = tactic_rule_impacts_not_membership($tr, $child_fa);
-      let $m_fa = $m_not_fa; } or
+    # D2-V1: relaxed-first (most common children first)
     { $child_fa isa relaxed_fuzzy_expression;
       let $m_rf_fa = tactic_rule_impacts_relaxed_leaf_fulfillment($tr, $child_fa);
       let $m_fa = $m_rf_fa; } or
     { $child_fa isa fuzzy_comparison_expression;
       let $m_leaf_fa = tactic_rule_impacts_fuzzy_leaf_fulfillment($tr, $child_fa);
       let $m_fa = $m_leaf_fa; } or
+    { $child_fa isa comparison_expression;
+      let $m_cmp_fa = tactic_rule_impacts_comparison_fulfillment($tr, $child_fa);
+      let $m_fa = $m_cmp_fa; } or
+    { $child_fa isa fuzzy_not;
+      let $m_fn_fa = tactic_rule_impacts_fuzzy_not_membership($tr, $child_fa);
+      let $m_fa = $m_fn_fa; } or
+    { $child_fa isa not_expression;
+      let $m_not_fa = tactic_rule_impacts_not_membership($tr, $child_fa);
+      let $m_fa = $m_not_fa; } or
     { $child_fa isa logical_expression;
       not { $child_fa isa comparison_expression; };
       let $m_log_fa = logical_expression_membership($child_fa);
