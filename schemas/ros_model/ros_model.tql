@@ -6,10 +6,6 @@ define
 attribute package, value string;
 attribute executable, value string;
 attribute lifecycle_state, value string @regex("^(unconfigured|inactive|active|finalized)$");
-attribute lifecycle_transition, value string @regex("^(configure|shutdown|activate|deactivate|cleanup)$");
-
-#### Should only be used by is_node_active rule
-attribute is_active, value boolean;
 
 ### Runtime node attributes
 attribute node_name, value string;
