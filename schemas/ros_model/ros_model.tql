@@ -62,7 +62,7 @@ entity ROSInterface @abstract,
     plays has_interface:efferent @card(0..);
 
 entity TopicInterface sub ROSInterface,
-    owns gid @card(0..),
+    owns gid @card(0..1),
     plays has_qos:interface;
 entity Subscriber sub TopicInterface,
     plays has_topic:subscriber @card(0..);
