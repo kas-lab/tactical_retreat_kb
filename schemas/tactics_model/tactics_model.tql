@@ -7,11 +7,6 @@ attribute name @abstract, value string;
 attribute resolution_model_name sub name;
 attribute tactic_name sub name;
 attribute rule_name sub name;
-attribute variant_name sub name;
-
-attribute tactic_resolution_model, value string;
-
-attribute tactic_select_variant, value string;
 
 ### Tactic
 entity Tactic,
