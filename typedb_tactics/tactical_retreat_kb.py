@@ -178,7 +178,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         self.measures_clients = {}
         self.measures_timers = {}
         self.measures_services = {}  # For proxies
-        self.declare_parameter('warm_up_on_activate', True)
+        self.declare_parameter('warm_up_on_configure', True)
 
     def on_activate(self, state: State) -> TransitionCallbackReturn:
         """
@@ -189,9 +189,6 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         """
         self.get_logger().info(self.get_name() + ': on_activate() is called.')
         self.active = True
-
-        if self.get_parameter('warm_up_on_activate').value:
-            self.typedb_interface.warm_up()
 
         # self.create_measures_interfaces()
         def _create_measures_cb(_, res):
@@ -258,6 +255,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         :return: transition result
         """
         config_res = super().on_configure(state)
+        if self.get_parameter('warm_up_on_configure').value:
+            self.typedb_interface.warm_up()
         return config_res
 
     def on_cleanup(self, state: State) -> TransitionCallbackReturn:

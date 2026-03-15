@@ -16,6 +16,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 import logging
+import time
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -151,30 +152,24 @@ class TacticalRetreatInterface:
         NOT-branch ('no effect') in hypothetical functions still fires and
         triggers JIT compilation for the full call chain.
         """
+        t_start = time.perf_counter()
         logger.info('TypeDB warm-up: starting.')
 
-        # Fetch static entity names loaded during on_configure.
-        rules = []
-        reqs = []
+        # 1. One (rule, in_effect requirement) pair — transitively invokes all
+        #    16 schema functions in discover_hypothetical_req_fulfillment.tql.
+        #    JIT compilation is function-level; one call per function suffices.
+        #    in_effect requirements are used to avoid slow non-effect traversals.
         try:
             rules = self.get_all_tactic_rules()
-        except Exception as e:
-            logger.warning('TypeDB warm-up: get_all_tactic_rules failed: %s', e)
-        try:
-            reqs = self.get_all_requirements()
-        except Exception as e:
-            logger.warning('TypeDB warm-up: get_all_requirements failed: %s', e)
-
-        # 1. Hypothetical requirement fulfillment — transitively invokes all 16
-        #    schema functions in discover_hypothetical_req_fulfillment.tql.
-        if rules and reqs:
-            try:
+            reqs = self._get_in_effect_requirement_names()
+            if rules and reqs:
                 self.fetch_tactic_rule_impacts_requirement(reqs[0], rules[0])
-            except Exception as e:
-                logger.warning(
-                    'TypeDB warm-up: fetch_tactic_rule_impacts_requirement failed: %s', e)
+        except Exception as e:
+            logger.warning(
+                'TypeDB warm-up: fetch_tactic_rule_impacts_requirement failed: %s', e)
 
-        # 2. Applicable tactics — structural query, works regardless of measurements.
+        # 2. Applicable tactics — warms applicable_tactics function separately
+        #    since fetch_potential_requirements_fulfillment calls it in production.
         try:
             models = self._get_all_resolution_models()
             interfaces = self._get_all_ros_interfaces()
@@ -183,21 +178,23 @@ class TacticalRetreatInterface:
         except Exception as e:
             logger.warning('TypeDB warm-up: fetch_applicable_tactics failed: %s', e)
 
-        # 3. Current (non-hypothetical) requirement fulfillment.
+        # 2. Current (non-hypothetical) requirement fulfillment.
         try:
             self.fetch_in_effect_requirement_fulfillment()
         except Exception as e:
             logger.warning(
                 'TypeDB warm-up: fetch_in_effect_requirement_fulfillment failed: %s', e)
 
-        # 4. Tactic validity check.
-        if rules:
-            try:
+        # 3. Structural tactic validity check.
+        try:
+            rules = self.get_all_tactic_rules()
+            if rules:
                 self.fetch_tactic_rule_valid(rules[0])
-            except Exception as e:
-                logger.warning('TypeDB warm-up: fetch_tactic_rule_valid failed: %s', e)
+        except Exception as e:
+            logger.warning('TypeDB warm-up: fetch_tactic_rule_valid failed: %s', e)
 
-        logger.info('TypeDB warm-up: complete.')
+        elapsed_ms = (time.perf_counter() - t_start) * 1000.0
+        logger.info('TypeDB warm-up: complete in %.0fms.', elapsed_ms)
 
     def fetch_database(self, query: str) -> List[dict]:
         """
@@ -553,6 +550,24 @@ class TacticalRetreatInterface:
         """
         query_result = self._fetch_all_ros_interfaces()
         return [result['interface_name'] for result in query_result]
+
+    def _get_in_effect_requirement_names(self) -> List[str]:
+        """
+        Get requirement names that have in_effect true.
+
+        Uses a structural query only — does NOT call any schema function,
+        so the JIT cold state is preserved for subsequent timing.
+
+        :return: list of requirement_name strings with in_effect true
+        """
+        rows = self._fetch("""
+            match
+                $req isa relaxed_requirement,
+                    has requirement_name $name,
+                    has in_effect true;
+            fetch { "name": $name };
+        """)
+        return [row['name'] for row in rows if row.get('name') is not None]
 
     def fetch_all_tactic_rules(self) -> List[dict]:
         """
