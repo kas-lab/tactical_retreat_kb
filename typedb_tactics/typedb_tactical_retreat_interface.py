@@ -1142,7 +1142,7 @@ class TacticalRetreatInterface:
         """
         query = f"""
             match
-                $ra isa set_lifecycle_state, has lifecycle_state '{lifecycle_state}';
+                $ra isa set_lifecycle_state, has target_lifecycle_state '{lifecycle_state}';
                 $ra links (node: $node);
                 $node isa LifeCycleNode, has node_name '{node_name}';
                 true == set_lifecycle_state_feasible($ra);
