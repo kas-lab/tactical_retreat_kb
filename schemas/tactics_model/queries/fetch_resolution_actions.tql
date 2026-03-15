@@ -27,7 +27,7 @@ fetch
                     $res_action (node: $node) isa! set_lifecycle_state;
                 fetch
                     $node: node_name;
-                    $res_action: lifecycle_state;
+                    $res_action: target_lifecycle_state;
             };
     };
     variant_deactivation: {
@@ -56,6 +56,6 @@ fetch
                     $res_action (node: $node) isa! set_lifecycle_state;
                 fetch
                     $node: node_name;
-                    $res_action: lifecycle_state;
+                    $res_action: target_lifecycle_state;
             };
     };

@@ -2,6 +2,9 @@ define
 
 attribute ros_system, value string;
 
+attribute target_lifecycle_state, value string,
+    regex "^(unconfigured|inactive|active|finalized)$";
+
 attribute name @abstract, value string;
 
 attribute resolution_model_name sub name;
@@ -83,7 +86,7 @@ Parameter plays set_nodes_parameters:parameter;
 Value plays set_nodes_parameters:parameter_value;
 
 relation set_lifecycle_state sub resolution_action,
-    owns lifecycle_state;
+    owns target_lifecycle_state;
 
 fun set_nodes_parameters_feasible($ra: set_nodes_parameters) -> boolean:
   match
@@ -95,7 +98,7 @@ fun set_lifecycle_state_feasible($ra: set_lifecycle_state) -> boolean:
   match
     $ra links (node: $node);
     $node has lifecycle_state $current;
-    $ra has lifecycle_state $target;
+    $ra has target_lifecycle_state $target;
     { $current == "active";
       { $target == "active"; } or { $target == "inactive"; } or { $target == "finalized"; };
     } or {

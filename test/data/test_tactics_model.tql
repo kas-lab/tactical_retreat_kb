@@ -79,25 +79,25 @@ $lifecycle_node_finalized isa LifeCycleNode,
 	has start_time 2025-09-06T11:57:56.666,
     has lifecycle_state "finalized";
 
-(node: $lifecycle_node_active) isa set_lifecycle_state, has lifecycle_state "active";       # feasible is true
-(node: $lifecycle_node_active) isa set_lifecycle_state, has lifecycle_state "inactive";     # feasible is true
-(node: $lifecycle_node_active) isa set_lifecycle_state, has lifecycle_state "unconfigured"; # feasible is false
-(node: $lifecycle_node_active) isa set_lifecycle_state, has lifecycle_state "finalized";    # feasible is true
+(node: $lifecycle_node_active) isa set_lifecycle_state, has target_lifecycle_state "active";       # feasible is true
+(node: $lifecycle_node_active) isa set_lifecycle_state, has target_lifecycle_state "inactive";     # feasible is true
+(node: $lifecycle_node_active) isa set_lifecycle_state, has target_lifecycle_state "unconfigured"; # feasible is false
+(node: $lifecycle_node_active) isa set_lifecycle_state, has target_lifecycle_state "finalized";    # feasible is true
 
-(node: $lifecycle_node_inactive) isa set_lifecycle_state, has lifecycle_state "active";       # feasible is true
-(node: $lifecycle_node_inactive) isa set_lifecycle_state, has lifecycle_state "inactive";     # feasible is true
-(node: $lifecycle_node_inactive) isa set_lifecycle_state, has lifecycle_state "unconfigured"; # feasible is true
-(node: $lifecycle_node_inactive) isa set_lifecycle_state, has lifecycle_state "finalized";    # feasible is true
+(node: $lifecycle_node_inactive) isa set_lifecycle_state, has target_lifecycle_state "active";       # feasible is true
+(node: $lifecycle_node_inactive) isa set_lifecycle_state, has target_lifecycle_state "inactive";     # feasible is true
+(node: $lifecycle_node_inactive) isa set_lifecycle_state, has target_lifecycle_state "unconfigured"; # feasible is true
+(node: $lifecycle_node_inactive) isa set_lifecycle_state, has target_lifecycle_state "finalized";    # feasible is true
 
-(node: $lifecycle_node_unconfigured) isa set_lifecycle_state, has lifecycle_state "active";       # feasible is false
-(node: $lifecycle_node_unconfigured) isa set_lifecycle_state, has lifecycle_state "inactive";     # feasible is true
-(node: $lifecycle_node_unconfigured) isa set_lifecycle_state, has lifecycle_state "unconfigured"; # feasible is true
-(node: $lifecycle_node_unconfigured) isa set_lifecycle_state, has lifecycle_state "finalized";    # feasible is true
+(node: $lifecycle_node_unconfigured) isa set_lifecycle_state, has target_lifecycle_state "active";       # feasible is false
+(node: $lifecycle_node_unconfigured) isa set_lifecycle_state, has target_lifecycle_state "inactive";     # feasible is true
+(node: $lifecycle_node_unconfigured) isa set_lifecycle_state, has target_lifecycle_state "unconfigured"; # feasible is true
+(node: $lifecycle_node_unconfigured) isa set_lifecycle_state, has target_lifecycle_state "finalized";    # feasible is true
 
-(node: $lifecycle_node_finalized) isa set_lifecycle_state, has lifecycle_state "active";       # feasible is false
-(node: $lifecycle_node_finalized) isa set_lifecycle_state, has lifecycle_state "inactive";     # feasible is false
-(node: $lifecycle_node_finalized) isa set_lifecycle_state, has lifecycle_state "unconfigured"; # feasible is false
-(node: $lifecycle_node_finalized) isa set_lifecycle_state, has lifecycle_state "finalized";    # feasible is true
+(node: $lifecycle_node_finalized) isa set_lifecycle_state, has target_lifecycle_state "active";       # feasible is false
+(node: $lifecycle_node_finalized) isa set_lifecycle_state, has target_lifecycle_state "inactive";     # feasible is false
+(node: $lifecycle_node_finalized) isa set_lifecycle_state, has target_lifecycle_state "unconfigured"; # feasible is false
+(node: $lifecycle_node_finalized) isa set_lifecycle_state, has target_lifecycle_state "finalized";    # feasible is true
 
 ## test tactic_rule_consequent_unfeasible
 $f_selectable isa Feature, has feature_name "f_selectable", has selectable true;
@@ -228,9 +228,9 @@ $fa_vr_zero_ra isa feature_adaptation, links (activation: $f_vr_zero_ra);
 
 # set_lifecycle_state resolution actions for variant_resolution tests
 $lcs_ra_feas isa set_lifecycle_state,
-    links (node: $lifecycle_node_vr_test), has lifecycle_state "inactive";       # active→inactive: feasible
+    links (node: $lifecycle_node_vr_test), has target_lifecycle_state "inactive";       # active→inactive: feasible
 $lcs_ra_unfeas isa set_lifecycle_state,
-    links (node: $lifecycle_node_vr_test), has lifecycle_state "unconfigured";   # active→unconfigured: infeasible
+    links (node: $lifecycle_node_vr_test), has target_lifecycle_state "unconfigured";   # active→unconfigured: infeasible
 
 # variant_resolutions
 $vr_lcs_feas isa variant_activation,

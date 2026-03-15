@@ -52,14 +52,14 @@ $mock_node3 isa ROSNode,
 	has start_time 2025-08-06T10:57:56.666;
 
 ## define resolution action
-$set_lifecycle_mock_node1_active isa set_lifecycle_state, links (node: $mock_node1), has lifecycle_state 'active';
-$set_lifecycle_mock_node1_inactive isa set_lifecycle_state, links (node: $mock_node1), has lifecycle_state 'inactive';
+$set_lifecycle_mock_node1_active isa set_lifecycle_state, links (node: $mock_node1), has target_lifecycle_state 'active';
+$set_lifecycle_mock_node1_inactive isa set_lifecycle_state, links (node: $mock_node1), has target_lifecycle_state 'inactive';
 
-$set_lifecycle_mock_node2_active isa set_lifecycle_state, links (node: $mock_node2), has lifecycle_state 'active';
-$set_lifecycle_mock_node2_inactive isa set_lifecycle_state, links (node: $mock_node2), has lifecycle_state 'inactive';
+$set_lifecycle_mock_node2_active isa set_lifecycle_state, links (node: $mock_node2), has target_lifecycle_state 'active';
+$set_lifecycle_mock_node2_inactive isa set_lifecycle_state, links (node: $mock_node2), has target_lifecycle_state 'inactive';
 
-$set_lifecycle_mock_node3_active isa set_lifecycle_state, links (node: $mock_node3), has lifecycle_state 'active';
-$set_lifecycle_mock_node3_inactive isa set_lifecycle_state, links (node: $mock_node3), has lifecycle_state 'inactive';
+$set_lifecycle_mock_node3_active isa set_lifecycle_state, links (node: $mock_node3), has target_lifecycle_state 'active';
+$set_lifecycle_mock_node3_inactive isa set_lifecycle_state, links (node: $mock_node3), has target_lifecycle_state 'inactive';
 
 ## define variant resolutions
 
