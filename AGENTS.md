@@ -68,7 +68,36 @@ And so on.
 
 **Testing note:** Running the full test suite takes ~10 minutes and most of that time is spent setting up the KB/TypeDB. Prefer running only the relevant tests for the module you changed (e.g., if you change the relaxed model, run `test_relaxed_model`).
 
+**Mandatory lint/style gate (all agent changes):** Before considering work complete, always run `test_flake8` and `test_pep257` and ensure both pass. This is required even if you already ran focused functional tests.
+
+Local:
+
+```Bash
+colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_flake8
+colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_pep257
+```
+
+Docker (`tactical_retreat`):
+
+```Bash
+docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_flake8'
+docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_pep257'
+```
+
 **TypeDB note:** Tests and the KB node expect a running TypeDB server (default `localhost:1729`). Start TypeDB before running tests.
+
+## Fetch ordering policy
+
+- Runtime fetches should be unordered by default for performance.
+- Use `sort_fetch_results=True` when constructing `TacticalRetreatInterface` in tests that rely on deterministic result order.
+- Prefer `fetch_database_unordered(...)` in hot-path query methods.
+- Use ordered fetches only when deterministic ordering is required for assertions/debugging.
+
+## Cross-repo compatibility (typedb_tactics + ros_typedb)
+
+- Changes in `typedb_tactics` may depend on API changes in `ros_typedb` (`TypeDBInterface`).
+- If constructor or fetch API changes are introduced (e.g., `sort_fetch_results`, `sort_result`), verify compatibility with the installed/overlay version used in Docker.
+- Typical mismatch symptom: `TypeError` in `TacticalRetreatInterface.__init__` due to argument count/signature drift.
 
 ## TypeDB rules: common pitfalls
 
@@ -82,6 +111,24 @@ And so on.
 - **Container running:** `docker exec` fails if the container is not running. Check `docker ps` or start the container first.
 - **Non-interactive exec:** for CI/agents, prefer `docker exec tactical_retreat ...` (no `-it`).
 - **Timeouts:** schema-heavy `colcon test` runs can exceed default agent timeouts; allow 5–7 minutes.
+
+## Benchmark protocol
+
+- For quick method hotspot iteration:
+  - `python3 scripts/benchmark.py --runs 1 --methods get_potential_requirements_fulfillment`
+- For query + initialization decomposition:
+  - `python3 scripts/benchmark_queries.py --profiles hyp --runs 5`
+- Do not claim performance gains from a single run; use `--runs > 1` and compare p50/p95 and row stability.
+- Keep inference enabled for production-representative checks unless explicitly doing an infer/no-infer comparison.
+
+## Performance acceptance checklist
+
+- Relevant tests pass for changed modules.
+- Target query row counts are stable across warm runs.
+- No regression in `fetch_potential_requirements_fulfillment` / `get_potential_requirements_fulfillment` on `hyp` profile.
+- If schema/rules changed, compare before/after with both:
+  - `scripts/benchmark.py` (real interface method path)
+  - `scripts/benchmark_queries.py` (bottleneck attribution)
 
 ## Run the KB node
 
@@ -243,3 +290,5 @@ the documentation for typedb2 lives here: https://typedb.com/docs/home/2.x/
 
 - `docs/agent-notes.md` has a quick checklist and common failure checks.
 - `scripts/run-tests-docker.sh` runs tests in the `tactical_retreat` container (supports `-k`).
+- `scripts/benchmark.py` benchmarks `get_*` interface methods and `get_expression_satisfied`.
+- `scripts/benchmark_queries.py` benchmarks schema/data init and focused query latency by profile.

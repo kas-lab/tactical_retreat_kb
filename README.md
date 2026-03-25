@@ -122,3 +122,75 @@ docker exec -it tactical_retreat bash
 ```Bash
 colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics
 ```
+
+### Benchmark Query + Initialization Bottlenecks
+
+Run from the container in the `scripts` folder:
+
+```Bash
+cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics/scripts
+python3 benchmark_queries.py
+```
+
+Useful options:
+
+```Bash
+# Only hypothetical-fulfillment fixture profile
+python3 benchmark_queries.py --profiles hyp --runs 10
+
+# Only generated dataset
+python3 benchmark_queries.py --profiles generated --runs 10
+
+# JSON output for before/after diffing
+python3 benchmark_queries.py --profiles generated,hyp --runs 10 --format json
+```
+
+Output includes:
+- initialization breakdown (`init_no_schema`, per-schema timings, per-data-file timings)
+- query latency stats (`cold`, `warm_avg`, `warm_p50`, `warm_p95`)
+- row count stability across warm runs
+- top 3 slowest query cases (by warm p50)
+- top 3 slowest schema files (by load time)
+
+Interpretation notes:
+- `cold` includes first-call overhead; use `warm_p50`/`warm_p95` for steady-state latency.
+- Run with `--no-infer` only for comparison studies; production behavior should be benchmarked with inference enabled.
+
+### Benchmark Interface Methods (`benchmark.py`)
+
+Run from the container in the `scripts` folder:
+
+```Bash
+cd /home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics/scripts
+python3 benchmark.py
+```
+
+Useful options:
+
+```Bash
+# Run each benchmark case multiple times
+python3 benchmark.py --runs 10
+
+# Benchmark only specific get_* methods
+python3 benchmark.py --runs 10 --methods get_potential_requirements_fulfillment,get_applicable_tactics
+
+# Limit number of argument combinations per method
+python3 benchmark.py --runs 10 --methods get_potential_requirements_fulfillment --max-combinations 50
+```
+
+What this benchmark measures:
+- `TacticalRetreatInterface` creation time (schema + data load)
+- `get_expression_satisfied` latency for the fixed expression list in the script
+- all `get_*` methods in `TacticalRetreatInterface` (or the subset passed with `--methods`)
+
+Output includes:
+- per-case latency stats (`avg`, `p50`, `p95`)
+- success/failure counts per method call combination
+- result size summary (`avg`, `min`, `max`)
+- methods sorted by decreasing average latency
+- skipped methods (missing input context) and methods with only failed invocations
+
+Interpretation notes:
+- Use `--methods` to isolate hotspots and reduce runtime when iterating.
+- `--max-combinations` is useful for quick A/B checks on query or rule changes.
+- For full-impact checks, run without `--methods` and without `--max-combinations`.

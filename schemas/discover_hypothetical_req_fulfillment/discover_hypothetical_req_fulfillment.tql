@@ -51,6 +51,52 @@ tactic_rule_impacts_requirement sub tactic_rule_impacts,
     relates impacted;
 relaxed_requirement plays tactic_rule_impacts_requirement:impacted;
 
+# in-effect-scoped tactic_rule impacts used by potential requirement queries
+tactic_rule_impacts_in_effect sub relation,
+    owns fulfillment,
+    relates tactic_rule;
+tactic_rule plays tactic_rule_impacts_in_effect:tactic_rule;
+
+tactic_rule_impacts_base_in_effect sub tactic_rule_impacts_in_effect,
+    relates impacted;
+atomic_expression plays tactic_rule_impacts_base_in_effect:impacted;
+fuzzy_comparison_expression plays tactic_rule_impacts_base_in_effect:impacted;
+relaxed_fuzzy_expression plays tactic_rule_impacts_base_in_effect:impacted;
+not_expression plays tactic_rule_impacts_base_in_effect:impacted;
+fuzzy_not plays tactic_rule_impacts_base_in_effect:impacted;
+
+tactic_rule_impacts_or_in_effect sub tactic_rule_impacts_in_effect,
+    relates impacted;
+or_expression plays tactic_rule_impacts_or_in_effect:impacted;
+fuzzy_or plays tactic_rule_impacts_or_in_effect:impacted;
+
+tactic_rule_impacts_and_in_effect sub tactic_rule_impacts_in_effect,
+    relates impacted;
+and_expression plays tactic_rule_impacts_and_in_effect:impacted;
+fuzzy_and plays tactic_rule_impacts_and_in_effect:impacted;
+
+tactic_rule_impacts_shall_expression_in_effect sub tactic_rule_impacts_in_effect,
+    relates impacted;
+shall_expression plays tactic_rule_impacts_shall_expression_in_effect:impacted;
+
+tactic_rule_impacts_may_expression_in_effect sub tactic_rule_impacts_in_effect,
+    relates impacted;
+may_expression plays tactic_rule_impacts_may_expression_in_effect:impacted;
+
+tactic_rule_impacts_requirement_in_effect sub tactic_rule_impacts_in_effect,
+    relates impacted;
+relaxed_requirement plays tactic_rule_impacts_requirement_in_effect:impacted;
+
+# resolution-model-scoped in-effect requirement impacts for hot query path
+resolution_model_tactic_rule_impacts_requirement_in_effect sub relation,
+    owns fulfillment,
+    relates resolution_model,
+    relates tactic_rule,
+    relates impacted;
+resolution_model plays resolution_model_tactic_rule_impacts_requirement_in_effect:resolution_model;
+tactic_rule plays resolution_model_tactic_rule_impacts_requirement_in_effect:tactic_rule;
+relaxed_requirement plays resolution_model_tactic_rule_impacts_requirement_in_effect:impacted;
+
 
 tr_dependency_lhs_double_operand sub relation,
     relates tr_dependency,
@@ -897,3 +943,254 @@ rule requirement_tr_impacts_fulfillment :
 	} then {
         $tr_req has $fulfillment;
 	};
+
+# In-effect scoped tactic_rule_impacts_* rules for potential requirement queries
+rule tactic_rule_impacts_in_effect_requirements:
+    when {
+        $requirement isa relaxed_requirement, has in_effect true;
+        $tactic_rule isa tactic_rule;
+    } then {
+        (tactic_rule: $tactic_rule, impacted: $requirement) isa tactic_rule_impacts_requirement_in_effect;
+    };
+
+rule tactic_rule_impacts_in_effect_shall_transitivity:
+    when {
+        (tactic_rule: $tactic_rule, impacted: $requirement) isa tactic_rule_impacts_requirement_in_effect;
+        $requirement (expression: $shall_expression) isa relaxed_requirement;
+        $shall_expression isa shall_expression;
+    } then {
+        (tactic_rule: $tactic_rule, impacted: $shall_expression) isa tactic_rule_impacts_shall_expression_in_effect;
+    };
+
+rule tactic_rule_impacts_in_effect_may_transitivity:
+    when {
+        (tactic_rule: $tactic_rule, impacted: $requirement) isa tactic_rule_impacts_requirement_in_effect;
+        $requirement (expression: $may_expression) isa relaxed_requirement;
+        $may_expression isa may_expression;
+    } then {
+        (tactic_rule: $tactic_rule, impacted: $may_expression) isa tactic_rule_impacts_may_expression_in_effect;
+    };
+
+rule tactic_rule_impacts_in_effect_base_transitivity:
+    when {
+        (tactic_rule: $tactic_rule, impacted: $parent) isa tactic_rule_impacts_in_effect;
+        $parent (expression: $expression_child) isa expression;
+        $expression_child isa $expression_type;
+        {
+            $expression_type sub atomic_expression;
+        } or {
+            $expression_type sub fuzzy_comparison_expression;
+        } or {
+            $expression_type sub relaxed_fuzzy_expression;
+        } or {
+            $expression_type sub not_expression;
+        } or {
+            $expression_type sub fuzzy_not;
+        };
+    } then {
+        (tactic_rule: $tactic_rule, impacted: $expression_child) isa tactic_rule_impacts_base_in_effect;
+    };
+
+rule tactic_rule_impacts_in_effect_or_transitivity:
+    when {
+        (tactic_rule: $tactic_rule, impacted: $parent) isa tactic_rule_impacts_in_effect;
+        $parent (expression: $or_expression) isa expression;
+        $or_expression isa $expression_type;
+        {
+            $expression_type sub or_expression;
+        } or {
+            $expression_type sub fuzzy_or;
+        };
+    } then {
+        (tactic_rule: $tactic_rule, impacted: $or_expression) isa tactic_rule_impacts_or_in_effect;
+    };
+
+rule tactic_rule_impacts_in_effect_and_transitivity:
+    when {
+        (tactic_rule: $tactic_rule, impacted: $parent) isa tactic_rule_impacts_in_effect;
+        $parent (expression: $and_expression) isa expression;
+        $and_expression isa $expression_type;
+        {
+            $expression_type sub and_expression;
+        } or {
+            $expression_type sub fuzzy_and;
+        };
+    } then {
+        (tactic_rule: $tactic_rule, impacted: $and_expression) isa tactic_rule_impacts_and_in_effect;
+    };
+
+rule tr_dependency_tr_impacts_in_effect_fulfillment:
+  when {
+    $tr_impacts (tactic_rule: $tactic_rule, impacted: $expression) isa tactic_rule_impacts_in_effect;
+    $tr_dependency (tactic_rule: $tactic_rule, dependent: $expression) isa tactic_rule_dependency,
+        has fulfillment $fulfillment;
+  } then {
+    $tr_impacts has $fulfillment;
+  };
+
+rule tr_impacts_in_effect_fulfillment_comparison:
+  when {
+    $tr_impacts (tactic_rule: $tactic_rule, impacted: $expression) isa tactic_rule_impacts_base_in_effect;
+    $expression isa $comparison_type, has membership_degree $membership_degree;
+    {
+        $comparison_type sub comparison_expression;
+    } or {
+        $comparison_type sub fuzzy_comparison_expression;
+    } or {
+        $comparison_type sub relaxed_fuzzy_expression;
+    };
+    not {$tr_dependency (tactic_rule: $tactic_rule, dependent: $expression) isa tactic_rule_dependency;};
+    ?fulfillment = $membership_degree;
+  } then {
+    $tr_impacts has fulfillment ?fulfillment;
+  };
+
+rule tr_impacts_in_effect_fulfillment_proposition:
+  when {
+    $tr_impacts (tactic_rule: $tactic_rule, impacted: $expression) isa tactic_rule_impacts_base_in_effect;
+    $expression isa propositional_expression, has membership_degree $membership_degree;
+    ?fulfillment = $membership_degree;
+  } then {
+    $tr_impacts has fulfillment ?fulfillment;
+  };
+
+rule not_expression_tr_impacts_in_effect_fulfillment:
+  when {
+    $tr_impacts (tactic_rule: $tactic_rule, impacted: $not_expr) isa tactic_rule_impacts_base_in_effect;
+    $not_expr (expression: $expression) isa $not_type;
+
+    {
+        $not_type sub not_expression;
+    } or {
+        $not_type sub fuzzy_not;
+    };
+
+    (tactic_rule: $tactic_rule, impacted: $expression) isa tactic_rule_impacts_in_effect,
+        has fulfillment $fulfillment;
+
+    ?negated_fulfillment = 1.0 - $fulfillment;
+  } then {
+    $tr_impacts has fulfillment ?negated_fulfillment;
+  };
+
+rule or_expression_tr_impacts_in_effect_fulfillment:
+	when {
+        $tr_impacts (tactic_rule: $tactic_rule, impacted: $or_expr) isa tactic_rule_impacts_or_in_effect;
+
+        $or_expr (expression: $expression) isa expression;
+
+        (tactic_rule: $tactic_rule, impacted: $expression) isa tactic_rule_impacts_in_effect,
+            has fulfillment $fulfillment;
+
+        not {
+            $or_expr (expression: $another_expression) isa expression;
+            (tactic_rule: $tactic_rule, impacted: $another_expression) isa tactic_rule_impacts_in_effect,
+                has fulfillment $another_fulfillment;
+            $another_fulfillment > $fulfillment;
+		};
+	} then {
+        $tr_impacts has $fulfillment;
+	};
+
+rule and_expression_tr_impacts_in_effect_fulfillment:
+	when {
+        $tr_impacts (tactic_rule: $tactic_rule, impacted: $and_expr) isa tactic_rule_impacts_and_in_effect;
+
+        $and_expr (expression: $expression) isa expression;
+
+        (tactic_rule: $tactic_rule, impacted: $expression) isa tactic_rule_impacts_in_effect,
+            has fulfillment $fulfillment;
+
+        not {
+            $and_expr (expression: $another_expression) isa expression;
+            (tactic_rule: $tactic_rule, impacted: $another_expression) isa tactic_rule_impacts_in_effect,
+                has fulfillment $another_fulfillment;
+            $another_fulfillment < $fulfillment;
+		};
+	} then {
+        $tr_impacts has $fulfillment;
+	};
+
+rule shall_expression_tr_impacts_in_effect_fulfillment:
+	when {
+        $tr_shall (tactic_rule: $tactic_rule, impacted: $shall_expr) isa tactic_rule_impacts_shall_expression_in_effect;
+
+        $shall_expr (expression: $expression) isa shall_expression;
+
+        (tactic_rule: $tactic_rule, impacted: $expression) isa tactic_rule_impacts_in_effect,
+            has fulfillment $fulfillment;
+
+        not {
+            $shall_expr (expression: $another_expression) isa expression;
+            (tactic_rule: $tactic_rule, impacted: $another_expression) isa tactic_rule_impacts_in_effect,
+                has fulfillment $another_fulfillment;
+            $another_fulfillment < $fulfillment;
+		};
+	} then {
+        $tr_shall has $fulfillment;
+	};
+
+rule may_expression_tr_impacts_in_effect_fulfillment:
+	when {
+        $tr_may (tactic_rule: $tactic_rule, impacted: $may_expr) isa tactic_rule_impacts_may_expression_in_effect;
+
+        $may_expr (expression: $expression) isa may_expression;
+
+        (tactic_rule: $tactic_rule, impacted: $expression) isa tactic_rule_impacts_in_effect,
+            has fulfillment $fulfillment;
+
+        not {
+            $may_expr (expression: $another_expression) isa expression;
+            (tactic_rule: $tactic_rule, impacted: $another_expression) isa tactic_rule_impacts_in_effect,
+                has fulfillment $another_fulfillment;
+            $another_fulfillment > $fulfillment;
+		};
+	} then {
+        $tr_may has $fulfillment;
+	};
+
+rule requirement_tr_impacts_in_effect_fulfillment:
+	when {
+        $tr_req (tactic_rule: $tactic_rule, impacted: $requirement) isa tactic_rule_impacts_requirement_in_effect;
+        $requirement (expression: $expression) isa relaxed_requirement;
+        (tactic_rule: $tactic_rule, impacted: $expression) isa tactic_rule_impacts_in_effect,
+            has fulfillment $fulfillment;
+
+        not {
+            $requirement (expression: $another_expression) isa relaxed_requirement;
+            (tactic_rule: $tactic_rule, impacted: $another_expression) isa tactic_rule_impacts_in_effect,
+                has fulfillment $another_fulfillment;
+            $another_fulfillment < $fulfillment;
+		};
+	} then {
+        $tr_req has $fulfillment;
+	};
+
+rule resolution_model_tactic_rule_impacts_requirement_in_effect:
+    when {
+        $resolution_model (tactic: $tactic) isa resolution_model;
+        $tactic_rule (tactic: $tactic) isa tactic_rule;
+        $tr_req (tactic_rule: $tactic_rule, impacted: $requirement)
+            isa tactic_rule_impacts_requirement_in_effect;
+        $requirement isa relaxed_requirement, has in_effect true;
+    } then {
+        (resolution_model: $resolution_model,
+            tactic_rule: $tactic_rule,
+            impacted: $requirement)
+            isa resolution_model_tactic_rule_impacts_requirement_in_effect;
+    };
+
+rule resolution_model_tactic_rule_impacts_requirement_in_effect_fulfillment:
+    when {
+        $rm_tr_req (
+            resolution_model: $resolution_model,
+            tactic_rule: $tactic_rule,
+            impacted: $requirement
+        ) isa resolution_model_tactic_rule_impacts_requirement_in_effect;
+        $tr_req (tactic_rule: $tactic_rule, impacted: $requirement)
+            isa tactic_rule_impacts_requirement_in_effect,
+            has fulfillment $fulfillment;
+        $resolution_model isa resolution_model;
+    } then {
+        $rm_tr_req has $fulfillment;
+    };
