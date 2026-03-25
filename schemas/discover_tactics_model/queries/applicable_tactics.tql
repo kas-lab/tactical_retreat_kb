@@ -15,3 +15,9 @@ match
    $resolution_model isa resolution_model, has resolution_model_name 'rebetmc';
    (action: $action, resolution_model: $resolution_model, tactic_rule: $tactic_rule) isa applicable_tactics;
 fetch  $tactic_rule: rule_name;
+
+match
+   $action isa ActionServer, has interface_name '/compute_path_to_pose';
+   $resolution_model isa resolution_model, has resolution_model_name 'rebetmc';
+   (action: $action, resolution_model: $resolution_model, tactic_rule: $tactic_rule) isa applicable_tactics, has valid true;
+fetch  $tactic_rule: rule_name;

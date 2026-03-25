@@ -1,0 +1,355 @@
+insert
+
+# values
+$integer_1 isa ValueInteger,
+    has integer_value 1;
+$integer_2 isa ValueInteger,
+    has integer_value 2;
+$integer_3 isa ValueInteger,
+    has integer_value 3;
+
+$double_1_1 isa ValueDouble,
+    has double_value 1.1;
+$double_1_2 isa ValueDouble,
+    has double_value 1.2;
+$double_1_3 isa ValueDouble,
+    has double_value 1.3;
+
+$string_1 isa ValueString,
+    has string_value '1';
+$string_2 isa ValueString,
+    has string_value '2';
+
+$bool_false isa ValueBool, has bool_value false;
+$bool_true isa ValueBool, has bool_value true;
+
+# measures
+
+## measures integer
+$measure_integer_1 isa Measure, has measure_name 'measure_integer_1';
+(measure: $measure_integer_1, measurement_value: $integer_1) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+$measure_integer_2 isa Measure, has measure_name 'measure_integer_2';
+(measure: $measure_integer_2, measurement_value: $integer_2) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+$measure_integer_3 isa Measure, has measure_name 'measure_integer_3';
+(measure: $measure_integer_3, measurement_value: $integer_3) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+
+## measures double
+$measure_double_1_1 isa Measure, has measure_name 'measure_double_1_1';
+(measure: $measure_double_1_1, measurement_value: $double_1_1) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+$measure_double_1_2 isa Measure, has measure_name 'measure_double_1_2';
+(measure: $measure_double_1_2, measurement_value: $double_1_2) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+$measure_double_1_3 isa Measure, has measure_name 'measure_double_1_3';
+(measure: $measure_double_1_3, measurement_value: $double_1_3) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+
+## measures string
+$measure_string_1 isa Measure, has measure_name 'measure_string_1';
+(measure: $measure_string_1, measurement_value: $string_1) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+$measure_string_2 isa Measure, has measure_name 'measure_string_2';
+(measure: $measure_string_2, measurement_value: $string_2) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+
+## measures bool
+$measure_bool_false isa Measure, has measure_name 'measure_bool_false';
+(measure: $measure_bool_false, measurement_value: $bool_false) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+$measure_bool_true isa Measure, has measure_name 'measure_bool_true';
+(measure: $measure_bool_true, measurement_value: $bool_true) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+# proposition expressions
+$bool_false_prop_exp (atom: $bool_false) isa propositional_expression, has expression_name 'bool_false_prop_exp';
+$bool_true_prop_exp (atom: $bool_true) isa propositional_expression, has expression_name 'bool_true_prop_exp';
+
+$false_measure_prop_exp (atom: $measure_bool_false) isa propositional_expression, has expression_name 'false_measure_prop_exp';
+$true_measure_prop_exp (atom: $measure_bool_true) isa propositional_expression, has expression_name 'true_measure_prop_exp';
+
+$measure_no_measurement isa Measure, has measure_name 'measure_no_measurement';
+(atom: $measure_no_measurement) isa propositional_expression, has expression_name 'no_measure_prop_exp';
+
+# not expressions
+$not_false_expr (expression: $bool_false_prop_exp) isa not_expression, has expression_name 'not_false_expr';
+$not_true_expr (expression: $bool_true_prop_exp) isa not_expression, has expression_name 'not_true_expr';
+
+# comparison expressions
+## less_than expressions
+### less than w/ doubles
+$vd_1_2_less_vd_1_3 (lhs_value:$double_1_2, rhs_value:$double_1_3) isa less_than, has expression_name 'vd_1_2_less_vd_1_3';
+$vd_1_2_less_vd_1_2 (lhs_value:$double_1_2, rhs_value:$double_1_2) isa less_than, has expression_name 'vd_1_2_less_vd_1_2';
+$vd_1_2_less_vd_1_1 (lhs_value:$double_1_2, rhs_value:$double_1_1) isa less_than, has expression_name 'vd_1_2_less_vd_1_1';
+
+$md_1_2_less_md_1_3 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_3) isa less_than, has expression_name 'md_1_2_less_md_1_3';
+$md_1_2_less_md_1_2 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_2) isa less_than, has expression_name 'md_1_2_less_md_1_2';
+$md_1_2_less_md_1_1 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_1) isa less_than, has expression_name 'md_1_2_less_md_1_1';
+
+$md_1_2_less_vd_1_3 (lhs_value:$measure_double_1_2, rhs_value:$double_1_3) isa less_than, has expression_name 'md_1_2_less_vd_1_3';
+$md_1_2_less_vd_1_2 (lhs_value:$measure_double_1_2, rhs_value:$double_1_2) isa less_than, has expression_name 'md_1_2_less_vd_1_2';
+$md_1_2_less_vd_1_1 (lhs_value:$measure_double_1_2, rhs_value:$double_1_1) isa less_than, has expression_name 'md_1_2_less_vd_1_1';
+
+$vd_1_3_less_md_1_2 (lhs_value:$double_1_3, rhs_value:$measure_double_1_2) isa less_than, has expression_name 'vd_1_3_less_md_1_2';
+$vd_1_2_less_md_1_2 (lhs_value:$double_1_2, rhs_value:$measure_double_1_2) isa less_than, has expression_name 'vd_1_2_less_md_1_2';
+$vd_1_1_less_md_1_2 (lhs_value:$double_1_1, rhs_value:$measure_double_1_2) isa less_than, has expression_name 'vd_1_1_less_md_1_2';
+
+### less than w/ integers
+$vi_2_less_vi_3 (lhs_value:$integer_2, rhs_value:$integer_3) isa less_than, has expression_name 'vi_2_less_vi_3';
+$vi_2_less_vi_2 (lhs_value:$integer_2, rhs_value:$integer_2) isa less_than, has expression_name 'vi_2_less_vi_2';
+$vi_2_less_vi_1 (lhs_value:$integer_2, rhs_value:$integer_1) isa less_than, has expression_name 'vi_2_less_vi_1';
+
+$mi_2_less_mi_3 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_3) isa less_than, has expression_name 'mi_2_less_mi_3';
+$mi_2_less_mi_2 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_2) isa less_than, has expression_name 'mi_2_less_mi_2';
+$mi_2_less_mi_1 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_1) isa less_than, has expression_name 'mi_2_less_mi_1';
+
+$mi_2_less_vi_3 (lhs_value:$measure_integer_2, rhs_value:$integer_3) isa less_than, has expression_name 'mi_2_less_vi_3';
+$mi_2_less_vi_2 (lhs_value:$measure_integer_2, rhs_value:$integer_2) isa less_than, has expression_name 'mi_2_less_vi_2';
+$mi_2_less_vi_1 (lhs_value:$measure_integer_2, rhs_value:$integer_1) isa less_than, has expression_name 'mi_2_less_vi_1';
+
+$vi_3_less_mi_2 (lhs_value:$integer_3, rhs_value:$measure_integer_2) isa less_than, has expression_name 'vi_3_less_mi_2';
+$vi_2_less_mi_2 (lhs_value:$integer_2, rhs_value:$measure_integer_2) isa less_than, has expression_name 'vi_2_less_mi_2';
+$vi_1_less_mi_2 (lhs_value:$integer_1, rhs_value:$measure_integer_2) isa less_than, has expression_name 'vi_1_less_mi_2';
+
+## less_than_equal expressions
+### less than equal w/ doubles
+$vd_1_2_less_eq_vd_1_3 (lhs_value:$double_1_2, rhs_value:$double_1_3) isa less_than_equal, has expression_name 'vd_1_2_less_eq_vd_1_3';
+$vd_1_2_less_eq_vd_1_2 (lhs_value:$double_1_2, rhs_value:$double_1_2) isa less_than_equal, has expression_name 'vd_1_2_less_eq_vd_1_2';
+$vd_1_2_less_eq_vd_1_1 (lhs_value:$double_1_2, rhs_value:$double_1_1) isa less_than_equal, has expression_name 'vd_1_2_less_eq_vd_1_1';
+
+$md_1_2_less_eq_md_1_3 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_3) isa less_than_equal, has expression_name 'md_1_2_less_eq_md_1_3';
+$md_1_2_less_eq_md_1_2 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_2) isa less_than_equal, has expression_name 'md_1_2_less_eq_md_1_2';
+$md_1_2_less_eq_md_1_1 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_1) isa less_than_equal, has expression_name 'md_1_2_less_eq_md_1_1';
+
+$md_1_2_less_eq_vd_1_3 (lhs_value:$measure_double_1_2, rhs_value:$double_1_3) isa less_than_equal, has expression_name 'md_1_2_less_eq_vd_1_3';
+$md_1_2_less_eq_vd_1_2 (lhs_value:$measure_double_1_2, rhs_value:$double_1_2) isa less_than_equal, has expression_name 'md_1_2_less_eq_vd_1_2';
+$md_1_2_less_eq_vd_1_1 (lhs_value:$measure_double_1_2, rhs_value:$double_1_1) isa less_than_equal, has expression_name 'md_1_2_less_eq_vd_1_1';
+
+$vd_1_3_less_eq_md_1_2 (lhs_value:$double_1_3, rhs_value:$measure_double_1_2) isa less_than_equal, has expression_name 'vd_1_3_less_eq_md_1_2';
+$vd_1_2_less_eq_md_1_2 (lhs_value:$double_1_2, rhs_value:$measure_double_1_2) isa less_than_equal, has expression_name 'vd_1_2_less_eq_md_1_2';
+$vd_1_1_less_eq_md_1_2 (lhs_value:$double_1_1, rhs_value:$measure_double_1_2) isa less_than_equal, has expression_name 'vd_1_1_less_eq_md_1_2';
+
+### less than equal w/ integers
+$vi_2_less_eq_vi_3 (lhs_value:$integer_2, rhs_value:$integer_3) isa less_than_equal, has expression_name 'vi_2_less_eq_vi_3';
+$vi_2_less_eq_vi_2 (lhs_value:$integer_2, rhs_value:$integer_2) isa less_than_equal, has expression_name 'vi_2_less_eq_vi_2';
+$vi_2_less_eq_vi_1 (lhs_value:$integer_2, rhs_value:$integer_1) isa less_than_equal, has expression_name 'vi_2_less_eq_vi_1';
+
+$mi_2_less_eq_mi_3 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_3) isa less_than_equal, has expression_name 'mi_2_less_eq_mi_3';
+$mi_2_less_eq_mi_2 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_2) isa less_than_equal, has expression_name 'mi_2_less_eq_mi_2';
+$mi_2_less_eq_mi_1 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_1) isa less_than_equal, has expression_name 'mi_2_less_eq_mi_1';
+
+$mi_2_less_eq_vi_3 (lhs_value:$measure_integer_2, rhs_value:$integer_3) isa less_than_equal, has expression_name 'mi_2_less_eq_vi_3';
+$mi_2_less_eq_vi_2 (lhs_value:$measure_integer_2, rhs_value:$integer_2) isa less_than_equal, has expression_name 'mi_2_less_eq_vi_2';
+$mi_2_less_eq_vi_1 (lhs_value:$measure_integer_2, rhs_value:$integer_1) isa less_than_equal, has expression_name 'mi_2_less_eq_vi_1';
+
+$vi_3_less_eq_mi_2 (lhs_value:$integer_3, rhs_value:$measure_integer_2) isa less_than_equal, has expression_name 'vi_3_less_eq_mi_2';
+$vi_2_less_eq_mi_2 (lhs_value:$integer_2, rhs_value:$measure_integer_2) isa less_than_equal, has expression_name 'vi_2_less_eq_mi_2';
+$vi_1_less_eq_mi_2 (lhs_value:$integer_1, rhs_value:$measure_integer_2) isa less_than_equal, has expression_name 'vi_1_less_eq_mi_2';
+
+## greater_than expressions
+### greater than w/ doubles
+$vd_1_2_greater_vd_1_3 (lhs_value:$double_1_2, rhs_value:$double_1_3) isa greater_than, has expression_name 'vd_1_2_greater_vd_1_3';
+$vd_1_2_greater_vd_1_2 (lhs_value:$double_1_2, rhs_value:$double_1_2) isa greater_than, has expression_name 'vd_1_2_greater_vd_1_2';
+$vd_1_2_greater_vd_1_1 (lhs_value:$double_1_2, rhs_value:$double_1_1) isa greater_than, has expression_name 'vd_1_2_greater_vd_1_1';
+
+$md_1_2_greater_md_1_3 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_3) isa greater_than, has expression_name 'md_1_2_greater_md_1_3';
+$md_1_2_greater_md_1_2 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_2) isa greater_than, has expression_name 'md_1_2_greater_md_1_2';
+$md_1_2_greater_md_1_1 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_1) isa greater_than, has expression_name 'md_1_2_greater_md_1_1';
+
+$md_1_2_greater_vd_1_3 (lhs_value:$measure_double_1_2, rhs_value:$double_1_3) isa greater_than, has expression_name 'md_1_2_greater_vd_1_3';
+$md_1_2_greater_vd_1_2 (lhs_value:$measure_double_1_2, rhs_value:$double_1_2) isa greater_than, has expression_name 'md_1_2_greater_vd_1_2';
+$md_1_2_greater_vd_1_1 (lhs_value:$measure_double_1_2, rhs_value:$double_1_1) isa greater_than, has expression_name 'md_1_2_greater_vd_1_1';
+
+$vd_1_3_greater_md_1_2 (lhs_value:$double_1_3, rhs_value:$measure_double_1_2) isa greater_than, has expression_name 'vd_1_3_greater_md_1_2';
+$vd_1_2_greater_md_1_2 (lhs_value:$double_1_2, rhs_value:$measure_double_1_2) isa greater_than, has expression_name 'vd_1_2_greater_md_1_2';
+$vd_1_1_greater_md_1_2 (lhs_value:$double_1_1, rhs_value:$measure_double_1_2) isa greater_than, has expression_name 'vd_1_1_greater_md_1_2';
+
+### greater than w/ integers
+$vi_2_greater_vi_3 (lhs_value:$integer_2, rhs_value:$integer_3) isa greater_than, has expression_name 'vi_2_greater_vi_3';
+$vi_2_greater_vi_2 (lhs_value:$integer_2, rhs_value:$integer_2) isa greater_than, has expression_name 'vi_2_greater_vi_2';
+$vi_2_greater_vi_1 (lhs_value:$integer_2, rhs_value:$integer_1) isa greater_than, has expression_name 'vi_2_greater_vi_1';
+
+$mi_2_greater_mi_3 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_3) isa greater_than, has expression_name 'mi_2_greater_mi_3';
+$mi_2_greater_mi_2 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_2) isa greater_than, has expression_name 'mi_2_greater_mi_2';
+$mi_2_greater_mi_1 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_1) isa greater_than, has expression_name 'mi_2_greater_mi_1';
+
+$mi_2_greater_vi_3 (lhs_value:$measure_integer_2, rhs_value:$integer_3) isa greater_than, has expression_name 'mi_2_greater_vi_3';
+$mi_2_greater_vi_2 (lhs_value:$measure_integer_2, rhs_value:$integer_2) isa greater_than, has expression_name 'mi_2_greater_vi_2';
+$mi_2_greater_vi_1 (lhs_value:$measure_integer_2, rhs_value:$integer_1) isa greater_than, has expression_name 'mi_2_greater_vi_1';
+
+$vi_3_greater_mi_2 (lhs_value:$integer_3, rhs_value:$measure_integer_2) isa greater_than, has expression_name 'vi_3_greater_mi_2';
+$vi_2_greater_mi_2 (lhs_value:$integer_2, rhs_value:$measure_integer_2) isa greater_than, has expression_name 'vi_2_greater_mi_2';
+$vi_1_greater_mi_2 (lhs_value:$integer_1, rhs_value:$measure_integer_2) isa greater_than, has expression_name 'vi_1_greater_mi_2';
+
+## greater_than_equal expressions
+### greater than equal w/ doubles
+$vd_1_2_greater_eq_vd_1_3 (lhs_value:$double_1_2, rhs_value:$double_1_3) isa greater_than_equal, has expression_name 'vd_1_2_greater_eq_vd_1_3';
+$vd_1_2_greater_eq_vd_1_2 (lhs_value:$double_1_2, rhs_value:$double_1_2) isa greater_than_equal, has expression_name 'vd_1_2_greater_eq_vd_1_2';
+$vd_1_2_greater_eq_vd_1_1 (lhs_value:$double_1_2, rhs_value:$double_1_1) isa greater_than_equal, has expression_name 'vd_1_2_greater_eq_vd_1_1';
+
+$md_1_2_greater_eq_md_1_3 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_3) isa greater_than_equal, has expression_name 'md_1_2_greater_eq_md_1_3';
+$md_1_2_greater_eq_md_1_2 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_2) isa greater_than_equal, has expression_name 'md_1_2_greater_eq_md_1_2';
+$md_1_2_greater_eq_md_1_1 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_1) isa greater_than_equal, has expression_name 'md_1_2_greater_eq_md_1_1';
+
+$md_1_2_greater_eq_vd_1_3 (lhs_value:$measure_double_1_2, rhs_value:$double_1_3) isa greater_than_equal, has expression_name 'md_1_2_greater_eq_vd_1_3';
+$md_1_2_greater_eq_vd_1_2 (lhs_value:$measure_double_1_2, rhs_value:$double_1_2) isa greater_than_equal, has expression_name 'md_1_2_greater_eq_vd_1_2';
+$md_1_2_greater_eq_vd_1_1 (lhs_value:$measure_double_1_2, rhs_value:$double_1_1) isa greater_than_equal, has expression_name 'md_1_2_greater_eq_vd_1_1';
+
+$vd_1_3_greater_eq_md_1_2 (lhs_value:$double_1_3, rhs_value:$measure_double_1_2) isa greater_than_equal, has expression_name 'vd_1_3_greater_eq_md_1_2';
+$vd_1_2_greater_eq_md_1_2 (lhs_value:$double_1_2, rhs_value:$measure_double_1_2) isa greater_than_equal, has expression_name 'vd_1_2_greater_eq_md_1_2';
+$vd_1_1_greater_eq_md_1_2 (lhs_value:$double_1_1, rhs_value:$measure_double_1_2) isa greater_than_equal, has expression_name 'vd_1_1_greater_eq_md_1_2';
+
+### greater than equal w/ integers
+$vi_2_greater_eq_vi_3 (lhs_value:$integer_2, rhs_value:$integer_3) isa greater_than_equal, has expression_name 'vi_2_greater_eq_vi_3';
+$vi_2_greater_eq_vi_2 (lhs_value:$integer_2, rhs_value:$integer_2) isa greater_than_equal, has expression_name 'vi_2_greater_eq_vi_2';
+$vi_2_greater_eq_vi_1 (lhs_value:$integer_2, rhs_value:$integer_1) isa greater_than_equal, has expression_name 'vi_2_greater_eq_vi_1';
+
+$mi_2_greater_eq_mi_3 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_3) isa greater_than_equal, has expression_name 'mi_2_greater_eq_mi_3';
+$mi_2_greater_eq_mi_2 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_2) isa greater_than_equal, has expression_name 'mi_2_greater_eq_mi_2';
+$mi_2_greater_eq_mi_1 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_1) isa greater_than_equal, has expression_name 'mi_2_greater_eq_mi_1';
+
+$mi_2_greater_eq_vi_3 (lhs_value:$measure_integer_2, rhs_value:$integer_3) isa greater_than_equal, has expression_name 'mi_2_greater_eq_vi_3';
+$mi_2_greater_eq_vi_2 (lhs_value:$measure_integer_2, rhs_value:$integer_2) isa greater_than_equal, has expression_name 'mi_2_greater_eq_vi_2';
+$mi_2_greater_eq_vi_1 (lhs_value:$measure_integer_2, rhs_value:$integer_1) isa greater_than_equal, has expression_name 'mi_2_greater_eq_vi_1';
+
+$vi_3_greater_eq_mi_2 (lhs_value:$integer_3, rhs_value:$measure_integer_2) isa greater_than_equal, has expression_name 'vi_3_greater_eq_mi_2';
+$vi_2_greater_eq_mi_2 (lhs_value:$integer_2, rhs_value:$measure_integer_2) isa greater_than_equal, has expression_name 'vi_2_greater_eq_mi_2';
+$vi_1_greater_eq_mi_2 (lhs_value:$integer_1, rhs_value:$measure_integer_2) isa greater_than_equal, has expression_name 'vi_1_greater_eq_mi_2';
+
+
+## equal expressions
+### greater than w/ doubles
+$vd_1_2_equal_vd_1_3 (lhs_value:$double_1_2, rhs_value:$double_1_3) isa equal, has expression_name 'vd_1_2_equal_vd_1_3';
+$vd_1_2_equal_vd_1_2 (lhs_value:$double_1_2, rhs_value:$double_1_2) isa equal, has expression_name 'vd_1_2_equal_vd_1_2';
+
+$md_1_2_equal_md_1_3 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_3) isa equal, has expression_name 'md_1_2_equal_md_1_3';
+$md_1_2_equal_md_1_2 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_2) isa equal, has expression_name 'md_1_2_equal_md_1_2';
+
+$md_1_2_equal_vd_1_3 (lhs_value:$measure_double_1_2, rhs_value:$double_1_3) isa equal, has expression_name 'md_1_2_equal_vd_1_3';
+$md_1_2_equal_vd_1_2 (lhs_value:$measure_double_1_2, rhs_value:$double_1_2) isa equal, has expression_name 'md_1_2_equal_vd_1_2';
+
+$vd_1_3_equal_md_1_2 (lhs_value:$double_1_3, rhs_value:$measure_double_1_2) isa equal, has expression_name 'vd_1_3_equal_md_1_2';
+$vd_1_2_equal_md_1_2 (lhs_value:$double_1_2, rhs_value:$measure_double_1_2) isa equal, has expression_name 'vd_1_2_equal_md_1_2';
+
+### equal than w/ integers
+$vi_2_equal_vi_3 (lhs_value:$integer_2, rhs_value:$integer_3) isa equal, has expression_name 'vi_2_equal_vi_3';
+$vi_2_equal_vi_2 (lhs_value:$integer_2, rhs_value:$integer_2) isa equal, has expression_name 'vi_2_equal_vi_2';
+
+$mi_2_equal_mi_3 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_3) isa equal, has expression_name 'mi_2_equal_mi_3';
+$mi_2_equal_mi_2 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_2) isa equal, has expression_name 'mi_2_equal_mi_2';
+
+$mi_2_equal_vi_3 (lhs_value:$measure_integer_2, rhs_value:$integer_3) isa equal, has expression_name 'mi_2_equal_vi_3';
+$mi_2_equal_vi_2 (lhs_value:$measure_integer_2, rhs_value:$integer_2) isa equal, has expression_name 'mi_2_equal_vi_2';
+
+$vi_3_equal_mi_2 (lhs_value:$integer_3, rhs_value:$measure_integer_2) isa equal, has expression_name 'vi_3_equal_mi_2';
+$vi_2_equal_mi_2 (lhs_value:$integer_2, rhs_value:$measure_integer_2) isa equal, has expression_name 'vi_2_equal_mi_2';
+
+### equal w/ string
+$vs_2_equal_vs_1 (lhs_value:$string_2, rhs_value:$string_1) isa equal, has expression_name 'vs_2_equal_vs_1';
+$vs_2_equal_vs_2 (lhs_value:$string_2, rhs_value:$string_2) isa equal, has expression_name 'vs_2_equal_vs_2';
+
+$ms_2_equal_ms_1 (lhs_value:$measure_string_2, rhs_value:$measure_string_1) isa equal, has expression_name 'ms_2_equal_ms_1';
+$ms_2_equal_ms_2 (lhs_value:$measure_string_2, rhs_value:$measure_string_2) isa equal, has expression_name 'ms_2_equal_ms_2';
+
+$ms_2_equal_vs_1 (lhs_value:$measure_string_2, rhs_value:$string_1) isa equal, has expression_name 'ms_2_equal_vs_1';
+$ms_2_equal_vs_2 (lhs_value:$measure_string_2, rhs_value:$string_2) isa equal, has expression_name 'ms_2_equal_vs_2';
+
+$vs_1_equal_ms_2 (lhs_value:$string_1, rhs_value:$measure_string_2) isa equal, has expression_name 'vs_1_equal_ms_2';
+$vs_2_equal_ms_2 (lhs_value:$string_2, rhs_value:$measure_string_2) isa equal, has expression_name 'vs_2_equal_ms_2';
+
+### equal w/ bool
+$vb_false_equal_vb_true (lhs_value:$bool_false, rhs_value:$bool_true) isa equal, has expression_name 'vb_false_equal_vb_true';
+$vb_false_equal_vb_false (lhs_value:$bool_false, rhs_value:$bool_false) isa equal, has expression_name 'vb_false_equal_vb_false';
+
+$mb_false_equal_mb_true (lhs_value:$measure_bool_false, rhs_value:$measure_bool_true) isa equal, has expression_name 'mb_false_equal_mb_true';
+$mb_false_equal_mb_false (lhs_value:$measure_bool_false, rhs_value:$measure_bool_false) isa equal, has expression_name 'mb_false_equal_mb_false';
+
+$mb_false_equal_vb_true (lhs_value:$measure_bool_false, rhs_value:$bool_true) isa equal, has expression_name 'mb_false_equal_vb_true';
+$mb_false_equal_vb_false (lhs_value:$measure_bool_false, rhs_value:$bool_false) isa equal, has expression_name 'mb_false_equal_vb_false';
+
+$vb_true_equal_mb_false (lhs_value:$bool_true, rhs_value:$measure_bool_false) isa equal, has expression_name 'vb_true_equal_mb_false';
+$vb_false_equal_mb_false (lhs_value:$bool_false, rhs_value:$measure_bool_false) isa equal, has expression_name 'vb_false_equal_mb_false';
+
+## not_equal expressions
+### greater than w/ doubles
+$vd_1_2_not_equal_vd_1_3 (lhs_value:$double_1_2, rhs_value:$double_1_3) isa not_equal, has expression_name 'vd_1_2_not_equal_vd_1_3';
+$vd_1_2_not_equal_vd_1_2 (lhs_value:$double_1_2, rhs_value:$double_1_2) isa not_equal, has expression_name 'vd_1_2_not_equal_vd_1_2';
+
+$md_1_2_not_equal_md_1_3 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_3) isa not_equal, has expression_name 'md_1_2_not_equal_md_1_3';
+$md_1_2_not_equal_md_1_2 (lhs_value:$measure_double_1_2, rhs_value:$measure_double_1_2) isa not_equal, has expression_name 'md_1_2_not_equal_md_1_2';
+
+$md_1_2_not_equal_vd_1_3 (lhs_value:$measure_double_1_2, rhs_value:$double_1_3) isa not_equal, has expression_name 'md_1_2_not_equal_vd_1_3';
+$md_1_2_not_equal_vd_1_2 (lhs_value:$measure_double_1_2, rhs_value:$double_1_2) isa not_equal, has expression_name 'md_1_2_not_equal_vd_1_2';
+
+$vd_1_3_not_equal_md_1_2 (lhs_value:$double_1_3, rhs_value:$measure_double_1_2) isa not_equal, has expression_name 'vd_1_3_not_equal_md_1_2';
+$vd_1_2_not_equal_md_1_2 (lhs_value:$double_1_2, rhs_value:$measure_double_1_2) isa not_equal, has expression_name 'vd_1_2_not_equal_md_1_2';
+
+### not_equal than w/ integers
+$vi_2_not_equal_vi_3 (lhs_value:$integer_2, rhs_value:$integer_3) isa not_equal, has expression_name 'vi_2_not_equal_vi_3';
+$vi_2_not_equal_vi_2 (lhs_value:$integer_2, rhs_value:$integer_2) isa not_equal, has expression_name 'vi_2_not_equal_vi_2';
+
+$mi_2_not_equal_mi_3 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_3) isa not_equal, has expression_name 'mi_2_not_equal_mi_3';
+$mi_2_not_equal_mi_2 (lhs_value:$measure_integer_2, rhs_value:$measure_integer_2) isa not_equal, has expression_name 'mi_2_not_equal_mi_2';
+
+$mi_2_not_equal_vi_3 (lhs_value:$measure_integer_2, rhs_value:$integer_3) isa not_equal, has expression_name 'mi_2_not_equal_vi_3';
+$mi_2_not_equal_vi_2 (lhs_value:$measure_integer_2, rhs_value:$integer_2) isa not_equal, has expression_name 'mi_2_not_equal_vi_2';
+
+$vi_3_not_equal_mi_2 (lhs_value:$integer_3, rhs_value:$measure_integer_2) isa not_equal, has expression_name 'vi_3_not_equal_mi_2';
+$vi_2_not_equal_mi_2 (lhs_value:$integer_2, rhs_value:$measure_integer_2) isa not_equal, has expression_name 'vi_2_not_equal_mi_2';
+
+### not_equal w/ string
+$vs_2_not_equal_vs_1 (lhs_value:$string_2, rhs_value:$string_1) isa not_equal, has expression_name 'vs_2_not_equal_vs_1';
+$vs_2_not_equal_vs_2 (lhs_value:$string_2, rhs_value:$string_2) isa not_equal, has expression_name 'vs_2_not_equal_vs_2';
+
+$ms_2_not_equal_ms_1 (lhs_value:$measure_string_2, rhs_value:$measure_string_1) isa not_equal, has expression_name 'ms_2_not_equal_ms_1';
+$ms_2_not_equal_ms_2 (lhs_value:$measure_string_2, rhs_value:$measure_string_2) isa not_equal, has expression_name 'ms_2_not_equal_ms_2';
+
+$ms_2_not_equal_vs_1 (lhs_value:$measure_string_2, rhs_value:$string_1) isa not_equal, has expression_name 'ms_2_not_equal_vs_1';
+$ms_2_not_equal_vs_2 (lhs_value:$measure_string_2, rhs_value:$string_2) isa not_equal, has expression_name 'ms_2_not_equal_vs_2';
+
+$vs_1_not_equal_ms_2 (lhs_value:$string_1, rhs_value:$measure_string_2) isa not_equal, has expression_name 'vs_1_not_equal_ms_2';
+$vs_2_not_equal_ms_2 (lhs_value:$string_2, rhs_value:$measure_string_2) isa not_equal, has expression_name 'vs_2_not_equal_ms_2';
+
+### not_equal w/ bool
+$vb_false_not_equal_vb_true (lhs_value:$bool_false, rhs_value:$bool_true) isa not_equal, has expression_name 'vb_false_not_equal_vb_true';
+$vb_false_not_equal_vb_false (lhs_value:$bool_false, rhs_value:$bool_false) isa not_equal, has expression_name 'vb_false_not_equal_vb_false';
+
+$mb_false_not_equal_mb_true (lhs_value:$measure_bool_false, rhs_value:$measure_bool_true) isa not_equal, has expression_name 'mb_false_not_equal_mb_true';
+$mb_false_not_equal_mb_false (lhs_value:$measure_bool_false, rhs_value:$measure_bool_false) isa not_equal, has expression_name 'mb_false_not_equal_mb_false';
+
+$mb_false_not_equal_vb_true (lhs_value:$measure_bool_false, rhs_value:$bool_true) isa not_equal, has expression_name 'mb_false_not_equal_vb_true';
+$mb_false_not_equal_vb_false (lhs_value:$measure_bool_false, rhs_value:$bool_false) isa not_equal, has expression_name 'mb_false_not_equal_vb_false';
+
+$vb_true_not_equal_mb_false (lhs_value:$bool_true, rhs_value:$measure_bool_false) isa not_equal, has expression_name 'vb_true_not_equal_mb_false';
+$vb_false_not_equal_mb_false (lhs_value:$bool_false, rhs_value:$measure_bool_false) isa not_equal, has expression_name 'vb_false_not_equal_mb_false';
+
+# or & and expressions
+
+$or_expression_1 (expression:$vb_false_not_equal_vb_true, expression:$true_measure_prop_exp, expression: $not_false_expr)
+    isa or_expression, has expression_name 'or_expression_1'; # True | True | True -> True
+
+$or_expression_2 (expression:$vb_false_not_equal_vb_true, expression:$not_true_expr, expression:$not_false_expr) isa or_expression,
+    has expression_name 'or_expression_2'; # True | False | True -> True
+
+$or_expression_3 (expression:$not_true_expr, expression:$false_measure_prop_exp, expression:$bool_false_prop_exp) isa or_expression,
+    has expression_name 'or_expression_3'; # False | False | False -> False
+
+$and_expression_1 (expression:$or_expression_1, expression:$or_expression_2) isa and_expression,
+    has expression_name 'and_expression_1'; # True
+$and_expression_2 (expression:$or_expression_1, expression:$or_expression_2, expression:$or_expression_3) isa and_expression,
+    has expression_name 'and_expression_2'; # False
+$and_expression_3 (expression:$or_expression_1, expression:$true_measure_prop_exp, expression:$not_false_expr) isa and_expression,
+    has expression_name 'and_expression_3'; # True
+
+$some_rule isa tactic_rule, has rule_name "tr1"; # true
+
+$state_expr__1( antecedent: $and_expression_3, 
+rule: $some_rule
+) isa state, has state_name "current_state";
+
+$state_expr__2( antecedent: $and_expression_2, 
+rule: $some_rule
+) isa state, has state_name "not_current_state";

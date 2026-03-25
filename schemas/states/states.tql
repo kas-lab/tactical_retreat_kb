@@ -1,0 +1,32 @@
+define
+
+current sub attribute,
+    value boolean;
+
+state_name sub attribute,
+	value string;
+
+state sub relation,
+	owns state_name @key,
+    owns current,
+    relates antecedent,
+    relates rule;
+
+tactic_rule plays state:rule;
+logical_expression plays state:antecedent;
+
+rule state_current:
+    when {
+        $s isa state;
+        not {$s has current false;};
+    } then {
+        $s has current true;
+    };
+
+rule state_antecedent_invalid:
+    when {
+        $s (antecedent: $a) isa state;
+        $a isa logical_expression, has expression_satisfied false;
+    } then {
+        $s has current false;
+    };
