@@ -668,6 +668,21 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
     
+    def fetch_current_state(self):
+        query = f"""
+            match
+                $s isa state,
+                    has current true;
+            fetch
+                $s: state_name;
+        """
+        query_result = self.fetch_database(query)
+        return query_result
+
+    def get_current_state(self):
+        current_state = self.fetch_current_state()
+        return current_state[0]['s']['state_name'][0]['value']
+
     def fetch_valid_rule(self,
                         tactic_name: str,
                         ) -> List[dict[str, MatchResultDict]]:

@@ -41,7 +41,7 @@ def kb_interface():
 
 
 def test_current_state(kb_interface):
-    def fetch_state_current(self, state_name):
+    def fetch_state_current_by_name(self, state_name):
         query = f"""
             match
                 $s isa state,
@@ -52,14 +52,33 @@ def test_current_state(kb_interface):
         query_result = self.fetch_database(query)
         return query_result
 
+    def fetch_state_current(self):
+        query = f"""
+            match
+                $s isa state,
+                    has current true;
+            fetch
+                $s: state_name;
+        """
+        query_result = self.fetch_database(query)
+        return query_result
+
+    kb_interface.register_method('fetch_state_current_by_name', fetch_state_current_by_name)
     kb_interface.register_method('fetch_state_current', fetch_state_current)
 
-    current_state = kb_interface.fetch_state_current('current_state')
+
+    current_state = kb_interface.fetch_state_current_by_name('current_state')
 
     assert len(current_state[0]['s']['current']) == 1
     assert current_state[0]['s']['current'][0]['value'] is True
 
-    not_current_state = kb_interface.fetch_state_current('not_current_state')
+    not_current_state = kb_interface.fetch_state_current_by_name('not_current_state')
 
     assert len(not_current_state[0]['s']['current']) == 1
     assert not_current_state[0]['s']['current'][0]['value'] is False
+
+    current_state = kb_interface.fetch_state_current()
+
+    assert len(current_state[0]['s']['state_name']) == 1
+    print(current_state[0]['s']['state_name'][0]['value'])
+    assert current_state[0]['s']['state_name'][0]['value'] == "current_state"

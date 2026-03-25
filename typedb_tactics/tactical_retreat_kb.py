@@ -388,6 +388,23 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 self.get_logger().error("Traceback:\n" + traceback.format_exc())
                 res.success = False
             return res
+
+        def _fetch_current_state_cb(_, res):
+            try:
+                start_time = time.perf_counter()
+                self.get_logger().info('Getting current state...')
+                current_state_string =self.typedb_interface.get_current_state()
+                self.get_logger().info(f'current_state result: {current_state_string}')
+                elapsed_time = time.perf_counter() - start_time
+                self.get_logger().info(f'current_state retrieved in {elapsed_time:.4f} seconds.')
+                res.success = True
+                res.message = current_state_string
+            except Exception as e:
+                self.get_logger().error(
+                    f'Error fetching state: {e}')
+                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+                res.success = False
+            return res
         # create service with a lambda calling the create_measures_interfaces
         # function
         self.measures_service = self.create_service(
@@ -419,6 +436,13 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             HypotheticalReqFulfillment,
             self.get_name() + '/fetch_hyp_requirement',
             _fetch_req_hyp_req_cb,
+            callback_group=self.query_cb_group
+        )
+
+        self.current_state_service = self.create_service(
+            Trigger,
+            self.get_name() + '/get_current_state',
+            _fetch_current_state_cb,
             callback_group=self.query_cb_group
         )
 
@@ -555,37 +579,15 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 #     _measure_name, res)
                 # _node.get_logger().info(f"measure_name called: {_measure_name}", throttle_duration_sec=1)
                 self.measurements[_measure_name] = res
-                if(_measure_name == 'nearest_object'):
-                    if res < 0.10:
-                        self.context_dict[_measure_name] = "near"
-                    elif res > 0.15:
-                        self.context_dict[_measure_name] = "far"
-                    elif (res >= 0.10 and res <= 0.15):
-                        self.context_dict[_measure_name] = "there"  
-                elif(_measure_name == 'power_draw'):
-                    if res <= 40.0:
-                        self.context_dict[_measure_name] = "off"
-                    elif res > 40.0: 
-                        self.context_dict[_measure_name] = "drain"
-                elif(_measure_name == 'current_velocity'):
-                    val_name = _measure_name + "val"
-                    old_val = self.context_dict.get(val_name, 100)
-                    old_val_dec = self.context_dict.get(val_name, -100)
-
-                    self.context_dict[val_name] = res
-                    if res < 0.40:
-                        self.context_dict[_measure_name] = "slow"
-                    elif res > 0.40:
-                        self.context_dict[_measure_name] = "fast"
 
                 # I want to consider the unique combination of each category as a unique context, so I will publish an event with the current context whenever a measure is updated.
 
-                current_context_msg = String()
-                combo_id = self._get_context_combination_id()
-                current_context = (self.context_dict["nearest_object"], self.context_dict["power_draw"], self.context_dict["current_velocity"])
-                # _node.get_logger().info(f"Current context: {current_context}, combo_id: {combo_id}", throttle_duration_sec=2)
-                current_context_msg.data = str(combo_id)
-                self.context_publisher.publish(current_context_msg)
+                # current_context_msg = String()
+                # combo_id = self._get_context_combination_id()
+                # current_context = (self.context_dict["nearest_object"], self.context_dict["power_draw"], self.context_dict["current_velocity"])
+                # # _node.get_logger().info(f"Current context: {current_context}, combo_id: {combo_id}", throttle_duration_sec=2)
+                # current_context_msg.data = str(combo_id)
+                # self.context_publisher.publish(current_context_msg)
 
             self.measures_subscribers[measure_name] = self.create_subscription(
                 topic_type,
@@ -673,7 +675,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 self.create_measure_interface(interface)
 
             self.create_timer(1.0, lambda: self.typedb_interface.add_measurements(self.measurements) if self.measurements else None, callback_group=self.query_cb_group)
-            self.create_timer(2.0, self.publish_fulfillments, callback_group=self.query_cb_group)
+            # self.create_timer(2.0, self.publish_fulfillments, callback_group=self.query_cb_group)
 
         except Exception as e:
             raise e
