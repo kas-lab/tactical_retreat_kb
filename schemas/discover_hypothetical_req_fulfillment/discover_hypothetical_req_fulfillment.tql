@@ -729,6 +729,18 @@ rule tactic_rule_impacts_requirements:
         (tactic_rule: $tactic_rule, impacted: $requirement) isa tactic_rule_impacts_requirement;
     };
 
+rule dependency_into_impacts_and:
+    when {
+        (dependent: $comp_exp, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
+        $comp_exp ($measure) isa comparison_expression;
+        $and_exp (expression:$comp_exp) isa and_expression;
+        $measure isa Measure;
+        $tactic_rule (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure) isa effect;
+    } then {
+        (impacted: $and_exp, tactic_rule: $tactic_rule) isa tactic_rule_impacts_and;
+    };
+
 rule tactic_rule_impacts_shall_transitivity:
     when {
         (tactic_rule: $tactic_rule, impacted: $requirement) isa tactic_rule_impacts_requirement;

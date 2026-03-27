@@ -361,7 +361,7 @@ rule: $some_rule
 $double_1_0 isa ValueDouble,
     has double_value 1.0;
 
-$lower_by_0_5 (measure: $measure_double_1_2, effect_value: $double_minus_0_5) isa relative_effect;
+
 #measure_double_1_2, is some measure, which just happens to be 1.2 right now
 $measure_less_1_0 (lhs_value:$measure_double_1_2, rhs_value:$double_1_0) isa less_than, has expression_name 'measure_less_1_0';
 
@@ -389,42 +389,7 @@ $alt_state_3(antecedent: $state_3_precondition, rule: $some_rule) isa state, has
 $double_minus_0_5 isa ValueDouble,
     has double_value -0.5;
 
-$double_0_15 isa ValueDouble,
-    has double_value 0.15;
+$lower_by_0_5 (measure: $measure_double_1_2, effect_value: $double_minus_0_5) isa relative_effect;
 
-$double_0_10 isa ValueDouble,
-    has double_value 0.10;
 #knocks it down to 0.7, which should then mean we're in state 1.
-$measure_lhs_comparison isa Measure, has measure_name 'measure_lhs_comparison';
-(measure: $measure_lhs_comparison, measurement_value:$double_0_15) isa measurement,
-        has measurement_time 2025-09-06T12:57:56.666, has latest true;
-
 $some_rule_w_effect (tactic:$tactic_1, effect:$lower_by_0_5) isa tactic_rule, has rule_name "effective_rule";
-$double_minus_0_05 isa ValueDouble,
-    has double_value -0.05;
-
-$double_0_20 isa ValueDouble,
-    has double_value 0.20;
-$rel_effect_measure_lhs (measure: $measure_lhs_comparison, effect_value: $double_minus_0_05) isa relative_effect;
-$abs_effect_measure_lhs (measure: $measure_lhs_comparison, effect_value: $double_minus_0_05) isa absolute_effect;
-$abs_effect_measure_lhs_0_20 (measure: $measure_lhs_comparison, effect_value: $double_0_20) isa absolute_effect;
-$measure_rhs_comparison isa Measure, has measure_name 'measure_rhs_comparison';
-(measure: $measure_rhs_comparison, measurement_value:$double_0_10) isa measurement,
-        has measurement_time 2025-09-06T12:57:56.666, has latest true;
-
-# 0.10 <= 0.10
-(tactic:$tactic_1, effect: $rel_effect_measure_lhs)
-	isa tactic_rule, has rule_name "tactic_rule_rel_effect_measure_lhs";
-
-
-$less_than_equal (lhs_value:$measure_lhs_comparison, rhs_value:$measure_rhs_comparison) isa less_than_equal, has expression_name 'less_than_equal';
-$not_expr (expression: $less_than_equal) isa not_expression,
-	has expression_name 'not_expr';
-$fuzzy_not (expression: $less_than_equal) isa fuzzy_not,
-	has expression_name 'fuzzy_not';
-
-$propositional_expression (atom: $measure_bool_false) isa propositional_expression, has expression_name 'propositional_expression';
-
-
-$fuzzy_or_1 (expression:$less_than_equal,  expression:$propositional_expression, expression: $not_expr, expression: $fuzzy_not)
-    isa fuzzy_or, has expression_name 'fuzzy_or_1';

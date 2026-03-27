@@ -18,6 +18,21 @@ import pytest
 
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
+def fetch_tactic_rule_dependency_fulfillment(
+        self, expression_name, tactic_rule_name):
+    query = f"""
+            match
+                $expr isa expression,
+                    has expression_name '{expression_name}';
+                $tr isa tactic_rule,
+                    has rule_name '{tactic_rule_name}';
+                $tr_dependency (dependent: $expr, tactic_rule: $tr) isa tactic_rule_dependency;
+            fetch
+                $tr_dependency: fulfillment;
+        """
+    query_result = self.fetch_database(query)
+    return query_result
+
 
 @pytest.fixture(scope='module')
 def kb_interface():
@@ -69,7 +84,9 @@ def test_current_state(kb_interface):
 
     kb_interface.register_method('fetch_state_current_by_name', fetch_state_current_by_name)
     kb_interface.register_method('fetch_state_current', fetch_state_current)
-
+    kb_interface.register_method(
+        'fetch_tactic_rule_dependency_fulfillment',
+        fetch_tactic_rule_dependency_fulfillment)
 
     current_state = kb_interface.fetch_state_current_by_name('current_state')
 
@@ -97,18 +114,11 @@ def test_current_state(kb_interface):
     assert alt_state_2[0]['s']['current'][0]['value'] is False
     assert alt_state_3[0]['s']['current'][0]['value'] is True
 
-    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
-        'fuzzy_or_1', 'tactic_rule_rel_effect_measure_lhs')
-    assert len(fulfillment_query_res) == 1
-    assert fulfillment_query_res[0]['fulfillment']['value'] == pytest.approx(
-        1.0)
-
-    impact_part_of_precondition = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+    impact_part_of_precondition = kb_interface.fetch_tactic_rule_dependency_fulfillment(
         'measure_less_1_0', 'effective_rule')
     
     assert len(impact_part_of_precondition) == 1
-    assert impact_part_of_precondition[0]['fulfillment']['value'] == pytest.approx(
-        1.0)
+    assert impact_part_of_precondition[0]['tr_dependency']['fulfillment'][0]['value'] == 1.0
 
     impact_state_1_precondition = kb_interface.fetch_tactic_rule_impacts_fulfillment(
         'state_1_precondition', 'effective_rule')
