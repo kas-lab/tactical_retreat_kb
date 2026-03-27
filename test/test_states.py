@@ -26,11 +26,15 @@ def kb_interface():
         'test_states',
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
-            'schemas/ros_model/ros_model.tql',
             'schemas/logical_expressions/logical_expression.tql',
+            'schemas/logical_expressions/fuzzy_expression.tql',
+            'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
-            'schemas/feature_model/feature_model_logical_expression.tql',
+            'schemas/relaxed/relaxed_model.tql',
             'schemas/tactics_model/tactics_model.tql',
+            'schemas/discover_hypothetical_req_fulfillment/'
+            'discover_hypothetical_req_fulfillment.tql',
+            'schemas/discover_tactics_model/discover_tactics_model.tql',
 			'schemas/states/states.tql'],
         ['test/data/test_states.tql'],
         force_database=True,
@@ -80,5 +84,49 @@ def test_current_state(kb_interface):
     current_state = kb_interface.fetch_state_current()
 
     assert len(current_state[0]['s']['state_name']) == 1
-    print(current_state[0]['s']['state_name'][0]['value'])
-    assert current_state[0]['s']['state_name'][0]['value'] == "current_state"
+    assert current_state[0]['s']['state_name'][0]['value'] == "current_state" or current_state[1]['s']['state_name'][0]['value'] == "current_state"
+
+    alt_state_1 = kb_interface.fetch_state_current_by_name('alt_state_1')
+    alt_state_2 = kb_interface.fetch_state_current_by_name('alt_state_2')
+    alt_state_3 = kb_interface.fetch_state_current_by_name('alt_state_3')
+
+    assert len(alt_state_1[0]['s']['current']) == 1
+    assert len(alt_state_2[0]['s']['current']) == 1
+    assert len(alt_state_3[0]['s']['current']) == 1
+    assert alt_state_1[0]['s']['current'][0]['value'] is False
+    assert alt_state_2[0]['s']['current'][0]['value'] is False
+    assert alt_state_3[0]['s']['current'][0]['value'] is True
+
+    fulfillment_query_res = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'fuzzy_or_1', 'tactic_rule_rel_effect_measure_lhs')
+    assert len(fulfillment_query_res) == 1
+    assert fulfillment_query_res[0]['fulfillment']['value'] == pytest.approx(
+        1.0)
+
+    impact_part_of_precondition = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'measure_less_1_0', 'effective_rule')
+    
+    assert len(impact_part_of_precondition) == 1
+    assert impact_part_of_precondition[0]['fulfillment']['value'] == pytest.approx(
+        1.0)
+
+    impact_state_1_precondition = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'state_1_precondition', 'effective_rule')
+    print(impact_state_1_precondition)
+    assert len(impact_state_1_precondition) == 1
+    assert impact_state_1_precondition[0]['fulfillment']['value'] == pytest.approx(
+        1.0)
+
+    impact_state_2_precondition = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'state_2_precondition', 'effective_rule')
+
+    assert len(impact_state_2_precondition) == 1
+    assert impact_state_2_precondition[0]['fulfillment']['value'] == pytest.approx(
+        0.0)
+
+    impact_state_3_precondition = kb_interface.fetch_tactic_rule_impacts_fulfillment(
+        'state_3_precondition', 'effective_rule')
+    
+    assert len(impact_state_3_precondition) == 1
+    assert impact_state_3_precondition[0]['fulfillment']['value'] == pytest.approx(
+        0.0)

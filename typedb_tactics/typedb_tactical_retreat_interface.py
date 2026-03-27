@@ -811,7 +811,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query = f"""
             match
-              $tactic_rule (antecedent: $ant, tactic:$t, consequent:$fa) isa tactic_rule,  has rule_name "{rule_name}";
+              $tactic_rule (tactic:$t, consequent:$fa) isa tactic_rule,  has rule_name "{rule_name}";
             fetch
                 variant_activation: {{
                     match

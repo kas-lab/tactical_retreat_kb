@@ -206,7 +206,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
         self.fulfillment_publisher = self.create_publisher(String, 'requirements', 10)
 
-        self.context_publisher = self.create_publisher(String, 'context_events', 10)
+        self.state_publisher = self.create_publisher(String, 'symbolic_state', 10)
         # self.create_measures_interfaces()
         def _create_measures_cb(_, res):
             try:
@@ -674,11 +674,16 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                     f'Creating measure interface: {interface}')
                 self.create_measure_interface(interface)
 
-            self.create_timer(1.0, lambda: self.typedb_interface.add_measurements(self.measurements) if self.measurements else None, callback_group=self.query_cb_group)
-            # self.create_timer(2.0, self.publish_fulfillments, callback_group=self.query_cb_group)
+            self.create_timer(1.0, self.measurement_processing, callback_group=self.query_cb_group)
+            self.create_timer(2.0, self.publish_fulfillments, callback_group=self.query_cb_group)
 
         except Exception as e:
             raise e
+  
+    def measurement_processing(self):
+        if self.measurements:
+            self.typedb_interface.add_measurements(self.measurements)
+            self.state_publisher.publish(String(data=self.typedb_interface.get_current_state()))
 
     def publish_fulfillments(self):
         fulfillments = self.typedb_interface.get_in_effect_requirement_fulfillment()
