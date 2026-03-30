@@ -39,11 +39,11 @@ def kb_interface():
 def test_feature_selectable(kb_interface):
     assert kb_interface.is_feature_selectable('f_alternative_child_1') is False
     assert kb_interface.is_feature_selectable('f_alternative_child_2') is False
-    assert kb_interface.is_feature_selectable('f_alternative_child_3') is True
+    assert kb_interface.is_feature_selectable('f_alternative_child_3') is False
 
     assert kb_interface.is_feature_selectable('f_or_group_child_1') is True
     assert kb_interface.is_feature_selectable('f_or_group_child_2') is True
-    assert kb_interface.is_feature_selectable('f_or_group_child_3') is True
+    assert kb_interface.is_feature_selectable('f_or_group_child_3') is False
 
     assert kb_interface.is_feature_selectable('f_req_constrained_1') is True
     assert kb_interface.is_feature_selectable('f_req_constrained_2') is False

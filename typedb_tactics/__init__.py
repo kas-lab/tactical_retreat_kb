@@ -1,1 +1,0 @@
-"""typedb_tactics package."""

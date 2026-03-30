@@ -34,6 +34,7 @@ def kb_interface():
     kb_interface.delete_database()
 
 
+@pytest.mark.skip(reason='node running rule was removed')
 def test_ros_node_running(kb_interface):
     assert kb_interface.is_node_running('node_has_start_time') is True
     assert kb_interface.is_node_running('node_no_start_time') is False

@@ -86,7 +86,8 @@ $smoother_server_node isa LifeCycleNode,
 $velocity_smoother_node isa LifeCycleNode,
 	has node_name "velocity_smoother",
 	has namespace "",
-	has start_time 2025-08-06T10:57:56.666;
+	has start_time 2025-08-06T10:57:56.666,
+	has running true;
 (node: $velocity_smoother_node) isa node_deployment,
 	has package "nav2_velocity_smoother",
 	has executable "velocity_smoother";
