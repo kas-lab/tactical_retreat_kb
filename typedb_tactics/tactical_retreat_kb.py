@@ -555,15 +555,14 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         - optional: 'measurement_function_args' (str, comma-separated args)
         - optional: 'qos' (dict for QoSProfile construction)
         """
-
         measure_name = interface['measure_name']
         interface_name = interface['interface_name']
         ros_msg_type_str = interface['interface_type']
 
         measurement_qos = get_qos_from_qos_dict(interface.get('qos', {}))
 
-        # function_lib_name = (interface.get('measurement_function_lib')
-        #                      or 'ros_monitors_functions.monitor_functions')
+        function_lib_name = (interface.get('measurement_function_lib')
+                             or 'ros_monitors_functions.monitor_functions')
         function_name = (interface.get('measurement_function_name')
                          or 'get_data_field')
 
@@ -571,10 +570,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         function_args = [arg.strip() for arg in function_args_str.split(
             ',')] if function_args_str else []
 
-        # function_lib = self.monitor[function_lib_name]
-        # importlib.import_module(function_lib_name)
-        measure_function = self.monitor[function_name]
-        # getattr(function_lib, function_name)
+        function_lib = importlib.import_module(function_lib_name)
+        measure_function = getattr(function_lib, function_name)
 
         # Support both stateless functions and stateful callables (classes with __call__).
         if inspect.isclass(measure_function):
@@ -589,47 +586,25 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             topic_type = get_ros_msg_type_from_string(ros_msg_type_str, 'msg')
             super().get_logger().info(
                     f'Making a subscription for measure: {measure_name}')
+
             def _cb(msg,
-                    _node=super(),
                     _measure_name=measure_name,
                     _measure_callable=measure_callable,
                     _function_args=callable_args):
-                res = _measure_callable(self, msg, *_function_args)
-                # self.typedb_interface.add_measurement(
-                #     _measure_name, res)
-                # _node.get_logger().info(f"measure_name called: {_measure_name}", throttle_duration_sec=1)
-                self.measurements[_measure_name] = res
-                if(_measure_name == 'nearest_object'):
-                    if res < 0.10:
-                        self.context_dict[_measure_name] = "near"
-                    elif res > 0.15:
-                        self.context_dict[_measure_name] = "far"
-                    elif (res >= 0.10 and res <= 0.15):
-                        self.context_dict[_measure_name] = "there"  
-                elif(_measure_name == 'power_draw'):
-                    if res <= 40.0:
-                        self.context_dict[_measure_name] = "off"
-                    elif res > 40.0: 
-                        self.context_dict[_measure_name] = "drain"
-                elif(_measure_name == 'current_velocity'):
-                    val_name = _measure_name + "val"
-                    old_val = self.context_dict.get(val_name, 100)
-                    old_val_dec = self.context_dict.get(val_name, -100)
+                self.typedb_interface.add_measurement(
+                    _measure_name, _measure_callable(self, msg, *_function_args))
 
-                    self.context_dict[val_name] = res
-                    if res < 0.40:
-                        self.context_dict[_measure_name] = "slow"
-                    elif res > 0.40:
-                        self.context_dict[_measure_name] = "fast"
-
-                # I want to consider the unique combination of each category as a unique context, so I will publish an event with the current context whenever a measure is updated.
-
-                current_context_msg = String()
-                combo_id = self._get_context_combination_id()
-                current_context = (self.context_dict["nearest_object"], self.context_dict["power_draw"], self.context_dict["current_velocity"])
-                # _node.get_logger().info(f"Current context: {current_context}, combo_id: {combo_id}", throttle_duration_sec=2)
-                current_context_msg.data = str(combo_id)
-                self.context_publisher.publish(current_context_msg)
+                # current_context_msg = String()
+                # combo_id = self._get_context_combination_id()
+                # current_context = (
+                #     self.context_dict['nearest_object'],
+                #     self.context_dict['power_draw'],
+                #     self.context_dict['current_velocity'])
+                # # _node.get_logger().info(
+                # #     f"Current context: {current_context}, "
+                # #     f"combo_id: {combo_id}", throttle_duration_sec=2)
+                # current_context_msg.data = str(combo_id)
+                # self.context_publisher.publish(current_context_msg)
 
             self.measures_subscribers[measure_name] = self.create_subscription(
                 topic_type,
@@ -665,12 +640,11 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                                 request).add_done_callback(
                                     lambda future, _measure_name=_measure_name,
                                     _measure_callable=_measure_callable,
-                                    _function_args=_function_args, _measurements=self.measurements:
-                                    # self.typedb_interface.add_measurement(
-                                    #     _measure_name,
-                                    #     _measure_callable(self, future.result(), *_function_args)))
-                                    _measurements.__setitem__(_measure_name, _measure_callable(self, future.result(), *_function_args))
-                                )
+                                    _function_args=_function_args:
+                                    self.typedb_interface.add_measurement(
+                                        _measure_name,
+                                        _measure_callable(self, future.result(), *_function_args)))
+
                     self.measures_timers[measure_name] = self.create_timer(
                         interface['measurement_period'],
                         _cb)
@@ -689,14 +663,10 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                         future = self.measures_clients[measure_name].call_async(request)
                         # wait for future
                         rclpy.spin_until_future_complete(self, future)
-                        # self.typedb_interface.add_measurement(_measure_name, _measure_callable(
-                        #     self,
-                        #     future.result(),
-                        #     *_function_args))
-                        self.measurements[_measure_name] = _measure_callable(
+                        self.typedb_interface.add_measurement(_measure_name, _measure_callable(
                             self,
                             future.result(),
-                            *_function_args)
+                            *_function_args))
                         response = future.result()
                         return response
 
