@@ -28,11 +28,13 @@ def kb_interface():
         ['test/data/test_ros_model.tql'],
         force_database=True,
         force_data=True,
-        infer=True)
+        infer=True,
+        sort_fetch_results=True)
     yield kb_interface
     kb_interface.delete_database()
 
 
+@pytest.mark.skip(reason='node running rule was removed')
 def test_ros_node_running(kb_interface):
     assert kb_interface.is_node_running('node_has_start_time') is True
     assert kb_interface.is_node_running('node_no_start_time') is False
@@ -81,3 +83,10 @@ def test_get_measures_interfaces(kb_interface):
     measures_interfaces = kb_interface.get_measures_interfaces()
     assert measure_test_topic_dict in measures_interfaces
     assert laser_scan_dict in measures_interfaces
+
+
+def test_get_measures_interfaces_without_qos(kb_interface):
+    measures_interfaces = kb_interface.get_measures_interfaces(include_qos=False)
+    assert len(measures_interfaces) > 0
+    for measure_interface in measures_interfaces:
+        assert 'qos' not in measure_interface
