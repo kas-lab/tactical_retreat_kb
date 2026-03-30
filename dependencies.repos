@@ -2,8 +2,12 @@ repositories:
   ros_typedb:
     type: git
     url: https://github.com/kas-lab/ros_typedb.git
-    version: main
+    version: typedb2
   ros_monitors:
     type: git
     url: https://github.com/kas-lab/ros_monitors.git
+    version: main
+  AAL-ROS2:
+    type: git
+    url: https://github.com/EGAlberts/AAL-ROS2.git
     version: main

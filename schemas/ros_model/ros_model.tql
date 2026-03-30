@@ -199,25 +199,25 @@ subnode sub process_group,
 
 
 ## rules
-rule ros_node_not_running_has_end_time:
-    when {
-        $node isa ROSNode, has end_time $end_time;
-    } then {
-        $node has running false;
-    };
+# rule ros_node_not_running_has_end_time:
+#     when {
+#         $node isa ROSNode, has end_time $end_time;
+#     } then {
+#         $node has running false;
+#     };
 
-rule ros_node_not_running_no_start_time:
-    when {
-        $node isa ROSNode;
-        not {$node has start_time $start_time;};
-    } then {
-        $node has running false;
-    };
+# rule ros_node_not_running_no_start_time:
+#     when {
+#         $node isa ROSNode;
+#         not {$node has start_time $start_time;};
+#     } then {
+#         $node has running false;
+#     };
 
-rule ros_node_running:
-    when {
-        $node isa ROSNode;
-        not {$node has running false;};
-    } then {
-        $node has running true;
-    };
+# rule ros_node_running:
+#     when {
+#         $node isa ROSNode;
+#         not {$node has running false;};
+#     } then {
+#         $node has running true;
+#     };

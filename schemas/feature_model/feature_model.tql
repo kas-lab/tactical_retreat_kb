@@ -75,3 +75,9 @@ rule alternative_selected:
         $f_child_2 has selectable false;
     };
 
+rule already_selected:
+    when {
+        $f isa Feature, has selected true;
+    } then {
+        $f has selectable false;
+    };

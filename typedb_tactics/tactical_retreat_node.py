@@ -11,12 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""TacticalRetreat node entry point."""
 import rclpy
 
 from typedb_tactics.tactical_retreat_kb import TacticalRetreatKB
 
 
 def main():
+    """Start TacticalRetreat lifecycle node with multi-threaded executor."""
     rclpy.init()
 
     executor = rclpy.executors.MultiThreadedExecutor()

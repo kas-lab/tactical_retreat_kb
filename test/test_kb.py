@@ -302,7 +302,7 @@ def test_create_measure_interface_service(executor, tactical_kb, test_node):
     )
 
     measure_test_service_dict = {
-        'source': 'Service',
+        'source': 'ServiceServer',
         'measure_name': 'measure_test_service',
         'interface_name': '/measure_test_service',
         'interface_type': 'std_srvs/srv/Trigger',
@@ -342,7 +342,7 @@ def test_create_proxy(executor, tactical_kb, test_node):
     )  # this is the original service that will be proxied
 
     measure_test_service_dict = {
-        'source': 'Service',
+        'source': 'ServiceServer',
         'measure_name': 'measure_test_service',
         'interface_name': '/measure_test_service',
         'interface_type': 'std_srvs/srv/Trigger',
