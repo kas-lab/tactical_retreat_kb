@@ -36,7 +36,13 @@ Source ROS and workspace before anything:
 source /opt/ros/humble/setup.bash
 ```
 
-From the workspace folder:
+From the workspace root:
+
+```Bash
+source install/setup.bash
+```
+
+If you are working from `src/typedb_tactics` instead of the workspace root, the equivalent command is:
 
 ```Bash
 source ../../install/setup.bash
@@ -111,6 +117,7 @@ docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && sour
 - **Container running:** `docker exec` fails if the container is not running. Check `docker ps` or start the container first.
 - **Non-interactive exec:** for CI/agents, prefer `docker exec tactical_retreat ...` (no `-it`).
 - **Timeouts:** schema-heavy `colcon test` runs can exceed default agent timeouts; allow 5–7 minutes.
+- **Portable mounts:** prefer running Docker commands from the workspace root and mounting packages via `"$PWD/src/..."` instead of hard-coded host paths.
 
 ## Benchmark protocol
 
@@ -255,7 +262,8 @@ docker build --secret id=gh_token,src=<(gh auth token) --build-arg DEPS_CACHE_BU
 Start container in the background with TypeDB server running and mounting the packages `typedb_tactics` and `ros_monitors`:
 
 ```Bash
-docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v $HOME/ros_workspaces/tactical_retreat_ws/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics -v $HOME/ros_workspaces/tactical_retreat_ws/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors tactical_retreat typedb server
+cd <workspace_root>
+docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics" -v "$PWD/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors" tactical_retreat typedb server
 ```
 
 Start new terminal in the container:
@@ -289,6 +297,9 @@ the documentation for typedb2 lives here: https://typedb.com/docs/home/2.x/
 ## Agent helpers
 
 - `docs/agent-notes.md` has a quick checklist and common failure checks.
+- `scripts/README.md` explains how to run the helper scripts in `scripts/`.
 - `scripts/run-tests-docker.sh` runs tests in the `tactical_retreat` container (supports `-k`).
+- `scripts/generate_schema_diagrams.py` generates one diagram per schema.
+- `scripts/generate_merged_schema_diagram.py` generates one merged schema diagram, with default ignores for the discovery schemas.
 - `scripts/benchmark.py` benchmarks `get_*` interface methods and `get_expression_satisfied`.
 - `scripts/benchmark_queries.py` benchmarks schema/data init and focused query latency by profile.
