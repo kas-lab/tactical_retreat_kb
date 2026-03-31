@@ -1,0 +1,239 @@
+define
+
+symbolic_scheme_name sub attribute,
+    value string;
+
+exclusive_partition sub attribute,
+    value boolean;
+coverage_complete sub attribute,
+    value boolean;
+undefined_state sub attribute,
+    value boolean;
+ambiguous_state sub attribute,
+    value boolean;
+
+symbolic_label_name sub attribute,
+    value string;
+symbolic_order sub attribute,
+    value long;
+symbolic_active sub attribute,
+    value boolean;
+
+lower_bound_double sub attribute,
+    value double;
+upper_bound_double sub attribute,
+    value double;
+lower_bound_integer sub attribute,
+    value long;
+upper_bound_integer sub attribute,
+    value long;
+
+SymbolicScheme sub entity,
+    owns symbolic_scheme_name @key,
+    owns description,
+    owns exclusive_partition,
+    owns coverage_complete,
+    owns undefined_state,
+    owns ambiguous_state,
+    plays symbolic_scheme_label:scheme,
+    plays current_symbolic_assignment:scheme;
+
+SymbolicLabel sub entity,
+    abstract,
+    owns symbolic_label_name,
+    owns symbolic_order,
+    owns description,
+    owns symbolic_active,
+    plays symbolic_scheme_label:label,
+    plays symbolic_logical_definition:label,
+    plays current_symbolic_assignment:label;
+
+AtomicSymbolicLabel sub SymbolicLabel,
+    plays symbolic_interval_definition:label;
+
+CompositeSymbolicLabel sub SymbolicLabel;
+
+symbolic_scheme_label sub relation,
+    relates scheme,
+    relates label;
+
+symbolic_definition sub relation,
+    abstract;
+
+symbolic_logical_definition sub symbolic_definition,
+    relates label,
+    relates definition;
+logical_expression plays symbolic_logical_definition:definition;
+
+symbolic_interval_definition sub symbolic_definition,
+    abstract,
+    relates label,
+    relates measure;
+
+symbolic_double_interval sub symbolic_interval_definition,
+    owns lower_bound_double,
+    owns upper_bound_double;
+
+symbolic_integer_interval sub symbolic_interval_definition,
+    owns lower_bound_integer,
+    owns upper_bound_integer;
+Measure plays symbolic_interval_definition:measure;
+
+current_symbolic_assignment sub relation,
+    relates scheme,
+    relates label;
+
+## atomic label activation for double-valued measures
+rule symbolic_double_interval_active_bounded:
+    when {
+        (label: $label, measure: $measure) isa symbolic_double_interval,
+            has lower_bound_double $lower,
+            has upper_bound_double $upper;
+        (measure: $measure, measurement_value: $measurement_value) isa measurement,
+            has latest true;
+        $measurement_value isa ValueDouble, has double_value $value;
+        $value >= $lower;
+        $value < $upper;
+    } then {
+        $label has symbolic_active true;
+    };
+
+rule symbolic_double_interval_active_lower_unbounded:
+    when {
+        (label: $label, measure: $measure) isa symbolic_double_interval,
+            has upper_bound_double $upper;
+        not {
+            (label: $label, measure: $measure) isa symbolic_double_interval,
+                has lower_bound_double $lower;
+        };
+        (measure: $measure, measurement_value: $measurement_value) isa measurement,
+            has latest true;
+        $measurement_value isa ValueDouble, has double_value $value;
+        $value < $upper;
+    } then {
+        $label has symbolic_active true;
+    };
+
+rule symbolic_double_interval_active_upper_unbounded:
+    when {
+        (label: $label, measure: $measure) isa symbolic_double_interval,
+            has lower_bound_double $lower;
+        not {
+            (label: $label, measure: $measure) isa symbolic_double_interval,
+                has upper_bound_double $upper;
+        };
+        (measure: $measure, measurement_value: $measurement_value) isa measurement,
+            has latest true;
+        $measurement_value isa ValueDouble, has double_value $value;
+        $value >= $lower;
+    } then {
+        $label has symbolic_active true;
+    };
+
+## atomic label activation for integer-valued measures
+rule symbolic_integer_interval_active_bounded:
+    when {
+        (label: $label, measure: $measure) isa symbolic_integer_interval,
+            has lower_bound_integer $lower,
+            has upper_bound_integer $upper;
+        (measure: $measure, measurement_value: $measurement_value) isa measurement,
+            has latest true;
+        $measurement_value isa ValueInteger, has integer_value $value;
+        $value >= $lower;
+        $value < $upper;
+    } then {
+        $label has symbolic_active true;
+    };
+
+rule symbolic_integer_interval_active_lower_unbounded:
+    when {
+        (label: $label, measure: $measure) isa symbolic_integer_interval,
+            has upper_bound_integer $upper;
+        not {
+            (label: $label, measure: $measure) isa symbolic_integer_interval,
+                has lower_bound_integer $lower;
+        };
+        (measure: $measure, measurement_value: $measurement_value) isa measurement,
+            has latest true;
+        $measurement_value isa ValueInteger, has integer_value $value;
+        $value < $upper;
+    } then {
+        $label has symbolic_active true;
+    };
+
+rule symbolic_integer_interval_active_upper_unbounded:
+    when {
+        (label: $label, measure: $measure) isa symbolic_integer_interval,
+            has lower_bound_integer $lower;
+        not {
+            (label: $label, measure: $measure) isa symbolic_integer_interval,
+                has upper_bound_integer $upper;
+        };
+        (measure: $measure, measurement_value: $measurement_value) isa measurement,
+            has latest true;
+        $measurement_value isa ValueInteger, has integer_value $value;
+        $value >= $lower;
+    } then {
+        $label has symbolic_active true;
+    };
+
+## composite symbolic labels
+rule composite_symbolic_label_active:
+    when {
+        (label: $label, definition: $definition) isa symbolic_logical_definition;
+        $label isa CompositeSymbolicLabel;
+        $definition isa logical_expression, has expression_satisfied true;
+    } then {
+        $label has symbolic_active true;
+    };
+
+## derived query-time assignments
+rule current_symbolic_assignment_active_label:
+    when {
+        (scheme: $scheme, label: $label) isa symbolic_scheme_label;
+        $label has symbolic_active true;
+    } then {
+        (scheme: $scheme, label: $label) isa current_symbolic_assignment;
+    };
+
+## explicit false defaults to make querying easier
+rule symbolic_label_not_active:
+    when {
+        $label isa SymbolicLabel;
+        not {
+            $label has symbolic_active true;
+        };
+    } then {
+        $label has symbolic_active false;
+    };
+
+rule symbolic_scheme_undefined:
+    when {
+        $scheme isa SymbolicScheme, has exclusive_partition true;
+        not {
+            (scheme: $scheme, label: $label) isa symbolic_scheme_label;
+            $label has symbolic_active true;
+        };
+    } then {
+        $scheme has undefined_state true;
+    };
+
+rule symbolic_scheme_not_undefined:
+    when {
+        $scheme isa SymbolicScheme;
+        not {
+            $scheme has undefined_state true;
+        };
+    } then {
+        $scheme has undefined_state false;
+    };
+
+rule symbolic_scheme_not_ambiguous:
+    when {
+        $scheme isa SymbolicScheme;
+        not {
+            $scheme has ambiguous_state true;
+        };
+    } then {
+        $scheme has ambiguous_state false;
+    };
