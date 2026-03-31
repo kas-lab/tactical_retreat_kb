@@ -33,6 +33,32 @@ def fetch_tactic_rule_dependency_fulfillment(
     query_result = self.fetch_database(query)
     return query_result
 
+def fetch_next_state_name(self):
+    query = """
+            match
+                (current_state: $s, next_state:$s2) isa state_sequence;
+            fetch
+                $s2: state_name;
+        """
+    query_result = self.fetch_database(query)
+    return query_result
+
+#Given an imaginary choice in tactic_rule, we dream up a new state and action that will result.
+def dream(self, tactic_rule_name):
+    query = f"""
+            match
+                $tr isa tactic_rule,
+                    has rule_name '{tactic_rule_name}';
+                (action: $tr, current_state: $s, next_state:$s2) isa state_sequence;
+                $requirement isa relaxed_requirement,
+                    has in_effect true;
+                $tactic_impact (tactic_rule: $tr, impacted: $requirement) isa tactic_rule_impacts_requirement;
+            fetch
+                $s2: state_name;
+                $tactic_impact: fulfillment; 
+    """
+    query_result = self.fetch_database(query)
+    return query_result
 
 @pytest.fixture(scope='module')
 def kb_interface():
@@ -72,7 +98,7 @@ def test_current_state(kb_interface):
         return query_result
 
     def fetch_state_current(self):
-        query = f"""
+        query = """
             match
                 $s isa state,
                     has current true;
@@ -83,7 +109,6 @@ def test_current_state(kb_interface):
         return query_result
 
     kb_interface.register_method('fetch_state_current_by_name', fetch_state_current_by_name)
-    kb_interface.register_method('fetch_state_current', fetch_state_current)
     kb_interface.register_method(
         'fetch_tactic_rule_dependency_fulfillment',
         fetch_tactic_rule_dependency_fulfillment)
@@ -98,6 +123,7 @@ def test_current_state(kb_interface):
     assert len(not_current_state[0]['s']['current']) == 1
     assert not_current_state[0]['s']['current'][0]['value'] is False
 
+    kb_interface.register_method('fetch_state_current', fetch_state_current)
     current_state = kb_interface.fetch_state_current()
 
     assert len(current_state[0]['s']['state_name']) == 1
@@ -122,7 +148,6 @@ def test_current_state(kb_interface):
 
     impact_state_1_precondition = kb_interface.fetch_tactic_rule_impacts_fulfillment(
         'state_1_precondition', 'effective_rule')
-    print(impact_state_1_precondition)
     assert len(impact_state_1_precondition) == 1
     assert impact_state_1_precondition[0]['fulfillment']['value'] == pytest.approx(
         1.0)
@@ -140,3 +165,27 @@ def test_current_state(kb_interface):
     assert len(impact_state_3_precondition) == 1
     assert impact_state_3_precondition[0]['fulfillment']['value'] == pytest.approx(
         0.0)
+    
+    kb_interface.register_method(
+        'fetch_next_state_name',
+        fetch_next_state_name
+    )
+    x = kb_interface.fetch_next_state_name()
+    assert len(x[0]['s2']['state_name']) == 1
+    assert x[0]['s2']['state_name'][0]['value'] == "alt_state_1"
+
+    req_ful = kb_interface.fetch_in_effect_requirement_fulfillment()
+
+    kb_interface.register_method('dream',dream)
+
+    dream_result = kb_interface.dream("effective_rule")
+
+
+    assert len(dream_result[0]['s2']['state_name']) == 1
+    assert dream_result[0]['s2']['state_name'][0]['value'] == "alt_state_1"
+
+    assert len(dream_result[0]['tactic_impact']['fulfillment']) == 1
+
+    assert dream_result[0]['tactic_impact']['fulfillment'][0]['value'] > req_ful[0]['req']['fulfillment'][0]['value']
+    # assert x[0]['s2']['state_name'][0]['value'] == "alt_state_1"
+    

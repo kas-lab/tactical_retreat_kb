@@ -12,7 +12,15 @@ state sub relation,
     relates antecedent,
     relates rule;
 
+state_sequence sub relation,
+    relates current_state,
+    relates next_state,
+    relates action;
+
 tactic_rule plays state:rule;
+state plays state_sequence:current_state;
+state plays state_sequence:next_state;
+tactic_rule plays state_sequence:action;
 logical_expression plays state:antecedent;
 
 rule state_current:
@@ -29,4 +37,13 @@ rule state_antecedent_invalid:
         $a isa logical_expression, has expression_satisfied false;
     } then {
         $s has current false;
+    };
+
+rule next_state_hypothetically:
+    when{
+        (impacted: $and_exp, tactic_rule: $tactic_rule) isa tactic_rule_impacts_and, has fulfillment 1.0;
+        $nxt_state (antecedent: $and_exp) isa state;
+        $current_state isa state, has current true;
+    } then {
+        (action: $tactic_rule, current_state: $current_state, next_state:$nxt_state) isa state_sequence;
     };
