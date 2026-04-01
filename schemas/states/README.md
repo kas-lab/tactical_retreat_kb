@@ -69,6 +69,22 @@ The intention is that a scheme relation represents something like:
 
 `symbolic_scheme_name` is the only scheme identifier currently modeled.
 
+### State dimensions and system states
+
+The schema also supports building a system-state abstraction on top of symbolic schemes.
+
+- `state_dimension` marks which `symbolic_scheme` relations count as dimensions of the system state
+- `system_state` is a relation that groups one label per selected dimension
+- `current_state` is an inferred attribute on `system_state` that is `true` when the state's labels match the currently active labels of the marked dimensions
+
+This allows modeling state tuples such as:
+
+- `low-safe`
+- `medium-unsafe`
+- `high-safe`
+
+without introducing separate user-defined state-space types.
+
 ### Symbolic labels
 
 A `SymbolicLabel` is an abstract symbolic category.
@@ -142,6 +158,7 @@ The schema currently infers:
 2. Whether a composite label is active from the satisfaction of its backing logical expression.
 3. Whether a scheme is `undefined_state = true` because no label in an exclusive partition is active.
 4. Whether a scheme is `ambiguous_state = true` because more than one differently named label in an exclusive partition is active.
+5. Which declared `system_state` is the current one through the inferred `current_state` attribute.
 
 The schema also infers default `false` values for:
 
@@ -161,6 +178,8 @@ Implemented in `symbolic_states.tql`:
 - exclusive-partition-friendly modeling
 - multiple schemes over the same measure
 - query-time active labels through the scheme relation
+- relation-based state dimensions and enumerated system states
+- inferred `current_state` on declared system states
 - undefined fallback for uncovered values
 - ambiguity detection for overlapping active labels in exclusive schemes
 - composite symbolic labels backed by `logical_expression`
@@ -275,6 +294,12 @@ A common intended usage is:
 4. Define half-open intervals for atomic labels.
 5. Query the scheme relation for labels with `symbolic_active = true` to obtain the active symbolic label(s).
 
+For system-state abstractions:
+
+1. Mark the schemes that count as state dimensions using `state_dimension`.
+2. Enumerate `system_state` tuples such as `medium-safe` or `high-unsafe`.
+3. Query `system_state` with `current_state = true` to obtain the currently matching declared state.
+
 For composite concepts:
 
 1. Define an existing `logical_expression` over raw measures and values.
@@ -292,6 +317,7 @@ The test currently exercises:
 
 - exclusive atomic partitioning
 - multiple parallel schemes on the same measure
+- relation-based state dimensions and current system state inference
 - composite symbolic labels backed by logical expressions
 - undefined fallback when a scheme contains a gap
 - ambiguous fallback when an exclusive scheme contains overlapping active labels

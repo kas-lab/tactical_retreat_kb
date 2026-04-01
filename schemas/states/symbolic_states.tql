@@ -14,6 +14,10 @@ undefined_state sub attribute,
     value boolean;
 ambiguous_state sub attribute,
     value boolean;
+state_name sub attribute,
+    value string;
+current_state sub attribute,
+    value boolean;
 
 symbolic_label_name sub attribute,
     value string;
@@ -38,7 +42,8 @@ SymbolicLabel sub entity,
     owns description,
     owns symbolic_active,
     plays symbolic_scheme:label,
-    plays symbolic_logical_definition:label;
+    plays symbolic_logical_definition:label,
+    plays system_state:label;
 
 AtomicSymbolicLabel sub SymbolicLabel,
     plays symbolic_interval_definition:label;
@@ -51,6 +56,16 @@ symbolic_scheme sub relation,
     owns exclusive_partition,
     owns undefined_state,
     owns ambiguous_state,
+    relates label,
+    plays state_dimension:scheme;
+
+state_dimension sub relation,
+    relates scheme;
+
+system_state sub relation,
+    owns state_name @key,
+    owns description,
+    owns current_state,
     relates label;
 
 symbolic_definition sub relation,
@@ -231,4 +246,30 @@ rule symbolic_scheme_not_ambiguous:
         };
     } then {
         $scheme has ambiguous_state false;
+    };
+
+rule system_state_current:
+    when {
+        $state (label: $state_label) isa system_state;
+        (scheme: $dimension_scheme) isa state_dimension;
+        $dimension_scheme (label: $state_label) isa symbolic_scheme;
+        $state_label has symbolic_active true;
+        not {
+            $state (label: $inactive_dimension_label) isa system_state;
+            (scheme: $dimension_scheme_2) isa state_dimension;
+            $dimension_scheme_2 (label: $inactive_dimension_label) isa symbolic_scheme;
+            $inactive_dimension_label has symbolic_active false;
+        };
+    } then {
+        $state has current_state true;
+    };
+
+rule system_state_not_current:
+    when {
+        $state isa system_state;
+        not {
+            $state has current_state true;
+        };
+    } then {
+        $state has current_state false;
     };

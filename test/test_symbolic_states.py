@@ -42,6 +42,28 @@ def fetch_scheme_status(self, scheme_name):
     return self.fetch_database(query)
 
 
+def fetch_current_system_state(self):
+    query = """
+        match
+            $state isa system_state,
+                has current_state true;
+        fetch
+            $state: state_name;
+    """
+    return self.fetch_database(query)
+
+
+def fetch_system_states(self):
+    query = """
+        match
+            $state isa system_state,
+                has state_name $name;
+        fetch
+            $state: state_name;
+    """
+    return self.fetch_database(query)
+
+
 @pytest.fixture(scope='module')
 def kb_interface():
     kb_interface = TypeDBInterface(
@@ -62,6 +84,12 @@ def kb_interface():
     kb_interface.register_method(
         'fetch_scheme_status',
         fetch_scheme_status)
+    kb_interface.register_method(
+        'fetch_current_system_state',
+        fetch_current_system_state)
+    kb_interface.register_method(
+        'fetch_system_states',
+        fetch_system_states)
     yield kb_interface
     kb_interface.delete_database()
 
@@ -169,3 +197,32 @@ def test_ambiguous_state(kb_interface):
     assert len(scheme_status) == 1
     assert scheme_status[0]['scheme']['undefined_state'][0]['value'] is False
     assert scheme_status[0]['scheme']['ambiguous_state'][0]['value'] is True
+
+
+def test_current_system_state_and_state_space(kb_interface):
+    assert kb_interface.fetch_attribute_from_thing(
+        'AtomicSymbolicLabel',
+        [('symbolic_label_name', 'medium')],
+        'symbolic_active')[0] is True
+    assert kb_interface.fetch_attribute_from_thing(
+        'AtomicSymbolicLabel',
+        [('symbolic_label_name', 'state-safe')],
+        'symbolic_active')[0] is False
+    assert kb_interface.fetch_attribute_from_thing(
+        'AtomicSymbolicLabel',
+        [('symbolic_label_name', 'state-unsafe')],
+        'symbolic_active')[0] is True
+
+    current_state = kb_interface.fetch_current_system_state()
+    assert len(current_state) == 1
+    assert current_state[0]['state']['state_name'][0]['value'] == 'medium-unsafe'
+
+    all_states = kb_interface.fetch_system_states()
+    assert sorted(
+        state['state']['state_name'][0]['value'] for state in all_states) == [
+            'high-safe',
+            'high-unsafe',
+            'low-safe',
+            'low-unsafe',
+            'medium-safe',
+            'medium-unsafe']
