@@ -36,6 +36,21 @@ def fetch_tactic_rule_dependency_fulfillment(
     return query_result
 
 
+def fetch_quantified_value_number(self):
+    query = """
+            match
+                $expr isa fuzzy_comparison_expression;
+            fetch
+                $expr: expression_name;
+                qv_count : {
+                    match
+                        $expr has quantified_value $qv;
+                    get $qv;
+                    count;
+                };
+        """
+    return self.fetch_database(query)
+
 def fetch_tactic_rule_effect_resulting_values(
         self, expression_name, tactic_rule_name):
     query = f"""
@@ -85,6 +100,9 @@ def kb_interface():
     kb_interface.register_method(
         'fetch_tactic_rule_effect_resulting_values',
         fetch_tactic_rule_effect_resulting_values)
+    kb_interface.register_method(
+        'fetch_quantified_value_number',
+        fetch_quantified_value_number)
     yield kb_interface
     kb_interface.delete_database()
 
@@ -183,6 +201,15 @@ def test_tactic_rule_dependency_fuzzy_expr_fulfillment(kb_interface):
     assert len(fulfillment_query_res[0]['tr_dependency']['fulfillment']) == 1
     assert fulfillment_query_res[0]['tr_dependency']['fulfillment'][0]['value'] == pytest.approx(
         0.952380952)
+
+
+def test_direct_fuzzy_expression_quantified_value_unaffected_by_hypothetical(kb_interface):
+    # Verify that a named fuzzy expression has exactly one quantified_value
+
+    query_result = kb_interface.fetch_quantified_value_number()
+
+    for result in query_result:
+        assert result['qv_count']['value'] == 1
 
 
 def test_tactic_rule_dependency_relaxed_fuzzy_expr_fulfillment(kb_interface):
