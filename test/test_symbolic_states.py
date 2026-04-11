@@ -42,6 +42,18 @@ def fetch_scheme_status(self, scheme_name):
     return self.fetch_database(query)
 
 
+def fetch_median_value(self, label_name):
+    query = f"""
+        match
+            $interval (label: $label) isa symbolic_interval_definition,
+                has median_bound_value $median;
+            $label has symbolic_label_name "{label_name}";
+        fetch
+            $interval: median_bound_value;
+    """
+    return self.fetch_database(query)
+
+
 def fetch_current_system_state(self):
     query = """
         match
@@ -84,6 +96,9 @@ def kb_interface():
     kb_interface.register_method(
         'fetch_scheme_status',
         fetch_scheme_status)
+    kb_interface.register_method(
+        'fetch_median_value',
+        fetch_median_value)
     kb_interface.register_method(
         'fetch_current_system_state',
         fetch_current_system_state)
@@ -226,3 +241,45 @@ def test_current_system_state_and_state_space(kb_interface):
             'low-unsafe',
             'medium-safe',
             'medium-unsafe']
+
+
+def test_median_value_rules(kb_interface):
+    # symbolic_double_interval_median_value:
+    #   both bounds present → median = (lower + upper) / 2.0
+    result = kb_interface.fetch_median_value('low')   # [0.0, 0.18)
+    assert len(result) == 1
+    assert result[0]['interval']['median_bound_value'][0]['value'] == pytest.approx(0.09)
+
+    result = kb_interface.fetch_median_value('medium')   # [0.18, 0.26)
+    assert len(result) == 1
+    assert result[0]['interval']['median_bound_value'][0]['value'] == pytest.approx(0.22)
+
+    # symbolic_double_interval_no_upper_bound_median_value:
+    #   lower bound only → median = lower
+    result = kb_interface.fetch_median_value('high')   # [0.26, ∞)
+    assert len(result) == 1
+    assert result[0]['interval']['median_bound_value'][0]['value'] == pytest.approx(0.26)
+
+    # symbolic_double_interval_no_lower_bound_median_value:
+    #   upper bound only → median = upper
+    result = kb_interface.fetch_median_value('very-cold')   # (-∞, 0.0)
+    assert len(result) == 1
+    assert result[0]['interval']['median_bound_value'][0]['value'] == pytest.approx(0.0)
+
+    # symbolic_integer_interval_median_value:
+    #   both bounds present → median = (lower + upper) / 2.0
+    result = kb_interface.fetch_median_value('count-low')   # [0, 10)
+    assert len(result) == 1
+    assert result[0]['interval']['median_bound_value'][0]['value'] == pytest.approx(5.0)
+
+    # symbolic_integer_interval_no_upper_bound_median_value:
+    #   lower bound only → median = lower
+    result = kb_interface.fetch_median_value('count-high')   # [10, ∞)
+    assert len(result) == 1
+    assert result[0]['interval']['median_bound_value'][0]['value'] == pytest.approx(10.0)
+
+    # symbolic_integer_interval_no_lower_bound_median_value:
+    #   upper bound only → median = upper
+    result = kb_interface.fetch_median_value('count-negative')   # (-∞, 0)
+    assert len(result) == 1
+    assert result[0]['interval']['median_bound_value'][0]['value'] == pytest.approx(0.0)

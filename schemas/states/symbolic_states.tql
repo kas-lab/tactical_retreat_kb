@@ -35,6 +35,9 @@ lower_bound_integer sub attribute,
 upper_bound_integer sub attribute,
     value long;
 
+median_bound_value sub attribute,
+    value double;
+
 SymbolicLabel sub entity,
     abstract,
     owns symbolic_label_name,
@@ -83,11 +86,13 @@ symbolic_interval_definition sub symbolic_definition,
 
 symbolic_double_interval sub symbolic_interval_definition,
     owns lower_bound_double,
-    owns upper_bound_double;
+    owns upper_bound_double,
+    owns median_bound_value;
 
 symbolic_integer_interval sub symbolic_interval_definition,
     owns lower_bound_integer,
-    owns upper_bound_integer;
+    owns upper_bound_integer,
+    owns median_bound_value;
 
 Measure plays symbolic_interval_definition:measure;
 
@@ -272,4 +277,73 @@ rule system_state_not_current:
         };
     } then {
         $state has current_state false;
+    };
+
+
+rule symbolic_double_interval_median_value:
+    when {
+        $interval (label: $label, measure: $measure) isa symbolic_double_interval,
+            has lower_bound_double $lower,
+            has upper_bound_double $upper;
+        ?median_value = ($lower + $upper) / 2.0;
+    } then {
+        $interval has median_bound_value ?median_value;
+    };
+
+rule symbolic_double_interval_no_upper_bound_median_value:
+    when {
+        $interval (label: $label, measure: $measure) isa symbolic_double_interval,
+            has lower_bound_double $lower;
+        not {
+            $interval has upper_bound_double $upper;
+        };
+        ?median_value = $lower; # default to lower bound if upper bound is not defined
+    } then {
+        $interval has median_bound_value ?median_value;
+    };
+
+rule symbolic_double_interval_no_lower_bound_median_value:
+    when {
+        $interval (label: $label, measure: $measure) isa symbolic_double_interval,
+            has upper_bound_double $upper;
+        not {
+            $interval has lower_bound_double $lower;
+        };
+        ?median_value = $upper; # default to upper bound if lower bound is not defined
+    } then {
+        $interval has median_bound_value ?median_value;
+    };
+
+rule symbolic_integer_interval_median_value:
+    when {
+        $interval (label: $label, measure: $measure) isa symbolic_integer_interval,
+            has lower_bound_integer $lower,
+            has upper_bound_integer $upper;
+        ?median_value = ($lower + $upper) / 2.0;
+    } then {
+        $interval has median_bound_value ?median_value;
+    };
+
+rule symbolic_integer_interval_no_upper_bound_median_value:
+    when {
+        $interval (label: $label, measure: $measure) isa symbolic_integer_interval,
+            has lower_bound_integer $lower;
+        not {
+            $interval has upper_bound_integer $upper;
+        };
+        ?median_value = $lower; # default to lower bound if upper bound is not defined
+    } then {
+        $interval has median_bound_value ?median_value;
+    };
+
+rule symbolic_integer_interval_no_lower_bound_median_value:
+    when {
+        $interval (label: $label, measure: $measure) isa symbolic_integer_interval,
+            has upper_bound_integer $upper;
+        not {
+            $interval has lower_bound_integer $lower;
+        };
+        ?median_value = $upper; # default to upper bound if lower bound is not defined
+    } then {
+        $interval has median_bound_value ?median_value;
     };

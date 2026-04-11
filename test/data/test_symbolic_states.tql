@@ -250,3 +250,42 @@ $state_high_unsafe (
         label: $safety_unsafe
     ) isa system_state,
     has state_name "high-unsafe";
+
+# ── median_bound_value test fixtures ────────────────────────────────────────
+
+# lower-unbounded double interval: only upper_bound_double set → median = upper
+$very_cold isa AtomicSymbolicLabel,
+    has symbolic_label_name "very-cold",
+    has symbolic_order 0;
+(label: $very_cold, measure: $temperature) isa symbolic_double_interval,
+    has upper_bound_double 0.0;
+
+# integer measure for symbolic_integer_interval rules
+$step_count isa MeasureInteger,
+    has measure_name "step_count";
+$step_count_value isa ValueInteger,
+    has integer_value 5;
+(measure: $step_count, measurement_value: $step_count_value) isa measurement,
+    has measurement_time 2026-03-31T10:00:00.000,
+    has latest true;
+
+$count_low isa AtomicSymbolicLabel,
+    has symbolic_label_name "count-low",
+    has symbolic_order 1;
+$count_high isa AtomicSymbolicLabel,
+    has symbolic_label_name "count-high",
+    has symbolic_order 2;
+$count_negative isa AtomicSymbolicLabel,
+    has symbolic_label_name "count-negative",
+    has symbolic_order 0;
+
+# bounded integer interval → median = (0 + 10) / 2.0 = 5.0
+(label: $count_low, measure: $step_count) isa symbolic_integer_interval,
+    has lower_bound_integer 0,
+    has upper_bound_integer 10;
+# upper-unbounded integer interval → median = lower = 10.0
+(label: $count_high, measure: $step_count) isa symbolic_integer_interval,
+    has lower_bound_integer 10;
+# lower-unbounded integer interval → median = upper = 0.0
+(label: $count_negative, measure: $step_count) isa symbolic_integer_interval,
+    has upper_bound_integer 0;
