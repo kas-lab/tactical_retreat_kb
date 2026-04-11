@@ -577,6 +577,7 @@ rule comparison_expression_tactic_rule_dependency_fulfillment_0:
 rule fuzzy_expression_quantified_value_effect:
 	when {
 		$fuzzy_expression (effect: $effect) isa fuzzy_comparison_expression;
+		not { $fuzzy_expression (term: $term) isa fuzzy_comparison_expression; };
         $effect (effect_value: $term) isa effect, has resulting_effect_value $quantified_value;
 
         {
