@@ -359,3 +359,31 @@ $fake_system isa System, has system_name 'system';
 # tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> 0.0 && 0.941764572 -> 0.0
 $req_1 (system: $fake_system, expression: $fake_shall_expression, expression: $fake_shall_expression_2) isa relaxed_requirement,
     has requirement_name 'req_1';
+
+# ── CNF missing-case test expressions ────────────────────────────────────────
+# These and_expression instances are intentionally standalone (not inside any
+# requirement) so they can only receive tactic_rule_impacts_and via the three
+# new seed rules, NOT via the requirement → shall_expression transitivity path.
+#
+# $not_expr and $less_than_equal are reused from above — their
+# tactic_rule_dependency relations already exist.
+
+# Case 1: and_expression(not_expression(comparison_expression))
+# Only child is $not_expr; no direct comparison_expression child.
+# Requires dependency_into_impacts_and_via_not to seed tactic_rule_impacts_and.
+$and_only_not (expression: $not_expr) isa and_expression,
+    has expression_name 'and_only_not';
+
+# Case 2: and_expression(or_expression(comparison_expression))
+# Requires dependency_into_impacts_and_via_or.
+$or_only_comp (expression: $less_than_equal) isa or_expression,
+    has expression_name 'or_only_comp';
+$and_only_or (expression: $or_only_comp) isa and_expression,
+    has expression_name 'and_only_or';
+
+# Case 3: and_expression(or_expression(not_expression(comparison_expression)))
+# Requires dependency_into_impacts_and_via_or_not.
+$or_only_not (expression: $not_expr) isa or_expression,
+    has expression_name 'or_only_not';
+$and_only_or_not (expression: $or_only_not) isa and_expression,
+    has expression_name 'and_only_or_not';

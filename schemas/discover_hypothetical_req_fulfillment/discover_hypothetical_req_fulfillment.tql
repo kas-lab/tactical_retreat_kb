@@ -742,6 +742,46 @@ rule dependency_into_impacts_and:
         (impacted: $and_exp, tactic_rule: $tactic_rule) isa tactic_rule_impacts_and;
     };
 
+rule dependency_into_impacts_and_via_not:
+    when {
+        (dependent: $comp_exp, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
+        $comp_exp ($measure) isa comparison_expression;
+        $not_exp (expression: $comp_exp) isa not_expression;
+        $and_exp (expression: $not_exp) isa and_expression;
+        $measure isa Measure;
+        $tactic_rule (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure) isa effect;
+    } then {
+        (impacted: $and_exp, tactic_rule: $tactic_rule) isa tactic_rule_impacts_and;
+    };
+
+rule dependency_into_impacts_and_via_or:
+    when {
+        (dependent: $comp_exp, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
+        $comp_exp ($measure) isa comparison_expression;
+        $or_exp (expression: $comp_exp) isa or_expression;
+        $and_exp (expression: $or_exp) isa and_expression;
+        $measure isa Measure;
+        $tactic_rule (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure) isa effect;
+    } then {
+        (impacted: $and_exp, tactic_rule: $tactic_rule) isa tactic_rule_impacts_and;
+    };
+
+rule dependency_into_impacts_and_via_or_not:
+    when {
+        (dependent: $comp_exp, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
+        $comp_exp ($measure) isa comparison_expression;
+        $not_exp (expression: $comp_exp) isa not_expression;
+        $or_exp (expression: $not_exp) isa or_expression;
+        $and_exp (expression: $or_exp) isa and_expression;
+        $measure isa Measure;
+        $tactic_rule (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure) isa effect;
+    } then {
+        (impacted: $and_exp, tactic_rule: $tactic_rule) isa tactic_rule_impacts_and;
+    };
+
 rule tactic_rule_impacts_shall_transitivity:
     when {
         (tactic_rule: $tactic_rule, impacted: $requirement) isa tactic_rule_impacts_requirement;
