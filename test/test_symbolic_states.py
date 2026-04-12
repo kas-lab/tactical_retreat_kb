@@ -84,6 +84,8 @@ def kb_interface():
         ['schemas/data_structure/data_structure.tql',
          'schemas/context_model/context_model.tql',
          'schemas/logical_expressions/logical_expression.tql',
+         'schemas/logical_expressions/fuzzy_expression.tql',
+         'schemas/relaxed/relaxed_model.tql',
          'schemas/states/symbolic_states.tql'],
         ['test/data/test_symbolic_states.tql'],
         force_database=True,
