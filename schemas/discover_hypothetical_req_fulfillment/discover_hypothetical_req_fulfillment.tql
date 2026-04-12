@@ -110,6 +110,18 @@ tr_dependency_rhs_double_operand sub relation,
 tactic_rule_dependency plays tr_dependency_rhs_double_operand:tr_dependency;
 ValueDouble plays tr_dependency_rhs_double_operand:rhs_double;
 
+tr_dependency_lhs_integer_operand sub relation,
+    relates tr_dependency,
+    relates lhs_integer;
+tactic_rule_dependency plays tr_dependency_lhs_integer_operand:tr_dependency;
+ValueInteger plays tr_dependency_lhs_integer_operand:lhs_integer;
+
+tr_dependency_rhs_integer_operand sub relation,
+    relates tr_dependency,
+    relates rhs_integer;
+tactic_rule_dependency plays tr_dependency_rhs_integer_operand:tr_dependency;
+ValueInteger plays tr_dependency_rhs_integer_operand:rhs_integer;
+
 tr_dependency_lhs_effect_operand sub relation,
     relates tr_dependency,
     relates lhs_effect;
@@ -158,7 +170,14 @@ rule fuzzy_expression_tactic_rule_dependency:
 
 rule relaxed_fuzzy_expression_tactic_rule_dependency:
     when {
-        $expression (term: $measure) isa relaxed_fuzzy_expression;
+        $expression (term: $measure) isa $expression_type;
+        {
+            $expression_type sub as_close_as_possible_expression;
+        } or {
+            $expression_type sub as_many_as_possible_expression;
+        } or {
+            $expression_type sub as_few_as_possible_expression;
+        };
         $measure isa Measure;
         $tactic_rule (effect: $effect) isa tactic_rule;
         $effect (measure: $measure) isa effect;
@@ -188,6 +207,15 @@ rule comparison_expression_tactic_rule_dependency_lhs_literal_double:
         (tr_dependency: $tr_dependency, lhs_double: $lhs) isa tr_dependency_lhs_double_operand;
     };
 
+rule comparison_expression_tactic_rule_dependency_lhs_literal_integer:
+    when {
+        $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
+        $expression (lhs_value: $lhs) isa comparison_expression;
+        $lhs isa ValueInteger;
+    } then {
+        (tr_dependency: $tr_dependency, lhs_integer: $lhs) isa tr_dependency_lhs_integer_operand;
+    };
+
 rule comparison_expression_tactic_rule_dependency_lhs_measure_without_effect:
     when {
         $tr_dependency (dependent: $expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
@@ -211,6 +239,16 @@ rule comparison_expression_tactic_rule_dependency_lhs_measure_double:
         (tr_dependency: $tr_dependency, lhs_double: $mv_lhs) isa tr_dependency_lhs_double_operand;
     };
 
+rule comparison_expression_tactic_rule_dependency_lhs_measure_integer:
+    when {
+        (tr_dependency: $tr_dependency, lhs_measure: $lhs) isa tr_dependency_lhs_measure_without_effect;
+        (measure: $lhs, measurement_value: $mv_lhs) isa measurement,
+            has latest true;
+        $mv_lhs isa ValueInteger;
+    } then {
+        (tr_dependency: $tr_dependency, lhs_integer: $mv_lhs) isa tr_dependency_lhs_integer_operand;
+    };
+
 rule comparison_expression_tactic_rule_dependency_rhs_effect:
     when {
         $tr_dependency (dependent: $expression, tactic_rule: $tactic_rule) isa tactic_rule_dependency;
@@ -228,6 +266,15 @@ rule comparison_expression_tactic_rule_dependency_rhs_literal_double:
         $rhs isa ValueDouble;
     } then {
         (tr_dependency: $tr_dependency, rhs_double: $rhs) isa tr_dependency_rhs_double_operand;
+    };
+
+rule comparison_expression_tactic_rule_dependency_rhs_literal_integer:
+    when {
+        $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
+        $expression (rhs_value: $rhs) isa comparison_expression;
+        $rhs isa ValueInteger;
+    } then {
+        (tr_dependency: $tr_dependency, rhs_integer: $rhs) isa tr_dependency_rhs_integer_operand;
     };
 
 rule comparison_expression_tactic_rule_dependency_rhs_measure_without_effect:
@@ -251,6 +298,16 @@ rule comparison_expression_tactic_rule_dependency_rhs_measure_double:
         $mv_rhs isa ValueDouble;
     } then {
         (tr_dependency: $tr_dependency, rhs_double: $mv_rhs) isa tr_dependency_rhs_double_operand;
+    };
+
+rule comparison_expression_tactic_rule_dependency_rhs_measure_integer:
+    when {
+        (tr_dependency: $tr_dependency, rhs_measure: $rhs) isa tr_dependency_rhs_measure_without_effect;
+        (measure: $rhs, measurement_value: $mv_rhs) isa measurement,
+            has latest true;
+        $mv_rhs isa ValueInteger;
+    } then {
+        (tr_dependency: $tr_dependency, rhs_integer: $mv_rhs) isa tr_dependency_rhs_integer_operand;
     };
 
 rule comparison_expression_tactic_rule_dependency_less_than_effect_effect:
@@ -279,12 +336,38 @@ rule comparison_expression_tactic_rule_dependency_less_than_effect_double:
         $tr_dependency has fulfillment 1.0;
     };
 
+rule comparison_expression_tactic_rule_dependency_less_than_effect_integer:
+    when {
+        $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
+        $expression isa less_than;
+        (tr_dependency: $tr_dependency, lhs_effect: $lhs_effect) isa tr_dependency_lhs_effect_operand;
+        $lhs_effect has resulting_effect_value $value_lhs;
+        (tr_dependency: $tr_dependency, rhs_integer: $rhs_integer) isa tr_dependency_rhs_integer_operand;
+        $rhs_integer has integer_value $value_rhs;
+        $value_lhs < $value_rhs;
+    } then {
+        $tr_dependency has fulfillment 1.0;
+    };
+
 rule comparison_expression_tactic_rule_dependency_less_than_double_effect:
     when {
         $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
         $expression isa less_than;
         (tr_dependency: $tr_dependency, lhs_double: $lhs_double) isa tr_dependency_lhs_double_operand;
         $lhs_double has double_value $value_lhs;
+        (tr_dependency: $tr_dependency, rhs_effect: $rhs_effect) isa tr_dependency_rhs_effect_operand;
+        $rhs_effect has resulting_effect_value $value_rhs;
+        $value_lhs < $value_rhs;
+    } then {
+        $tr_dependency has fulfillment 1.0;
+    };
+
+rule comparison_expression_tactic_rule_dependency_less_than_integer_effect:
+    when {
+        $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
+        $expression isa less_than;
+        (tr_dependency: $tr_dependency, lhs_integer: $lhs_integer) isa tr_dependency_lhs_integer_operand;
+        $lhs_integer has integer_value $value_lhs;
         (tr_dependency: $tr_dependency, rhs_effect: $rhs_effect) isa tr_dependency_rhs_effect_operand;
         $rhs_effect has resulting_effect_value $value_rhs;
         $value_lhs < $value_rhs;
@@ -331,12 +414,38 @@ rule comparison_expression_tactic_rule_dependency_less_than_equal_effect_double:
         $tr_dependency has fulfillment 1.0;
     };
 
+rule comparison_expression_tactic_rule_dependency_less_than_equal_effect_integer:
+    when {
+        $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
+        $expression isa less_than_equal;
+        (tr_dependency: $tr_dependency, lhs_effect: $lhs_effect) isa tr_dependency_lhs_effect_operand;
+        $lhs_effect has resulting_effect_value $value_lhs;
+        (tr_dependency: $tr_dependency, rhs_integer: $rhs_integer) isa tr_dependency_rhs_integer_operand;
+        $rhs_integer has integer_value $value_rhs;
+        $value_lhs <= $value_rhs;
+    } then {
+        $tr_dependency has fulfillment 1.0;
+    };
+
 rule comparison_expression_tactic_rule_dependency_less_than_equal_double_effect:
     when {
         $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
         $expression isa less_than_equal;
         (tr_dependency: $tr_dependency, lhs_double: $lhs_double) isa tr_dependency_lhs_double_operand;
         $lhs_double has double_value $value_lhs;
+        (tr_dependency: $tr_dependency, rhs_effect: $rhs_effect) isa tr_dependency_rhs_effect_operand;
+        $rhs_effect has resulting_effect_value $value_rhs;
+        $value_lhs <= $value_rhs;
+    } then {
+        $tr_dependency has fulfillment 1.0;
+    };
+
+rule comparison_expression_tactic_rule_dependency_less_than_equal_integer_effect:
+    when {
+        $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
+        $expression isa less_than_equal;
+        (tr_dependency: $tr_dependency, lhs_integer: $lhs_integer) isa tr_dependency_lhs_integer_operand;
+        $lhs_integer has integer_value $value_lhs;
         (tr_dependency: $tr_dependency, rhs_effect: $rhs_effect) isa tr_dependency_rhs_effect_operand;
         $rhs_effect has resulting_effect_value $value_rhs;
         $value_lhs <= $value_rhs;
@@ -383,12 +492,38 @@ rule comparison_expression_tactic_rule_dependency_greater_than_effect_double:
         $tr_dependency has fulfillment 1.0;
     };
 
+rule comparison_expression_tactic_rule_dependency_greater_than_effect_integer:
+    when {
+        $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
+        $expression isa greater_than;
+        (tr_dependency: $tr_dependency, lhs_effect: $lhs_effect) isa tr_dependency_lhs_effect_operand;
+        $lhs_effect has resulting_effect_value $value_lhs;
+        (tr_dependency: $tr_dependency, rhs_integer: $rhs_integer) isa tr_dependency_rhs_integer_operand;
+        $rhs_integer has integer_value $value_rhs;
+        $value_lhs > $value_rhs;
+    } then {
+        $tr_dependency has fulfillment 1.0;
+    };
+
 rule comparison_expression_tactic_rule_dependency_greater_than_double_effect:
     when {
         $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
         $expression isa greater_than;
         (tr_dependency: $tr_dependency, lhs_double: $lhs_double) isa tr_dependency_lhs_double_operand;
         $lhs_double has double_value $value_lhs;
+        (tr_dependency: $tr_dependency, rhs_effect: $rhs_effect) isa tr_dependency_rhs_effect_operand;
+        $rhs_effect has resulting_effect_value $value_rhs;
+        $value_lhs > $value_rhs;
+    } then {
+        $tr_dependency has fulfillment 1.0;
+    };
+
+rule comparison_expression_tactic_rule_dependency_greater_than_integer_effect:
+    when {
+        $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
+        $expression isa greater_than;
+        (tr_dependency: $tr_dependency, lhs_integer: $lhs_integer) isa tr_dependency_lhs_integer_operand;
+        $lhs_integer has integer_value $value_lhs;
         (tr_dependency: $tr_dependency, rhs_effect: $rhs_effect) isa tr_dependency_rhs_effect_operand;
         $rhs_effect has resulting_effect_value $value_rhs;
         $value_lhs > $value_rhs;
@@ -435,12 +570,38 @@ rule comparison_expression_tactic_rule_dependency_greater_than_equal_effect_doub
         $tr_dependency has fulfillment 1.0;
     };
 
+rule comparison_expression_tactic_rule_dependency_greater_than_equal_effect_integer:
+    when {
+        $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
+        $expression isa greater_than_equal;
+        (tr_dependency: $tr_dependency, lhs_effect: $lhs_effect) isa tr_dependency_lhs_effect_operand;
+        $lhs_effect has resulting_effect_value $value_lhs;
+        (tr_dependency: $tr_dependency, rhs_integer: $rhs_integer) isa tr_dependency_rhs_integer_operand;
+        $rhs_integer has integer_value $value_rhs;
+        $value_lhs >= $value_rhs;
+    } then {
+        $tr_dependency has fulfillment 1.0;
+    };
+
 rule comparison_expression_tactic_rule_dependency_greater_than_equal_double_effect:
     when {
         $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
         $expression isa greater_than_equal;
         (tr_dependency: $tr_dependency, lhs_double: $lhs_double) isa tr_dependency_lhs_double_operand;
         $lhs_double has double_value $value_lhs;
+        (tr_dependency: $tr_dependency, rhs_effect: $rhs_effect) isa tr_dependency_rhs_effect_operand;
+        $rhs_effect has resulting_effect_value $value_rhs;
+        $value_lhs >= $value_rhs;
+    } then {
+        $tr_dependency has fulfillment 1.0;
+    };
+
+rule comparison_expression_tactic_rule_dependency_greater_than_equal_integer_effect:
+    when {
+        $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
+        $expression isa greater_than_equal;
+        (tr_dependency: $tr_dependency, lhs_integer: $lhs_integer) isa tr_dependency_lhs_integer_operand;
+        $lhs_integer has integer_value $value_lhs;
         (tr_dependency: $tr_dependency, rhs_effect: $rhs_effect) isa tr_dependency_rhs_effect_operand;
         $rhs_effect has resulting_effect_value $value_rhs;
         $value_lhs >= $value_rhs;
@@ -487,12 +648,38 @@ rule comparison_expression_tactic_rule_dependency_equal_effect_double:
         $tr_dependency has fulfillment 1.0;
     };
 
+rule comparison_expression_tactic_rule_dependency_equal_effect_integer:
+    when {
+        $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
+        $expression isa equal;
+        (tr_dependency: $tr_dependency, lhs_effect: $lhs_effect) isa tr_dependency_lhs_effect_operand;
+        $lhs_effect has resulting_effect_value $value_lhs;
+        (tr_dependency: $tr_dependency, rhs_integer: $rhs_integer) isa tr_dependency_rhs_integer_operand;
+        $rhs_integer has integer_value $value_rhs;
+        $value_lhs == $value_rhs;
+    } then {
+        $tr_dependency has fulfillment 1.0;
+    };
+
 rule comparison_expression_tactic_rule_dependency_equal_double_effect:
     when {
         $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
         $expression isa equal;
         (tr_dependency: $tr_dependency, lhs_double: $lhs_double) isa tr_dependency_lhs_double_operand;
         $lhs_double has double_value $value_lhs;
+        (tr_dependency: $tr_dependency, rhs_effect: $rhs_effect) isa tr_dependency_rhs_effect_operand;
+        $rhs_effect has resulting_effect_value $value_rhs;
+        $value_lhs == $value_rhs;
+    } then {
+        $tr_dependency has fulfillment 1.0;
+    };
+
+rule comparison_expression_tactic_rule_dependency_equal_integer_effect:
+    when {
+        $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
+        $expression isa equal;
+        (tr_dependency: $tr_dependency, lhs_integer: $lhs_integer) isa tr_dependency_lhs_integer_operand;
+        $lhs_integer has integer_value $value_lhs;
         (tr_dependency: $tr_dependency, rhs_effect: $rhs_effect) isa tr_dependency_rhs_effect_operand;
         $rhs_effect has resulting_effect_value $value_rhs;
         $value_lhs == $value_rhs;
@@ -539,12 +726,38 @@ rule comparison_expression_tactic_rule_dependency_not_equal_effect_double:
         $tr_dependency has fulfillment 1.0;
     };
 
+rule comparison_expression_tactic_rule_dependency_not_equal_effect_integer:
+    when {
+        $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
+        $expression isa not_equal;
+        (tr_dependency: $tr_dependency, lhs_effect: $lhs_effect) isa tr_dependency_lhs_effect_operand;
+        $lhs_effect has resulting_effect_value $value_lhs;
+        (tr_dependency: $tr_dependency, rhs_integer: $rhs_integer) isa tr_dependency_rhs_integer_operand;
+        $rhs_integer has integer_value $value_rhs;
+        $value_lhs != $value_rhs;
+    } then {
+        $tr_dependency has fulfillment 1.0;
+    };
+
 rule comparison_expression_tactic_rule_dependency_not_equal_double_effect:
     when {
         $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
         $expression isa not_equal;
         (tr_dependency: $tr_dependency, lhs_double: $lhs_double) isa tr_dependency_lhs_double_operand;
         $lhs_double has double_value $value_lhs;
+        (tr_dependency: $tr_dependency, rhs_effect: $rhs_effect) isa tr_dependency_rhs_effect_operand;
+        $rhs_effect has resulting_effect_value $value_rhs;
+        $value_lhs != $value_rhs;
+    } then {
+        $tr_dependency has fulfillment 1.0;
+    };
+
+rule comparison_expression_tactic_rule_dependency_not_equal_integer_effect:
+    when {
+        $tr_dependency (dependent: $expression) isa tactic_rule_dependency;
+        $expression isa not_equal;
+        (tr_dependency: $tr_dependency, lhs_integer: $lhs_integer) isa tr_dependency_lhs_integer_operand;
+        $lhs_integer has integer_value $value_lhs;
         (tr_dependency: $tr_dependency, rhs_effect: $rhs_effect) isa tr_dependency_rhs_effect_operand;
         $rhs_effect has resulting_effect_value $value_rhs;
         $value_lhs != $value_rhs;
@@ -800,6 +1013,15 @@ rule tactic_rule_impacts_may_transitivity:
         (tactic_rule: $tactic_rule, impacted: $may_expression) isa tactic_rule_impacts_may_expression;
     };
 
+rule tactic_rule_impacts_may_transitivity_from_shall:
+    when {
+        (tactic_rule: $tactic_rule, impacted: $shall_expression) isa tactic_rule_impacts_shall_expression;
+        $shall_expression (expression: $may_expression) isa shall_expression;
+        $may_expression isa may_expression;
+    } then {
+        (tactic_rule: $tactic_rule, impacted: $may_expression) isa tactic_rule_impacts_may_expression;
+    };
+
 rule tactic_rule_impacts_base_transitivity:
     when {
         (tactic_rule: $tactic_rule, impacted: $parent) isa tactic_rule_impacts;
@@ -1019,6 +1241,15 @@ rule tactic_rule_impacts_in_effect_may_transitivity:
     when {
         (tactic_rule: $tactic_rule, impacted: $requirement) isa tactic_rule_impacts_requirement_in_effect;
         $requirement (expression: $may_expression) isa relaxed_requirement;
+        $may_expression isa may_expression;
+    } then {
+        (tactic_rule: $tactic_rule, impacted: $may_expression) isa tactic_rule_impacts_may_expression_in_effect;
+    };
+
+rule tactic_rule_impacts_in_effect_may_transitivity_from_shall:
+    when {
+        (tactic_rule: $tactic_rule, impacted: $shall_expression) isa tactic_rule_impacts_shall_expression_in_effect;
+        $shall_expression (expression: $may_expression) isa shall_expression;
         $may_expression isa may_expression;
     } then {
         (tactic_rule: $tactic_rule, impacted: $may_expression) isa tactic_rule_impacts_may_expression_in_effect;
