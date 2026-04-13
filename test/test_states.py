@@ -180,7 +180,6 @@ def test_current_state(kb_interface):
 
     dream_result = kb_interface.dream("effective_rule")
 
-
     assert len(dream_result[0]['s2']['state_name']) == 1
     assert dream_result[0]['s2']['state_name'][0]['value'] == "alt_state_1"
 
@@ -188,4 +187,3 @@ def test_current_state(kb_interface):
 
     assert dream_result[0]['tactic_impact']['fulfillment'][0]['value'] > req_ful[0]['req']['fulfillment'][0]['value']
     # assert x[0]['s2']['state_name'][0]['value'] == "alt_state_1"
-    

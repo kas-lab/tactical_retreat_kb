@@ -9,8 +9,24 @@ state_name sub attribute,
 state sub relation,
 	owns state_name @key,
     owns current,
+    owns median_fulfillment,
     relates antecedent,
-    relates rule;
+    relates rule,
+    relates median_valuation;
+
+median_bound_value sub attribute,
+    value double;
+
+medianValuation sub relation,
+    owns median_bound_value,
+    relates measure;
+
+
+
+Measure plays median_valuation:measure;
+
+medianValuation plays state:median_valuation
+medianValuation plays fuzzy_comparison_expression:median_valuation
 
 state_sequence sub relation,
     relates current_state,
