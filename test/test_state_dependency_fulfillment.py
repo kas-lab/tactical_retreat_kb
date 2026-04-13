@@ -129,15 +129,18 @@ def kb_interface():
         ['schemas/data_structure/data_structure.tql',
          'schemas/context_model/context_model.tql',
          'schemas/logical_expressions/logical_expression.tql',
+         'schemas/ros_model/ros_model.tql',
+         'schemas/feature_model/feature_model.tql',
+         'schemas/tactics_model/tactics_model.tql',
          'schemas/logical_expressions/fuzzy_expression.tql',
          'schemas/relaxed/relaxed_model.tql',
+         'schemas/discover_hypothetical_req_fulfillment/discover_hypothetical_req_fulfillment.tql',
          'schemas/states/states.tql',
          'schemas/states/simple_state_dependency_fulfillment.tql'],
         ['test/data/test_simple_state_dependency_fulfillment.tql'],
         force_database=True,
         force_data=True,
-        infer=True,
-        sort_fetch_results=True)
+        infer=True)
     kb_interface.register_method('fetch_fulfillment', fetch_fulfillment)
     kb_interface.register_method(
         'fetch_state_dependency_count', fetch_state_dependency_count)

@@ -89,13 +89,13 @@ sd_lhs_interval_operand sub relation,
     relates sd_dependency,
     relates lhs_interval;
 state_dependency plays sd_lhs_interval_operand:sd_dependency;
-median_valuation plays sd_lhs_interval_operand:lhs_interval;
+medianValuation plays sd_lhs_interval_operand:lhs_interval;
 
 sd_rhs_interval_operand sub relation,
     relates sd_dependency,
     relates rhs_interval;
 state_dependency plays sd_rhs_interval_operand:sd_dependency;
-median_valuation plays sd_rhs_interval_operand:rhs_interval;
+medianValuation plays sd_rhs_interval_operand:rhs_interval;
 
 # lhs/rhs is a Measure NOT covered by the state's intervals;
 # its value is resolved from the latest live measurement instead.
