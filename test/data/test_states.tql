@@ -1,0 +1,165 @@
+insert
+
+# values
+$integer_1 isa ValueInteger,
+    has integer_value 1;
+$integer_2 isa ValueInteger,
+    has integer_value 2;
+$integer_3 isa ValueInteger,
+    has integer_value 3;
+
+$double_1_1 isa ValueDouble,
+    has double_value 1.1;
+$double_1_2 isa ValueDouble,
+    has double_value 1.2;
+$double_1_3 isa ValueDouble,
+    has double_value 1.3;
+
+$string_1 isa ValueString,
+    has string_value '1';
+$string_2 isa ValueString,
+    has string_value '2';
+
+$bool_false isa ValueBool, has bool_value false;
+$bool_true isa ValueBool, has bool_value true;
+
+# measures
+
+## measures integer
+$measure_integer_1 isa Measure, has measure_name 'measure_integer_1';
+(measure: $measure_integer_1, measurement_value: $integer_1) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+$measure_integer_2 isa Measure, has measure_name 'measure_integer_2';
+(measure: $measure_integer_2, measurement_value: $integer_2) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+$measure_integer_3 isa Measure, has measure_name 'measure_integer_3';
+(measure: $measure_integer_3, measurement_value: $integer_3) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+
+## measures double
+$measure_double_1_1 isa Measure, has measure_name 'measure_double_1_1';
+(measure: $measure_double_1_1, measurement_value: $double_1_1) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+$measure_double_1_2 isa Measure, has measure_name 'measure_double_1_2';
+(measure: $measure_double_1_2, measurement_value: $double_1_2) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+$measure_double_1_3 isa Measure, has measure_name 'measure_double_1_3';
+(measure: $measure_double_1_3, measurement_value: $double_1_3) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+
+## measures string
+$measure_string_1 isa Measure, has measure_name 'measure_string_1';
+(measure: $measure_string_1, measurement_value: $string_1) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+$measure_string_2 isa Measure, has measure_name 'measure_string_2';
+(measure: $measure_string_2, measurement_value: $string_2) isa measurement,
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
+
+## measures bool
+$measure_bool_false isa Measure, has measure_name 'measure_bool_false';
+(measure: $measure_bool_false, measurement_value: $bool_false) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+$measure_bool_true isa Measure, has measure_name 'measure_bool_true';
+(measure: $measure_bool_true, measurement_value: $bool_true) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+# proposition expressions
+$bool_false_prop_exp (atom: $bool_false) isa propositional_expression, has expression_name 'bool_false_prop_exp';
+$bool_true_prop_exp (atom: $bool_true) isa propositional_expression, has expression_name 'bool_true_prop_exp';
+
+$false_measure_prop_exp (atom: $measure_bool_false) isa propositional_expression, has expression_name 'false_measure_prop_exp';
+$true_measure_prop_exp (atom: $measure_bool_true) isa propositional_expression, has expression_name 'true_measure_prop_exp';
+
+$measure_no_measurement isa Measure, has measure_name 'measure_no_measurement';
+(atom: $measure_no_measurement) isa propositional_expression, has expression_name 'no_measure_prop_exp';
+
+# not expressions
+$not_false_expr (expression: $bool_false_prop_exp) isa not_expression, has expression_name 'not_false_expr';
+$not_true_expr (expression: $bool_true_prop_exp) isa not_expression, has expression_name 'not_true_expr';
+
+# or & and expressions
+
+$vb_false_not_equal_vb_true (lhs_value:$bool_false, rhs_value:$bool_true) isa not_equal, has expression_name 'vb_false_not_equal_vb_true';
+
+$or_expression_1 (expression:$vb_false_not_equal_vb_true, expression:$true_measure_prop_exp, expression: $not_false_expr)
+    isa or_expression, has expression_name 'or_expression_1'; # True | True | True -> True
+
+$or_expression_2 (expression:$vb_false_not_equal_vb_true, expression:$not_true_expr, expression:$not_false_expr) isa or_expression,
+    has expression_name 'or_expression_2'; # True | False | True -> True
+
+$or_expression_3 (expression:$not_true_expr, expression:$false_measure_prop_exp, expression:$bool_false_prop_exp) isa or_expression,
+    has expression_name 'or_expression_3'; # False | False | False -> False
+
+$and_expression_1 (expression:$or_expression_1, expression:$or_expression_2) isa and_expression,
+    has expression_name 'and_expression_1'; # True
+$and_expression_2 (expression:$or_expression_1, expression:$or_expression_2, expression:$or_expression_3) isa and_expression,
+    has expression_name 'and_expression_2'; # False
+$and_expression_3 (expression:$or_expression_1, expression:$true_measure_prop_exp, expression:$not_false_expr) isa and_expression,
+    has expression_name 'and_expression_3'; # True
+
+$tactic_1 isa Tactic, has tactic_name "tactic_1";
+
+$some_rule (tactic:$tactic_1) isa tactic_rule, has rule_name "tr1"; # true
+
+$state_expr__1( antecedent: $and_expression_3, 
+rule: $some_rule
+) isa state, has state_name "current_state";
+
+$state_expr__2( antecedent: $and_expression_2, 
+rule: $some_rule
+) isa state, has state_name "not_current_state";
+
+
+#less than 1.0
+$double_1_0 isa ValueDouble,
+    has double_value 1.0;
+
+
+#measure_double_1_2, is some measure, which just happens to be 1.2 right now
+$measure_less_1_0 (lhs_value:$measure_double_1_2, rhs_value:$double_1_0) isa less_than, has expression_name 'measure_less_1_0';
+
+#between 1.0 and 1.2
+
+$measure_more_1_0 (lhs_value:$measure_double_1_2, rhs_value:$double_1_0) isa greater_than_equal, has expression_name 'measure_more_1_0';
+$measure_less_1_2 (lhs_value:$measure_double_1_2, rhs_value:$double_1_2) isa less_than, has expression_name 'measure_less_1_2';
+
+
+#more than 1.2
+$measure_more_1_2 (lhs_value:$measure_double_1_2, rhs_value:$double_1_2) isa greater_than_equal, has expression_name 'md_1_2_less_vd_1_2';
+
+$triangular_set isa FuzzyTriangular,
+	has a -2.0,
+	has b 0.0,
+	has c 2.0;
+
+$fake_as_close_expression (fuzzy_set: $triangular_set, term: $measure_double_1_2) isa as_close_as_possible_expression,
+	has required_value 0.26;
+
+
+$state_1_precondition(expression:$bool_true_prop_exp, expression:$measure_less_1_0) isa and_expression, has expression_name 'state_1_precondition';
+$state_2_precondition(expression:$bool_true_prop_exp, expression:$measure_more_1_0, expression:$measure_less_1_2) isa and_expression, has expression_name 'state_2_precondition';
+$state_3_precondition(expression:$bool_true_prop_exp, expression:$measure_more_1_2) isa and_expression, has expression_name 'state_3_precondition';
+
+$alt_state_1(antecedent: $state_1_precondition, rule: $some_rule) isa state, has state_name "alt_state_1";
+$alt_state_2(antecedent: $state_2_precondition, rule: $some_rule) isa state, has state_name "alt_state_2";
+$alt_state_3(antecedent: $state_3_precondition, rule: $some_rule) isa state, has state_name "alt_state_3";
+
+#state 3 should be current.
+$double_minus_0_5 isa ValueDouble,
+    has double_value -0.5;
+
+$lower_by_0_5 (measure: $measure_double_1_2, effect_value: $double_minus_0_5) isa relative_effect;
+
+#knocks it down to 0.7, which should then mean we're in state 1.
+$some_rule_w_effect (tactic:$tactic_1, effect:$lower_by_0_5) isa tactic_rule, has rule_name "effective_rule";
+
+$fake_system isa System, has system_name 'system';
+
+$fake_shall_expression (
+    expression: $fake_as_close_expression) isa shall_expression,
+    has expression_name 'fake_shall_expression';
+
+
+$req_1 (system: $fake_system, expression: $fake_shall_expression) isa relaxed_requirement,
+    has requirement_name 'req_1', has in_effect true;

@@ -7,3 +7,23 @@ repositories:
     type: git
     url: https://github.com/kas-lab/ros_monitors.git
     version: main
+  AAL-ROS2:
+    type: git
+    url: https://github.com/EGAlberts/AAL-ROS2.git
+    version: mc
+  adapt_x:
+    type: git
+    url: https://github.com/kas-lab/adapt_x.git
+    version: main
+  rebet_monitors:
+    type: git
+    url: https://github.com/kas-lab/rebet_monitors.git
+    version: main
+  rebet:
+    type: git
+    url: https://github.com/EGAlberts/ReBeT.git
+    version: mc
+  behaviortree_ros2:
+    type: git
+    url: https://github.com/EGAlberts/BehaviorTree.ROS2.git
+    version: humble

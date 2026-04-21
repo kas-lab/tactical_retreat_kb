@@ -2723,11 +2723,11 @@
  $expr_ (
  expression:$nearest_object_less,
  expression:$power_draw_greater
- ) isa or_expression;
+ ) isa or_expression, has expression_name 'expr_';
  $expr__1 (
  		    	expression:$is_selected_f_hi_speed_1,
  		    	expression:$expr_
- 		    	) isa and_expression;
+ 		    	) isa and_expression, has expression_name 'expr__1';
  $decrease_to_medfa (
  activation: $f_med_speed
  ) isa feature_adaptation;
@@ -2744,11 +2744,11 @@
  $expr__2 (
  expression:$nearest_object_less_1,
  expression:$power_draw_greater_1
- ) isa or_expression;
+ ) isa or_expression, has expression_name 'expr__2';
  $expr__3 (
  		    	expression:$is_selected_f_med_speed_1,
  		    	expression:$expr__2
- 		    	) isa and_expression;
+ 		    	) isa and_expression, has expression_name 'expr__3';
  $decrease_to_lowfa (
  activation: $f_low_speed
  ) isa feature_adaptation;
@@ -2770,11 +2770,11 @@
  expression:$nearest_object_greater,
  expression:$power_draw_leq,
  expression:$current_velocity_less
- ) isa or_expression;
+ ) isa or_expression, has expression_name 'expr__4';
  $expr__5 (
  		    	expression:$is_selected_f_low_speed_1,
  		    	expression:$expr__4
- 		    	) isa and_expression;
+ 		    	) isa and_expression, has expression_name 'expr__5';
  $increase_to_medfa (
  activation: $f_med_speed
  ) isa feature_adaptation;
@@ -2793,11 +2793,11 @@
  expression:$nearest_object_greater_1,
  expression:$power_draw_leq_1,
  expression:$current_velocity_less_1
- ) isa or_expression;
+ ) isa or_expression, has expression_name 'expr__6';
  $expr__7 (
  		    	expression:$is_selected_f_med_speed_2,
  		    	expression:$expr__6
- 		    	) isa and_expression;
+ 		    	) isa and_expression, has expression_name 'expr__7';
  $increase_to_maxfa (
  activation: $f_hi_speed
  ) isa feature_adaptation;
@@ -2838,18 +2838,23 @@
   isa resolution_model,
      has resolution_model_name "rebet_frog", has ros_system "rebet_frog";
 
+# benchmark aliases with leading slash to match runtime API inputs
+ $bt_navigator_node_action_server_1 has interface_name "/navigate_to_pose";
+ $controller_server_node_action_server has interface_name "/follow_path";
+ $planner_server_node_action_server_1 has interface_name "/compute_path_to_pose";
+
 
  $rebetmc isa System, has system_name "rebetmc";
-#  $t_measured_current_velocity_prop_exp (term: $t_measured_current_velocity) isa propositional_expression;
  $movequickly_as_close_set isa FuzzyTriangular,
  	has a -0.5,
  	has b 0.0,
  	has c 0.5;
 
  $movequickly_as_close (fuzzy_set: $movequickly_as_close_set, term: $t_measured_current_velocity) isa as_close_as_possible_expression,
- 	has required_value 0.26;
+ 	has required_value 0.26,
+	has expression_name "movequickly_as_close";
 
- $movequickly_as_close_shall (expression: $movequickly_as_close) isa shall_expression;
+ $movequickly_as_close_shall (expression: $movequickly_as_close) isa shall_expression, has expression_name "movequickly_as_close_shall";
 
  $movequickly_requirement (system: $rebetmc, expression: $movequickly_as_close_shall) isa relaxed_requirement,
  	has requirement_name "MoveQuickly",
@@ -2858,7 +2863,8 @@
 
  $t_measured_too_close_prop_exp (atom: $t_measured_too_close) isa propositional_expression;
 
- $t_measured_too_close_prop_exp_neg (expression: $t_measured_too_close_prop_exp) isa fuzzy_not;
+ $t_measured_too_close_prop_exp_neg (expression: $t_measured_too_close_prop_exp) isa fuzzy_not,
+ 	has expression_name "t_measured_too_close_prop_exp_neg";
 #  $t_measured_current_velocity_prop_exp (atom: $t_measured_current_velocity) isa propositional_expression;
  $movesafely_as_close_set isa FuzzyTriangular,
  	has a -0.5,
@@ -2866,13 +2872,30 @@
  	has c 0.5;
 
  $movesafely_as_close (fuzzy_set: $movesafely_as_close_set, term: $t_measured_current_velocity) isa as_close_as_possible_expression,
- 	has required_value 0.18;
+ 	has required_value 0.18, has expression_name "movesafely_as_close";
 
- $t_measured_too_close_prop_exp_neg_movesafely_as_close_or (expression: $t_measured_too_close_prop_exp_neg, expression: $movesafely_as_close) isa fuzzy_or;
+ $t_measured_too_close_prop_exp_neg_movesafely_as_close_or (expression: $t_measured_too_close_prop_exp_neg, expression: $movesafely_as_close) isa fuzzy_or, has expression_name "t_measured_too_close_prop_exp_neg_movesafely_as_close_or";
 
- $t_measured_too_close_prop_exp_neg_movesafely_as_close_or_shall (expression: $t_measured_too_close_prop_exp_neg_movesafely_as_close_or) isa shall_expression;
+ $t_measured_too_close_prop_exp_neg_movesafely_as_close_or_shall (expression: $t_measured_too_close_prop_exp_neg_movesafely_as_close_or) isa shall_expression, has expression_name "t_measured_too_close_prop_exp_neg_movesafely_as_close_or_shall";
 
  $movesafely_requirement (system: $rebetmc, expression: $t_measured_too_close_prop_exp_neg_movesafely_as_close_or_shall) isa relaxed_requirement,
  	has requirement_name "MoveSafely",
  	has in_effect false,
  	has description "Try to keep a velocity of below 0.18m/s while an object is within the first 10% of the range of the LIDAR.";
+
+# benchmark-focused in-effect requirements for potential fulfillment coverage
+ $benchmark_movequickly_requirement (
+     system: $rebetmc,
+     expression: $movequickly_as_close_shall
+ ) isa relaxed_requirement,
+    has requirement_name "BenchmarkMoveQuickly",
+    has in_effect true,
+    has description "Benchmark requirement using existing MoveQuickly expression.";
+
+ $benchmark_movesafely_requirement (
+     system: $rebetmc,
+     expression: $t_measured_too_close_prop_exp_neg_movesafely_as_close_or_shall
+ ) isa relaxed_requirement,
+    has requirement_name "BenchmarkMoveSafely",
+    has in_effect true,
+    has description "Benchmark requirement using existing MoveSafely expression.";

@@ -1,0 +1,8 @@
+# Find all exclusive symbolic schemes that currently have no active label.
+
+match
+    $scheme isa symbolic_scheme,
+        has exclusive_partition true,
+        has undefined_state true;
+fetch
+    $scheme: symbolic_scheme_name;

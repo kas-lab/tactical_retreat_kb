@@ -36,7 +36,8 @@ def kb_interface():
          'test/data/test_relaxed_model.tql'],
         force_database=True,
         force_data=True,
-        infer=True)
+        infer=True,
+        sort_fetch_results=True)
     yield kb_interface
     kb_interface.delete_database()
 
@@ -44,7 +45,7 @@ def kb_interface():
 def test_get_relaxed_expr_fulfillment(kb_interface):
     fulfillment_array = kb_interface.fetch_relaxed_expression_fulfillment(
         'fake_may_expression')
-    assert len(fulfillment_array[0]['relaxed_expression']['fulfillment']) == 1
+    assert len(fulfillment_array) == 1
 
     fulfillment = kb_interface.get_relaxed_expression_fulfillment(
         'fake_may_expression')
@@ -52,7 +53,7 @@ def test_get_relaxed_expr_fulfillment(kb_interface):
 
     fulfillment_array = kb_interface.fetch_relaxed_expression_fulfillment(
         'fake_shall_expression')
-    assert len(fulfillment_array[0]['relaxed_expression']['fulfillment']) == 1
+    assert len(fulfillment_array) == 1
 
     fulfillment = kb_interface.get_relaxed_expression_fulfillment(
         'fake_shall_expression')
@@ -61,7 +62,7 @@ def test_get_relaxed_expr_fulfillment(kb_interface):
     # Mirte model
     fulfillment_array = kb_interface.fetch_relaxed_expression_fulfillment(
         'velocity_shall_expression')
-    assert len(fulfillment_array[0]['relaxed_expression']['fulfillment']) == 1
+    assert len(fulfillment_array) == 1
 
     fulfillment = kb_interface.get_relaxed_expression_fulfillment(
         'velocity_shall_expression')
@@ -69,7 +70,7 @@ def test_get_relaxed_expr_fulfillment(kb_interface):
 
     fulfillment_array = kb_interface.fetch_relaxed_expression_fulfillment(
         'velocity_as_close_expression_2')
-    assert len(fulfillment_array[0]['relaxed_expression']['fulfillment']) == 1
+    assert len(fulfillment_array) == 1
 
     fulfillment = kb_interface.get_relaxed_expression_fulfillment(
         'velocity_as_close_expression_2')
@@ -77,7 +78,7 @@ def test_get_relaxed_expr_fulfillment(kb_interface):
 
     fulfillment_array = kb_interface.fetch_relaxed_expression_fulfillment(
         'velocity_shall_expression_2')
-    assert len(fulfillment_array[0]['relaxed_expression']['fulfillment']) == 1
+    assert len(fulfillment_array) == 1
 
     fulfillment = kb_interface.get_relaxed_expression_fulfillment(
         'velocity_shall_expression_2')

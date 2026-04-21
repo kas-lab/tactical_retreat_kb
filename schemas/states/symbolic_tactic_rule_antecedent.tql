@@ -1,0 +1,16 @@
+define
+
+# Bridge schema that allows symbolic labels to act as tactic-rule antecedents.
+# Load after:
+# - schemas/states/symbolic_states.tql
+# - schemas/tactics_model/tactics_model.tql
+
+SymbolicLabel plays tactic_rule:antecedent;
+
+rule tactic_rule_symbolic_antecedent_invalid:
+    when {
+        $tr (antecedent: $antecedent) isa tactic_rule;
+        $antecedent isa SymbolicLabel, has symbolic_active false;
+    } then {
+        $tr has rule_valid false;
+    };

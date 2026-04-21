@@ -1,0 +1,12 @@
+# Query the currently active labels of a relation-based symbolic scheme.
+#
+# This is the direct replacement for querying `current_symbolic_assignment`
+# in the entity-based variant.
+
+match
+    $scheme (label: $label) isa symbolic_scheme,
+        has symbolic_scheme_name "velocity-bands";
+    $label has symbolic_active true;
+fetch
+    $label: symbolic_label_name,
+        symbolic_order;

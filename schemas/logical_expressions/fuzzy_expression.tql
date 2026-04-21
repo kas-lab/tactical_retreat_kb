@@ -186,10 +186,10 @@ rule fuzzy_expression_quantified_value:
 		};
 
 		{
-			$fuzzy_expression  has offset_value $offest;
-			?quantified_value_ = $quantified_value + $offest;
+			$fuzzy_expression  has offset_value $offset;
+			?quantified_value_ = $quantified_value + $offset;
 		} or {
-			not {$fuzzy_expression has offset_value $offest;};
+			not {$fuzzy_expression has offset_value $offset;};
 			?quantified_value_ = $quantified_value;
 		};
 		?quantified_value__ = ?quantified_value_;
