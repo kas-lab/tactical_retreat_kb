@@ -1,0 +1,2901 @@
+ insert
+
+
+ $map_server_node isa LifeCycleNode,
+ has node_name "/map_server",
+ has namespace "";
+ $bond_disable_heartbeat_timeout_param isa ParameterBool,
+ 	has parameter_name "/bond_disable_heartbeat_timeout";
+ $bond_disable_heartbeat_timeout_param_pvalue isa ValueBool, has bool_value true;
+ (node: $map_server_node,
+ parameter: $bond_disable_heartbeat_timeout_param,
+ parameter_value: $bond_disable_heartbeat_timeout_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $frame_id_param isa ParameterString,
+ 	has parameter_name "frame_id";
+ $frame_id_param_pvalue isa ValueString, has string_value "map";
+ (node: $map_server_node,
+ parameter: $frame_id_param,
+ parameter_value: $frame_id_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $topic_name_param isa ParameterString,
+ 	has parameter_name "topic_name";
+ $topic_name_param_pvalue isa ValueString, has string_value "map";
+ (node: $map_server_node,
+ parameter: $topic_name_param,
+ parameter_value: $topic_name_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $use_sim_time_param isa ParameterBool,
+ 	has parameter_name "use_sim_time";
+ $use_sim_time_param_pvalue isa ValueBool, has bool_value true;
+ (node: $map_server_node,
+ parameter: $use_sim_time_param,
+ parameter_value: $use_sim_time_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $yaml_filename_param isa ParameterString,
+ 	has parameter_name "yaml_filename";
+ $yaml_filename_param_pvalue isa ValueString, has string_value "/home/ega/rebet_ws/install/rebet_frog/share/rebet_frog/config/acsos2024_map.yaml";
+ (node: $map_server_node,
+ parameter: $yaml_filename_param,
+ parameter_value: $yaml_filename_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+
+ $map_server_node_parameters (
+ 	node: $map_server_node,
+ 	parameter: $bond_disable_heartbeat_timeout_param,
+ 	parameter: $frame_id_param,
+ 	parameter: $topic_name_param,
+ 	parameter: $use_sim_time_param,
+ 	parameter: $yaml_filename_param
+ 	) isa has_parameter;
+ $map_server_node_sub isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $map_server_node, subscriber: $map_server_node_sub) isa has_topic;
+
+ $map_server_node_sub_1 isa Subscriber,
+ has interface_name "clock",
+ has interface_type "rosgraph_msgs/Clock";
+
+ (node: $map_server_node, subscriber: $map_server_node_sub_1) isa has_topic;
+
+ $map_server_nodepub isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $map_server_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $map_server_nodepub_qos_rel (interface: $map_server_nodepub, qos: $map_server_nodepub_qos) isa has_qos;
+
+ (node: $map_server_node, publisher: $map_server_nodepub) isa has_topic;
+ $map_server_nodepub_1 isa Publisher,
+ has interface_name "map",
+ has interface_type "nav_msgs/OccupancyGrid";
+
+ $map_server_nodepub_1_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "TRANSIENT_LOCAL"
+ ;
+
+ $map_server_nodepub_1_qos_rel (interface: $map_server_nodepub_1, qos: $map_server_nodepub_1_qos) isa has_qos;
+
+ (node: $map_server_node, publisher: $map_server_nodepub_1) isa has_topic;
+ $map_server_nodepub_2 isa Publisher,
+ has interface_name "map_server/transition_event",
+ has interface_type "lifecycle_msgs/TransitionEvent";
+
+ $map_server_nodepub_2_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $map_server_nodepub_2_qos_rel (interface: $map_server_nodepub_2, qos: $map_server_nodepub_2_qos) isa has_qos;
+
+ (node: $map_server_node, publisher: $map_server_nodepub_2) isa has_topic;
+ $map_server_node_service_server isa ServiceServer,
+ has interface_name "map_server/change_state",
+ has interface_type "lifecycle_msgs/ChangeState";
+ (node: $map_server_node, server: $map_server_node_service_server) isa has_service;
+ $map_server_node_service_server_1 isa ServiceServer,
+ has interface_name "map_server/get_available_states",
+ has interface_type "lifecycle_msgs/GetAvailableStates";
+ (node: $map_server_node, server: $map_server_node_service_server_1) isa has_service;
+ $map_server_node_service_server_2 isa ServiceServer,
+ has interface_name "map_server/get_available_transitions",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $map_server_node, server: $map_server_node_service_server_2) isa has_service;
+ $map_server_node_service_server_3 isa ServiceServer,
+ has interface_name "map_server/get_state",
+ has interface_type "lifecycle_msgs/GetState";
+ (node: $map_server_node, server: $map_server_node_service_server_3) isa has_service;
+ $map_server_node_service_server_4 isa ServiceServer,
+ has interface_name "map_server/get_transition_graph",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $map_server_node, server: $map_server_node_service_server_4) isa has_service;
+ $map_server_node_service_server_5 isa ServiceServer,
+ has interface_name "map_server/load_map",
+ has interface_type "nav2_msgs/LoadMap";
+ (node: $map_server_node, server: $map_server_node_service_server_5) isa has_service;
+ $map_server_node_service_server_6 isa ServiceServer,
+ has interface_name "map_server/map",
+ has interface_type "nav_msgs/GetMap";
+ (node: $map_server_node, server: $map_server_node_service_server_6) isa has_service;
+ $amcl_node isa LifeCycleNode,
+ has node_name "/amcl",
+ has namespace "";
+ $bond_disable_heartbeat_timeout_param_1 isa ParameterBool,
+ 	has parameter_name "/bond_disable_heartbeat_timeout";
+ $bond_disable_heartbeat_timeout_param_1_pvalue isa ValueBool, has bool_value true;
+ (node: $amcl_node,
+ parameter: $bond_disable_heartbeat_timeout_param_1,
+ parameter_value: $bond_disable_heartbeat_timeout_param_1_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $alpha1_param isa ParameterDouble,
+ 	has parameter_name "alpha1";
+ $alpha1_param_pvalue isa ValueDouble, has double_value 0.2;
+ (node: $amcl_node,
+ parameter: $alpha1_param,
+ parameter_value: $alpha1_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $alpha2_param isa ParameterDouble,
+ 	has parameter_name "alpha2";
+ $alpha2_param_pvalue isa ValueDouble, has double_value 0.2;
+ (node: $amcl_node,
+ parameter: $alpha2_param,
+ parameter_value: $alpha2_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $alpha3_param isa ParameterDouble,
+ 	has parameter_name "alpha3";
+ $alpha3_param_pvalue isa ValueDouble, has double_value 0.2;
+ (node: $amcl_node,
+ parameter: $alpha3_param,
+ parameter_value: $alpha3_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $alpha4_param isa ParameterDouble,
+ 	has parameter_name "alpha4";
+ $alpha4_param_pvalue isa ValueDouble, has double_value 0.2;
+ (node: $amcl_node,
+ parameter: $alpha4_param,
+ parameter_value: $alpha4_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $alpha5_param isa ParameterDouble,
+ 	has parameter_name "alpha5";
+ $alpha5_param_pvalue isa ValueDouble, has double_value 0.2;
+ (node: $amcl_node,
+ parameter: $alpha5_param,
+ parameter_value: $alpha5_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $always_reset_initial_pose_param isa ParameterBool,
+ 	has parameter_name "always_reset_initial_pose";
+ $always_reset_initial_pose_param_pvalue isa ValueBool, has bool_value false;
+ (node: $amcl_node,
+ parameter: $always_reset_initial_pose_param,
+ parameter_value: $always_reset_initial_pose_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $base_frame_id_param isa ParameterString,
+ 	has parameter_name "base_frame_id";
+ $base_frame_id_param_pvalue isa ValueString, has string_value "base_footprint";
+ (node: $amcl_node,
+ parameter: $base_frame_id_param,
+ parameter_value: $base_frame_id_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $beam_skip_distance_param isa ParameterDouble,
+ 	has parameter_name "beam_skip_distance";
+ $beam_skip_distance_param_pvalue isa ValueDouble, has double_value 0.5;
+ (node: $amcl_node,
+ parameter: $beam_skip_distance_param,
+ parameter_value: $beam_skip_distance_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $beam_skip_error_threshold_param isa ParameterDouble,
+ 	has parameter_name "beam_skip_error_threshold";
+ $beam_skip_error_threshold_param_pvalue isa ValueDouble, has double_value 0.9;
+ (node: $amcl_node,
+ parameter: $beam_skip_error_threshold_param,
+ parameter_value: $beam_skip_error_threshold_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $beam_skip_threshold_param isa ParameterDouble,
+ 	has parameter_name "beam_skip_threshold";
+ $beam_skip_threshold_param_pvalue isa ValueDouble, has double_value 0.3;
+ (node: $amcl_node,
+ parameter: $beam_skip_threshold_param,
+ parameter_value: $beam_skip_threshold_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $do_beamskip_param isa ParameterBool,
+ 	has parameter_name "do_beamskip";
+ $do_beamskip_param_pvalue isa ValueBool, has bool_value false;
+ (node: $amcl_node,
+ parameter: $do_beamskip_param,
+ parameter_value: $do_beamskip_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $first_map_only_param isa ParameterBool,
+ 	has parameter_name "first_map_only";
+ $first_map_only_param_pvalue isa ValueBool, has bool_value false;
+ (node: $amcl_node,
+ parameter: $first_map_only_param,
+ parameter_value: $first_map_only_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $global_frame_id_param isa ParameterString,
+ 	has parameter_name "global_frame_id";
+ $global_frame_id_param_pvalue isa ValueString, has string_value "map";
+ (node: $amcl_node,
+ parameter: $global_frame_id_param,
+ parameter_value: $global_frame_id_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $initial_pose_x_param isa ParameterDouble,
+ 	has parameter_name "initial_pose.x";
+ $initial_pose_x_param_pvalue isa ValueDouble, has double_value 0;
+ (node: $amcl_node,
+ parameter: $initial_pose_x_param,
+ parameter_value: $initial_pose_x_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $initial_pose_y_param isa ParameterDouble,
+ 	has parameter_name "initial_pose.y";
+ $initial_pose_y_param_pvalue isa ValueDouble, has double_value 0;
+ (node: $amcl_node,
+ parameter: $initial_pose_y_param,
+ parameter_value: $initial_pose_y_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $initial_pose_yaw_param isa ParameterDouble,
+ 	has parameter_name "initial_pose.yaw";
+ $initial_pose_yaw_param_pvalue isa ValueDouble, has double_value 0;
+ (node: $amcl_node,
+ parameter: $initial_pose_yaw_param,
+ parameter_value: $initial_pose_yaw_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $initial_pose_z_param isa ParameterDouble,
+ 	has parameter_name "initial_pose.z";
+ $initial_pose_z_param_pvalue isa ValueDouble, has double_value 0;
+ (node: $amcl_node,
+ parameter: $initial_pose_z_param,
+ parameter_value: $initial_pose_z_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $lambda_short_param isa ParameterDouble,
+ 	has parameter_name "lambda_short";
+ $lambda_short_param_pvalue isa ValueDouble, has double_value 0.1;
+ (node: $amcl_node,
+ parameter: $lambda_short_param,
+ parameter_value: $lambda_short_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $laser_likelihood_max_dist_param isa ParameterDouble,
+ 	has parameter_name "laser_likelihood_max_dist";
+ $laser_likelihood_max_dist_param_pvalue isa ValueDouble, has double_value 2;
+ (node: $amcl_node,
+ parameter: $laser_likelihood_max_dist_param,
+ parameter_value: $laser_likelihood_max_dist_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $laser_max_range_param isa ParameterDouble,
+ 	has parameter_name "laser_max_range";
+ $laser_max_range_param_pvalue isa ValueDouble, has double_value 100;
+ (node: $amcl_node,
+ parameter: $laser_max_range_param,
+ parameter_value: $laser_max_range_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $laser_min_range_param isa ParameterDouble,
+ 	has parameter_name "laser_min_range";
+ $laser_min_range_param_pvalue isa ValueDouble, has double_value -1;
+ (node: $amcl_node,
+ parameter: $laser_min_range_param,
+ parameter_value: $laser_min_range_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $laser_model_type_param isa ParameterString,
+ 	has parameter_name "laser_model_type";
+ $laser_model_type_param_pvalue isa ValueString, has string_value "likelihood_field";
+ (node: $amcl_node,
+ parameter: $laser_model_type_param,
+ parameter_value: $laser_model_type_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $map_topic_param isa ParameterString,
+ 	has parameter_name "map_topic";
+ $map_topic_param_pvalue isa ValueString, has string_value "map";
+ (node: $amcl_node,
+ parameter: $map_topic_param,
+ parameter_value: $map_topic_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $max_beams_param isa ParameterInteger,
+ 	has parameter_name "max_beams";
+ $max_beams_param_pvalue isa ValueInteger, has integer_value 60;
+ (node: $amcl_node,
+ parameter: $max_beams_param,
+ parameter_value: $max_beams_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $max_particles_param isa ParameterInteger,
+ 	has parameter_name "max_particles";
+ $max_particles_param_pvalue isa ValueInteger, has integer_value 2000;
+ (node: $amcl_node,
+ parameter: $max_particles_param,
+ parameter_value: $max_particles_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $min_particles_param isa ParameterInteger,
+ 	has parameter_name "min_particles";
+ $min_particles_param_pvalue isa ValueInteger, has integer_value 500;
+ (node: $amcl_node,
+ parameter: $min_particles_param,
+ parameter_value: $min_particles_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $odom_frame_id_param isa ParameterString,
+ 	has parameter_name "odom_frame_id";
+ $odom_frame_id_param_pvalue isa ValueString, has string_value "odom";
+ (node: $amcl_node,
+ parameter: $odom_frame_id_param,
+ parameter_value: $odom_frame_id_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $pf_err_param isa ParameterDouble,
+ 	has parameter_name "pf_err";
+ $pf_err_param_pvalue isa ValueDouble, has double_value 0.05;
+ (node: $amcl_node,
+ parameter: $pf_err_param,
+ parameter_value: $pf_err_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $pf_z_param isa ParameterDouble,
+ 	has parameter_name "pf_z";
+ $pf_z_param_pvalue isa ValueDouble, has double_value 0.99;
+ (node: $amcl_node,
+ parameter: $pf_z_param,
+ parameter_value: $pf_z_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $recovery_alpha_fast_param isa ParameterDouble,
+ 	has parameter_name "recovery_alpha_fast";
+ $recovery_alpha_fast_param_pvalue isa ValueDouble, has double_value 0;
+ (node: $amcl_node,
+ parameter: $recovery_alpha_fast_param,
+ parameter_value: $recovery_alpha_fast_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $recovery_alpha_slow_param isa ParameterDouble,
+ 	has parameter_name "recovery_alpha_slow";
+ $recovery_alpha_slow_param_pvalue isa ValueDouble, has double_value 0;
+ (node: $amcl_node,
+ parameter: $recovery_alpha_slow_param,
+ parameter_value: $recovery_alpha_slow_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $resample_interval_param isa ParameterInteger,
+ 	has parameter_name "resample_interval";
+ $resample_interval_param_pvalue isa ValueInteger, has integer_value 1;
+ (node: $amcl_node,
+ parameter: $resample_interval_param,
+ parameter_value: $resample_interval_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $robot_model_type_param isa ParameterString,
+ 	has parameter_name "robot_model_type";
+ $robot_model_type_param_pvalue isa ValueString, has string_value "nav2_amcl::DifferentialMotionModel";
+ (node: $amcl_node,
+ parameter: $robot_model_type_param,
+ parameter_value: $robot_model_type_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $save_pose_rate_param isa ParameterDouble,
+ 	has parameter_name "save_pose_rate";
+ $save_pose_rate_param_pvalue isa ValueDouble, has double_value 0.5;
+ (node: $amcl_node,
+ parameter: $save_pose_rate_param,
+ parameter_value: $save_pose_rate_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $scan_topic_param isa ParameterString,
+ 	has parameter_name "scan_topic";
+ $scan_topic_param_pvalue isa ValueString, has string_value "scan";
+ (node: $amcl_node,
+ parameter: $scan_topic_param,
+ parameter_value: $scan_topic_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $set_initial_pose_param isa ParameterBool,
+ 	has parameter_name "set_initial_pose";
+ $set_initial_pose_param_pvalue isa ValueBool, has bool_value false;
+ (node: $amcl_node,
+ parameter: $set_initial_pose_param,
+ parameter_value: $set_initial_pose_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $sigma_hit_param isa ParameterDouble,
+ 	has parameter_name "sigma_hit";
+ $sigma_hit_param_pvalue isa ValueDouble, has double_value 0.2;
+ (node: $amcl_node,
+ parameter: $sigma_hit_param,
+ parameter_value: $sigma_hit_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $tf_broadcast_param isa ParameterBool,
+ 	has parameter_name "tf_broadcast";
+ $tf_broadcast_param_pvalue isa ValueBool, has bool_value true;
+ (node: $amcl_node,
+ parameter: $tf_broadcast_param,
+ parameter_value: $tf_broadcast_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $transform_tolerance_param isa ParameterDouble,
+ 	has parameter_name "transform_tolerance";
+ $transform_tolerance_param_pvalue isa ValueDouble, has double_value 1;
+ (node: $amcl_node,
+ parameter: $transform_tolerance_param,
+ parameter_value: $transform_tolerance_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $update_min_a_param isa ParameterDouble,
+ 	has parameter_name "update_min_a";
+ $update_min_a_param_pvalue isa ValueDouble, has double_value 0.2;
+ (node: $amcl_node,
+ parameter: $update_min_a_param,
+ parameter_value: $update_min_a_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $update_min_d_param isa ParameterDouble,
+ 	has parameter_name "update_min_d";
+ $update_min_d_param_pvalue isa ValueDouble, has double_value 0.25;
+ (node: $amcl_node,
+ parameter: $update_min_d_param,
+ parameter_value: $update_min_d_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $use_sim_time_param_1 isa ParameterBool,
+ 	has parameter_name "use_sim_time";
+ $use_sim_time_param_1_pvalue isa ValueBool, has bool_value true;
+ (node: $amcl_node,
+ parameter: $use_sim_time_param_1,
+ parameter_value: $use_sim_time_param_1_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $z_hit_param isa ParameterDouble,
+ 	has parameter_name "z_hit";
+ $z_hit_param_pvalue isa ValueDouble, has double_value 0.5;
+ (node: $amcl_node,
+ parameter: $z_hit_param,
+ parameter_value: $z_hit_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $z_max_param isa ParameterDouble,
+ 	has parameter_name "z_max";
+ $z_max_param_pvalue isa ValueDouble, has double_value 0.05;
+ (node: $amcl_node,
+ parameter: $z_max_param,
+ parameter_value: $z_max_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $z_rand_param isa ParameterDouble,
+ 	has parameter_name "z_rand";
+ $z_rand_param_pvalue isa ValueDouble, has double_value 0.5;
+ (node: $amcl_node,
+ parameter: $z_rand_param,
+ parameter_value: $z_rand_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $z_short_param isa ParameterDouble,
+ 	has parameter_name "z_short";
+ $z_short_param_pvalue isa ValueDouble, has double_value 0.05;
+ (node: $amcl_node,
+ parameter: $z_short_param,
+ parameter_value: $z_short_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+
+ $amcl_node_parameters (
+ 	node: $amcl_node,
+ 	parameter: $bond_disable_heartbeat_timeout_param_1,
+ 	parameter: $alpha1_param,
+ 	parameter: $alpha2_param,
+ 	parameter: $alpha3_param,
+ 	parameter: $alpha4_param,
+ 	parameter: $alpha5_param,
+ 	parameter: $always_reset_initial_pose_param,
+ 	parameter: $base_frame_id_param,
+ 	parameter: $beam_skip_distance_param,
+ 	parameter: $beam_skip_error_threshold_param,
+ 	parameter: $beam_skip_threshold_param,
+ 	parameter: $do_beamskip_param,
+ 	parameter: $first_map_only_param,
+ 	parameter: $global_frame_id_param,
+ 	parameter: $initial_pose_x_param,
+ 	parameter: $initial_pose_y_param,
+ 	parameter: $initial_pose_yaw_param,
+ 	parameter: $initial_pose_z_param,
+ 	parameter: $lambda_short_param,
+ 	parameter: $laser_likelihood_max_dist_param,
+ 	parameter: $laser_max_range_param,
+ 	parameter: $laser_min_range_param,
+ 	parameter: $laser_model_type_param,
+ 	parameter: $map_topic_param,
+ 	parameter: $max_beams_param,
+ 	parameter: $max_particles_param,
+ 	parameter: $min_particles_param,
+ 	parameter: $odom_frame_id_param,
+ 	parameter: $pf_err_param,
+ 	parameter: $pf_z_param,
+ 	parameter: $recovery_alpha_fast_param,
+ 	parameter: $recovery_alpha_slow_param,
+ 	parameter: $resample_interval_param,
+ 	parameter: $robot_model_type_param,
+ 	parameter: $save_pose_rate_param,
+ 	parameter: $scan_topic_param,
+ 	parameter: $set_initial_pose_param,
+ 	parameter: $sigma_hit_param,
+ 	parameter: $tf_broadcast_param,
+ 	parameter: $transform_tolerance_param,
+ 	parameter: $update_min_a_param,
+ 	parameter: $update_min_d_param,
+ 	parameter: $use_sim_time_param_1,
+ 	parameter: $z_hit_param,
+ 	parameter: $z_max_param,
+ 	parameter: $z_rand_param,
+ 	parameter: $z_short_param
+ 	) isa has_parameter;
+ $amcl_node_sub isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $amcl_node, subscriber: $amcl_node_sub) isa has_topic;
+
+ $amcl_node_sub_1 isa Subscriber,
+ has interface_name "clock",
+ has interface_type "rosgraph_msgs/Clock";
+
+ (node: $amcl_node, subscriber: $amcl_node_sub_1) isa has_topic;
+
+ $amcl_node_sub_2 isa Subscriber,
+ has interface_name "initialpose",
+ has interface_type "geometry_msgs/PoseWithCovarianceStamped";
+
+ (node: $amcl_node, subscriber: $amcl_node_sub_2) isa has_topic;
+
+ $amcl_node_sub_3 isa Subscriber,
+ has interface_name "map",
+ has interface_type "nav_msgs/OccupancyGrid";
+
+ (node: $amcl_node, subscriber: $amcl_node_sub_3) isa has_topic;
+
+ $amcl_node_sub_4 isa Subscriber,
+ has interface_name "scan",
+ has interface_type "sensor_msgs/LaserScan";
+
+ (node: $amcl_node, subscriber: $amcl_node_sub_4) isa has_topic;
+
+ $amcl_nodepub isa Publisher,
+ has interface_name "amcl/transition_event",
+ has interface_type "lifecycle_msgs/TransitionEvent";
+
+ $amcl_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $amcl_nodepub_qos_rel (interface: $amcl_nodepub, qos: $amcl_nodepub_qos) isa has_qos;
+
+ (node: $amcl_node, publisher: $amcl_nodepub) isa has_topic;
+ $amcl_nodepub_1 isa Publisher,
+ has interface_name "amcl_pose",
+ has interface_type "geometry_msgs/PoseWithCovarianceStamped";
+
+ $amcl_nodepub_1_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "TRANSIENT_LOCAL"
+ ;
+
+ $amcl_nodepub_1_qos_rel (interface: $amcl_nodepub_1, qos: $amcl_nodepub_1_qos) isa has_qos;
+
+ (node: $amcl_node, publisher: $amcl_nodepub_1) isa has_topic;
+ $amcl_nodepub_2 isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $amcl_nodepub_2_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $amcl_nodepub_2_qos_rel (interface: $amcl_nodepub_2, qos: $amcl_nodepub_2_qos) isa has_qos;
+
+ (node: $amcl_node, publisher: $amcl_nodepub_2) isa has_topic;
+ $amcl_nodepub_3 isa Publisher,
+ has interface_name "particle_cloud",
+ has interface_type "nav2_msgs/ParticleCloud";
+
+ $amcl_nodepub_3_qos isa QoSProfile,
+     	   	has reliability "BEST_EFFORT",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $amcl_nodepub_3_qos_rel (interface: $amcl_nodepub_3, qos: $amcl_nodepub_3_qos) isa has_qos;
+
+ (node: $amcl_node, publisher: $amcl_nodepub_3) isa has_topic;
+ $amcl_nodepub_4 isa Publisher,
+ has interface_name "tf",
+ has interface_type "tf2_msgs/TFMessage";
+
+ $amcl_nodepub_4_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $amcl_nodepub_4_qos_rel (interface: $amcl_nodepub_4, qos: $amcl_nodepub_4_qos) isa has_qos;
+
+ (node: $amcl_node, publisher: $amcl_nodepub_4) isa has_topic;
+ $amcl_node_service_server isa ServiceServer,
+ has interface_name "amcl/change_state",
+ has interface_type "lifecycle_msgs/ChangeState";
+ (node: $amcl_node, server: $amcl_node_service_server) isa has_service;
+ $amcl_node_service_server_1 isa ServiceServer,
+ has interface_name "amcl/get_available_states",
+ has interface_type "lifecycle_msgs/GetAvailableStates";
+ (node: $amcl_node, server: $amcl_node_service_server_1) isa has_service;
+ $amcl_node_service_server_2 isa ServiceServer,
+ has interface_name "amcl/get_available_transitions",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $amcl_node, server: $amcl_node_service_server_2) isa has_service;
+ $amcl_node_service_server_3 isa ServiceServer,
+ has interface_name "amcl/get_state",
+ has interface_type "lifecycle_msgs/GetState";
+ (node: $amcl_node, server: $amcl_node_service_server_3) isa has_service;
+ $amcl_node_service_server_4 isa ServiceServer,
+ has interface_name "amcl/get_transition_graph",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $amcl_node, server: $amcl_node_service_server_4) isa has_service;
+ $amcl_node_service_server_5 isa ServiceServer,
+ has interface_name "reinitialize_global_localization",
+ has interface_type "std_srvs/Empty";
+ (node: $amcl_node, server: $amcl_node_service_server_5) isa has_service;
+ $amcl_node_service_server_6 isa ServiceServer,
+ has interface_name "request_nomotion_update",
+ has interface_type "std_srvs/Empty";
+ (node: $amcl_node, server: $amcl_node_service_server_6) isa has_service;
+ $amcl_node_service_server_7 isa ServiceServer,
+ has interface_name "set_initial_pose",
+ has interface_type "nav2_msgs/SetInitialPose";
+ (node: $amcl_node, server: $amcl_node_service_server_7) isa has_service;
+ $lifecycle_manager_localization_node isa ROSNode,
+ has node_name "/lifecycle_manager_localization",
+ has namespace "";
+ $lifecycle_manager_localization_node_sub isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $lifecycle_manager_localization_node, subscriber: $lifecycle_manager_localization_node_sub) isa has_topic;
+
+ $lifecycle_manager_localization_node_sub_1 isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $lifecycle_manager_localization_node, subscriber: $lifecycle_manager_localization_node_sub_1) isa has_topic;
+
+ $lifecycle_manager_localization_node_sub_2 isa Subscriber,
+ has interface_name "clock",
+ has interface_type "rosgraph_msgs/Clock";
+
+ (node: $lifecycle_manager_localization_node, subscriber: $lifecycle_manager_localization_node_sub_2) isa has_topic;
+
+ $lifecycle_manager_localization_nodepub isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $lifecycle_manager_localization_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $lifecycle_manager_localization_nodepub_qos_rel (interface: $lifecycle_manager_localization_nodepub, qos: $lifecycle_manager_localization_nodepub_qos) isa has_qos;
+
+ (node: $lifecycle_manager_localization_node, publisher: $lifecycle_manager_localization_nodepub) isa has_topic;
+ $lifecycle_manager_localization_nodepub_1 isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $lifecycle_manager_localization_nodepub_1_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $lifecycle_manager_localization_nodepub_1_qos_rel (interface: $lifecycle_manager_localization_nodepub_1, qos: $lifecycle_manager_localization_nodepub_1_qos) isa has_qos;
+
+ (node: $lifecycle_manager_localization_node, publisher: $lifecycle_manager_localization_nodepub_1) isa has_topic;
+ $lifecycle_manager_localization_nodepub_2 isa Publisher,
+ has interface_name "diagnostics",
+ has interface_type "diagnostic_msgs/DiagnosticArray";
+
+ $lifecycle_manager_localization_nodepub_2_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $lifecycle_manager_localization_nodepub_2_qos_rel (interface: $lifecycle_manager_localization_nodepub_2, qos: $lifecycle_manager_localization_nodepub_2_qos) isa has_qos;
+
+ (node: $lifecycle_manager_localization_node, publisher: $lifecycle_manager_localization_nodepub_2) isa has_topic;
+ $lifecycle_manager_localization_node_service_server isa ServiceServer,
+ has interface_name "lifecycle_manager_localization/is_active",
+ has interface_type "std_srvs/Trigger";
+ (node: $lifecycle_manager_localization_node, server: $lifecycle_manager_localization_node_service_server) isa has_service;
+ $lifecycle_manager_localization_node_service_server_1 isa ServiceServer,
+ has interface_name "lifecycle_manager_localization/manage_nodes",
+ has interface_type "nav2_msgs/ManageLifecycleNodes";
+ (node: $lifecycle_manager_localization_node, server: $lifecycle_manager_localization_node_service_server_1) isa has_service;
+
+ $controller_server_node isa LifeCycleNode,
+ has node_name "/controller_server",
+ has namespace "";
+ $controller_server_node_sub isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $controller_server_node, subscriber: $controller_server_node_sub) isa has_topic;
+
+ $controller_server_node_sub_1 isa Subscriber,
+ has interface_name "clock",
+ has interface_type "rosgraph_msgs/Clock";
+
+ (node: $controller_server_node, subscriber: $controller_server_node_sub_1) isa has_topic;
+
+ $controller_server_node_sub_2 isa Subscriber,
+ has interface_name "odom",
+ has interface_type "nav_msgs/Odometry";
+
+ (node: $controller_server_node, subscriber: $controller_server_node_sub_2) isa has_topic;
+
+ $controller_server_node_sub_3 isa Subscriber,
+ has interface_name "speed_limit",
+ has interface_type "nav2_msgs/SpeedLimit";
+
+ (node: $controller_server_node, subscriber: $controller_server_node_sub_3) isa has_topic;
+
+ $controller_server_nodepub isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $controller_server_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $controller_server_nodepub_qos_rel (interface: $controller_server_nodepub, qos: $controller_server_nodepub_qos) isa has_qos;
+
+ (node: $controller_server_node, publisher: $controller_server_nodepub) isa has_topic;
+ $controller_server_nodepub_1 isa Publisher,
+ has interface_name "cmd_vel_nav",
+ has interface_type "geometry_msgs/Twist";
+
+ $controller_server_nodepub_1_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $controller_server_nodepub_1_qos_rel (interface: $controller_server_nodepub_1, qos: $controller_server_nodepub_1_qos) isa has_qos;
+
+ (node: $controller_server_node, publisher: $controller_server_nodepub_1) isa has_topic;
+ $controller_server_nodepub_2 isa Publisher,
+ has interface_name "controller_server/transition_event",
+ has interface_type "lifecycle_msgs/TransitionEvent";
+
+ $controller_server_nodepub_2_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $controller_server_nodepub_2_qos_rel (interface: $controller_server_nodepub_2, qos: $controller_server_nodepub_2_qos) isa has_qos;
+
+ (node: $controller_server_node, publisher: $controller_server_nodepub_2) isa has_topic;
+ $controller_server_nodepub_3 isa Publisher,
+ has interface_name "cost_cloud",
+ has interface_type "sensor_msgs/PointCloud2";
+
+ $controller_server_nodepub_3_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $controller_server_nodepub_3_qos_rel (interface: $controller_server_nodepub_3, qos: $controller_server_nodepub_3_qos) isa has_qos;
+
+ (node: $controller_server_node, publisher: $controller_server_nodepub_3) isa has_topic;
+ $controller_server_nodepub_4 isa Publisher,
+ has interface_name "evaluation",
+ has interface_type "dwb_msgs/LocalPlanEvaluation";
+
+ $controller_server_nodepub_4_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $controller_server_nodepub_4_qos_rel (interface: $controller_server_nodepub_4, qos: $controller_server_nodepub_4_qos) isa has_qos;
+
+ (node: $controller_server_node, publisher: $controller_server_nodepub_4) isa has_topic;
+ $controller_server_nodepub_5 isa Publisher,
+ has interface_name "local_plan",
+ has interface_type "nav_msgs/Path";
+
+ $controller_server_nodepub_5_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $controller_server_nodepub_5_qos_rel (interface: $controller_server_nodepub_5, qos: $controller_server_nodepub_5_qos) isa has_qos;
+
+ (node: $controller_server_node, publisher: $controller_server_nodepub_5) isa has_topic;
+ $controller_server_nodepub_6 isa Publisher,
+ has interface_name "marker",
+ has interface_type "visualization_msgs/MarkerArray";
+
+ $controller_server_nodepub_6_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $controller_server_nodepub_6_qos_rel (interface: $controller_server_nodepub_6, qos: $controller_server_nodepub_6_qos) isa has_qos;
+
+ (node: $controller_server_node, publisher: $controller_server_nodepub_6) isa has_topic;
+ $controller_server_nodepub_7 isa Publisher,
+ has interface_name "received_global_plan",
+ has interface_type "nav_msgs/Path";
+
+ $controller_server_nodepub_7_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $controller_server_nodepub_7_qos_rel (interface: $controller_server_nodepub_7, qos: $controller_server_nodepub_7_qos) isa has_qos;
+
+ (node: $controller_server_node, publisher: $controller_server_nodepub_7) isa has_topic;
+ $controller_server_nodepub_8 isa Publisher,
+ has interface_name "transformed_global_plan",
+ has interface_type "nav_msgs/Path";
+
+ $controller_server_nodepub_8_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $controller_server_nodepub_8_qos_rel (interface: $controller_server_nodepub_8, qos: $controller_server_nodepub_8_qos) isa has_qos;
+
+ (node: $controller_server_node, publisher: $controller_server_nodepub_8) isa has_topic;
+ $controller_server_node_action_server isa ActionServer,
+ has interface_name "follow_path",
+ has interface_type "nav2_msgs/FollowPath";
+ (node: $controller_server_node, server: $controller_server_node_action_server) isa has_action;
+ $controller_server_node_service_server isa ServiceServer,
+ has interface_name "controller_server/change_state",
+ has interface_type "lifecycle_msgs/ChangeState";
+ (node: $controller_server_node, server: $controller_server_node_service_server) isa has_service;
+ $controller_server_node_service_server_1 isa ServiceServer,
+ has interface_name "controller_server/get_available_states",
+ has interface_type "lifecycle_msgs/GetAvailableStates";
+ (node: $controller_server_node, server: $controller_server_node_service_server_1) isa has_service;
+ $controller_server_node_service_server_2 isa ServiceServer,
+ has interface_name "controller_server/get_available_transitions",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $controller_server_node, server: $controller_server_node_service_server_2) isa has_service;
+ $controller_server_node_service_server_3 isa ServiceServer,
+ has interface_name "controller_server/get_state",
+ has interface_type "lifecycle_msgs/GetState";
+ (node: $controller_server_node, server: $controller_server_node_service_server_3) isa has_service;
+ $controller_server_node_service_server_4 isa ServiceServer,
+ has interface_name "controller_server/get_transition_graph",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $controller_server_node, server: $controller_server_node_service_server_4) isa has_service;
+ $smoother_server_node isa LifeCycleNode,
+ has node_name "/smoother_server",
+ has namespace "";
+ $bond_disable_heartbeat_timeout_param_2 isa ParameterBool,
+ 	has parameter_name "/bond_disable_heartbeat_timeout";
+ $bond_disable_heartbeat_timeout_param_2_pvalue isa ValueBool, has bool_value true;
+ (node: $smoother_server_node,
+ parameter: $bond_disable_heartbeat_timeout_param_2,
+ parameter_value: $bond_disable_heartbeat_timeout_param_2_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $costmap_topic_param isa ParameterString,
+ 	has parameter_name "costmap_topic";
+ $costmap_topic_param_pvalue isa ValueString, has string_value "global_costmap/costmap_raw";
+ (node: $smoother_server_node,
+ parameter: $costmap_topic_param,
+ parameter_value: $costmap_topic_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $footprint_topic_param isa ParameterString,
+ 	has parameter_name "footprint_topic";
+ $footprint_topic_param_pvalue isa ValueString, has string_value "global_costmap/published_footprint";
+ (node: $smoother_server_node,
+ parameter: $footprint_topic_param,
+ parameter_value: $footprint_topic_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $robot_base_frame_param isa ParameterString,
+ 	has parameter_name "robot_base_frame";
+ $robot_base_frame_param_pvalue isa ValueString, has string_value "base_link";
+ (node: $smoother_server_node,
+ parameter: $robot_base_frame_param,
+ parameter_value: $robot_base_frame_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $simple_smoother_do_refinement_param isa ParameterBool,
+ 	has parameter_name "simple_smoother.do_refinement";
+ $simple_smoother_do_refinement_param_pvalue isa ValueBool, has bool_value true;
+ (node: $smoother_server_node,
+ parameter: $simple_smoother_do_refinement_param,
+ parameter_value: $simple_smoother_do_refinement_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $simple_smoother_max_its_param isa ParameterInteger,
+ 	has parameter_name "simple_smoother.max_its";
+ $simple_smoother_max_its_param_pvalue isa ValueInteger, has integer_value 1000;
+ (node: $smoother_server_node,
+ parameter: $simple_smoother_max_its_param,
+ parameter_value: $simple_smoother_max_its_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $simple_smoother_plugin_param isa ParameterString,
+ 	has parameter_name "simple_smoother.plugin";
+ $simple_smoother_plugin_param_pvalue isa ValueString, has string_value "nav2_smoother::SimpleSmoother";
+ (node: $smoother_server_node,
+ parameter: $simple_smoother_plugin_param,
+ parameter_value: $simple_smoother_plugin_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $simple_smoother_tolerance_param isa ParameterDouble,
+ 	has parameter_name "simple_smoother.tolerance";
+ $simple_smoother_tolerance_param_pvalue isa ValueDouble, has double_value 0.0000000001;
+ (node: $smoother_server_node,
+ parameter: $simple_smoother_tolerance_param,
+ parameter_value: $simple_smoother_tolerance_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $simple_smoother_w_data_param isa ParameterDouble,
+ 	has parameter_name "simple_smoother.w_data";
+ $simple_smoother_w_data_param_pvalue isa ValueDouble, has double_value 0.2;
+ (node: $smoother_server_node,
+ parameter: $simple_smoother_w_data_param,
+ parameter_value: $simple_smoother_w_data_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $simple_smoother_w_smooth_param isa ParameterDouble,
+ 	has parameter_name "simple_smoother.w_smooth";
+ $simple_smoother_w_smooth_param_pvalue isa ValueDouble, has double_value 0.3;
+ (node: $smoother_server_node,
+ parameter: $simple_smoother_w_smooth_param,
+ parameter_value: $simple_smoother_w_smooth_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $smoother_plugins_param isa ParameterStringArray,
+ 	has parameter_name "smoother_plugins";
+ $smoother_plugins_param_p_array_value isa ValueArray;
+ $smoother_plugins_param_pvalue isa ValueString, has string_value "simple_smoother";
+ $smoother_plugins_param_p_array_value_elem_0 (array: $smoother_plugins_param_p_array_value, array_value: $smoother_plugins_param_pvalue) isa at_index, has index 0;
+
+ (node: $smoother_server_node,
+ parameter: $smoother_plugins_param,
+ parameter_value: $smoother_plugins_param_p_array_value)
+ 	isa has_parameter_value, has default_value true;
+ $transform_tolerance_param_1 isa ParameterDouble,
+ 	has parameter_name "transform_tolerance";
+ $transform_tolerance_param_1_pvalue isa ValueDouble, has double_value 0.1;
+ (node: $smoother_server_node,
+ parameter: $transform_tolerance_param_1,
+ parameter_value: $transform_tolerance_param_1_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $use_sim_time_param_2 isa ParameterBool,
+ 	has parameter_name "use_sim_time";
+ $use_sim_time_param_2_pvalue isa ValueBool, has bool_value true;
+ (node: $smoother_server_node,
+ parameter: $use_sim_time_param_2,
+ parameter_value: $use_sim_time_param_2_pvalue)
+ 	isa has_parameter_value, has default_value true;
+
+ $smoother_server_node_parameters (
+ 	node: $smoother_server_node,
+ 	parameter: $bond_disable_heartbeat_timeout_param_2,
+ 	parameter: $costmap_topic_param,
+ 	parameter: $footprint_topic_param,
+ 	parameter: $robot_base_frame_param,
+ 	parameter: $simple_smoother_do_refinement_param,
+ 	parameter: $simple_smoother_max_its_param,
+ 	parameter: $simple_smoother_plugin_param,
+ 	parameter: $simple_smoother_tolerance_param,
+ 	parameter: $simple_smoother_w_data_param,
+ 	parameter: $simple_smoother_w_smooth_param,
+ 	parameter: $smoother_plugins_param,
+ 	parameter: $transform_tolerance_param_1,
+ 	parameter: $use_sim_time_param_2
+ 	) isa has_parameter;
+ $smoother_server_node_sub isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $smoother_server_node, subscriber: $smoother_server_node_sub) isa has_topic;
+
+ $smoother_server_node_sub_1 isa Subscriber,
+ has interface_name "clock",
+ has interface_type "rosgraph_msgs/Clock";
+
+ (node: $smoother_server_node, subscriber: $smoother_server_node_sub_1) isa has_topic;
+
+ $smoother_server_node_sub_2 isa Subscriber,
+ has interface_name "global_costmap/costmap_raw",
+ has interface_type "nav2_msgs/Costmap";
+
+ (node: $smoother_server_node, subscriber: $smoother_server_node_sub_2) isa has_topic;
+
+ $smoother_server_node_sub_3 isa Subscriber,
+ has interface_name "global_costmap/published_footprint",
+ has interface_type "geometry_msgs/PolygonStamped";
+
+ (node: $smoother_server_node, subscriber: $smoother_server_node_sub_3) isa has_topic;
+
+ $smoother_server_nodepub isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $smoother_server_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $smoother_server_nodepub_qos_rel (interface: $smoother_server_nodepub, qos: $smoother_server_nodepub_qos) isa has_qos;
+
+ (node: $smoother_server_node, publisher: $smoother_server_nodepub) isa has_topic;
+ $smoother_server_nodepub_1 isa Publisher,
+ has interface_name "plan_smoothed",
+ has interface_type "nav_msgs/Path";
+
+ $smoother_server_nodepub_1_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $smoother_server_nodepub_1_qos_rel (interface: $smoother_server_nodepub_1, qos: $smoother_server_nodepub_1_qos) isa has_qos;
+
+ (node: $smoother_server_node, publisher: $smoother_server_nodepub_1) isa has_topic;
+ $smoother_server_nodepub_2 isa Publisher,
+ has interface_name "smoother_server/transition_event",
+ has interface_type "lifecycle_msgs/TransitionEvent";
+
+ $smoother_server_nodepub_2_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $smoother_server_nodepub_2_qos_rel (interface: $smoother_server_nodepub_2, qos: $smoother_server_nodepub_2_qos) isa has_qos;
+
+ (node: $smoother_server_node, publisher: $smoother_server_nodepub_2) isa has_topic;
+ $smoother_server_node_action_server isa ActionServer,
+ has interface_name "smooth_path",
+ has interface_type "nav2_msgs/SmoothPath";
+ (node: $smoother_server_node, server: $smoother_server_node_action_server) isa has_action;
+ $smoother_server_node_service_server isa ServiceServer,
+ has interface_name "smoother_server/change_state",
+ has interface_type "lifecycle_msgs/ChangeState";
+ (node: $smoother_server_node, server: $smoother_server_node_service_server) isa has_service;
+ $smoother_server_node_service_server_1 isa ServiceServer,
+ has interface_name "smoother_server/get_available_states",
+ has interface_type "lifecycle_msgs/GetAvailableStates";
+ (node: $smoother_server_node, server: $smoother_server_node_service_server_1) isa has_service;
+ $smoother_server_node_service_server_2 isa ServiceServer,
+ has interface_name "smoother_server/get_available_transitions",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $smoother_server_node, server: $smoother_server_node_service_server_2) isa has_service;
+ $smoother_server_node_service_server_3 isa ServiceServer,
+ has interface_name "smoother_server/get_state",
+ has interface_type "lifecycle_msgs/GetState";
+ (node: $smoother_server_node, server: $smoother_server_node_service_server_3) isa has_service;
+ $smoother_server_node_service_server_4 isa ServiceServer,
+ has interface_name "smoother_server/get_transition_graph",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $smoother_server_node, server: $smoother_server_node_service_server_4) isa has_service;
+ $planner_server_node isa LifeCycleNode,
+ has node_name "/planner_server",
+ has namespace "";
+ $bond_disable_heartbeat_timeout_param_3 isa ParameterBool,
+ 	has parameter_name "/bond_disable_heartbeat_timeout";
+ $bond_disable_heartbeat_timeout_param_3_pvalue isa ValueBool, has bool_value true;
+ (node: $planner_server_node,
+ parameter: $bond_disable_heartbeat_timeout_param_3,
+ parameter_value: $bond_disable_heartbeat_timeout_param_3_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $GridBased_allow_unknown_param isa ParameterBool,
+ 	has parameter_name "GridBased.allow_unknown";
+ $GridBased_allow_unknown_param_pvalue isa ValueBool, has bool_value true;
+ (node: $planner_server_node,
+ parameter: $GridBased_allow_unknown_param,
+ parameter_value: $GridBased_allow_unknown_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $GridBased_plugin_param isa ParameterString,
+ 	has parameter_name "GridBased.plugin";
+ $GridBased_plugin_param_pvalue isa ValueString, has string_value "nav2_navfn_planner/NavfnPlanner";
+ (node: $planner_server_node,
+ parameter: $GridBased_plugin_param,
+ parameter_value: $GridBased_plugin_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $GridBased_tolerance_param isa ParameterDouble,
+ 	has parameter_name "GridBased.tolerance";
+ $GridBased_tolerance_param_pvalue isa ValueDouble, has double_value 0.5;
+ (node: $planner_server_node,
+ parameter: $GridBased_tolerance_param,
+ parameter_value: $GridBased_tolerance_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $GridBased_use_astar_param isa ParameterBool,
+ 	has parameter_name "GridBased.use_astar";
+ $GridBased_use_astar_param_pvalue isa ValueBool, has bool_value false;
+ (node: $planner_server_node,
+ parameter: $GridBased_use_astar_param,
+ parameter_value: $GridBased_use_astar_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $GridBased_use_final_approach_orientation_param isa ParameterBool,
+ 	has parameter_name "GridBased.use_final_approach_orientation";
+ $GridBased_use_final_approach_orientation_param_pvalue isa ValueBool, has bool_value false;
+ (node: $planner_server_node,
+ parameter: $GridBased_use_final_approach_orientation_param,
+ parameter_value: $GridBased_use_final_approach_orientation_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_allow_unknown_param isa ParameterBool,
+ 	has parameter_name "SMAC.allow_unknown";
+ $SMAC_allow_unknown_param_pvalue isa ValueBool, has bool_value true;
+ (node: $planner_server_node,
+ parameter: $SMAC_allow_unknown_param,
+ parameter_value: $SMAC_allow_unknown_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_cost_travel_multiplier_param isa ParameterDouble,
+ 	has parameter_name "SMAC.cost_travel_multiplier";
+ $SMAC_cost_travel_multiplier_param_pvalue isa ValueDouble, has double_value 2;
+ (node: $planner_server_node,
+ parameter: $SMAC_cost_travel_multiplier_param,
+ parameter_value: $SMAC_cost_travel_multiplier_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_downsample_costmap_param isa ParameterBool,
+ 	has parameter_name "SMAC.downsample_costmap";
+ $SMAC_downsample_costmap_param_pvalue isa ValueBool, has bool_value false;
+ (node: $planner_server_node,
+ parameter: $SMAC_downsample_costmap_param,
+ parameter_value: $SMAC_downsample_costmap_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_downsampling_factor_param isa ParameterInteger,
+ 	has parameter_name "SMAC.downsampling_factor";
+ $SMAC_downsampling_factor_param_pvalue isa ValueInteger, has integer_value 1;
+ (node: $planner_server_node,
+ parameter: $SMAC_downsampling_factor_param,
+ parameter_value: $SMAC_downsampling_factor_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_max_iterations_param isa ParameterInteger,
+ 	has parameter_name "SMAC.max_iterations";
+ $SMAC_max_iterations_param_pvalue isa ValueInteger, has integer_value 1000000;
+ (node: $planner_server_node,
+ parameter: $SMAC_max_iterations_param,
+ parameter_value: $SMAC_max_iterations_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_max_on_approach_iterations_param isa ParameterInteger,
+ 	has parameter_name "SMAC.max_on_approach_iterations";
+ $SMAC_max_on_approach_iterations_param_pvalue isa ValueInteger, has integer_value 1000;
+ (node: $planner_server_node,
+ parameter: $SMAC_max_on_approach_iterations_param,
+ parameter_value: $SMAC_max_on_approach_iterations_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_max_planning_time_param isa ParameterDouble,
+ 	has parameter_name "SMAC.max_planning_time";
+ $SMAC_max_planning_time_param_pvalue isa ValueDouble, has double_value 2;
+ (node: $planner_server_node,
+ parameter: $SMAC_max_planning_time_param,
+ parameter_value: $SMAC_max_planning_time_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_plugin_param isa ParameterString,
+ 	has parameter_name "SMAC.plugin";
+ $SMAC_plugin_param_pvalue isa ValueString, has string_value "nav2_smac_planner/SmacPlanner2D";
+ (node: $planner_server_node,
+ parameter: $SMAC_plugin_param,
+ parameter_value: $SMAC_plugin_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_smoother_do_refinement_param isa ParameterBool,
+ 	has parameter_name "SMAC.smoother.do_refinement";
+ $SMAC_smoother_do_refinement_param_pvalue isa ValueBool, has bool_value true;
+ (node: $planner_server_node,
+ parameter: $SMAC_smoother_do_refinement_param,
+ parameter_value: $SMAC_smoother_do_refinement_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_smoother_max_iterations_param isa ParameterInteger,
+ 	has parameter_name "SMAC.smoother.max_iterations";
+ $SMAC_smoother_max_iterations_param_pvalue isa ValueInteger, has integer_value 1000;
+ (node: $planner_server_node,
+ parameter: $SMAC_smoother_max_iterations_param,
+ parameter_value: $SMAC_smoother_max_iterations_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_smoother_tolerance_param isa ParameterDouble,
+ 	has parameter_name "SMAC.smoother.tolerance";
+ $SMAC_smoother_tolerance_param_pvalue isa ValueDouble, has double_value 0.0000000001;
+ (node: $planner_server_node,
+ parameter: $SMAC_smoother_tolerance_param,
+ parameter_value: $SMAC_smoother_tolerance_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_smoother_w_data_param isa ParameterDouble,
+ 	has parameter_name "SMAC.smoother.w_data";
+ $SMAC_smoother_w_data_param_pvalue isa ValueDouble, has double_value 0.2;
+ (node: $planner_server_node,
+ parameter: $SMAC_smoother_w_data_param,
+ parameter_value: $SMAC_smoother_w_data_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_smoother_w_smooth_param isa ParameterDouble,
+ 	has parameter_name "SMAC.smoother.w_smooth";
+ $SMAC_smoother_w_smooth_param_pvalue isa ValueDouble, has double_value 0.3;
+ (node: $planner_server_node,
+ parameter: $SMAC_smoother_w_smooth_param,
+ parameter_value: $SMAC_smoother_w_smooth_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_tolerance_param isa ParameterDouble,
+ 	has parameter_name "SMAC.tolerance";
+ $SMAC_tolerance_param_pvalue isa ValueDouble, has double_value 0.125;
+ (node: $planner_server_node,
+ parameter: $SMAC_tolerance_param,
+ parameter_value: $SMAC_tolerance_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $SMAC_use_final_approach_orientation_param isa ParameterBool,
+ 	has parameter_name "SMAC.use_final_approach_orientation";
+ $SMAC_use_final_approach_orientation_param_pvalue isa ValueBool, has bool_value false;
+ (node: $planner_server_node,
+ parameter: $SMAC_use_final_approach_orientation_param,
+ parameter_value: $SMAC_use_final_approach_orientation_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $expected_planner_frequency_param isa ParameterDouble,
+ 	has parameter_name "expected_planner_frequency";
+ $expected_planner_frequency_param_pvalue isa ValueDouble, has double_value 20;
+ (node: $planner_server_node,
+ parameter: $expected_planner_frequency_param,
+ parameter_value: $expected_planner_frequency_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $planner_plugins_param isa ParameterStringArray,
+ 	has parameter_name "planner_plugins";
+ $planner_plugins_param_p_array_value isa ValueArray;
+ $planner_plugins_param_pvalue isa ValueString, has string_value "GridBased";
+ $planner_plugins_param_p_array_value_elem_0 (array: $planner_plugins_param_p_array_value, array_value: $planner_plugins_param_pvalue) isa at_index, has index 0;
+ $planner_plugins_param_pvalue_1 isa ValueString, has string_value "SMAC";
+ $planner_plugins_param_p_array_value_elem_1 (array: $planner_plugins_param_p_array_value, array_value: $planner_plugins_param_pvalue_1) isa at_index, has index 1;
+
+ (node: $planner_server_node,
+ parameter: $planner_plugins_param,
+ parameter_value: $planner_plugins_param_p_array_value)
+ 	isa has_parameter_value, has default_value true;
+ $use_sim_time_param_3 isa ParameterBool,
+ 	has parameter_name "use_sim_time";
+ $use_sim_time_param_3_pvalue isa ValueBool, has bool_value false;
+ (node: $planner_server_node,
+ parameter: $use_sim_time_param_3,
+ parameter_value: $use_sim_time_param_3_pvalue)
+ 	isa has_parameter_value, has default_value true;
+
+ $planner_server_node_parameters (
+ 	node: $planner_server_node,
+ 	parameter: $bond_disable_heartbeat_timeout_param_3,
+ 	parameter: $GridBased_allow_unknown_param,
+ 	parameter: $GridBased_plugin_param,
+ 	parameter: $GridBased_tolerance_param,
+ 	parameter: $GridBased_use_astar_param,
+ 	parameter: $GridBased_use_final_approach_orientation_param,
+ 	parameter: $SMAC_allow_unknown_param,
+ 	parameter: $SMAC_cost_travel_multiplier_param,
+ 	parameter: $SMAC_downsample_costmap_param,
+ 	parameter: $SMAC_downsampling_factor_param,
+ 	parameter: $SMAC_max_iterations_param,
+ 	parameter: $SMAC_max_on_approach_iterations_param,
+ 	parameter: $SMAC_max_planning_time_param,
+ 	parameter: $SMAC_plugin_param,
+ 	parameter: $SMAC_smoother_do_refinement_param,
+ 	parameter: $SMAC_smoother_max_iterations_param,
+ 	parameter: $SMAC_smoother_tolerance_param,
+ 	parameter: $SMAC_smoother_w_data_param,
+ 	parameter: $SMAC_smoother_w_smooth_param,
+ 	parameter: $SMAC_tolerance_param,
+ 	parameter: $SMAC_use_final_approach_orientation_param,
+ 	parameter: $expected_planner_frequency_param,
+ 	parameter: $planner_plugins_param,
+ 	parameter: $use_sim_time_param_3
+ 	) isa has_parameter;
+ $planner_server_node_sub isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $planner_server_node, subscriber: $planner_server_node_sub) isa has_topic;
+
+ $planner_server_nodepub isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $planner_server_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $planner_server_nodepub_qos_rel (interface: $planner_server_nodepub, qos: $planner_server_nodepub_qos) isa has_qos;
+
+ (node: $planner_server_node, publisher: $planner_server_nodepub) isa has_topic;
+ $planner_server_nodepub_1 isa Publisher,
+ has interface_name "plan",
+ has interface_type "nav_msgs/Path";
+
+ $planner_server_nodepub_1_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $planner_server_nodepub_1_qos_rel (interface: $planner_server_nodepub_1, qos: $planner_server_nodepub_1_qos) isa has_qos;
+
+ (node: $planner_server_node, publisher: $planner_server_nodepub_1) isa has_topic;
+ $planner_server_nodepub_2 isa Publisher,
+ has interface_name "planner_server/transition_event",
+ has interface_type "lifecycle_msgs/TransitionEvent";
+
+ $planner_server_nodepub_2_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $planner_server_nodepub_2_qos_rel (interface: $planner_server_nodepub_2, qos: $planner_server_nodepub_2_qos) isa has_qos;
+
+ (node: $planner_server_node, publisher: $planner_server_nodepub_2) isa has_topic;
+ $planner_server_nodepub_3 isa Publisher,
+ has interface_name "unsmoothed_plan",
+ has interface_type "nav_msgs/Path";
+
+ $planner_server_nodepub_3_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $planner_server_nodepub_3_qos_rel (interface: $planner_server_nodepub_3, qos: $planner_server_nodepub_3_qos) isa has_qos;
+
+ (node: $planner_server_node, publisher: $planner_server_nodepub_3) isa has_topic;
+ $planner_server_node_action_server isa ActionServer,
+ has interface_name "compute_path_through_poses",
+ has interface_type "nav2_msgs/ComputePathThroughPoses";
+ (node: $planner_server_node, server: $planner_server_node_action_server) isa has_action;
+ $planner_server_node_action_server_1 isa ActionServer,
+ has interface_name "compute_path_to_pose",
+ has interface_type "nav2_msgs/ComputePathToPose";
+ (node: $planner_server_node, server: $planner_server_node_action_server_1) isa has_action;
+ $planner_server_node_service_server isa ServiceServer,
+ has interface_name "is_path_valid",
+ has interface_type "nav2_msgs/IsPathValid";
+ (node: $planner_server_node, server: $planner_server_node_service_server) isa has_service;
+ $planner_server_node_service_server_1 isa ServiceServer,
+ has interface_name "planner_server/change_state",
+ has interface_type "lifecycle_msgs/ChangeState";
+ (node: $planner_server_node, server: $planner_server_node_service_server_1) isa has_service;
+ $planner_server_node_service_server_2 isa ServiceServer,
+ has interface_name "planner_server/get_available_states",
+ has interface_type "lifecycle_msgs/GetAvailableStates";
+ (node: $planner_server_node, server: $planner_server_node_service_server_2) isa has_service;
+ $planner_server_node_service_server_3 isa ServiceServer,
+ has interface_name "planner_server/get_available_transitions",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $planner_server_node, server: $planner_server_node_service_server_3) isa has_service;
+ $planner_server_node_service_server_4 isa ServiceServer,
+ has interface_name "planner_server/get_state",
+ has interface_type "lifecycle_msgs/GetState";
+ (node: $planner_server_node, server: $planner_server_node_service_server_4) isa has_service;
+ $planner_server_node_service_server_5 isa ServiceServer,
+ has interface_name "planner_server/get_transition_graph",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $planner_server_node, server: $planner_server_node_service_server_5) isa has_service;
+ $behavior_server_node isa LifeCycleNode,
+ has node_name "/behavior_server",
+ has namespace "";
+ $behavior_server_node_sub isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $behavior_server_node, subscriber: $behavior_server_node_sub) isa has_topic;
+
+ $behavior_server_node_sub_1 isa Subscriber,
+ has interface_name "clock",
+ has interface_type "rosgraph_msgs/Clock";
+
+ (node: $behavior_server_node, subscriber: $behavior_server_node_sub_1) isa has_topic;
+
+ $behavior_server_node_sub_2 isa Subscriber,
+ has interface_name "cmd_vel_teleop",
+ has interface_type "geometry_msgs/Twist";
+
+ (node: $behavior_server_node, subscriber: $behavior_server_node_sub_2) isa has_topic;
+
+ $behavior_server_node_sub_3 isa Subscriber,
+ has interface_name "local_costmap/costmap_raw",
+ has interface_type "nav2_msgs/Costmap";
+
+ (node: $behavior_server_node, subscriber: $behavior_server_node_sub_3) isa has_topic;
+
+ $behavior_server_node_sub_4 isa Subscriber,
+ has interface_name "local_costmap/published_footprint",
+ has interface_type "geometry_msgs/PolygonStamped";
+
+ (node: $behavior_server_node, subscriber: $behavior_server_node_sub_4) isa has_topic;
+
+ $behavior_server_node_sub_5 isa Subscriber,
+ has interface_name "preempt_teleop",
+ has interface_type "std_msgs/Empty";
+
+ (node: $behavior_server_node, subscriber: $behavior_server_node_sub_5) isa has_topic;
+
+ $behavior_server_nodepub isa Publisher,
+ has interface_name "behavior_server/transition_event",
+ has interface_type "lifecycle_msgs/TransitionEvent";
+
+ $behavior_server_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $behavior_server_nodepub_qos_rel (interface: $behavior_server_nodepub, qos: $behavior_server_nodepub_qos) isa has_qos;
+
+ (node: $behavior_server_node, publisher: $behavior_server_nodepub) isa has_topic;
+ $behavior_server_nodepub_1 isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $behavior_server_nodepub_1_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $behavior_server_nodepub_1_qos_rel (interface: $behavior_server_nodepub_1, qos: $behavior_server_nodepub_1_qos) isa has_qos;
+
+ (node: $behavior_server_node, publisher: $behavior_server_nodepub_1) isa has_topic;
+ $behavior_server_nodepub_2 isa Publisher,
+ has interface_name "cmd_vel",
+ has interface_type "geometry_msgs/Twist";
+
+ $behavior_server_nodepub_2_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $behavior_server_nodepub_2_qos_rel (interface: $behavior_server_nodepub_2, qos: $behavior_server_nodepub_2_qos) isa has_qos;
+
+ (node: $behavior_server_node, publisher: $behavior_server_nodepub_2) isa has_topic;
+ $behavior_server_nodepub_3 isa Publisher,
+ has interface_name "cmd_vel",
+ has interface_type "geometry_msgs/Twist";
+
+ $behavior_server_nodepub_3_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $behavior_server_nodepub_3_qos_rel (interface: $behavior_server_nodepub_3, qos: $behavior_server_nodepub_3_qos) isa has_qos;
+
+ (node: $behavior_server_node, publisher: $behavior_server_nodepub_3) isa has_topic;
+ $behavior_server_nodepub_4 isa Publisher,
+ has interface_name "cmd_vel",
+ has interface_type "geometry_msgs/Twist";
+
+ $behavior_server_nodepub_4_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $behavior_server_nodepub_4_qos_rel (interface: $behavior_server_nodepub_4, qos: $behavior_server_nodepub_4_qos) isa has_qos;
+
+ (node: $behavior_server_node, publisher: $behavior_server_nodepub_4) isa has_topic;
+ $behavior_server_nodepub_5 isa Publisher,
+ has interface_name "cmd_vel",
+ has interface_type "geometry_msgs/Twist";
+
+ $behavior_server_nodepub_5_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $behavior_server_nodepub_5_qos_rel (interface: $behavior_server_nodepub_5, qos: $behavior_server_nodepub_5_qos) isa has_qos;
+
+ (node: $behavior_server_node, publisher: $behavior_server_nodepub_5) isa has_topic;
+ $behavior_server_nodepub_6 isa Publisher,
+ has interface_name "cmd_vel",
+ has interface_type "geometry_msgs/Twist";
+
+ $behavior_server_nodepub_6_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $behavior_server_nodepub_6_qos_rel (interface: $behavior_server_nodepub_6, qos: $behavior_server_nodepub_6_qos) isa has_qos;
+
+ (node: $behavior_server_node, publisher: $behavior_server_nodepub_6) isa has_topic;
+ $behavior_server_node_action_server isa ActionServer,
+ has interface_name "assisted_teleop",
+ has interface_type "nav2_msgs/AssistedTeleop";
+ (node: $behavior_server_node, server: $behavior_server_node_action_server) isa has_action;
+ $behavior_server_node_action_server_1 isa ActionServer,
+ has interface_name "backup",
+ has interface_type "nav2_msgs/BackUp";
+ (node: $behavior_server_node, server: $behavior_server_node_action_server_1) isa has_action;
+ $behavior_server_node_action_server_2 isa ActionServer,
+ has interface_name "drive_on_heading",
+ has interface_type "nav2_msgs/DriveOnHeading";
+ (node: $behavior_server_node, server: $behavior_server_node_action_server_2) isa has_action;
+ $behavior_server_node_action_server_3 isa ActionServer,
+ has interface_name "spin",
+ has interface_type "nav2_msgs/Spin";
+ (node: $behavior_server_node, server: $behavior_server_node_action_server_3) isa has_action;
+ $behavior_server_node_action_server_4 isa ActionServer,
+ has interface_name "wait",
+ has interface_type "nav2_msgs/Wait";
+ (node: $behavior_server_node, server: $behavior_server_node_action_server_4) isa has_action;
+ $behavior_server_node_service_server isa ServiceServer,
+ has interface_name "behavior_server/change_state",
+ has interface_type "lifecycle_msgs/ChangeState";
+ (node: $behavior_server_node, server: $behavior_server_node_service_server) isa has_service;
+ $behavior_server_node_service_server_1 isa ServiceServer,
+ has interface_name "behavior_server/get_available_states",
+ has interface_type "lifecycle_msgs/GetAvailableStates";
+ (node: $behavior_server_node, server: $behavior_server_node_service_server_1) isa has_service;
+ $behavior_server_node_service_server_2 isa ServiceServer,
+ has interface_name "behavior_server/get_available_transitions",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $behavior_server_node, server: $behavior_server_node_service_server_2) isa has_service;
+ $behavior_server_node_service_server_3 isa ServiceServer,
+ has interface_name "behavior_server/get_state",
+ has interface_type "lifecycle_msgs/GetState";
+ (node: $behavior_server_node, server: $behavior_server_node_service_server_3) isa has_service;
+ $behavior_server_node_service_server_4 isa ServiceServer,
+ has interface_name "behavior_server/get_transition_graph",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $behavior_server_node, server: $behavior_server_node_service_server_4) isa has_service;
+ $bt_navigator_node isa LifeCycleNode,
+ has node_name "/bt_navigator",
+ has namespace "";
+ $bond_disable_heartbeat_timeout_param_4 isa ParameterBool,
+ 	has parameter_name "/bond_disable_heartbeat_timeout";
+ $bond_disable_heartbeat_timeout_param_4_pvalue isa ValueBool, has bool_value true;
+ (node: $bt_navigator_node,
+ parameter: $bond_disable_heartbeat_timeout_param_4,
+ parameter_value: $bond_disable_heartbeat_timeout_param_4_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $always_reload_bt_xml_param isa ParameterBool,
+ 	has parameter_name "always_reload_bt_xml";
+ $always_reload_bt_xml_param_pvalue isa ValueBool, has bool_value false;
+ (node: $bt_navigator_node,
+ parameter: $always_reload_bt_xml_param,
+ parameter_value: $always_reload_bt_xml_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $bt_loop_duration_param isa ParameterInteger,
+ 	has parameter_name "bt_loop_duration";
+ $bt_loop_duration_param_pvalue isa ValueInteger, has integer_value 10;
+ (node: $bt_navigator_node,
+ parameter: $bt_loop_duration_param,
+ parameter_value: $bt_loop_duration_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $default_nav_through_poses_bt_xml_param isa ParameterString,
+ 	has parameter_name "default_nav_through_poses_bt_xml";
+ $default_nav_through_poses_bt_xml_param_pvalue isa ValueString, has string_value "/opt/ros/humble/share/nav2_bt_navigator/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml";
+ (node: $bt_navigator_node,
+ parameter: $default_nav_through_poses_bt_xml_param,
+ parameter_value: $default_nav_through_poses_bt_xml_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $default_nav_to_pose_bt_xml_param isa ParameterString,
+ 	has parameter_name "default_nav_to_pose_bt_xml";
+ $default_nav_to_pose_bt_xml_param_pvalue isa ValueString, has string_value "/home/ega/rebet_ws/install/rebet_frog/share/rebet_frog/trees/nav2/frog_navigate_to_pose.xml";
+ (node: $bt_navigator_node,
+ parameter: $default_nav_to_pose_bt_xml_param,
+ parameter_value: $default_nav_to_pose_bt_xml_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $default_server_timeout_param isa ParameterInteger,
+ 	has parameter_name "default_server_timeout";
+ $default_server_timeout_param_pvalue isa ValueInteger, has integer_value 20;
+ (node: $bt_navigator_node,
+ parameter: $default_server_timeout_param,
+ parameter_value: $default_server_timeout_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $global_frame_param isa ParameterString,
+ 	has parameter_name "global_frame";
+ $global_frame_param_pvalue isa ValueString, has string_value "map";
+ (node: $bt_navigator_node,
+ parameter: $global_frame_param,
+ parameter_value: $global_frame_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $goal_blackboard_id_param isa ParameterString,
+ 	has parameter_name "goal_blackboard_id";
+ $goal_blackboard_id_param_pvalue isa ValueString, has string_value "goal";
+ (node: $bt_navigator_node,
+ parameter: $goal_blackboard_id_param,
+ parameter_value: $goal_blackboard_id_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $goals_blackboard_id_param isa ParameterString,
+ 	has parameter_name "goals_blackboard_id";
+ $goals_blackboard_id_param_pvalue isa ValueString, has string_value "goals";
+ (node: $bt_navigator_node,
+ parameter: $goals_blackboard_id_param,
+ parameter_value: $goals_blackboard_id_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $odom_topic_param isa ParameterString,
+ 	has parameter_name "odom_topic";
+ $odom_topic_param_pvalue isa ValueString, has string_value "/odom";
+ (node: $bt_navigator_node,
+ parameter: $odom_topic_param,
+ parameter_value: $odom_topic_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $path_blackboard_id_param isa ParameterString,
+ 	has parameter_name "path_blackboard_id";
+ $path_blackboard_id_param_pvalue isa ValueString, has string_value "path";
+ (node: $bt_navigator_node,
+ parameter: $path_blackboard_id_param,
+ parameter_value: $path_blackboard_id_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $plugin_lib_names_param isa ParameterStringArray,
+ 	has parameter_name "plugin_lib_names";
+ $plugin_lib_names_param_p_array_value isa ValueArray;
+ $plugin_lib_names_param_pvalue isa ValueString, has string_value "nav2_compute_path_to_pose_action_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_0 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue) isa at_index, has index 0;
+ $plugin_lib_names_param_pvalue_1 isa ValueString, has string_value "nav2_compute_path_through_poses_action_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_1 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_1) isa at_index, has index 1;
+ $plugin_lib_names_param_pvalue_2 isa ValueString, has string_value "nav2_smooth_path_action_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_2 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_2) isa at_index, has index 2;
+ $plugin_lib_names_param_pvalue_3 isa ValueString, has string_value "nav2_follow_path_action_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_3 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_3) isa at_index, has index 3;
+ $plugin_lib_names_param_pvalue_4 isa ValueString, has string_value "nav2_spin_action_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_4 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_4) isa at_index, has index 4;
+ $plugin_lib_names_param_pvalue_5 isa ValueString, has string_value "nav2_wait_action_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_5 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_5) isa at_index, has index 5;
+ $plugin_lib_names_param_pvalue_6 isa ValueString, has string_value "nav2_assisted_teleop_action_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_6 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_6) isa at_index, has index 6;
+ $plugin_lib_names_param_pvalue_7 isa ValueString, has string_value "nav2_back_up_action_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_7 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_7) isa at_index, has index 7;
+ $plugin_lib_names_param_pvalue_8 isa ValueString, has string_value "nav2_drive_on_heading_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_8 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_8) isa at_index, has index 8;
+ $plugin_lib_names_param_pvalue_9 isa ValueString, has string_value "nav2_clear_costmap_service_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_9 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_9) isa at_index, has index 9;
+ $plugin_lib_names_param_pvalue_10 isa ValueString, has string_value "nav2_is_stuck_condition_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_10 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_10) isa at_index, has index 10;
+ $plugin_lib_names_param_pvalue_11 isa ValueString, has string_value "nav2_goal_reached_condition_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_11 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_11) isa at_index, has index 11;
+ $plugin_lib_names_param_pvalue_12 isa ValueString, has string_value "nav2_goal_updated_condition_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_12 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_12) isa at_index, has index 12;
+ $plugin_lib_names_param_pvalue_13 isa ValueString, has string_value "nav2_globally_updated_goal_condition_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_13 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_13) isa at_index, has index 13;
+ $plugin_lib_names_param_pvalue_14 isa ValueString, has string_value "nav2_is_path_valid_condition_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_14 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_14) isa at_index, has index 14;
+ $plugin_lib_names_param_pvalue_15 isa ValueString, has string_value "nav2_initial_pose_received_condition_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_15 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_15) isa at_index, has index 15;
+ $plugin_lib_names_param_pvalue_16 isa ValueString, has string_value "nav2_reinitialize_global_localization_service_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_16 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_16) isa at_index, has index 16;
+ $plugin_lib_names_param_pvalue_17 isa ValueString, has string_value "nav2_rate_controller_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_17 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_17) isa at_index, has index 17;
+ $plugin_lib_names_param_pvalue_18 isa ValueString, has string_value "nav2_distance_controller_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_18 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_18) isa at_index, has index 18;
+ $plugin_lib_names_param_pvalue_19 isa ValueString, has string_value "nav2_speed_controller_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_19 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_19) isa at_index, has index 19;
+ $plugin_lib_names_param_pvalue_20 isa ValueString, has string_value "nav2_truncate_path_action_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_20 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_20) isa at_index, has index 20;
+ $plugin_lib_names_param_pvalue_21 isa ValueString, has string_value "nav2_truncate_path_local_action_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_21 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_21) isa at_index, has index 21;
+ $plugin_lib_names_param_pvalue_22 isa ValueString, has string_value "nav2_goal_updater_node_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_22 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_22) isa at_index, has index 22;
+ $plugin_lib_names_param_pvalue_23 isa ValueString, has string_value "nav2_recovery_node_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_23 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_23) isa at_index, has index 23;
+ $plugin_lib_names_param_pvalue_24 isa ValueString, has string_value "nav2_pipeline_sequence_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_24 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_24) isa at_index, has index 24;
+ $plugin_lib_names_param_pvalue_25 isa ValueString, has string_value "nav2_round_robin_node_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_25 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_25) isa at_index, has index 25;
+ $plugin_lib_names_param_pvalue_26 isa ValueString, has string_value "nav2_transform_available_condition_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_26 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_26) isa at_index, has index 26;
+ $plugin_lib_names_param_pvalue_27 isa ValueString, has string_value "nav2_time_expired_condition_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_27 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_27) isa at_index, has index 27;
+ $plugin_lib_names_param_pvalue_28 isa ValueString, has string_value "nav2_path_expiring_timer_condition";
+ $plugin_lib_names_param_p_array_value_elem_28 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_28) isa at_index, has index 28;
+ $plugin_lib_names_param_pvalue_29 isa ValueString, has string_value "nav2_distance_traveled_condition_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_29 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_29) isa at_index, has index 29;
+ $plugin_lib_names_param_pvalue_30 isa ValueString, has string_value "nav2_single_trigger_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_30 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_30) isa at_index, has index 30;
+ $plugin_lib_names_param_pvalue_31 isa ValueString, has string_value "nav2_goal_updated_controller_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_31 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_31) isa at_index, has index 31;
+ $plugin_lib_names_param_pvalue_32 isa ValueString, has string_value "nav2_is_battery_low_condition_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_32 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_32) isa at_index, has index 32;
+ $plugin_lib_names_param_pvalue_33 isa ValueString, has string_value "nav2_navigate_through_poses_action_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_33 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_33) isa at_index, has index 33;
+ $plugin_lib_names_param_pvalue_34 isa ValueString, has string_value "nav2_navigate_to_pose_action_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_34 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_34) isa at_index, has index 34;
+ $plugin_lib_names_param_pvalue_35 isa ValueString, has string_value "nav2_remove_passed_goals_action_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_35 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_35) isa at_index, has index 35;
+ $plugin_lib_names_param_pvalue_36 isa ValueString, has string_value "nav2_planner_selector_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_36 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_36) isa at_index, has index 36;
+ $plugin_lib_names_param_pvalue_37 isa ValueString, has string_value "nav2_controller_selector_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_37 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_37) isa at_index, has index 37;
+ $plugin_lib_names_param_pvalue_38 isa ValueString, has string_value "nav2_goal_checker_selector_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_38 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_38) isa at_index, has index 38;
+ $plugin_lib_names_param_pvalue_39 isa ValueString, has string_value "nav2_controller_cancel_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_39 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_39) isa at_index, has index 39;
+ $plugin_lib_names_param_pvalue_40 isa ValueString, has string_value "nav2_path_longer_on_approach_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_40 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_40) isa at_index, has index 40;
+ $plugin_lib_names_param_pvalue_41 isa ValueString, has string_value "nav2_wait_cancel_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_41 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_41) isa at_index, has index 41;
+ $plugin_lib_names_param_pvalue_42 isa ValueString, has string_value "nav2_spin_cancel_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_42 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_42) isa at_index, has index 42;
+ $plugin_lib_names_param_pvalue_43 isa ValueString, has string_value "nav2_back_up_cancel_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_43 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_43) isa at_index, has index 43;
+ $plugin_lib_names_param_pvalue_44 isa ValueString, has string_value "nav2_assisted_teleop_cancel_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_44 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_44) isa at_index, has index 44;
+ $plugin_lib_names_param_pvalue_45 isa ValueString, has string_value "nav2_drive_on_heading_cancel_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_45 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_45) isa at_index, has index 45;
+ $plugin_lib_names_param_pvalue_46 isa ValueString, has string_value "nav2_is_battery_charging_condition_bt_node";
+ $plugin_lib_names_param_p_array_value_elem_46 (array: $plugin_lib_names_param_p_array_value, array_value: $plugin_lib_names_param_pvalue_46) isa at_index, has index 46;
+
+ (node: $bt_navigator_node,
+ parameter: $plugin_lib_names_param,
+ parameter_value: $plugin_lib_names_param_p_array_value)
+ 	isa has_parameter_value, has default_value true;
+ $robot_base_frame_param_1 isa ParameterString,
+ 	has parameter_name "robot_base_frame";
+ $robot_base_frame_param_1_pvalue isa ValueString, has string_value "base_link";
+ (node: $bt_navigator_node,
+ parameter: $robot_base_frame_param_1,
+ parameter_value: $robot_base_frame_param_1_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $transform_tolerance_param_2 isa ParameterDouble,
+ 	has parameter_name "transform_tolerance";
+ $transform_tolerance_param_2_pvalue isa ValueDouble, has double_value 0.1;
+ (node: $bt_navigator_node,
+ parameter: $transform_tolerance_param_2,
+ parameter_value: $transform_tolerance_param_2_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $use_sim_time_param_4 isa ParameterBool,
+ 	has parameter_name "use_sim_time";
+ $use_sim_time_param_4_pvalue isa ValueBool, has bool_value true;
+ (node: $bt_navigator_node,
+ parameter: $use_sim_time_param_4,
+ parameter_value: $use_sim_time_param_4_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $wait_for_service_timeout_param isa ParameterInteger,
+ 	has parameter_name "wait_for_service_timeout";
+ $wait_for_service_timeout_param_pvalue isa ValueInteger, has integer_value 1000;
+ (node: $bt_navigator_node,
+ parameter: $wait_for_service_timeout_param,
+ parameter_value: $wait_for_service_timeout_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+
+ $bt_navigator_node_parameters (
+ 	node: $bt_navigator_node,
+ 	parameter: $bond_disable_heartbeat_timeout_param_4,
+ 	parameter: $always_reload_bt_xml_param,
+ 	parameter: $bt_loop_duration_param,
+ 	parameter: $default_nav_through_poses_bt_xml_param,
+ 	parameter: $default_nav_to_pose_bt_xml_param,
+ 	parameter: $default_server_timeout_param,
+ 	parameter: $global_frame_param,
+ 	parameter: $goal_blackboard_id_param,
+ 	parameter: $goals_blackboard_id_param,
+ 	parameter: $odom_topic_param,
+ 	parameter: $path_blackboard_id_param,
+ 	parameter: $plugin_lib_names_param,
+ 	parameter: $robot_base_frame_param_1,
+ 	parameter: $transform_tolerance_param_2,
+ 	parameter: $use_sim_time_param_4,
+ 	parameter: $wait_for_service_timeout_param
+ 	) isa has_parameter;
+ $bt_navigator_node_sub isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $bt_navigator_node, subscriber: $bt_navigator_node_sub) isa has_topic;
+
+ $bt_navigator_node_sub_1 isa Subscriber,
+ has interface_name "clock",
+ has interface_type "rosgraph_msgs/Clock";
+
+ (node: $bt_navigator_node, subscriber: $bt_navigator_node_sub_1) isa has_topic;
+
+ $bt_navigator_node_sub_2 isa Subscriber,
+ has interface_name "goal_pose",
+ has interface_type "geometry_msgs/PoseStamped";
+
+ (node: $bt_navigator_node, subscriber: $bt_navigator_node_sub_2) isa has_topic;
+
+ $bt_navigator_node_sub_3 isa Subscriber,
+ has interface_name "odom",
+ has interface_type "nav_msgs/Odometry";
+
+ (node: $bt_navigator_node, subscriber: $bt_navigator_node_sub_3) isa has_topic;
+
+ $bt_navigator_node_sub_4 isa Subscriber,
+ has interface_name "tf",
+ has interface_type "tf2_msgs/TFMessage";
+
+ (node: $bt_navigator_node, subscriber: $bt_navigator_node_sub_4) isa has_topic;
+
+ $bt_navigator_node_sub_5 isa Subscriber,
+ has interface_name "tf_static",
+ has interface_type "tf2_msgs/TFMessage";
+
+ (node: $bt_navigator_node, subscriber: $bt_navigator_node_sub_5) isa has_topic;
+
+ $bt_navigator_nodepub isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $bt_navigator_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $bt_navigator_nodepub_qos_rel (interface: $bt_navigator_nodepub, qos: $bt_navigator_nodepub_qos) isa has_qos;
+
+ (node: $bt_navigator_node, publisher: $bt_navigator_nodepub) isa has_topic;
+ $bt_navigator_nodepub_1 isa Publisher,
+ has interface_name "bt_navigator/transition_event",
+ has interface_type "lifecycle_msgs/TransitionEvent";
+
+ $bt_navigator_nodepub_1_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $bt_navigator_nodepub_1_qos_rel (interface: $bt_navigator_nodepub_1, qos: $bt_navigator_nodepub_1_qos) isa has_qos;
+
+ (node: $bt_navigator_node, publisher: $bt_navigator_nodepub_1) isa has_topic;
+ $bt_navigator_node_action_client isa ActionClient,
+ has interface_name "navigate_to_pose",
+ has interface_type "nav2_msgs/NavigateToPose";
+ (node: $bt_navigator_node, client: $bt_navigator_node_action_client) isa has_action;
+ $bt_navigator_node_action_server isa ActionServer,
+ has interface_name "navigate_through_poses",
+ has interface_type "nav2_msgs/NavigateThroughPoses";
+ (node: $bt_navigator_node, server: $bt_navigator_node_action_server) isa has_action;
+ $bt_navigator_node_action_server_1 isa ActionServer,
+ has interface_name "navigate_to_pose",
+ has interface_type "nav2_msgs/NavigateToPose";
+ (node: $bt_navigator_node, server: $bt_navigator_node_action_server_1) isa has_action;
+ $bt_navigator_node_service_server isa ServiceServer,
+ has interface_name "bt_navigator/change_state",
+ has interface_type "lifecycle_msgs/ChangeState";
+ (node: $bt_navigator_node, server: $bt_navigator_node_service_server) isa has_service;
+ $bt_navigator_node_service_server_1 isa ServiceServer,
+ has interface_name "bt_navigator/get_available_states",
+ has interface_type "lifecycle_msgs/GetAvailableStates";
+ (node: $bt_navigator_node, server: $bt_navigator_node_service_server_1) isa has_service;
+ $bt_navigator_node_service_server_2 isa ServiceServer,
+ has interface_name "bt_navigator/get_available_transitions",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $bt_navigator_node, server: $bt_navigator_node_service_server_2) isa has_service;
+ $bt_navigator_node_service_server_3 isa ServiceServer,
+ has interface_name "bt_navigator/get_state",
+ has interface_type "lifecycle_msgs/GetState";
+ (node: $bt_navigator_node, server: $bt_navigator_node_service_server_3) isa has_service;
+ $bt_navigator_node_service_server_4 isa ServiceServer,
+ has interface_name "bt_navigator/get_transition_graph",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $bt_navigator_node, server: $bt_navigator_node_service_server_4) isa has_service;
+ $bt_navigator_navigate_to_pose_rclcpp_node_node isa ROSNode,
+ has node_name "/bt_navigator_navigate_to_pose_rclcpp_node",
+ has namespace "";
+ $bt_navigator_navigate_to_pose_rclcpp_node_node_sub isa Subscriber,
+ has interface_name "clock",
+ has interface_type "rosgraph_msgs/Clock";
+
+ (node: $bt_navigator_navigate_to_pose_rclcpp_node_node, subscriber: $bt_navigator_navigate_to_pose_rclcpp_node_node_sub) isa has_topic;
+
+ $bt_navigator_navigate_to_pose_rclcpp_node_nodepub isa Publisher,
+ has interface_name "behavior_tree_log",
+ has interface_type "nav2_msgs/BehaviorTreeLog";
+
+ $bt_navigator_navigate_to_pose_rclcpp_node_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $bt_navigator_navigate_to_pose_rclcpp_node_nodepub_qos_rel (interface: $bt_navigator_navigate_to_pose_rclcpp_node_nodepub, qos: $bt_navigator_navigate_to_pose_rclcpp_node_nodepub_qos) isa has_qos;
+
+ (node: $bt_navigator_navigate_to_pose_rclcpp_node_node, publisher: $bt_navigator_navigate_to_pose_rclcpp_node_nodepub) isa has_topic;
+ $bt_navigator_navigate_to_pose_rclcpp_node_node_action_client isa ActionClient,
+ has interface_name "backup",
+ has interface_type "nav2_msgs/BackUp";
+ (node: $bt_navigator_navigate_to_pose_rclcpp_node_node, client: $bt_navigator_navigate_to_pose_rclcpp_node_node_action_client) isa has_action;
+ $bt_navigator_navigate_to_pose_rclcpp_node_node_action_client_1 isa ActionClient,
+ has interface_name "compute_path_to_pose",
+ has interface_type "nav2_msgs/ComputePathToPose";
+ (node: $bt_navigator_navigate_to_pose_rclcpp_node_node, client: $bt_navigator_navigate_to_pose_rclcpp_node_node_action_client_1) isa has_action;
+ $bt_navigator_navigate_to_pose_rclcpp_node_node_action_client_2 isa ActionClient,
+ has interface_name "follow_path",
+ has interface_type "nav2_msgs/FollowPath";
+ (node: $bt_navigator_navigate_to_pose_rclcpp_node_node, client: $bt_navigator_navigate_to_pose_rclcpp_node_node_action_client_2) isa has_action;
+ $bt_navigator_navigate_through_poses_rclcpp_node_node isa ROSNode,
+ has node_name "/bt_navigator_navigate_through_poses_rclcpp_node",
+ has namespace "";
+ $bt_navigator_navigate_through_poses_rclcpp_node_node_sub isa Subscriber,
+ has interface_name "clock",
+ has interface_type "rosgraph_msgs/Clock";
+
+ (node: $bt_navigator_navigate_through_poses_rclcpp_node_node, subscriber: $bt_navigator_navigate_through_poses_rclcpp_node_node_sub) isa has_topic;
+
+ $bt_navigator_navigate_through_poses_rclcpp_node_nodepub isa Publisher,
+ has interface_name "behavior_tree_log",
+ has interface_type "nav2_msgs/BehaviorTreeLog";
+
+ $bt_navigator_navigate_through_poses_rclcpp_node_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $bt_navigator_navigate_through_poses_rclcpp_node_nodepub_qos_rel (interface: $bt_navigator_navigate_through_poses_rclcpp_node_nodepub, qos: $bt_navigator_navigate_through_poses_rclcpp_node_nodepub_qos) isa has_qos;
+
+ (node: $bt_navigator_navigate_through_poses_rclcpp_node_node, publisher: $bt_navigator_navigate_through_poses_rclcpp_node_nodepub) isa has_topic;
+ $bt_navigator_navigate_through_poses_rclcpp_node_node_action_client isa ActionClient,
+ has interface_name "backup",
+ has interface_type "nav2_msgs/BackUp";
+ (node: $bt_navigator_navigate_through_poses_rclcpp_node_node, client: $bt_navigator_navigate_through_poses_rclcpp_node_node_action_client) isa has_action;
+ $bt_navigator_navigate_through_poses_rclcpp_node_node_action_client_1 isa ActionClient,
+ has interface_name "compute_path_through_poses",
+ has interface_type "nav2_msgs/ComputePathThroughPoses";
+ (node: $bt_navigator_navigate_through_poses_rclcpp_node_node, client: $bt_navigator_navigate_through_poses_rclcpp_node_node_action_client_1) isa has_action;
+ $bt_navigator_navigate_through_poses_rclcpp_node_node_action_client_2 isa ActionClient,
+ has interface_name "follow_path",
+ has interface_type "nav2_msgs/FollowPath";
+ (node: $bt_navigator_navigate_through_poses_rclcpp_node_node, client: $bt_navigator_navigate_through_poses_rclcpp_node_node_action_client_2) isa has_action;
+ $bt_navigator_navigate_through_poses_rclcpp_node_node_action_client_3 isa ActionClient,
+ has interface_name "spin",
+ has interface_type "nav2_msgs/Spin";
+ (node: $bt_navigator_navigate_through_poses_rclcpp_node_node, client: $bt_navigator_navigate_through_poses_rclcpp_node_node_action_client_3) isa has_action;
+ $bt_navigator_navigate_through_poses_rclcpp_node_node_action_client_4 isa ActionClient,
+ has interface_name "wait",
+ has interface_type "nav2_msgs/Wait";
+ (node: $bt_navigator_navigate_through_poses_rclcpp_node_node, client: $bt_navigator_navigate_through_poses_rclcpp_node_node_action_client_4) isa has_action;
+ $waypoint_follower_node isa LifeCycleNode,
+ has node_name "/waypoint_follower",
+ has namespace "";
+ $bond_disable_heartbeat_timeout_param_5 isa ParameterBool,
+ 	has parameter_name "/bond_disable_heartbeat_timeout";
+ $bond_disable_heartbeat_timeout_param_5_pvalue isa ValueBool, has bool_value true;
+ (node: $waypoint_follower_node,
+ parameter: $bond_disable_heartbeat_timeout_param_5,
+ parameter_value: $bond_disable_heartbeat_timeout_param_5_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $loop_rate_param isa ParameterInteger,
+ 	has parameter_name "loop_rate";
+ $loop_rate_param_pvalue isa ValueInteger, has integer_value 20;
+ (node: $waypoint_follower_node,
+ parameter: $loop_rate_param,
+ parameter_value: $loop_rate_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $stop_on_failure_param isa ParameterBool,
+ 	has parameter_name "stop_on_failure";
+ $stop_on_failure_param_pvalue isa ValueBool, has bool_value false;
+ (node: $waypoint_follower_node,
+ parameter: $stop_on_failure_param,
+ parameter_value: $stop_on_failure_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $use_sim_time_param_5 isa ParameterBool,
+ 	has parameter_name "use_sim_time";
+ $use_sim_time_param_5_pvalue isa ValueBool, has bool_value true;
+ (node: $waypoint_follower_node,
+ parameter: $use_sim_time_param_5,
+ parameter_value: $use_sim_time_param_5_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $wait_at_waypoint_enabled_param isa ParameterBool,
+ 	has parameter_name "wait_at_waypoint.enabled";
+ $wait_at_waypoint_enabled_param_pvalue isa ValueBool, has bool_value true;
+ (node: $waypoint_follower_node,
+ parameter: $wait_at_waypoint_enabled_param,
+ parameter_value: $wait_at_waypoint_enabled_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $wait_at_waypoint_plugin_param isa ParameterString,
+ 	has parameter_name "wait_at_waypoint.plugin";
+ $wait_at_waypoint_plugin_param_pvalue isa ValueString, has string_value "nav2_waypoint_follower::WaitAtWaypoint";
+ (node: $waypoint_follower_node,
+ parameter: $wait_at_waypoint_plugin_param,
+ parameter_value: $wait_at_waypoint_plugin_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $wait_at_waypoint_waypoint_pause_duration_param isa ParameterInteger,
+ 	has parameter_name "wait_at_waypoint.waypoint_pause_duration";
+ $wait_at_waypoint_waypoint_pause_duration_param_pvalue isa ValueInteger, has integer_value 200;
+ (node: $waypoint_follower_node,
+ parameter: $wait_at_waypoint_waypoint_pause_duration_param,
+ parameter_value: $wait_at_waypoint_waypoint_pause_duration_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $waypoint_task_executor_plugin_param isa ParameterString,
+ 	has parameter_name "waypoint_task_executor_plugin";
+ $waypoint_task_executor_plugin_param_pvalue isa ValueString, has string_value "wait_at_waypoint";
+ (node: $waypoint_follower_node,
+ parameter: $waypoint_task_executor_plugin_param,
+ parameter_value: $waypoint_task_executor_plugin_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+
+ $waypoint_follower_node_parameters (
+ 	node: $waypoint_follower_node,
+ 	parameter: $bond_disable_heartbeat_timeout_param_5,
+ 	parameter: $loop_rate_param,
+ 	parameter: $stop_on_failure_param,
+ 	parameter: $use_sim_time_param_5,
+ 	parameter: $wait_at_waypoint_enabled_param,
+ 	parameter: $wait_at_waypoint_plugin_param,
+ 	parameter: $wait_at_waypoint_waypoint_pause_duration_param,
+ 	parameter: $waypoint_task_executor_plugin_param
+ 	) isa has_parameter;
+ $waypoint_follower_node_sub isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $waypoint_follower_node, subscriber: $waypoint_follower_node_sub) isa has_topic;
+
+ $waypoint_follower_node_sub_1 isa Subscriber,
+ has interface_name "clock",
+ has interface_type "rosgraph_msgs/Clock";
+
+ (node: $waypoint_follower_node, subscriber: $waypoint_follower_node_sub_1) isa has_topic;
+
+ $waypoint_follower_nodepub isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $waypoint_follower_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $waypoint_follower_nodepub_qos_rel (interface: $waypoint_follower_nodepub, qos: $waypoint_follower_nodepub_qos) isa has_qos;
+
+ (node: $waypoint_follower_node, publisher: $waypoint_follower_nodepub) isa has_topic;
+ $waypoint_follower_nodepub_1 isa Publisher,
+ has interface_name "waypoint_follower/transition_event",
+ has interface_type "lifecycle_msgs/TransitionEvent";
+
+ $waypoint_follower_nodepub_1_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $waypoint_follower_nodepub_1_qos_rel (interface: $waypoint_follower_nodepub_1, qos: $waypoint_follower_nodepub_1_qos) isa has_qos;
+
+ (node: $waypoint_follower_node, publisher: $waypoint_follower_nodepub_1) isa has_topic;
+ $waypoint_follower_node_action_client isa ActionClient,
+ has interface_name "navigate_to_pose",
+ has interface_type "nav2_msgs/NavigateToPose";
+ (node: $waypoint_follower_node, client: $waypoint_follower_node_action_client) isa has_action;
+ $waypoint_follower_node_action_server isa ActionServer,
+ has interface_name "follow_waypoints",
+ has interface_type "nav2_msgs/FollowWaypoints";
+ (node: $waypoint_follower_node, server: $waypoint_follower_node_action_server) isa has_action;
+ $waypoint_follower_node_service_server isa ServiceServer,
+ has interface_name "waypoint_follower/change_state",
+ has interface_type "lifecycle_msgs/ChangeState";
+ (node: $waypoint_follower_node, server: $waypoint_follower_node_service_server) isa has_service;
+ $waypoint_follower_node_service_server_1 isa ServiceServer,
+ has interface_name "waypoint_follower/get_available_states",
+ has interface_type "lifecycle_msgs/GetAvailableStates";
+ (node: $waypoint_follower_node, server: $waypoint_follower_node_service_server_1) isa has_service;
+ $waypoint_follower_node_service_server_2 isa ServiceServer,
+ has interface_name "waypoint_follower/get_available_transitions",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $waypoint_follower_node, server: $waypoint_follower_node_service_server_2) isa has_service;
+ $waypoint_follower_node_service_server_3 isa ServiceServer,
+ has interface_name "waypoint_follower/get_state",
+ has interface_type "lifecycle_msgs/GetState";
+ (node: $waypoint_follower_node, server: $waypoint_follower_node_service_server_3) isa has_service;
+ $waypoint_follower_node_service_server_4 isa ServiceServer,
+ has interface_name "waypoint_follower/get_transition_graph",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $waypoint_follower_node, server: $waypoint_follower_node_service_server_4) isa has_service;
+ $velocity_smoother_node isa LifeCycleNode,
+ has node_name "/velocity_smoother",
+ has namespace "";
+ $bond_disable_heartbeat_timeout_param_6 isa ParameterBool,
+ 	has parameter_name "/bond_disable_heartbeat_timeout";
+ $bond_disable_heartbeat_timeout_param_6_pvalue isa ValueBool, has bool_value true;
+ (node: $velocity_smoother_node,
+ parameter: $bond_disable_heartbeat_timeout_param_6,
+ parameter_value: $bond_disable_heartbeat_timeout_param_6_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $deadband_velocity_param isa ParameterDoubleArray,
+ 	has parameter_name "deadband_velocity";
+ $deadband_velocity_param_p_array_value isa ValueArray;
+ $deadband_velocity_param_pvalue isa ValueDouble, has double_value 0;
+ $deadband_velocity_param_p_array_value_elem_0 (array: $deadband_velocity_param_p_array_value, array_value: $deadband_velocity_param_pvalue) isa at_index, has index 0;
+ $deadband_velocity_param_pvalue_1 isa ValueDouble, has double_value 0;
+ $deadband_velocity_param_p_array_value_elem_1 (array: $deadband_velocity_param_p_array_value, array_value: $deadband_velocity_param_pvalue_1) isa at_index, has index 1;
+ $deadband_velocity_param_pvalue_2 isa ValueDouble, has double_value 0;
+ $deadband_velocity_param_p_array_value_elem_2 (array: $deadband_velocity_param_p_array_value, array_value: $deadband_velocity_param_pvalue_2) isa at_index, has index 2;
+
+ (node: $velocity_smoother_node,
+ parameter: $deadband_velocity_param,
+ parameter_value: $deadband_velocity_param_p_array_value)
+ 	isa has_parameter_value, has default_value true;
+ $feedback_param isa ParameterString,
+ 	has parameter_name "feedback";
+ $feedback_param_pvalue isa ValueString, has string_value "OPEN_LOOP";
+ (node: $velocity_smoother_node,
+ parameter: $feedback_param,
+ parameter_value: $feedback_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $max_accel_param isa ParameterDoubleArray,
+ 	has parameter_name "max_accel";
+ $max_accel_param_p_array_value isa ValueArray;
+ $max_accel_param_pvalue isa ValueDouble, has double_value 2.5;
+ $max_accel_param_p_array_value_elem_0 (array: $max_accel_param_p_array_value, array_value: $max_accel_param_pvalue) isa at_index, has index 0;
+ $max_accel_param_pvalue_1 isa ValueDouble, has double_value 0;
+ $max_accel_param_p_array_value_elem_1 (array: $max_accel_param_p_array_value, array_value: $max_accel_param_pvalue_1) isa at_index, has index 1;
+ $max_accel_param_pvalue_2 isa ValueDouble, has double_value 3.2;
+ $max_accel_param_p_array_value_elem_2 (array: $max_accel_param_p_array_value, array_value: $max_accel_param_pvalue_2) isa at_index, has index 2;
+
+ (node: $velocity_smoother_node,
+ parameter: $max_accel_param,
+ parameter_value: $max_accel_param_p_array_value)
+ 	isa has_parameter_value, has default_value true;
+ $max_decel_param isa ParameterDoubleArray,
+ 	has parameter_name "max_decel";
+ $max_decel_param_p_array_value isa ValueArray;
+ $max_decel_param_pvalue isa ValueDouble, has double_value -2.5;
+ $max_decel_param_p_array_value_elem_0 (array: $max_decel_param_p_array_value, array_value: $max_decel_param_pvalue) isa at_index, has index 0;
+ $max_decel_param_pvalue_1 isa ValueDouble, has double_value 0;
+ $max_decel_param_p_array_value_elem_1 (array: $max_decel_param_p_array_value, array_value: $max_decel_param_pvalue_1) isa at_index, has index 1;
+ $max_decel_param_pvalue_2 isa ValueDouble, has double_value -3.2;
+ $max_decel_param_p_array_value_elem_2 (array: $max_decel_param_p_array_value, array_value: $max_decel_param_pvalue_2) isa at_index, has index 2;
+
+ (node: $velocity_smoother_node,
+ parameter: $max_decel_param,
+ parameter_value: $max_decel_param_p_array_value)
+ 	isa has_parameter_value, has default_value true;
+ $max_velocity_param isa ParameterDoubleArray,
+ 	has parameter_name "max_velocity";
+ $max_velocity_param_p_array_value isa ValueArray;
+ $max_velocity_param_pvalue isa ValueDouble, has double_value 0.26;
+ $max_velocity_param_p_array_value_elem_0 (array: $max_velocity_param_p_array_value, array_value: $max_velocity_param_pvalue) isa at_index, has index 0;
+ $max_velocity_param_pvalue_1 isa ValueDouble, has double_value 0;
+ $max_velocity_param_p_array_value_elem_1 (array: $max_velocity_param_p_array_value, array_value: $max_velocity_param_pvalue_1) isa at_index, has index 1;
+ $max_velocity_param_pvalue_2 isa ValueDouble, has double_value 1;
+ $max_velocity_param_p_array_value_elem_2 (array: $max_velocity_param_p_array_value, array_value: $max_velocity_param_pvalue_2) isa at_index, has index 2;
+
+ (node: $velocity_smoother_node,
+ parameter: $max_velocity_param,
+ parameter_value: $max_velocity_param_p_array_value)
+ 	isa has_parameter_value, has default_value true;
+ $min_velocity_param isa ParameterDoubleArray,
+ 	has parameter_name "min_velocity";
+ $min_velocity_param_p_array_value isa ValueArray;
+ $min_velocity_param_pvalue isa ValueDouble, has double_value -0.26;
+ $min_velocity_param_p_array_value_elem_0 (array: $min_velocity_param_p_array_value, array_value: $min_velocity_param_pvalue) isa at_index, has index 0;
+ $min_velocity_param_pvalue_1 isa ValueDouble, has double_value 0;
+ $min_velocity_param_p_array_value_elem_1 (array: $min_velocity_param_p_array_value, array_value: $min_velocity_param_pvalue_1) isa at_index, has index 1;
+ $min_velocity_param_pvalue_2 isa ValueDouble, has double_value -1;
+ $min_velocity_param_p_array_value_elem_2 (array: $min_velocity_param_p_array_value, array_value: $min_velocity_param_pvalue_2) isa at_index, has index 2;
+
+ (node: $velocity_smoother_node,
+ parameter: $min_velocity_param,
+ parameter_value: $min_velocity_param_p_array_value)
+ 	isa has_parameter_value, has default_value true;
+ $odom_duration_param isa ParameterDouble,
+ 	has parameter_name "odom_duration";
+ $odom_duration_param_pvalue isa ValueDouble, has double_value 0.1;
+ (node: $velocity_smoother_node,
+ parameter: $odom_duration_param,
+ parameter_value: $odom_duration_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $odom_topic_param_1 isa ParameterString,
+ 	has parameter_name "odom_topic";
+ $odom_topic_param_1_pvalue isa ValueString, has string_value "odom";
+ (node: $velocity_smoother_node,
+ parameter: $odom_topic_param_1,
+ parameter_value: $odom_topic_param_1_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $scale_velocities_param isa ParameterBool,
+ 	has parameter_name "scale_velocities";
+ $scale_velocities_param_pvalue isa ValueBool, has bool_value false;
+ (node: $velocity_smoother_node,
+ parameter: $scale_velocities_param,
+ parameter_value: $scale_velocities_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $smoothing_frequency_param isa ParameterDouble,
+ 	has parameter_name "smoothing_frequency";
+ $smoothing_frequency_param_pvalue isa ValueDouble, has double_value 20;
+ (node: $velocity_smoother_node,
+ parameter: $smoothing_frequency_param,
+ parameter_value: $smoothing_frequency_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $use_sim_time_param_6 isa ParameterBool,
+ 	has parameter_name "use_sim_time";
+ $use_sim_time_param_6_pvalue isa ValueBool, has bool_value true;
+ (node: $velocity_smoother_node,
+ parameter: $use_sim_time_param_6,
+ parameter_value: $use_sim_time_param_6_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $velocity_timeout_param isa ParameterDouble,
+ 	has parameter_name "velocity_timeout";
+ $velocity_timeout_param_pvalue isa ValueDouble, has double_value 1;
+ (node: $velocity_smoother_node,
+ parameter: $velocity_timeout_param,
+ parameter_value: $velocity_timeout_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+
+ $velocity_smoother_node_parameters (
+ 	node: $velocity_smoother_node,
+ 	parameter: $bond_disable_heartbeat_timeout_param_6,
+ 	parameter: $deadband_velocity_param,
+ 	parameter: $feedback_param,
+ 	parameter: $max_accel_param,
+ 	parameter: $max_decel_param,
+ 	parameter: $max_velocity_param,
+ 	parameter: $min_velocity_param,
+ 	parameter: $odom_duration_param,
+ 	parameter: $odom_topic_param_1,
+ 	parameter: $scale_velocities_param,
+ 	parameter: $smoothing_frequency_param,
+ 	parameter: $use_sim_time_param_6,
+ 	parameter: $velocity_timeout_param
+ 	) isa has_parameter;
+ $velocity_smoother_node_sub isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $velocity_smoother_node, subscriber: $velocity_smoother_node_sub) isa has_topic;
+
+ $velocity_smoother_node_sub_1 isa Subscriber,
+ has interface_name "clock",
+ has interface_type "rosgraph_msgs/Clock";
+
+ (node: $velocity_smoother_node, subscriber: $velocity_smoother_node_sub_1) isa has_topic;
+
+ $velocity_smoother_node_sub_2 isa Subscriber,
+ has interface_name "cmd_vel_nav",
+ has interface_type "geometry_msgs/Twist";
+
+ (node: $velocity_smoother_node, subscriber: $velocity_smoother_node_sub_2) isa has_topic;
+
+ $velocity_smoother_nodepub isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $velocity_smoother_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $velocity_smoother_nodepub_qos_rel (interface: $velocity_smoother_nodepub, qos: $velocity_smoother_nodepub_qos) isa has_qos;
+
+ (node: $velocity_smoother_node, publisher: $velocity_smoother_nodepub) isa has_topic;
+ $velocity_smoother_nodepub_1 isa Publisher,
+ has interface_name "cmd_vel",
+ has interface_type "geometry_msgs/Twist";
+
+ $velocity_smoother_nodepub_1_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $velocity_smoother_nodepub_1_qos_rel (interface: $velocity_smoother_nodepub_1, qos: $velocity_smoother_nodepub_1_qos) isa has_qos;
+
+ (node: $velocity_smoother_node, publisher: $velocity_smoother_nodepub_1) isa has_topic;
+ $velocity_smoother_nodepub_2 isa Publisher,
+ has interface_name "velocity_smoother/transition_event",
+ has interface_type "lifecycle_msgs/TransitionEvent";
+
+ $velocity_smoother_nodepub_2_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $velocity_smoother_nodepub_2_qos_rel (interface: $velocity_smoother_nodepub_2, qos: $velocity_smoother_nodepub_2_qos) isa has_qos;
+
+ (node: $velocity_smoother_node, publisher: $velocity_smoother_nodepub_2) isa has_topic;
+ $velocity_smoother_node_service_server isa ServiceServer,
+ has interface_name "velocity_smoother/change_state",
+ has interface_type "lifecycle_msgs/ChangeState";
+ (node: $velocity_smoother_node, server: $velocity_smoother_node_service_server) isa has_service;
+ $velocity_smoother_node_service_server_1 isa ServiceServer,
+ has interface_name "velocity_smoother/get_available_states",
+ has interface_type "lifecycle_msgs/GetAvailableStates";
+ (node: $velocity_smoother_node, server: $velocity_smoother_node_service_server_1) isa has_service;
+ $velocity_smoother_node_service_server_2 isa ServiceServer,
+ has interface_name "velocity_smoother/get_available_transitions",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $velocity_smoother_node, server: $velocity_smoother_node_service_server_2) isa has_service;
+ $velocity_smoother_node_service_server_3 isa ServiceServer,
+ has interface_name "velocity_smoother/get_state",
+ has interface_type "lifecycle_msgs/GetState";
+ (node: $velocity_smoother_node, server: $velocity_smoother_node_service_server_3) isa has_service;
+ $velocity_smoother_node_service_server_4 isa ServiceServer,
+ has interface_name "velocity_smoother/get_transition_graph",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $velocity_smoother_node, server: $velocity_smoother_node_service_server_4) isa has_service;
+ $lifecycle_manager_navigation_node isa ROSNode,
+ has node_name "/lifecycle_manager_navigation",
+ has namespace "";
+ $bond_disable_heartbeat_timeout_param_7 isa ParameterBool,
+ 	has parameter_name "/bond_disable_heartbeat_timeout";
+ $bond_disable_heartbeat_timeout_param_7_pvalue isa ValueBool, has bool_value false;
+ (node: $lifecycle_manager_navigation_node,
+ parameter: $bond_disable_heartbeat_timeout_param_7,
+ parameter_value: $bond_disable_heartbeat_timeout_param_7_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $attempt_respawn_reconnection_param isa ParameterBool,
+ 	has parameter_name "attempt_respawn_reconnection";
+ $attempt_respawn_reconnection_param_pvalue isa ValueBool, has bool_value true;
+ (node: $lifecycle_manager_navigation_node,
+ parameter: $attempt_respawn_reconnection_param,
+ parameter_value: $attempt_respawn_reconnection_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $autostart_param isa ParameterBool,
+ 	has parameter_name "autostart";
+ $autostart_param_pvalue isa ValueBool, has bool_value true;
+ (node: $lifecycle_manager_navigation_node,
+ parameter: $autostart_param,
+ parameter_value: $autostart_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $bond_respawn_max_duration_param isa ParameterDouble,
+ 	has parameter_name "bond_respawn_max_duration";
+ $bond_respawn_max_duration_param_pvalue isa ValueDouble, has double_value 10;
+ (node: $lifecycle_manager_navigation_node,
+ parameter: $bond_respawn_max_duration_param,
+ parameter_value: $bond_respawn_max_duration_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $bond_timeout_param isa ParameterDouble,
+ 	has parameter_name "bond_timeout";
+ $bond_timeout_param_pvalue isa ValueDouble, has double_value 4;
+ (node: $lifecycle_manager_navigation_node,
+ parameter: $bond_timeout_param,
+ parameter_value: $bond_timeout_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $diagnostic_updater_period_param isa ParameterDouble,
+ 	has parameter_name "diagnostic_updater.period";
+ $diagnostic_updater_period_param_pvalue isa ValueDouble, has double_value 1;
+ (node: $lifecycle_manager_navigation_node,
+ parameter: $diagnostic_updater_period_param,
+ parameter_value: $diagnostic_updater_period_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $diagnostic_updater_use_fqn_param isa ParameterBool,
+ 	has parameter_name "diagnostic_updater.use_fqn";
+ $diagnostic_updater_use_fqn_param_pvalue isa ValueBool, has bool_value false;
+ (node: $lifecycle_manager_navigation_node,
+ parameter: $diagnostic_updater_use_fqn_param,
+ parameter_value: $diagnostic_updater_use_fqn_param_pvalue)
+ 	isa has_parameter_value, has default_value true;
+ $node_names_param isa ParameterStringArray,
+ 	has parameter_name "node_names";
+ $node_names_param_p_array_value isa ValueArray;
+ $node_names_param_pvalue isa ValueString, has string_value "controller_server";
+ $node_names_param_p_array_value_elem_0 (array: $node_names_param_p_array_value, array_value: $node_names_param_pvalue) isa at_index, has index 0;
+ $node_names_param_pvalue_1 isa ValueString, has string_value "smoother_server";
+ $node_names_param_p_array_value_elem_1 (array: $node_names_param_p_array_value, array_value: $node_names_param_pvalue_1) isa at_index, has index 1;
+ $node_names_param_pvalue_2 isa ValueString, has string_value "planner_server";
+ $node_names_param_p_array_value_elem_2 (array: $node_names_param_p_array_value, array_value: $node_names_param_pvalue_2) isa at_index, has index 2;
+ $node_names_param_pvalue_3 isa ValueString, has string_value "behavior_server";
+ $node_names_param_p_array_value_elem_3 (array: $node_names_param_p_array_value, array_value: $node_names_param_pvalue_3) isa at_index, has index 3;
+ $node_names_param_pvalue_4 isa ValueString, has string_value "bt_navigator";
+ $node_names_param_p_array_value_elem_4 (array: $node_names_param_p_array_value, array_value: $node_names_param_pvalue_4) isa at_index, has index 4;
+ $node_names_param_pvalue_5 isa ValueString, has string_value "waypoint_follower";
+ $node_names_param_p_array_value_elem_5 (array: $node_names_param_p_array_value, array_value: $node_names_param_pvalue_5) isa at_index, has index 5;
+ $node_names_param_pvalue_6 isa ValueString, has string_value "velocity_smoother";
+ $node_names_param_p_array_value_elem_6 (array: $node_names_param_p_array_value, array_value: $node_names_param_pvalue_6) isa at_index, has index 6;
+
+ (node: $lifecycle_manager_navigation_node,
+ parameter: $node_names_param,
+ parameter_value: $node_names_param_p_array_value)
+ 	isa has_parameter_value, has default_value true;
+ $use_sim_time_param_7 isa ParameterBool,
+ 	has parameter_name "use_sim_time";
+ $use_sim_time_param_7_pvalue isa ValueBool, has bool_value true;
+ (node: $lifecycle_manager_navigation_node,
+ parameter: $use_sim_time_param_7,
+ parameter_value: $use_sim_time_param_7_pvalue)
+ 	isa has_parameter_value, has default_value true;
+
+ $lifecycle_manager_navigation_node_parameters (
+ 	node: $lifecycle_manager_navigation_node,
+ 	parameter: $bond_disable_heartbeat_timeout_param_7,
+ 	parameter: $attempt_respawn_reconnection_param,
+ 	parameter: $autostart_param,
+ 	parameter: $bond_respawn_max_duration_param,
+ 	parameter: $bond_timeout_param,
+ 	parameter: $diagnostic_updater_period_param,
+ 	parameter: $diagnostic_updater_use_fqn_param,
+ 	parameter: $node_names_param,
+ 	parameter: $use_sim_time_param_7
+ 	) isa has_parameter;
+ $lifecycle_manager_navigation_node_sub isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $lifecycle_manager_navigation_node, subscriber: $lifecycle_manager_navigation_node_sub) isa has_topic;
+
+ $lifecycle_manager_navigation_node_sub_1 isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $lifecycle_manager_navigation_node, subscriber: $lifecycle_manager_navigation_node_sub_1) isa has_topic;
+
+ $lifecycle_manager_navigation_node_sub_2 isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $lifecycle_manager_navigation_node, subscriber: $lifecycle_manager_navigation_node_sub_2) isa has_topic;
+
+ $lifecycle_manager_navigation_node_sub_3 isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $lifecycle_manager_navigation_node, subscriber: $lifecycle_manager_navigation_node_sub_3) isa has_topic;
+
+ $lifecycle_manager_navigation_node_sub_4 isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $lifecycle_manager_navigation_node, subscriber: $lifecycle_manager_navigation_node_sub_4) isa has_topic;
+
+ $lifecycle_manager_navigation_node_sub_5 isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $lifecycle_manager_navigation_node, subscriber: $lifecycle_manager_navigation_node_sub_5) isa has_topic;
+
+ $lifecycle_manager_navigation_node_sub_6 isa Subscriber,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ (node: $lifecycle_manager_navigation_node, subscriber: $lifecycle_manager_navigation_node_sub_6) isa has_topic;
+
+ $lifecycle_manager_navigation_node_sub_7 isa Subscriber,
+ has interface_name "clock",
+ has interface_type "rosgraph_msgs/Clock";
+
+ (node: $lifecycle_manager_navigation_node, subscriber: $lifecycle_manager_navigation_node_sub_7) isa has_topic;
+
+ $lifecycle_manager_navigation_nodepub isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $lifecycle_manager_navigation_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $lifecycle_manager_navigation_nodepub_qos_rel (interface: $lifecycle_manager_navigation_nodepub, qos: $lifecycle_manager_navigation_nodepub_qos) isa has_qos;
+
+ (node: $lifecycle_manager_navigation_node, publisher: $lifecycle_manager_navigation_nodepub) isa has_topic;
+ $lifecycle_manager_navigation_nodepub_1 isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $lifecycle_manager_navigation_nodepub_1_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $lifecycle_manager_navigation_nodepub_1_qos_rel (interface: $lifecycle_manager_navigation_nodepub_1, qos: $lifecycle_manager_navigation_nodepub_1_qos) isa has_qos;
+
+ (node: $lifecycle_manager_navigation_node, publisher: $lifecycle_manager_navigation_nodepub_1) isa has_topic;
+ $lifecycle_manager_navigation_nodepub_2 isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $lifecycle_manager_navigation_nodepub_2_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $lifecycle_manager_navigation_nodepub_2_qos_rel (interface: $lifecycle_manager_navigation_nodepub_2, qos: $lifecycle_manager_navigation_nodepub_2_qos) isa has_qos;
+
+ (node: $lifecycle_manager_navigation_node, publisher: $lifecycle_manager_navigation_nodepub_2) isa has_topic;
+ $lifecycle_manager_navigation_nodepub_3 isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $lifecycle_manager_navigation_nodepub_3_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $lifecycle_manager_navigation_nodepub_3_qos_rel (interface: $lifecycle_manager_navigation_nodepub_3, qos: $lifecycle_manager_navigation_nodepub_3_qos) isa has_qos;
+
+ (node: $lifecycle_manager_navigation_node, publisher: $lifecycle_manager_navigation_nodepub_3) isa has_topic;
+ $lifecycle_manager_navigation_nodepub_4 isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $lifecycle_manager_navigation_nodepub_4_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $lifecycle_manager_navigation_nodepub_4_qos_rel (interface: $lifecycle_manager_navigation_nodepub_4, qos: $lifecycle_manager_navigation_nodepub_4_qos) isa has_qos;
+
+ (node: $lifecycle_manager_navigation_node, publisher: $lifecycle_manager_navigation_nodepub_4) isa has_topic;
+ $lifecycle_manager_navigation_nodepub_5 isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $lifecycle_manager_navigation_nodepub_5_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $lifecycle_manager_navigation_nodepub_5_qos_rel (interface: $lifecycle_manager_navigation_nodepub_5, qos: $lifecycle_manager_navigation_nodepub_5_qos) isa has_qos;
+
+ (node: $lifecycle_manager_navigation_node, publisher: $lifecycle_manager_navigation_nodepub_5) isa has_topic;
+ $lifecycle_manager_navigation_nodepub_6 isa Publisher,
+ has interface_name "bond",
+ has interface_type "bond/Status";
+
+ $lifecycle_manager_navigation_nodepub_6_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $lifecycle_manager_navigation_nodepub_6_qos_rel (interface: $lifecycle_manager_navigation_nodepub_6, qos: $lifecycle_manager_navigation_nodepub_6_qos) isa has_qos;
+
+ (node: $lifecycle_manager_navigation_node, publisher: $lifecycle_manager_navigation_nodepub_6) isa has_topic;
+ $lifecycle_manager_navigation_nodepub_7 isa Publisher,
+ has interface_name "diagnostics",
+ has interface_type "diagnostic_msgs/DiagnosticArray";
+
+ $lifecycle_manager_navigation_nodepub_7_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $lifecycle_manager_navigation_nodepub_7_qos_rel (interface: $lifecycle_manager_navigation_nodepub_7, qos: $lifecycle_manager_navigation_nodepub_7_qos) isa has_qos;
+
+ (node: $lifecycle_manager_navigation_node, publisher: $lifecycle_manager_navigation_nodepub_7) isa has_topic;
+ $lifecycle_manager_navigation_node_service_server isa ServiceServer,
+ has interface_name "lifecycle_manager_navigation/is_active",
+ has interface_type "std_srvs/Trigger";
+ (node: $lifecycle_manager_navigation_node, server: $lifecycle_manager_navigation_node_service_server) isa has_service;
+ $lifecycle_manager_navigation_node_service_server_1 isa ServiceServer,
+ has interface_name "lifecycle_manager_navigation/manage_nodes",
+ has interface_type "nav2_msgs/ManageLifecycleNodes";
+ (node: $lifecycle_manager_navigation_node, server: $lifecycle_manager_navigation_node_service_server_1) isa has_service;
+ (node: $bt_navigator_node,
+ subnode: $bt_navigator_navigate_to_pose_rclcpp_node_node,
+ subnode: $bt_navigator_navigate_through_poses_rclcpp_node_node
+ 	) isa subnode;
+
+ $turtlebot3_laserscan_node isa ROSNode,
+ has node_name "turtlebot3_laserscan",
+ has namespace "";
+ $turtlebot3_laserscan_node_sub isa Subscriber,
+ has interface_name "clock",
+ has interface_type "rosgraph_msgs/Clock";
+
+ (node: $turtlebot3_laserscan_node, subscriber: $turtlebot3_laserscan_node_sub) isa has_topic;
+
+ $turtlebot3_laserscan_nodepub isa Publisher,
+ has interface_name "scan",
+ has interface_type "sensor_msgs/LaserScan";
+
+ $turtlebot3_laserscan_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $turtlebot3_laserscan_nodepub_qos_rel (interface: $turtlebot3_laserscan_nodepub, qos: $turtlebot3_laserscan_nodepub_qos) isa has_qos;
+
+ (node: $turtlebot3_laserscan_node, publisher: $turtlebot3_laserscan_nodepub) isa has_topic;
+ $turtlebot3_diff_drive_node isa ROSNode,
+ has node_name "turtlebot3_diff_drive",
+ has namespace "";
+ $use_sim_time_param_8 isa ParameterBool,
+ 	has parameter_name "use_sim_time";
+ $use_sim_time_param_8_pvalue isa ValueBool, has bool_value true;
+ (node: $turtlebot3_diff_drive_node,
+ parameter: $use_sim_time_param_8,
+ parameter_value: $use_sim_time_param_8_pvalue)
+ 	isa has_parameter_value, has default_value true;
+
+ $turtlebot3_diff_drive_node_parameters (
+ 	node: $turtlebot3_diff_drive_node,
+ 	parameter: $use_sim_time_param_8
+ 	) isa has_parameter;
+ $turtlebot3_diff_drive_node_sub isa Subscriber,
+ has interface_name "clock",
+ has interface_type "rosgraph_msgs/Clock";
+
+ (node: $turtlebot3_diff_drive_node, subscriber: $turtlebot3_diff_drive_node_sub) isa has_topic;
+
+ $turtlebot3_diff_drive_node_sub_1 isa Subscriber,
+ has interface_name "cmd_vel",
+ has interface_type "geometry_msgs/Twist";
+
+ (node: $turtlebot3_diff_drive_node, subscriber: $turtlebot3_diff_drive_node_sub_1) isa has_topic;
+
+ $turtlebot3_diff_drive_nodepub isa Publisher,
+ has interface_name "odom",
+ has interface_type "nav_msgs/Odometry";
+
+ $turtlebot3_diff_drive_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $turtlebot3_diff_drive_nodepub_qos_rel (interface: $turtlebot3_diff_drive_nodepub, qos: $turtlebot3_diff_drive_nodepub_qos) isa has_qos;
+
+ (node: $turtlebot3_diff_drive_node, publisher: $turtlebot3_diff_drive_nodepub) isa has_topic;
+ $turtlebot3_diff_drive_nodepub_1 isa Publisher,
+ has interface_name "tf",
+ has interface_type "tf2_msgs/TFMessage";
+
+ $turtlebot3_diff_drive_nodepub_1_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $turtlebot3_diff_drive_nodepub_1_qos_rel (interface: $turtlebot3_diff_drive_nodepub_1, qos: $turtlebot3_diff_drive_nodepub_1_qos) isa has_qos;
+
+ (node: $turtlebot3_diff_drive_node, publisher: $turtlebot3_diff_drive_nodepub_1) isa has_topic;
+
+ $detect_object_node isa LifeCycleNode,
+ has node_name "detect_object",
+ has namespace "";
+ $detect_object_node_sub isa Subscriber,
+ has interface_name "camera/image_noisy",
+ has interface_type "sensor_msgs/Image";
+
+ (node: $detect_object_node, subscriber: $detect_object_node_sub) isa has_topic;
+
+ $detect_object_nodepub isa Publisher,
+ has interface_name "detect_object/transition_event",
+ has interface_type "lifecycle_msgs/TransitionEvent";
+
+ $detect_object_nodepub_qos isa QoSProfile,
+     	   	has reliability "RELIABLE",
+     	   	has history "KEEP_ALL",
+     	   	has durability "VOLATILE"
+ ;
+
+ $detect_object_nodepub_qos_rel (interface: $detect_object_nodepub, qos: $detect_object_nodepub_qos) isa has_qos;
+
+ (node: $detect_object_node, publisher: $detect_object_nodepub) isa has_topic;
+ $detect_object_node_service_server isa ServiceServer,
+ has interface_name "detect_object/change_state",
+ has interface_type "lifecycle_msgs/ChangeState";
+ (node: $detect_object_node, server: $detect_object_node_service_server) isa has_service;
+ $detect_object_node_service_server_1 isa ServiceServer,
+ has interface_name "detect_object/get_available_states",
+ has interface_type "lifecycle_msgs/GetAvailableStates";
+ (node: $detect_object_node, server: $detect_object_node_service_server_1) isa has_service;
+ $detect_object_node_service_server_2 isa ServiceServer,
+ has interface_name "detect_object/get_available_transitions",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $detect_object_node, server: $detect_object_node_service_server_2) isa has_service;
+ $detect_object_node_service_server_3 isa ServiceServer,
+ has interface_name "detect_object/get_state",
+ has interface_type "lifecycle_msgs/GetState";
+ (node: $detect_object_node, server: $detect_object_node_service_server_3) isa has_service;
+ $detect_object_node_service_server_4 isa ServiceServer,
+ has interface_name "detect_object/get_transition_graph",
+ has interface_type "lifecycle_msgs/GetAvailableTransitions";
+ (node: $detect_object_node, server: $detect_object_node_service_server_4) isa has_service;
+ $detect_object_node_service_server_5 isa ServiceServer,
+ has interface_name "detect_object_srv",
+ has interface_type "rebet_msgs/DetectObject";
+ (node: $detect_object_node, server: $detect_object_node_service_server_5) isa has_service;
+
+ $ta_frogmaxspeed isa Tactic, has tactic_name "FROGMaxSpeed";
+
+ # define Feature Model
+ $f_low_speed isa Feature, has feature_name "LOW_SPEED", has mandatory false;
+ $f_med_speed isa Feature, has feature_name "MED_SPEED", has mandatory false;
+ $f_hi_speed isa Feature, has feature_name "HI_SPEED", has mandatory false;
+
+
+ $t_measured_nearest_object isa Measure, has measure_name "nearest_object";
+
+ (measure: $t_measured_nearest_object, source: $turtlebot3_laserscan_nodepub) isa measurement_interface,
+ 	    has measurement_function_name 'get_nearest_laser_scan_ratio';
+ $t_measured_too_close isa Measure, has measure_name "too_close";
+
+ (measure: $t_measured_too_close, source: $turtlebot3_laserscan_nodepub) isa measurement_interface,
+ 	    has measurement_function_name 'is_too_close';
+ $t_measured_current_velocity isa Measure, has measure_name "current_velocity";
+
+ (measure: $t_measured_current_velocity, source: $turtlebot3_diff_drive_nodepub) isa measurement_interface,
+ 	    has measurement_function_name 'calc_linear_velocity';
+ $t_measured_power_draw isa Measure, has measure_name "power_draw";
+
+ (measure: $t_measured_power_draw, source: $turtlebot3_diff_drive_nodepub) isa measurement_interface,
+ 	    has measurement_function_name 'MovementPowerDraw';
+ $t_measured_power_budget isa Measure, has measure_name "power_budget";
+
+ (measure: $t_measured_power_budget, source: $detect_object_node_service_server_5) isa measurement_interface,
+ 	    has measurement_proxy true,
+ 	    has measurement_function_name 'PowerBudget';
+
+ $is_selected_f_hi_speed_1 (atom: $f_hi_speed) isa propositional_expression;
+ $nearest_object_less_val isa ValueDouble, has double_value 0.10;
+ $nearest_object_less (lhs_value:$t_measured_nearest_object, rhs_value: $nearest_object_less_val) isa less_than,
+    has expression_name 'nearest_object_less';
+
+ $power_draw_greater_val isa ValueDouble, has double_value 40.0;
+ $power_draw_greater (lhs_value:$t_measured_power_draw, rhs_value: $power_draw_greater_val) isa greater_than,
+    has expression_name 'power_draw_greater';
+
+ $expr_ (
+ expression:$nearest_object_less,
+ expression:$power_draw_greater
+ ) isa or_expression, has expression_name 'expr_';
+ $expr__1 (
+ 		    	expression:$is_selected_f_hi_speed_1,
+ 		    	expression:$expr_
+ 		    	) isa and_expression, has expression_name 'expr__1';
+ $decrease_to_medfa (
+ activation: $f_med_speed
+ ) isa feature_adaptation;
+ $tactic_rule_decrease_to_med (tactic:$ta_frogmaxspeed, antecedent:$expr__1, consequent:$decrease_to_medfa ) isa tactic_rule, has rule_name "DECREASE_TO_MED";
+ $is_selected_f_med_speed_1 (atom: $f_med_speed) isa propositional_expression;
+ $nearest_object_less_1_val isa ValueDouble, has double_value 0.10;
+ $nearest_object_less_1 (lhs_value:$t_measured_nearest_object, rhs_value: $nearest_object_less_1_val) isa less_than,
+    has expression_name 'nearest_object_less_1';
+
+ $power_draw_greater_1_val isa ValueDouble, has double_value 40.0;
+ $power_draw_greater_1 (lhs_value:$t_measured_power_draw, rhs_value: $power_draw_greater_1_val) isa greater_than,
+  has expression_name 'power_draw_greater_1';
+
+ $expr__2 (
+ expression:$nearest_object_less_1,
+ expression:$power_draw_greater_1
+ ) isa or_expression, has expression_name 'expr__2';
+ $expr__3 (
+ 		    	expression:$is_selected_f_med_speed_1,
+ 		    	expression:$expr__2
+ 		    	) isa and_expression, has expression_name 'expr__3';
+ $decrease_to_lowfa (
+ activation: $f_low_speed
+ ) isa feature_adaptation;
+ $tactic_rule_decrease_to_low (tactic:$ta_frogmaxspeed, antecedent:$expr__3, consequent:$decrease_to_lowfa ) isa tactic_rule, has rule_name "DECREASE_TO_LOW";
+ $is_selected_f_low_speed_1 (atom: $f_low_speed) isa propositional_expression;
+ $nearest_object_greater_val isa ValueDouble, has double_value 0.15;
+ $nearest_object_greater (lhs_value:$t_measured_nearest_object, rhs_value: $nearest_object_greater_val) isa greater_than,
+    has expression_name 'nearest_object_greater';
+
+ $power_draw_leq_val isa ValueDouble, has double_value 40.0;
+ $power_draw_leq (lhs_value:$t_measured_power_draw, rhs_value: $power_draw_leq_val) isa less_than_equal,
+    has expression_name 'power_draw_leq';
+
+ $current_velocity_less_val isa ValueDouble, has double_value 0.40;
+ $current_velocity_less (lhs_value:$t_measured_current_velocity, rhs_value: $current_velocity_less_val) isa less_than,
+    has expression_name 'current_velocity_less';
+
+ $expr__4 (
+ expression:$nearest_object_greater,
+ expression:$power_draw_leq,
+ expression:$current_velocity_less
+ ) isa or_expression, has expression_name 'expr__4';
+ $expr__5 (
+ 		    	expression:$is_selected_f_low_speed_1,
+ 		    	expression:$expr__4
+ 		    	) isa and_expression, has expression_name 'expr__5';
+ $increase_to_medfa (
+ activation: $f_med_speed
+ ) isa feature_adaptation;
+ $tactic_rule_increase_to_med (tactic:$ta_frogmaxspeed, antecedent:$expr__5, consequent:$increase_to_medfa ) isa tactic_rule, has rule_name "INCREASE_TO_MED";
+ $is_selected_f_med_speed_2 (atom: $f_med_speed) isa propositional_expression;
+ $nearest_object_greater_1_val isa ValueDouble, has double_value 0.15;
+ $nearest_object_greater_1 (lhs_value:$t_measured_nearest_object, rhs_value: $nearest_object_greater_1_val) isa greater_than;
+
+ $power_draw_leq_1_val isa ValueDouble, has double_value 40.0;
+ $power_draw_leq_1 (lhs_value:$t_measured_power_draw, rhs_value: $power_draw_leq_1_val) isa less_than_equal;
+
+ $current_velocity_less_1_val isa ValueDouble, has double_value 0.40;
+ $current_velocity_less_1 (lhs_value:$t_measured_current_velocity, rhs_value: $current_velocity_less_1_val) isa less_than;
+
+ $expr__6 (
+ expression:$nearest_object_greater_1,
+ expression:$power_draw_leq_1,
+ expression:$current_velocity_less_1
+ ) isa or_expression, has expression_name 'expr__6';
+ $expr__7 (
+ 		    	expression:$is_selected_f_med_speed_2,
+ 		    	expression:$expr__6
+ 		    	) isa and_expression, has expression_name 'expr__7';
+ $increase_to_maxfa (
+ activation: $f_hi_speed
+ ) isa feature_adaptation;
+ $tactic_rule_increase_to_max (tactic:$ta_frogmaxspeed, antecedent:$expr__7, consequent:$increase_to_maxfa ) isa tactic_rule, has rule_name "INCREASE_TO_MAX";
+ $sp_max_velocity_p_array_value isa ValueArray;
+ $sp_max_velocity_pvalue isa ValueDouble, has double_value 0.1;
+ $sp_max_velocity_p_array_value_elem_0 (array: $sp_max_velocity_p_array_value, array_value: $sp_max_velocity_pvalue) isa at_index, has index 0;
+ $sp_max_velocity_pvalue_1 isa ValueDouble, has double_value 0;
+ $sp_max_velocity_p_array_value_elem_1 (array: $sp_max_velocity_p_array_value, array_value: $sp_max_velocity_pvalue_1) isa at_index, has index 1;
+ $sp_max_velocity_pvalue_2 isa ValueDouble, has double_value 1;
+ $sp_max_velocity_p_array_value_elem_2 (array: $sp_max_velocity_p_array_value, array_value: $sp_max_velocity_pvalue_2) isa at_index, has index 2;
+
+ $sp_max_velocity (node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $sp_max_velocity_p_array_value) isa set_nodes_parameters;
+ $low_speed_resolution_act (
+ 	resolution_action: $sp_max_velocity
+ , variant: $f_low_speed) isa variant_activation;
+ $sp_max_velocity_1_p_array_value isa ValueArray;
+ $sp_max_velocity_1_pvalue isa ValueDouble, has double_value 0.18;
+ $sp_max_velocity_1_p_array_value_elem_0 (array: $sp_max_velocity_1_p_array_value, array_value: $sp_max_velocity_1_pvalue) isa at_index, has index 0;
+ $sp_max_velocity_1_pvalue_1 isa ValueDouble, has double_value 0;
+ $sp_max_velocity_1_p_array_value_elem_1 (array: $sp_max_velocity_1_p_array_value, array_value: $sp_max_velocity_1_pvalue_1) isa at_index, has index 1;
+ $sp_max_velocity_1_pvalue_2 isa ValueDouble, has double_value 1;
+ $sp_max_velocity_1_p_array_value_elem_2 (array: $sp_max_velocity_1_p_array_value, array_value: $sp_max_velocity_1_pvalue_2) isa at_index, has index 2;
+
+ $sp_max_velocity_1 (node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $sp_max_velocity_1_p_array_value) isa set_nodes_parameters;
+ $med_speed_resolution_act (
+ 	resolution_action: $sp_max_velocity_1
+ , variant: $f_med_speed) isa variant_activation;
+ $sp_max_velocity_2 (node: $velocity_smoother_node, parameter: $max_velocity_param, parameter_value: $max_velocity_param_p_array_value) isa set_nodes_parameters;
+ $hi_speed_resolution_act (
+ 	resolution_action: $sp_max_velocity_2
+ , variant: $f_hi_speed) isa variant_activation;
+ $res_rebet_frog (tactic: $ta_frogmaxspeed,
+ variant_resolution:$low_speed_resolution_act,
+  variant_resolution:$med_speed_resolution_act,
+  variant_resolution:$hi_speed_resolution_act
+  )
+  isa resolution_model,
+     has resolution_model_name "rebet_frog", has ros_system "rebet_frog";
+
+# benchmark aliases with leading slash to match runtime API inputs
+ $bt_navigator_node_action_server_1 has interface_name "/navigate_to_pose";
+ $controller_server_node_action_server has interface_name "/follow_path";
+ $planner_server_node_action_server_1 has interface_name "/compute_path_to_pose";
+
+
+ $rebetmc isa System, has system_name "rebetmc";
+ $movequickly_as_close_set isa FuzzyTriangular,
+ 	has a -0.5,
+ 	has b 0.0,
+ 	has c 0.5;
+
+ $movequickly_as_close (fuzzy_set: $movequickly_as_close_set, term: $t_measured_current_velocity) isa as_close_as_possible_expression,
+ 	has required_value 0.26,
+	has expression_name "movequickly_as_close";
+
+ $movequickly_as_close_shall (expression: $movequickly_as_close) isa shall_expression, has expression_name "movequickly_as_close_shall";
+
+ $movequickly_requirement (system: $rebetmc, expression: $movequickly_as_close_shall) isa relaxed_requirement,
+ 	has requirement_name "MoveQuickly",
+ 	has in_effect false,
+ 	has description "Move as quickly as possible to 0.26 m/s";
+
+ $t_measured_too_close_prop_exp (atom: $t_measured_too_close) isa propositional_expression;
+
+ $t_measured_too_close_prop_exp_neg (expression: $t_measured_too_close_prop_exp) isa fuzzy_not,
+ 	has expression_name "t_measured_too_close_prop_exp_neg";
+#  $t_measured_current_velocity_prop_exp (atom: $t_measured_current_velocity) isa propositional_expression;
+ $movesafely_as_close_set isa FuzzyTriangular,
+ 	has a -0.5,
+ 	has b 0.0,
+ 	has c 0.5;
+
+ $movesafely_as_close (fuzzy_set: $movesafely_as_close_set, term: $t_measured_current_velocity) isa as_close_as_possible_expression,
+ 	has required_value 0.18, has expression_name "movesafely_as_close";
+
+ $t_measured_too_close_prop_exp_neg_movesafely_as_close_or (expression: $t_measured_too_close_prop_exp_neg, expression: $movesafely_as_close) isa fuzzy_or, has expression_name "t_measured_too_close_prop_exp_neg_movesafely_as_close_or";
+
+ $t_measured_too_close_prop_exp_neg_movesafely_as_close_or_shall (expression: $t_measured_too_close_prop_exp_neg_movesafely_as_close_or) isa shall_expression, has expression_name "t_measured_too_close_prop_exp_neg_movesafely_as_close_or_shall";
+
+ $movesafely_requirement (system: $rebetmc, expression: $t_measured_too_close_prop_exp_neg_movesafely_as_close_or_shall) isa relaxed_requirement,
+ 	has requirement_name "MoveSafely",
+ 	has in_effect false,
+ 	has description "Try to keep a velocity of below 0.18m/s while an object is within the first 10% of the range of the LIDAR.";
+
+# benchmark-focused in-effect requirements for potential fulfillment coverage
+ $benchmark_movequickly_requirement (
+     system: $rebetmc,
+     expression: $movequickly_as_close_shall
+ ) isa relaxed_requirement,
+    has requirement_name "BenchmarkMoveQuickly",
+    has in_effect true,
+    has description "Benchmark requirement using existing MoveQuickly expression.";
+
+ $benchmark_movesafely_requirement (
+     system: $rebetmc,
+     expression: $t_measured_too_close_prop_exp_neg_movesafely_as_close_or_shall
+ ) isa relaxed_requirement,
+    has requirement_name "BenchmarkMoveSafely",
+    has in_effect true,
+    has description "Benchmark requirement using existing MoveSafely expression.";

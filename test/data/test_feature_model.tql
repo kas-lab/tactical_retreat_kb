@@ -1,17 +1,16 @@
 insert
 
 $feature_parent_alternative isa Feature, has feature_name "feature_parent_alternative", has mandatory true;
-$f_alternative_child_1 isa Feature, has feature_name "f_alternative_child_1";
-$f_alternative_child_2 isa Feature, has feature_name "f_alternative_child_2";
+$f_alternative_child_1 isa Feature, has feature_name "f_alternative_child_1", has selected false;
+$f_alternative_child_2 isa Feature, has feature_name "f_alternative_child_2", has selected false;
 $f_alternative_child_3 isa Feature, has feature_name "f_alternative_child_3", has selected true;
 (parent: $feature_parent_alternative, child: $f_alternative_child_1, child: $f_alternative_child_2, child: $f_alternative_child_3) isa alternative;
 
 $feature_parent_or_group isa Feature, has feature_name "feature_parent_or_group", has mandatory true;
-$f_or_group_child_1 isa Feature, has feature_name "f_or_group_child_1";
-$f_or_group_child_2 isa Feature, has feature_name "f_or_group_child_2";
+$f_or_group_child_1 isa Feature, has feature_name "f_or_group_child_1", has selected false;
+$f_or_group_child_2 isa Feature, has feature_name "f_or_group_child_2", has selected false;
 $f_or_group_child_3 isa Feature, has feature_name "f_or_group_child_3", has selected true;
 (parent: $feature_parent_or_group, child: $f_or_group_child_1, child: $f_or_group_child_2, child: $f_or_group_child_3) isa or_group;
-
 
 $f_selected_1 isa Feature, has feature_name "f_selected_1", has selected true;
 $f_selected_2 isa Feature, has feature_name "f_selected_2", has selected true;
@@ -44,3 +43,9 @@ $f_excl_constrained_5 isa Feature, has feature_name "f_excl_constrained_5";
 (constrained: $f_excl_constrained_3, constraint: $f_selected_1, constraint: $f_selected_2) isa excludes_constraint;          # selectable false
 (constrained: $f_excl_constrained_4, constraint: $f_not_selected_1, constraint: $f_not_selected_2) isa excludes_constraint;  # selectable true
 (constrained: $f_excl_constrained_5, constraint: $f_selected_1, constraint: $f_not_selected_1) isa excludes_constraint;      # selectable false
+
+# Feature as proposition expression
+
+$true_feature_prop_exp (atom: $f_selected_1) isa propositional_expression, has expression_name 'true_feature_prop_exp';
+$false_feature_prop_exp (atom: $f_not_selected_1) isa propositional_expression, has expression_name 'false_feature_prop_exp';
+$false_feature_prop_exp_2 (atom: $f_not_selected_2) isa propositional_expression, has expression_name 'false_feature_prop_exp_2';

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import pytest
+
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
@@ -22,15 +23,18 @@ def kb_interface():
         'test_model_interface',
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
+            'schemas/logical_expressions/logical_expression.tql',
             'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
+            'schemas/logical_expressions/logical_expression.tql',
             'schemas/tactics_model/tactics_model.tql',
             'schemas/discover_tactics_model/discover_tactics_model.tql'],
         ['schemas/ros_model/ros_model_example.tql',
             'schemas/tactics_model/tactics_example.tql'],
         force_database=True,
         force_data=True,
-        infer=True)
+        infer=True,
+        sort_fetch_results=True)
     yield kb_interface
     kb_interface.delete_database()
 
@@ -203,14 +207,18 @@ def kb_interface_test_model():
         'test_model_interface',
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
+            'schemas/logical_expressions/logical_expression.tql',
+            'schemas/logical_expressions/fuzzy_expression.tql',
             'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
+            'schemas/relaxed/relaxed_model.tql',
             'schemas/tactics_model/tactics_model.tql',
             'schemas/discover_tactics_model/discover_tactics_model.tql'],
         ['test/data/test_tactical_retreat_interface.tql'],
         force_database=True,
         force_data=True,
-        infer=True)
+        infer=True,
+        sort_fetch_results=True)
     yield kb_interface_test_model
     kb_interface_test_model.delete_database()
 

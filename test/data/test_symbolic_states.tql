@@ -1,0 +1,291 @@
+insert
+
+# measurements
+$velocity isa MeasureDouble,
+    has measure_name "velocity",
+    has description "Vehicle forward velocity";
+$velocity_value isa ValueDouble,
+    has double_value 0.22;
+(measure: $velocity, measurement_value: $velocity_value) isa measurement,
+    has measurement_time 2026-03-31T10:00:00.000,
+    has latest true;
+
+$obstacle_distance isa MeasureDouble,
+    has measure_name "obstacle_distance",
+    has description "Distance to the nearest obstacle";
+$obstacle_distance_value isa ValueDouble,
+    has double_value 0.40;
+(measure: $obstacle_distance, measurement_value: $obstacle_distance_value) isa measurement,
+    has measurement_time 2026-03-31T10:00:00.000,
+    has latest true;
+
+$temperature isa MeasureDouble,
+    has measure_name "temperature",
+    has description "Temperature with an intentional coverage gap";
+$temperature_value isa ValueDouble,
+    has double_value 11.0;
+(measure: $temperature, measurement_value: $temperature_value) isa measurement,
+    has measurement_time 2026-03-31T10:00:00.000,
+    has latest true;
+
+# scheme 1: exclusive velocity bands
+$velocity_bands (
+        label: $velocity_low,
+        label: $velocity_medium,
+        label: $velocity_high
+    ) isa symbolic_scheme,
+    has symbolic_scheme_name "velocity-bands",
+    has exclusive_partition true;
+
+$velocity_low isa AtomicSymbolicLabel,
+    has symbolic_label_name "low",
+    has symbolic_order 1;
+$velocity_medium isa AtomicSymbolicLabel,
+    has symbolic_label_name "medium",
+    has symbolic_order 2;
+$velocity_high isa AtomicSymbolicLabel,
+    has symbolic_label_name "high",
+    has symbolic_order 3;
+
+(label: $velocity_low, measure: $velocity) isa symbolic_double_interval,
+    has lower_bound_double 0.0,
+    has upper_bound_double 0.18;
+(label: $velocity_medium, measure: $velocity) isa symbolic_double_interval,
+    has lower_bound_double 0.18,
+    has upper_bound_double 0.26;
+(label: $velocity_high, measure: $velocity) isa symbolic_double_interval,
+    has lower_bound_double 0.26;
+
+# scheme 2: parallel interpretation of the same measure
+$velocity_safety (
+        label: $velocity_safe,
+        label: $velocity_caution,
+        label: $velocity_unsafe
+    ) isa symbolic_scheme,
+    has symbolic_scheme_name "velocity-safety",
+    has exclusive_partition true;
+
+$velocity_safe isa AtomicSymbolicLabel,
+    has symbolic_label_name "safe",
+    has symbolic_order 1;
+$velocity_caution isa AtomicSymbolicLabel,
+    has symbolic_label_name "caution",
+    has symbolic_order 2;
+$velocity_unsafe isa AtomicSymbolicLabel,
+    has symbolic_label_name "unsafe",
+    has symbolic_order 3;
+
+(label: $velocity_safe, measure: $velocity) isa symbolic_double_interval,
+    has lower_bound_double 0.0,
+    has upper_bound_double 0.20;
+(label: $velocity_caution, measure: $velocity) isa symbolic_double_interval,
+    has lower_bound_double 0.20,
+    has upper_bound_double 0.35;
+(label: $velocity_unsafe, measure: $velocity) isa symbolic_double_interval,
+    has lower_bound_double 0.35;
+
+# scheme 3: distance bands used by a composite concept
+$distance_bands (
+        label: $distance_near,
+        label: $distance_far
+    ) isa symbolic_scheme,
+    has symbolic_scheme_name "distance-bands",
+    has exclusive_partition true;
+
+$distance_near isa AtomicSymbolicLabel,
+    has symbolic_label_name "near",
+    has symbolic_order 1;
+$distance_far isa AtomicSymbolicLabel,
+    has symbolic_label_name "far",
+    has symbolic_order 2;
+
+(label: $distance_near, measure: $obstacle_distance) isa symbolic_double_interval,
+    has lower_bound_double 0.0,
+    has upper_bound_double 0.50;
+(label: $distance_far, measure: $obstacle_distance) isa symbolic_double_interval,
+    has lower_bound_double 0.50;
+
+# scheme 3b: safety labels used as state dimensions
+$safety_status (
+        label: $safety_safe,
+        label: $safety_unsafe
+    ) isa symbolic_scheme,
+    has symbolic_scheme_name "safety-status",
+    has exclusive_partition true;
+
+$safety_safe isa AtomicSymbolicLabel,
+    has symbolic_label_name "state-safe",
+    has symbolic_order 1;
+$safety_unsafe isa AtomicSymbolicLabel,
+    has symbolic_label_name "state-unsafe",
+    has symbolic_order 2;
+
+(label: $safety_unsafe, measure: $obstacle_distance) isa symbolic_double_interval,
+    has lower_bound_double 0.0,
+    has upper_bound_double 0.50;
+(label: $safety_safe, measure: $obstacle_distance) isa symbolic_double_interval,
+    has lower_bound_double 0.50;
+
+# scheme 4: a composite symbolic concept derived from other labels
+$navigation_context (
+        label: $approach_medium
+    ) isa symbolic_scheme,
+    has symbolic_scheme_name "navigation-context",
+    has exclusive_partition false;
+
+$approach_medium isa CompositeSymbolicLabel,
+    has symbolic_label_name "approach-medium";
+
+$velocity_medium_lower_bound isa ValueDouble,
+    has double_value 0.18;
+$velocity_medium_upper_bound isa ValueDouble,
+    has double_value 0.26;
+$distance_near_upper_bound isa ValueDouble,
+    has double_value 0.50;
+
+$velocity_medium_gte (
+        lhs_value: $velocity,
+        rhs_value: $velocity_medium_lower_bound
+    ) isa greater_than_equal,
+    has expression_name "velocity-medium-gte";
+$velocity_medium_lt (
+        lhs_value: $velocity,
+        rhs_value: $velocity_medium_upper_bound
+    ) isa less_than,
+    has expression_name "velocity-medium-lt";
+$distance_near_lt (
+        lhs_value: $obstacle_distance,
+        rhs_value: $distance_near_upper_bound
+    ) isa less_than,
+    has expression_name "distance-near-lt";
+$approach_medium_expr (
+        expression: $velocity_medium_gte,
+        expression: $velocity_medium_lt,
+        expression: $distance_near_lt
+    ) isa and_expression,
+    has expression_name "approach-medium-expr";
+(label: $approach_medium, definition: $approach_medium_expr) isa symbolic_logical_definition;
+
+# scheme 5: intentional coverage gap to exercise undefined fallback
+$temperature_bands (
+        label: $temperature_cold,
+        label: $temperature_warm,
+        label: $temperature_hot
+    ) isa symbolic_scheme,
+    has symbolic_scheme_name "temperature-bands-gap",
+    has exclusive_partition true;
+
+$temperature_cold isa AtomicSymbolicLabel,
+    has symbolic_label_name "cold",
+    has symbolic_order 1;
+$temperature_warm isa AtomicSymbolicLabel,
+    has symbolic_label_name "warm",
+    has symbolic_order 2;
+$temperature_hot isa AtomicSymbolicLabel,
+    has symbolic_label_name "hot",
+    has symbolic_order 3;
+
+(label: $temperature_cold, measure: $temperature) isa symbolic_double_interval,
+    has lower_bound_double 0.0,
+    has upper_bound_double 10.0;
+(label: $temperature_warm, measure: $temperature) isa symbolic_double_interval,
+    has lower_bound_double 12.0,
+    has upper_bound_double 25.0;
+(label: $temperature_hot, measure: $temperature) isa symbolic_double_interval,
+    has lower_bound_double 25.0;
+
+# scheme 6: overlapping intervals to exercise ambiguous fallback
+$velocity_overlap (
+        label: $velocity_overlap_low,
+        label: $velocity_overlap_medium
+    ) isa symbolic_scheme,
+    has symbolic_scheme_name "velocity-overlap",
+    has exclusive_partition true;
+
+$velocity_overlap_low isa AtomicSymbolicLabel,
+    has symbolic_label_name "overlap-low",
+    has symbolic_order 1;
+$velocity_overlap_medium isa AtomicSymbolicLabel,
+    has symbolic_label_name "overlap-medium",
+    has symbolic_order 2;
+
+(label: $velocity_overlap_low, measure: $velocity) isa symbolic_double_interval,
+    has lower_bound_double 0.0,
+    has upper_bound_double 0.30;
+(label: $velocity_overlap_medium, measure: $velocity) isa symbolic_double_interval,
+    has lower_bound_double 0.20,
+    has upper_bound_double 0.40;
+
+# state dimensions and system states
+(scheme: $velocity_bands) isa state_dimension;
+(scheme: $safety_status) isa state_dimension;
+
+$state_low_safe (
+        label: $velocity_low,
+        label: $safety_safe
+    ) isa system_state,
+    has state_name "low-safe";
+$state_low_unsafe (
+        label: $velocity_low,
+        label: $safety_unsafe
+    ) isa system_state,
+    has state_name "low-unsafe";
+$state_medium_safe (
+        label: $velocity_medium,
+        label: $safety_safe
+    ) isa system_state,
+    has state_name "medium-safe";
+$state_medium_unsafe (
+        label: $velocity_medium,
+        label: $safety_unsafe
+    ) isa system_state,
+    has state_name "medium-unsafe";
+$state_high_safe (
+        label: $velocity_high,
+        label: $safety_safe
+    ) isa system_state,
+    has state_name "high-safe";
+$state_high_unsafe (
+        label: $velocity_high,
+        label: $safety_unsafe
+    ) isa system_state,
+    has state_name "high-unsafe";
+
+# ── median_bound_value test fixtures ────────────────────────────────────────
+
+# lower-unbounded double interval: only upper_bound_double set → median = upper
+$very_cold isa AtomicSymbolicLabel,
+    has symbolic_label_name "very-cold",
+    has symbolic_order 0;
+(label: $very_cold, measure: $temperature) isa symbolic_double_interval,
+    has upper_bound_double 0.0;
+
+# integer measure for symbolic_integer_interval rules
+$step_count isa MeasureInteger,
+    has measure_name "step_count";
+$step_count_value isa ValueInteger,
+    has integer_value 5;
+(measure: $step_count, measurement_value: $step_count_value) isa measurement,
+    has measurement_time 2026-03-31T10:00:00.000,
+    has latest true;
+
+$count_low isa AtomicSymbolicLabel,
+    has symbolic_label_name "count-low",
+    has symbolic_order 1;
+$count_high isa AtomicSymbolicLabel,
+    has symbolic_label_name "count-high",
+    has symbolic_order 2;
+$count_negative isa AtomicSymbolicLabel,
+    has symbolic_label_name "count-negative",
+    has symbolic_order 0;
+
+# bounded integer interval → median = (0 + 10) / 2.0 = 5.0
+(label: $count_low, measure: $step_count) isa symbolic_integer_interval,
+    has lower_bound_integer 0,
+    has upper_bound_integer 10;
+# upper-unbounded integer interval → median = lower = 10.0
+(label: $count_high, measure: $step_count) isa symbolic_integer_interval,
+    has lower_bound_integer 10;
+# lower-unbounded integer interval → median = upper = 0.0
+(label: $count_negative, measure: $step_count) isa symbolic_integer_interval,
+    has upper_bound_integer 0;

@@ -1,0 +1,9 @@
+# Fetch scheme-level status attributes for a relation-based symbolic scheme.
+
+match
+    $scheme isa symbolic_scheme,
+        has symbolic_scheme_name "velocity-bands";
+fetch
+    $scheme: exclusive_partition,
+        undefined_state,
+        ambiguous_state;

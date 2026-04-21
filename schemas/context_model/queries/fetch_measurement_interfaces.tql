@@ -3,7 +3,12 @@ match
     $measurement_interface (measure: $measure, source: $source) isa measurement_interface;
 fetch
     $measure_name;
-	$measurement_interface: attribute;
+    $measurement_interface: measurement_function_name,
+        measurement_function_lib,
+        measurement_function_args,
+        measurement_proxy,
+        measurement_period,
+        service_request_kwargs;
     $source: interface_name, interface_type;
     qos_sub_query: {
         match
@@ -11,5 +16,12 @@ fetch
             (interface: $source, qos: $qos) isa has_qos;
             $qos isa QoSProfile;
         fetch
-            $qos: attribute;
+            $qos: reliability,
+                history,
+                depth,
+                durability,
+                deadline,
+                lifespan,
+                liveliness,
+                lease_duration;
     };

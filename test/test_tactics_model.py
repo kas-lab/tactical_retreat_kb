@@ -13,7 +13,9 @@
 # limitations under the License.
 
 import math
+
 import pytest
+
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
@@ -25,14 +27,17 @@ def kb_interface():
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
             'schemas/ros_model/ros_model.tql',
+            'schemas/logical_expressions/logical_expression.tql',
             'schemas/feature_model/feature_model.tql',
+            'schemas/feature_model/feature_model_logical_expression.tql',
             'schemas/tactics_model/tactics_model.tql'],
         ['test/data/test_tactics_model.tql',
          'schemas/ros_model/ros_model_example.tql',
-         'schemas/tactics_model/tactics_example.tql'],
+            'schemas/tactics_model/tactics_example.tql'],
         force_database=True,
         force_data=True,
-        infer=True)
+        infer=True,
+        sort_fetch_results=True)
     yield kb_interface
     kb_interface.delete_database()
 
@@ -47,61 +52,6 @@ def test_measurement_latest(kb_interface):
     measurement = kb_interface.get_latest_measurement(
         'measure_no_valid_measurement')
     assert math.isnan(measurement)
-
-
-def test_ineq_expression_valid(kb_interface):
-    assert kb_interface.get_ineq_expression_valid('measure', '<', 1.3) is True
-    assert kb_interface.get_ineq_expression_valid('measure', '<', 1.2) is False
-    assert kb_interface.get_ineq_expression_valid('measure', '<', 1.0) is False
-    assert kb_interface.get_ineq_expression_valid(
-        'measure_no_measurement', '<', 1.0) is False
-    assert kb_interface.get_ineq_expression_valid(
-        'measure_no_valid_measurement', '<', 1.0) is False
-
-    assert kb_interface.get_ineq_expression_valid('measure', '<=', 1.3) is True
-    assert kb_interface.get_ineq_expression_valid('measure', '<=', 1.2) is True
-    assert kb_interface.get_ineq_expression_valid(
-        'measure', '<=', 1.0) is False
-    assert kb_interface.get_ineq_expression_valid(
-        'measure_no_measurement', '<=', 1.0) is False
-    assert kb_interface.get_ineq_expression_valid(
-        'measure_no_valid_measurement', '<=', 1.0) is False
-
-    assert kb_interface.get_ineq_expression_valid('measure', '>', 1.3) is False
-    assert kb_interface.get_ineq_expression_valid('measure', '>', 1.2) is False
-    assert kb_interface.get_ineq_expression_valid('measure', '>', 1.0) is True
-    assert kb_interface.get_ineq_expression_valid(
-        'measure_no_measurement', '>', 1.0) is False
-    assert kb_interface.get_ineq_expression_valid(
-        'measure_no_valid_measurement', '>', 1.0) is False
-
-    assert kb_interface.get_ineq_expression_valid(
-        'measure', '>=', 1.3) is False
-    assert kb_interface.get_ineq_expression_valid('measure', '>=', 1.2) is True
-    assert kb_interface.get_ineq_expression_valid('measure', '>=', 1.0) is True
-    assert kb_interface.get_ineq_expression_valid(
-        'measure_no_measurement', '>=', 1.0) is False
-    assert kb_interface.get_ineq_expression_valid(
-        'measure_no_valid_measurement', '>=', 1.0) is False
-
-    assert kb_interface.get_ineq_expression_valid(
-        'measure', '==', 1.3) is False
-    assert kb_interface.get_ineq_expression_valid('measure', '==', 1.2) is True
-    assert kb_interface.get_ineq_expression_valid(
-        'measure', '==', 1.0) is False
-    assert kb_interface.get_ineq_expression_valid(
-        'measure_no_measurement', '==', 1.0) is False
-    assert kb_interface.get_ineq_expression_valid(
-        'measure_no_valid_measurement', '==', 1.0) is False
-
-    assert kb_interface.get_ineq_expression_valid('measure', '!=', 1.3) is True
-    assert kb_interface.get_ineq_expression_valid(
-        'measure', '!=', 1.2) is False
-    assert kb_interface.get_ineq_expression_valid('measure', '!=', 1.0) is True
-    assert kb_interface.get_ineq_expression_valid(
-        'measure_no_measurement', '!=', 1.0) is False
-    assert kb_interface.get_ineq_expression_valid(
-        'measure_no_valid_measurement', '!=', 1.0) is False
 
 
 def test_get_tactic_rule_valid(kb_interface):

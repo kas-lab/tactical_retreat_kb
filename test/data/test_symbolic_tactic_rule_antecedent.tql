@@ -1,0 +1,59 @@
+insert
+
+# measurements
+$velocity isa MeasureDouble,
+    has measure_name "velocity",
+    has description "Vehicle forward velocity";
+$velocity_value isa ValueDouble,
+    has double_value 0.22;
+(measure: $velocity, measurement_value: $velocity_value) isa measurement,
+    has measurement_time 2026-03-31T10:00:00.000,
+    has latest true;
+
+# symbolic scheme
+$velocity_bands (
+        label: $velocity_low,
+        label: $velocity_medium,
+        label: $velocity_high
+    ) isa symbolic_scheme,
+    has symbolic_scheme_name "velocity-bands",
+    has exclusive_partition true;
+
+$velocity_low isa AtomicSymbolicLabel,
+    has symbolic_label_name "low",
+    has symbolic_order 1;
+$velocity_medium isa AtomicSymbolicLabel,
+    has symbolic_label_name "medium",
+    has symbolic_order 2;
+$velocity_high isa AtomicSymbolicLabel,
+    has symbolic_label_name "high",
+    has symbolic_order 3;
+
+(label: $velocity_low, measure: $velocity) isa symbolic_double_interval,
+    has lower_bound_double 0.0,
+    has upper_bound_double 0.18;
+(label: $velocity_medium, measure: $velocity) isa symbolic_double_interval,
+    has lower_bound_double 0.18,
+    has upper_bound_double 0.26;
+(label: $velocity_high, measure: $velocity) isa symbolic_double_interval,
+    has lower_bound_double 0.26;
+
+# feature model and tactic rules
+$feature_medium_speed isa Feature,
+    has feature_name "MEDIUM_SPEED";
+$feature_high_speed isa Feature,
+    has feature_name "HIGH_SPEED";
+
+$adapt_medium (activation: $feature_medium_speed) isa feature_adaptation;
+$adapt_high (activation: $feature_high_speed) isa feature_adaptation;
+
+$speed_tactic isa Tactic,
+    has tactic_name "SpeedBySymbolicState";
+
+(tactic: $speed_tactic, antecedent: $velocity_medium, consequent: $adapt_medium)
+    isa tactic_rule,
+    has rule_name "symbolic-medium-rule";
+
+(tactic: $speed_tactic, antecedent: $velocity_high, consequent: $adapt_high)
+    isa tactic_rule,
+    has rule_name "symbolic-high-rule";

@@ -1,0 +1,1448 @@
+define
+
+# Hypothetical fulfillment of comparison_expression given a system_state.
+#
+# Design mirrors the tactic_rule analogue in
+#   discover_hypothetical_req_fulfillment.tql,
+# replacing tactic_rule_dependency → state_dependency and
+#           effect.resulting_effect_value → symbolic_interval_definition.median_bound_value.
+#
+# The core idea: a state_dependency relates a system_state to a
+# comparison_expression whose operands involve the measures that define that
+# state.  For each such dependency we ask "if we were in this state, would
+# this comparison be satisfied?"  The answer is derived from the
+# median_bound_value of the symbolic interval assigned to the relevant measure
+# in that state, rather than from the live measurement value.
+#
+# NOTE on fulfillment attribute: also defined in relaxed_model.tql.
+# When loading both schemas into the same database, remove this definition
+# and source fulfillment from the common base schema.
+
+fulfillment sub attribute,
+    value double;
+
+state_dependency sub relation,
+    abstract,
+    owns fulfillment,
+    relates system_state,
+    relates dependent;
+
+# Concrete subtype used for leaf (comparison / fuzzy) expressions.
+# The compound subtypes (sd_not, sd_or, …) are declared later.
+comparison_state_dependency sub state_dependency;
+
+system_state plays state_dependency:system_state;
+expression plays state_dependency:dependent;
+
+# Infer which expressions depend on which system states
+## Infer the state dependencies of comparison expressions based on the symbolic intervals they reference.
+rule comparison_expression_state_dependency:
+    when {
+        $expression ($measure) isa comparison_expression;
+        $measure isa Measure;
+        $system_state (label: $state_label) isa system_state;
+        (label: $state_label, measure: $measure) isa symbolic_interval_definition;
+    } then {
+        (system_state: $system_state, dependent: $expression) isa comparison_state_dependency;
+    };
+
+rule fuzzy_expression_state_dependency:
+    when {
+        $expression (term: $measure) isa fuzzy_comparison_expression;
+        $measure isa Measure;
+        $system_state (label: $state_label) isa system_state;
+        (label: $state_label, measure: $measure) isa symbolic_interval_definition;
+    } then {
+        (system_state: $system_state, dependent: $expression) isa comparison_state_dependency;
+    };
+
+rule relaxed_fuzzy_expression_state_dependency:
+    when {
+        $expression (term: $measure) isa relaxed_fuzzy_expression;
+        $measure isa Measure;
+        $system_state (label: $state_label) isa system_state;
+        (label: $state_label, measure: $measure) isa symbolic_interval_definition;
+    } then {
+        (system_state: $system_state, dependent: $expression) isa comparison_state_dependency;
+    };
+
+# ── Operand-tagging helper relations ─────────────────────────────────────────
+# Analogues of tr_dependency_*_operand from
+# discover_hypothetical_req_fulfillment.tql.
+
+# lhs/rhs resolves to a concrete double value (literal or current measurement).
+sd_lhs_double_operand sub relation,
+    relates sd_dependency,
+    relates lhs_double;
+state_dependency plays sd_lhs_double_operand:sd_dependency;
+ValueDouble plays sd_lhs_double_operand:lhs_double;
+
+sd_rhs_double_operand sub relation,
+    relates sd_dependency,
+    relates rhs_double;
+state_dependency plays sd_rhs_double_operand:sd_dependency;
+ValueDouble plays sd_rhs_double_operand:rhs_double;
+
+# lhs/rhs is a Measure whose hypothetical value is given by a symbolic
+# interval in the system_state (via median_bound_value).
+sd_lhs_interval_operand sub relation,
+    relates sd_dependency,
+    relates lhs_interval;
+state_dependency plays sd_lhs_interval_operand:sd_dependency;
+symbolic_interval_definition plays sd_lhs_interval_operand:lhs_interval;
+
+sd_rhs_interval_operand sub relation,
+    relates sd_dependency,
+    relates rhs_interval;
+state_dependency plays sd_rhs_interval_operand:sd_dependency;
+symbolic_interval_definition plays sd_rhs_interval_operand:rhs_interval;
+
+# lhs/rhs is a Measure NOT covered by the state's intervals;
+# its value is resolved from the latest live measurement instead.
+sd_lhs_measure_without_interval sub relation,
+    relates sd_dependency,
+    relates lhs_measure;
+state_dependency plays sd_lhs_measure_without_interval:sd_dependency;
+Measure plays sd_lhs_measure_without_interval:lhs_measure;
+
+sd_rhs_measure_without_interval sub relation,
+    relates sd_dependency,
+    relates rhs_measure;
+state_dependency plays sd_rhs_measure_without_interval:sd_dependency;
+Measure plays sd_rhs_measure_without_interval:rhs_measure;
+
+
+# ── Operand classification rules ─────────────────────────────────────────────
+
+# lhs is a Measure covered by an interval of a label in the system_state.
+rule comparison_expression_state_dependency_lhs_interval:
+    when {
+        $sd (dependent: $expression, system_state: $state) isa state_dependency;
+        $expression (lhs_value: $lhs) isa comparison_expression;
+        $lhs isa Measure;
+        $interval (label: $state_label, measure: $lhs) isa symbolic_interval_definition;
+        $state (label: $state_label) isa system_state;
+    } then {
+        (sd_dependency: $sd, lhs_interval: $interval) isa sd_lhs_interval_operand;
+    };
+
+# rhs is a Measure covered by an interval of a label in the system_state.
+rule comparison_expression_state_dependency_rhs_interval:
+    when {
+        $sd (dependent: $expression, system_state: $state) isa state_dependency;
+        $expression (rhs_value: $rhs) isa comparison_expression;
+        $rhs isa Measure;
+        $interval (label: $state_label, measure: $rhs) isa symbolic_interval_definition;
+        $state (label: $state_label) isa system_state;
+    } then {
+        (sd_dependency: $sd, rhs_interval: $interval) isa sd_rhs_interval_operand;
+    };
+
+# lhs is a literal ValueDouble.
+rule comparison_expression_state_dependency_lhs_literal_double:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression (lhs_value: $lhs) isa comparison_expression;
+        $lhs isa ValueDouble;
+    } then {
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+    };
+
+# rhs is a literal ValueDouble.
+rule comparison_expression_state_dependency_rhs_literal_double:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression (rhs_value: $rhs) isa comparison_expression;
+        $rhs isa ValueDouble;
+    } then {
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+    };
+
+# lhs is a Measure NOT covered by the state's intervals.
+rule comparison_expression_state_dependency_lhs_measure_without_interval:
+    when {
+        $sd (dependent: $expression, system_state: $state) isa state_dependency;
+        $expression (lhs_value: $lhs) isa comparison_expression;
+        $lhs isa Measure;
+        not {
+            $interval (label: $state_label, measure: $lhs) isa symbolic_interval_definition;
+            $state (label: $state_label) isa system_state;
+        };
+    } then {
+        (sd_dependency: $sd, lhs_measure: $lhs) isa sd_lhs_measure_without_interval;
+    };
+
+# rhs is a Measure NOT covered by the state's intervals.
+rule comparison_expression_state_dependency_rhs_measure_without_interval:
+    when {
+        $sd (dependent: $expression, system_state: $state) isa state_dependency;
+        $expression (rhs_value: $rhs) isa comparison_expression;
+        $rhs isa Measure;
+        not {
+            $interval (label: $state_label, measure: $rhs) isa symbolic_interval_definition;
+            $state (label: $state_label) isa system_state;
+        };
+    } then {
+        (sd_dependency: $sd, rhs_measure: $rhs) isa sd_rhs_measure_without_interval;
+    };
+
+# Lift a measure-without-interval to its latest double measurement value,
+# so the fulfillment rules only need to handle double operands.
+rule comparison_expression_state_dependency_lhs_measure_double:
+    when {
+        (sd_dependency: $sd, lhs_measure: $lhs) isa sd_lhs_measure_without_interval;
+        (measure: $lhs, measurement_value: $mv) isa measurement,
+            has latest true;
+        $mv isa ValueDouble;
+    } then {
+        (sd_dependency: $sd, lhs_double: $mv) isa sd_lhs_double_operand;
+    };
+
+rule comparison_expression_state_dependency_rhs_measure_double:
+    when {
+        (sd_dependency: $sd, rhs_measure: $rhs) isa sd_rhs_measure_without_interval;
+        (measure: $rhs, measurement_value: $mv) isa measurement,
+            has latest true;
+        $mv isa ValueDouble;
+    } then {
+        (sd_dependency: $sd, rhs_double: $mv) isa sd_rhs_double_operand;
+    };
+
+
+# ── Fulfillment computation: less_than ───────────────────────────────────────
+
+rule comparison_expression_state_dependency_less_than_interval_interval:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs < $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_less_than_interval_double:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs < $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_less_than_double_interval:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs < $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_less_than_double_double:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs < $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+
+# ── Fulfillment computation: less_than_equal ─────────────────────────────────
+
+rule comparison_expression_state_dependency_less_than_equal_interval_interval:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than_equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs <= $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_less_than_equal_interval_double:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than_equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs <= $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_less_than_equal_double_interval:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than_equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs <= $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_less_than_equal_double_double:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than_equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs <= $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+
+# ── Fulfillment computation: greater_than ────────────────────────────────────
+
+rule comparison_expression_state_dependency_greater_than_interval_interval:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs > $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_greater_than_interval_double:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs > $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_greater_than_double_interval:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs > $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_greater_than_double_double:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs > $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+
+# ── Fulfillment computation: greater_than_equal ──────────────────────────────
+
+rule comparison_expression_state_dependency_greater_than_equal_interval_interval:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than_equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs >= $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_greater_than_equal_interval_double:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than_equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs >= $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_greater_than_equal_double_interval:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than_equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs >= $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_greater_than_equal_double_double:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than_equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs >= $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+
+# ── Fulfillment computation: equal ───────────────────────────────────────────
+
+rule comparison_expression_state_dependency_equal_interval_interval:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs == $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_equal_interval_double:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs == $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_equal_double_interval:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs == $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_equal_double_double:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs == $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+
+# ── Fulfillment computation: not_equal ───────────────────────────────────────
+
+rule comparison_expression_state_dependency_not_equal_interval_interval:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa not_equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs != $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_not_equal_interval_double:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa not_equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs != $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_not_equal_double_interval:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa not_equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs != $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+rule comparison_expression_state_dependency_not_equal_double_double:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa not_equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs != $value_rhs;
+    } then {
+        $sd has fulfillment 1.0;
+    };
+
+
+# ── Complement rules: unfulfilled (0.0) ──────────────────────────────────────
+# One rule per operator × operand-combo (6 × 4 = 24).  Each checks the
+# arithmetic complement of the corresponding 1.0 rule so that negation is never
+# used over `fulfillment` — this avoids the TypeDB stratification cycle that
+# arises when compound-expression fulfillment rules also own `fulfillment`.
+
+# ── less_than false ────────────────────────────────────────────────────────
+rule comparison_expression_state_dependency_less_than_interval_interval_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs >= $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_less_than_interval_double_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs >= $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_less_than_double_interval_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs >= $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_less_than_double_double_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs >= $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+
+# ── less_than_equal false ──────────────────────────────────────────────────
+rule comparison_expression_state_dependency_less_than_equal_interval_interval_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than_equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs > $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_less_than_equal_interval_double_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than_equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs > $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_less_than_equal_double_interval_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than_equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs > $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_less_than_equal_double_double_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa less_than_equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs > $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+
+# ── greater_than false ─────────────────────────────────────────────────────
+rule comparison_expression_state_dependency_greater_than_interval_interval_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs <= $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_greater_than_interval_double_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs <= $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_greater_than_double_interval_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs <= $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_greater_than_double_double_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs <= $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+
+# ── greater_than_equal false ───────────────────────────────────────────────
+rule comparison_expression_state_dependency_greater_than_equal_interval_interval_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than_equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs < $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_greater_than_equal_interval_double_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than_equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs < $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_greater_than_equal_double_interval_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than_equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs < $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_greater_than_equal_double_double_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa greater_than_equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs < $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+
+# ── equal false ────────────────────────────────────────────────────────────
+rule comparison_expression_state_dependency_equal_interval_interval_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs != $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_equal_interval_double_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs != $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_equal_double_interval_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs != $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_equal_double_double_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs != $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+
+# ── not_equal false ────────────────────────────────────────────────────────
+rule comparison_expression_state_dependency_not_equal_interval_interval_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa not_equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs == $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_not_equal_interval_double_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa not_equal;
+        (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
+        $lhs has median_bound_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs == $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_not_equal_double_interval_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa not_equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        $rhs has median_bound_value $value_rhs;
+        $value_lhs == $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+rule comparison_expression_state_dependency_not_equal_double_double_false:
+    when {
+        $sd (dependent: $expression) isa state_dependency;
+        $expression isa not_equal;
+        (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
+        $lhs has double_value $value_lhs;
+        (sd_dependency: $sd, rhs_double: $rhs) isa sd_rhs_double_operand;
+        $rhs has double_value $value_rhs;
+        $value_lhs == $value_rhs;
+    } then { $sd has fulfillment 0.0; };
+
+
+# ── Fuzzy expression state dependency fulfillment ────────────────────────────
+# Analogue of the fuzzy rules in discover_hypothetical_req_fulfillment.tql,
+# replacing tactic_rule_dependency → state_dependency and
+#           effect.resulting_effect_value → symbolic_interval_definition.median_bound_value.
+#
+# For each fuzzy_comparison_expression linked to a state via state_dependency,
+# an inferred fuzzy expression instance is created that uses the interval's
+# median_bound_value as the quantified_value (instead of the live measurement),
+# then its membership_degree is propagated as fulfillment on the state_dependency.
+
+# ── New schema roles for inferred fuzzy expression instances ──────────────────
+
+fuzzy_comparison_expression relates sd_dependency;
+fuzzy_comparison_expression relates sd_interval;
+state_dependency plays fuzzy_comparison_expression:sd_dependency;
+symbolic_interval_definition plays fuzzy_comparison_expression:sd_interval;
+
+
+# ── Quantified value from interval ───────────────────────────────────────────
+# Fires for inferred fuzzy expression instances that have an sd_interval role
+# but no term.  Analogous to fuzzy_expression_quantified_value_effect.
+
+rule fuzzy_expression_quantified_value_interval:
+    when {
+        $fuzzy_expression (sd_interval: $interval) isa fuzzy_comparison_expression;
+        not { $fuzzy_expression (term: $term) isa fuzzy_comparison_expression; };
+        $interval has median_bound_value $quantified_value;
+        {
+            $fuzzy_expression has offset_value $offset;
+            ?quantified_value_ = $quantified_value + $offset;
+        } or {
+            not { $fuzzy_expression has offset_value $offset; };
+            ?quantified_value_ = $quantified_value;
+        };
+        ?quantified_value__ = ?quantified_value_;
+    } then {
+        $fuzzy_expression has quantified_value ?quantified_value__;
+    };
+
+
+# ── Inferred fuzzy expression instance creation ───────────────────────────────
+# One rule per fuzzy subtype, analogous to
+# fuzzy_{unimodal,ascend,decay}_expr_tactic_rule_dependency_effect.
+
+rule fuzzy_unimodal_expr_state_dependency_interval:
+    when {
+        $sd (dependent: $fuzzy_expression, system_state: $state) isa state_dependency;
+        $fuzzy_expression (fuzzy_set: $fuzzy_set, term: $term) isa fuzzy_unimodal_expression;
+        $term isa Measure;
+        $interval (label: $state_label, measure: $term) isa symbolic_interval_definition;
+        $state (label: $state_label) isa system_state;
+    } then {
+        (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_unimodal_expression;
+    };
+
+rule fuzzy_ascend_expr_state_dependency_interval:
+    when {
+        $sd (dependent: $fuzzy_expression, system_state: $state) isa state_dependency;
+        $fuzzy_expression (fuzzy_set: $fuzzy_set, term: $term) isa fuzzy_ascend_expression;
+        $term isa Measure;
+        $interval (label: $state_label, measure: $term) isa symbolic_interval_definition;
+        $state (label: $state_label) isa system_state;
+    } then {
+        (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_ascend_expression;
+    };
+
+rule fuzzy_decay_expr_state_dependency_interval:
+    when {
+        $sd (dependent: $fuzzy_expression, system_state: $state) isa state_dependency;
+        $fuzzy_expression (fuzzy_set: $fuzzy_set, term: $term) isa fuzzy_decay_expression;
+        $term isa Measure;
+        $interval (label: $state_label, measure: $term) isa symbolic_interval_definition;
+        $state (label: $state_label) isa system_state;
+    } then {
+        (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_decay_expression;
+    };
+
+
+# ── Fulfillment from fuzzy membership_degree ─────────────────────────────────
+
+rule fuzzy_expr_state_dependency_fulfillment:
+    when {
+        $sd (dependent: $expr) isa state_dependency;
+        $expr (term: $term, fuzzy_set: $fuzzy_set) isa fuzzy_comparison_expression;
+        (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_comparison_expression,
+            has membership_degree $membership_degree;
+        ?membership_degree_ = $membership_degree;
+    } then {
+        $sd has fulfillment ?membership_degree_;
+    };
+
+
+# ── as_close_as_possible_expression rules ────────────────────────────────────
+
+rule as_close_as_possible_state_dependency_interval:
+    when {
+        $sd (dependent: $relaxed_fuzzy_expression, system_state: $state) isa state_dependency;
+        $relaxed_fuzzy_expression (term: $term, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression;
+        $term isa Measure;
+        $interval (label: $state_label, measure: $term) isa symbolic_interval_definition;
+        $state (label: $state_label) isa system_state;
+    } then {
+        (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_unimodal_expression;
+    };
+
+rule as_close_as_possible_state_dependency_offset:
+    when {
+        $sd (dependent: $expr) isa state_dependency;
+        $fuzzy_expr (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_unimodal_expression;
+        $interval (measure: $term) isa symbolic_interval_definition;
+        $expr (term: $term, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression,
+            has required_value $required_value;
+        ?offset_value_ = -1.0 * $required_value;
+    } then {
+        $fuzzy_expr has offset_value ?offset_value_;
+    };
+
+rule as_close_as_possible_state_dependency_fulfillment:
+    when {
+        $sd (dependent: $expr) isa state_dependency;
+        $expr (term: $term, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression;
+        (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_unimodal_expression,
+            has membership_degree $membership_degree;
+        ?membership_degree_ = $membership_degree;
+    } then {
+        $sd has fulfillment ?membership_degree_;
+    };
+
+
+# ── as_many_as_possible_expression rules ─────────────────────────────────────
+
+rule as_many_as_possible_state_dependency_interval:
+    when {
+        $sd (dependent: $relaxed_fuzzy_expression, system_state: $state) isa state_dependency;
+        $relaxed_fuzzy_expression (term: $term, fuzzy_set: $fuzzy_set) isa as_many_as_possible_expression;
+        $term isa Measure;
+        $interval (label: $state_label, measure: $term) isa symbolic_interval_definition;
+        $state (label: $state_label) isa system_state;
+    } then {
+        (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_ascend_expression;
+    };
+
+rule as_many_as_possible_state_dependency_fulfillment:
+    when {
+        $sd (dependent: $expr) isa state_dependency;
+        $expr (term: $term, fuzzy_set: $fuzzy_set) isa as_many_as_possible_expression;
+        (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_ascend_expression,
+            has membership_degree $membership_degree;
+        ?membership_degree_ = $membership_degree;
+    } then {
+        $sd has fulfillment ?membership_degree_;
+    };
+
+
+# ── as_few_as_possible_expression rules ──────────────────────────────────────
+
+rule as_few_as_possible_state_dependency_interval:
+    when {
+        $sd (dependent: $relaxed_fuzzy_expression, system_state: $state) isa state_dependency;
+        $relaxed_fuzzy_expression (term: $term, fuzzy_set: $fuzzy_set) isa as_few_as_possible_expression;
+        $term isa Measure;
+        $interval (label: $state_label, measure: $term) isa symbolic_interval_definition;
+        $state (label: $state_label) isa system_state;
+    } then {
+        (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_decay_expression;
+    };
+
+rule as_few_as_possible_state_dependency_fulfillment:
+    when {
+        $sd (dependent: $expr) isa state_dependency;
+        $expr (term: $term, fuzzy_set: $fuzzy_set) isa as_few_as_possible_expression;
+        (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_decay_expression,
+            has membership_degree $membership_degree;
+        ?membership_degree_ = $membership_degree;
+    } then {
+        $sd has fulfillment ?membership_degree_;
+    };
+
+
+# ── Compound-expression state dependency propagation ─────────────────────────
+# Propagates state_dependency and its fulfillment up through the expression
+# tree to relaxed_requirement, mirroring the tactic_rule_impacts_* rules in
+# discover_hypothetical_req_fulfillment.tql.
+
+relaxed_requirement plays state_dependency:dependent;
+
+# ── Subtypes of state_dependency for compound expressions ─────────────────────
+# Mirroring tactic_rule_impacts_or / tactic_rule_impacts_and etc. in
+# discover_hypothetical_req_fulfillment.tql: the MAX/MIN fulfillment rules derive
+# `fulfillment` on a specific subtype (HEAD) while their negation block checks
+# the base `state_dependency` type.  TypeDB's negation-cycle check only fires
+# when HEAD type == NEGATION type exactly; different types in the same hierarchy
+# are allowed.
+
+sd_not sub state_dependency;
+sd_fuzzy_not sub state_dependency;
+sd_or sub state_dependency;
+sd_fuzzy_or sub state_dependency;
+sd_and sub state_dependency;
+sd_fuzzy_and sub state_dependency;
+sd_shall sub state_dependency;
+sd_may sub state_dependency;
+sd_requirement sub state_dependency;
+
+# ── Seeding: create state_dependency for compound expressions ─────────────────
+# A compound expression acquires a state_dependency for a state when at least
+# one of its children does.  TypeDB deduplicates inferred relations, so each
+# (compound, state) pair yields exactly one state_dependency.
+
+rule not_expression_state_dependency:
+    when {
+        (dependent: $child, system_state: $state) isa state_dependency;
+        $not_exp (expression: $child) isa not_expression;
+    } then {
+        (system_state: $state, dependent: $not_exp) isa sd_not;
+    };
+
+rule fuzzy_not_state_dependency:
+    when {
+        (dependent: $child, system_state: $state) isa state_dependency;
+        $fuzzy_not_exp (expression: $child) isa fuzzy_not;
+    } then {
+        (system_state: $state, dependent: $fuzzy_not_exp) isa sd_fuzzy_not;
+    };
+
+rule or_expression_state_dependency:
+    when {
+        (dependent: $child, system_state: $state) isa state_dependency;
+        $or_exp (expression: $child) isa or_expression;
+    } then {
+        (system_state: $state, dependent: $or_exp) isa sd_or;
+    };
+
+rule fuzzy_or_state_dependency:
+    when {
+        (dependent: $child, system_state: $state) isa state_dependency;
+        $fuzzy_or_exp (expression: $child) isa fuzzy_or;
+    } then {
+        (system_state: $state, dependent: $fuzzy_or_exp) isa sd_fuzzy_or;
+    };
+
+rule and_expression_state_dependency:
+    when {
+        (dependent: $child, system_state: $state) isa state_dependency;
+        $and_exp (expression: $child) isa and_expression;
+    } then {
+        (system_state: $state, dependent: $and_exp) isa sd_and;
+    };
+
+rule fuzzy_and_state_dependency:
+    when {
+        (dependent: $child, system_state: $state) isa state_dependency;
+        $fuzzy_and_exp (expression: $child) isa fuzzy_and;
+    } then {
+        (system_state: $state, dependent: $fuzzy_and_exp) isa sd_fuzzy_and;
+    };
+
+rule shall_expression_state_dependency:
+    when {
+        (dependent: $child, system_state: $state) isa state_dependency;
+        $shall_exp (expression: $child) isa shall_expression;
+    } then {
+        (system_state: $state, dependent: $shall_exp) isa sd_shall;
+    };
+
+rule may_expression_state_dependency:
+    when {
+        (dependent: $child, system_state: $state) isa state_dependency;
+        $may_exp (expression: $child) isa may_expression;
+    } then {
+        (system_state: $state, dependent: $may_exp) isa sd_may;
+    };
+
+rule relaxed_requirement_state_dependency:
+    when {
+        (dependent: $child, system_state: $state) isa state_dependency;
+        $req (expression: $child) isa relaxed_requirement;
+    } then {
+        (system_state: $state, dependent: $req) isa sd_requirement;
+    };
+
+
+# ── Fulfillment propagation ───────────────────────────────────────────────────
+# All compound rules read from SPECIFIC concrete subtypes of state_dependency
+# (never from the abstract base) to avoid TypeDB's stratification cycle check.
+#
+# TypeDB flags a cycle when: rule A negates predicate P, and some dependency
+# chain from P leads back to A's HEAD via IS-A supertype matching. By reading
+# only sibling concrete types (never the same type as HEAD and never the
+# abstract base), no gather rule has an indirect dependency on its own
+# MAX/MIN rule's output.
+#
+# Child-type map (concrete sd subtypes each expression type's children produce):
+#   not_expression    → comparison_state_dependency
+#   fuzzy_not         → comparison_state_dependency
+#   or_expression     → comparison_state_dependency, sd_not
+#   fuzzy_or          → comparison_state_dependency, sd_not, sd_fuzzy_not
+#   and_expression    → comparison_state_dependency, sd_not, sd_or
+#   fuzzy_and         → comparison_state_dependency, sd_not, sd_fuzzy_not, sd_fuzzy_or
+#   shall_expression  → comparison_state_dependency, sd_not, sd_or, sd_and,
+#                        sd_fuzzy_not, sd_fuzzy_or, sd_fuzzy_and, sd_may
+#   may_expression    → comparison_state_dependency, sd_not, sd_or, sd_and,
+#                        sd_fuzzy_not, sd_fuzzy_or, sd_fuzzy_and
+#   relaxed_requirement → comparison_state_dependency, sd_shall, sd_may
+
+
+# NOT: 1.0 − child fulfillment (arithmetic, no negation)
+# Child of not_expression is always atomic_expression → comparison_state_dependency
+rule not_expression_state_dependency_fulfillment:
+    when {
+        $sd (dependent: $not_exp, system_state: $state) isa sd_not;
+        $not_exp (expression: $child) isa not_expression;
+        (dependent: $child, system_state: $state) isa comparison_state_dependency,
+            has fulfillment $child_fulfillment;
+        ?negated = 1.0 - $child_fulfillment;
+    } then {
+        $sd has fulfillment ?negated;
+    };
+
+# fuzzy_not: 1.0 − child fulfillment (arithmetic, no negation)
+# Child of fuzzy_not is always atomic_expression or fuzzy_comparison_expression
+# → comparison_state_dependency
+rule fuzzy_not_state_dependency_fulfillment:
+    when {
+        $sd (dependent: $fuzzy_not_exp, system_state: $state) isa sd_fuzzy_not;
+        $fuzzy_not_exp (expression: $child) isa fuzzy_not;
+        (dependent: $child, system_state: $state) isa comparison_state_dependency,
+            has fulfillment $child_fulfillment;
+        ?negated = 1.0 - $child_fulfillment;
+    } then {
+        $sd has fulfillment ?negated;
+    };
+
+# ── sd_child_fulfillment: intermediate attribute for two-step MAX/MIN ─────────
+# The direct MAX/MIN pattern (NEGATION over state_dependency has fulfillment while
+# HEAD derives sd_or/sd_and has fulfillment) creates a stratification cycle because
+# sd_or IS-A state_dependency.  The two-step pattern breaks this:
+#   Step 1 (gather, no negation): copies children's fulfillment into sd_child_fulfillment.
+#   Step 2 (max/min, negation over sd_child_fulfillment): writes fulfillment.
+# HEAD writes `fulfillment`; NEGATION reads `sd_child_fulfillment` — different
+# attributes → TypeDB's stratification check finds no cycle.
+
+sd_child_fulfillment sub attribute, value double;
+state_dependency owns sd_child_fulfillment;
+
+
+# ── OR: MAX of children ────────────────────────────────────────────────────────
+# Children of or_expression: atomic_expression (→ comparison_state_dependency),
+#                             not_expression (→ sd_not)
+
+rule or_expression_state_dependency_child_fulfillment:
+    when {
+        $sd (dependent: $or_exp, system_state: $state) isa sd_or;
+        $or_exp (expression: $child) isa or_expression;
+        {
+            (dependent: $child, system_state: $state) isa comparison_state_dependency,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_not,
+                has fulfillment $fulfillment;
+        };
+        ?v = $fulfillment;
+    } then {
+        $sd has sd_child_fulfillment ?v;
+    };
+
+rule or_expression_state_dependency_fulfillment:
+    when {
+        $sd isa sd_or;
+        $sd has sd_child_fulfillment $v;
+        not { $sd has sd_child_fulfillment $another; $another > $v; };
+        ?fulfillment = $v;
+    } then {
+        $sd has fulfillment ?fulfillment;
+    };
+
+
+# ── fuzzy_or: MAX of children ─────────────────────────────────────────────────
+# Children of fuzzy_or: fuzzy_comparison/atomic (→ comparison_state_dependency),
+#                        not_expression (→ sd_not), fuzzy_not (→ sd_fuzzy_not)
+
+rule fuzzy_or_state_dependency_child_fulfillment:
+    when {
+        $sd (dependent: $fuzzy_or_exp, system_state: $state) isa sd_fuzzy_or;
+        $fuzzy_or_exp (expression: $child) isa fuzzy_or;
+        {
+            (dependent: $child, system_state: $state) isa comparison_state_dependency,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_not,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_fuzzy_not,
+                has fulfillment $fulfillment;
+        };
+        ?v = $fulfillment;
+    } then {
+        $sd has sd_child_fulfillment ?v;
+    };
+
+rule fuzzy_or_state_dependency_fulfillment:
+    when {
+        $sd isa sd_fuzzy_or;
+        $sd has sd_child_fulfillment $v;
+        not { $sd has sd_child_fulfillment $another; $another > $v; };
+        ?fulfillment = $v;
+    } then {
+        $sd has fulfillment ?fulfillment;
+    };
+
+
+# ── AND: MIN of children ───────────────────────────────────────────────────────
+# Children of and_expression: atomic_expression (→ comparison_state_dependency),
+#                              not_expression (→ sd_not), or_expression (→ sd_or)
+
+rule and_expression_state_dependency_child_fulfillment:
+    when {
+        $sd (dependent: $and_exp, system_state: $state) isa sd_and;
+        $and_exp (expression: $child) isa and_expression;
+        {
+            (dependent: $child, system_state: $state) isa comparison_state_dependency,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_not,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_or,
+                has fulfillment $fulfillment;
+        };
+        ?v = $fulfillment;
+    } then {
+        $sd has sd_child_fulfillment ?v;
+    };
+
+rule and_expression_state_dependency_fulfillment:
+    when {
+        $sd isa sd_and;
+        $sd has sd_child_fulfillment $v;
+        not { $sd has sd_child_fulfillment $another; $another < $v; };
+        ?fulfillment = $v;
+    } then {
+        $sd has fulfillment ?fulfillment;
+    };
+
+
+# ── fuzzy_and: MIN of children ────────────────────────────────────────────────
+# Children of fuzzy_and: fuzzy_comparison/atomic (→ comparison_state_dependency),
+#                         not_expression (→ sd_not), fuzzy_not (→ sd_fuzzy_not),
+#                         fuzzy_or (→ sd_fuzzy_or)
+
+rule fuzzy_and_state_dependency_child_fulfillment:
+    when {
+        $sd (dependent: $fuzzy_and_exp, system_state: $state) isa sd_fuzzy_and;
+        $fuzzy_and_exp (expression: $child) isa fuzzy_and;
+        {
+            (dependent: $child, system_state: $state) isa comparison_state_dependency,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_not,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_fuzzy_not,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_fuzzy_or,
+                has fulfillment $fulfillment;
+        };
+        ?v = $fulfillment;
+    } then {
+        $sd has sd_child_fulfillment ?v;
+    };
+
+rule fuzzy_and_state_dependency_fulfillment:
+    when {
+        $sd isa sd_fuzzy_and;
+        $sd has sd_child_fulfillment $v;
+        not { $sd has sd_child_fulfillment $another; $another < $v; };
+        ?fulfillment = $v;
+    } then {
+        $sd has fulfillment ?fulfillment;
+    };
+
+
+# ── shall_expression: MIN of children ────────────────────────────────────────
+# Children of shall_expression:
+#   relaxed_fuzzy_expression → comparison_state_dependency
+#     (only relaxed_fuzzy_expression has a seeding rule; atomic_relaxed_expression
+#      and until_expression have no seeding rule so they produce no state_dependency)
+#   may_expression → sd_may
+#   logical_expression subtypes (not, or, and) → sd_not, sd_or, sd_and
+#   fuzzy_operator subtypes (fuzzy_not, fuzzy_or, fuzzy_and) → sd_fuzzy_not, sd_fuzzy_or, sd_fuzzy_and
+# (logical_expression plays shall_expression:expression and
+#  fuzzy_operator plays shall_expression:expression per relaxed_model.tql)
+
+rule shall_expression_state_dependency_child_fulfillment:
+    when {
+        $sd (dependent: $shall_exp, system_state: $state) isa sd_shall;
+        $shall_exp (expression: $child) isa shall_expression;
+        {
+            (dependent: $child, system_state: $state) isa comparison_state_dependency,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_not,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_or,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_and,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_fuzzy_not,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_fuzzy_or,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_fuzzy_and,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_may,
+                has fulfillment $fulfillment;
+        };
+        ?v = $fulfillment;
+    } then {
+        $sd has sd_child_fulfillment ?v;
+    };
+
+rule shall_expression_state_dependency_fulfillment:
+    when {
+        $sd isa sd_shall;
+        $sd has sd_child_fulfillment $v;
+        not { $sd has sd_child_fulfillment $another; $another < $v; };
+        ?fulfillment = $v;
+    } then {
+        $sd has fulfillment ?fulfillment;
+    };
+
+
+# ── may_expression: MAX of children ──────────────────────────────────────────
+# Children of may_expression:
+#   relaxed_fuzzy_expression → comparison_state_dependency
+#     (only relaxed_fuzzy_expression has a seeding rule; atomic_relaxed_expression
+#      and until_expression have no seeding rule so they produce no state_dependency)
+#   logical_expression subtypes (not, or, and) → sd_not, sd_or, sd_and
+#   fuzzy_operator subtypes (fuzzy_not, fuzzy_or, fuzzy_and) → sd_fuzzy_not, sd_fuzzy_or, sd_fuzzy_and
+# (logical_expression plays may_expression:expression and
+#  fuzzy_operator plays may_expression:expression per relaxed_model.tql)
+
+rule may_expression_state_dependency_child_fulfillment:
+    when {
+        $sd (dependent: $may_exp, system_state: $state) isa sd_may;
+        $may_exp (expression: $child) isa may_expression;
+        {
+            (dependent: $child, system_state: $state) isa comparison_state_dependency,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_not,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_or,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_and,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_fuzzy_not,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_fuzzy_or,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_fuzzy_and,
+                has fulfillment $fulfillment;
+        };
+        ?v = $fulfillment;
+    } then {
+        $sd has sd_child_fulfillment ?v;
+    };
+
+rule may_expression_state_dependency_fulfillment:
+    when {
+        $sd isa sd_may;
+        $sd has sd_child_fulfillment $v;
+        not { $sd has sd_child_fulfillment $another; $another > $v; };
+        ?fulfillment = $v;
+    } then {
+        $sd has fulfillment ?fulfillment;
+    };
+
+
+# ── relaxed_requirement: MIN of expressions ───────────────────────────────────
+# Children: relaxed_expression subtypes:
+#   relaxed_fuzzy_expression (→ comparison_state_dependency),
+#   shall_expression (→ sd_shall), may_expression (→ sd_may),
+#   atomic_relaxed_expression / until_expression (no sd)
+
+rule relaxed_requirement_state_dependency_child_fulfillment:
+    when {
+        $sd (dependent: $req, system_state: $state) isa sd_requirement;
+        $req (expression: $child) isa relaxed_requirement;
+        {
+            (dependent: $child, system_state: $state) isa comparison_state_dependency,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_shall,
+                has fulfillment $fulfillment;
+        } or {
+            (dependent: $child, system_state: $state) isa sd_may,
+                has fulfillment $fulfillment;
+        };
+        ?v = $fulfillment;
+    } then {
+        $sd has sd_child_fulfillment ?v;
+    };
+
+rule relaxed_requirement_state_dependency_fulfillment:
+    when {
+        $sd isa sd_requirement;
+        $sd has sd_child_fulfillment $v;
+        not { $sd has sd_child_fulfillment $another; $another < $v; };
+        ?fulfillment = $v;
+    } then {
+        $sd has fulfillment ?fulfillment;
+    };

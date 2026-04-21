@@ -1,0 +1,12 @@
+# List all labels that belong to a relation-based symbolic scheme.
+#
+# Expected schema:
+# - schemas/states/symbolic_states.tql
+
+match
+    $scheme (label: $label) isa symbolic_scheme,
+        has symbolic_scheme_name "velocity-bands";
+fetch
+    $label: symbolic_label_name,
+        symbolic_order,
+        symbolic_active;

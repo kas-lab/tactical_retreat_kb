@@ -1,0 +1,63 @@
+define
+
+current sub attribute,
+    value boolean;
+
+state_name sub attribute,
+	value string;
+
+state sub relation,
+	owns state_name @key,
+    owns current,   
+    relates antecedent,
+    relates rule,
+    relates median_valuation;
+
+median_bound_value sub attribute,
+    value double;
+
+MedianValuation sub relation,
+    owns median_bound_value,
+    relates measure;
+
+
+
+Measure plays MedianValuation:measure;
+
+MedianValuation plays state:median_valuation;
+
+state_sequence sub relation,
+    relates current_state,
+    relates next_state,
+    relates action;
+
+tactic_rule plays state:rule;
+state plays state_sequence:current_state;
+state plays state_sequence:next_state;
+tactic_rule plays state_sequence:action;
+logical_expression plays state:antecedent;
+
+rule state_current:
+    when {
+        $s isa state;
+        not {$s has current false;};
+    } then {
+        $s has current true;
+    };
+
+rule state_antecedent_invalid:
+    when {
+        $s (antecedent: $a) isa state;
+        $a isa logical_expression, has expression_satisfied false;
+    } then {
+        $s has current false;
+    };
+
+rule next_state_hypothetically:
+    when{
+        (impacted: $and_exp, tactic_rule: $tactic_rule) isa tactic_rule_impacts_and, has fulfillment 1.0;
+        $nxt_state (antecedent: $and_exp) isa state;
+        $current_state isa state, has current true;
+    } then {
+        (action: $tactic_rule, current_state: $current_state, next_state:$nxt_state) isa state_sequence;
+    };
