@@ -1,14 +1,14 @@
 insert
 
 $feature_parent_alternative isa Feature, has feature_name "feature_parent_alternative", has mandatory true;
-$f_alternative_child_1 isa Feature, has feature_name "f_alternative_child_1";
-$f_alternative_child_2 isa Feature, has feature_name "f_alternative_child_2";
+$f_alternative_child_1 isa Feature, has feature_name "f_alternative_child_1", has selected false;
+$f_alternative_child_2 isa Feature, has feature_name "f_alternative_child_2", has selected false;
 $f_alternative_child_3 isa Feature, has feature_name "f_alternative_child_3", has selected true;
 (parent: $feature_parent_alternative, child: $f_alternative_child_1, child: $f_alternative_child_2, child: $f_alternative_child_3) isa alternative;
 
 $feature_parent_or_group isa Feature, has feature_name "feature_parent_or_group", has mandatory true;
-$f_or_group_child_1 isa Feature, has feature_name "f_or_group_child_1";
-$f_or_group_child_2 isa Feature, has feature_name "f_or_group_child_2";
+$f_or_group_child_1 isa Feature, has feature_name "f_or_group_child_1", has selected false;
+$f_or_group_child_2 isa Feature, has feature_name "f_or_group_child_2", has selected false;
 $f_or_group_child_3 isa Feature, has feature_name "f_or_group_child_3", has selected true;
 (parent: $feature_parent_or_group, child: $f_or_group_child_1, child: $f_or_group_child_2, child: $f_or_group_child_3) isa or_group;
 

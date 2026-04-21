@@ -17,6 +17,9 @@ feature_hierarchy sub relation,
     relates parent,
     relates child;
 
+feature_siblings sub relation,
+    relates sibling;
+
 alternative sub feature_hierarchy; # exclusive or (XOR)
 or_group sub feature_hierarchy;
 
@@ -36,7 +39,8 @@ Feature sub entity,
     plays feature_hierarchy:parent,
     plays feature_hierarchy:child,
     plays cross_tree_constraint:constraint,
-    plays cross_tree_constraint:constrained;
+    plays cross_tree_constraint:constrained,
+    plays feature_siblings:sibling;
 
 # Rules
 
@@ -80,4 +84,13 @@ rule already_selected:
         $f isa Feature, has selected true;
     } then {
         $f has selectable false;
+    };
+
+rule siblings:
+    when {
+        (parent: $f_parent, child: $f_child) isa feature_hierarchy;
+        (parent: $f_parent, child: $f_child_2) isa feature_hierarchy;
+        not {$f_child is $f_child_2;};
+    } then {
+        (sibling: $f_child, sibling: $f_child_2) isa feature_siblings;
     };

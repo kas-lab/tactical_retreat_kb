@@ -3803,10 +3803,10 @@ $t_measured_power_budget isa Measure, has measure_name "power_budget";
 	    has measurement_function_name 'PowerBudget';
 
 $nearest_object_less_val isa ValueDouble, has double_value 0.10;
-$nearest_object_less (lhs_value:$t_measured_nearest_object, rhs_value: $nearest_object_less_val) isa inequality_expression, has operator "<";
+$nearest_object_less (lhs_value:$t_measured_nearest_object, rhs_value: $nearest_object_less_val) isa less_than;
 
 $power_draw_greater_val isa ValueDouble, has double_value 40.0;
-$power_draw_greater (lhs_value:$t_measured_power_draw, rhs_value: $power_draw_greater_val) isa inequality_expression, has operator ">";
+$power_draw_greater (lhs_value:$t_measured_power_draw, rhs_value: $power_draw_greater_val) isa greater_than;
 
 $expr_ (
 expression:$nearest_object_less, 
@@ -3817,10 +3817,10 @@ activation: $f_med_speed
 ) isa feature_adaptation;
 $tactic_rule_decrease_to_med (tactic:$ta_frogmaxspeed, antecedent:$expr_, consequent:$decrease_to_medfa ) isa tactic_rule, has rule_name "DECREASE_TO_MED";
 $nearest_object_less_1_val isa ValueDouble, has double_value 0.10;
-$nearest_object_less_1 (lhs_value:$t_measured_nearest_object, rhs_value: $nearest_object_less_1_val) isa inequality_expression, has operator "<";
+$nearest_object_less_1 (lhs_value:$t_measured_nearest_object, rhs_value: $nearest_object_less_1_val) isa less_than;
 
 $power_draw_greater_1_val isa ValueDouble, has double_value 40.0;
-$power_draw_greater_1 (lhs_value:$t_measured_power_draw, rhs_value: $power_draw_greater_1_val) isa inequality_expression, has operator ">";
+$power_draw_greater_1 (lhs_value:$t_measured_power_draw, rhs_value: $power_draw_greater_1_val) isa greater_than;
 
 $expr__1 (
 expression:$nearest_object_less_1, 
@@ -3831,13 +3831,13 @@ activation: $f_low_speed
 ) isa feature_adaptation;
 $tactic_rule_decrease_to_low (tactic:$ta_frogmaxspeed, antecedent:$expr__1, consequent:$decrease_to_lowfa ) isa tactic_rule, has rule_name "DECREASE_TO_LOW";
 $nearest_object_greater_val isa ValueDouble, has double_value 0.15;
-$nearest_object_greater (lhs_value:$t_measured_nearest_object, rhs_value: $nearest_object_greater_val) isa inequality_expression, has operator ">";
+$nearest_object_greater (lhs_value:$t_measured_nearest_object, rhs_value: $nearest_object_greater_val) isa greater_than;
 
 $power_draw_leq_val isa ValueDouble, has double_value 40.0;
-$power_draw_leq (lhs_value:$t_measured_power_draw, rhs_value: $power_draw_leq_val) isa inequality_expression, has operator "<=";
+$power_draw_leq (lhs_value:$t_measured_power_draw, rhs_value: $power_draw_leq_val) isa less_than_equal;
 
 $current_velocity_less_val isa ValueDouble, has double_value 0.40;
-$current_velocity_less (lhs_value:$t_measured_current_velocity, rhs_value: $current_velocity_less_val) isa inequality_expression, has operator "<";
+$current_velocity_less (lhs_value:$t_measured_current_velocity, rhs_value: $current_velocity_less_val) isa less_than;
 
 $expr__2 (
 expression:$nearest_object_greater, 
@@ -3849,13 +3849,13 @@ activation: $f_med_speed
 ) isa feature_adaptation;
 $tactic_rule_increase_to_med (tactic:$ta_frogmaxspeed, antecedent:$expr__2, consequent:$increase_to_medfa ) isa tactic_rule, has rule_name "INCREASE_TO_MED";
 $nearest_object_greater_1_val isa ValueDouble, has double_value 0.15;
-$nearest_object_greater_1 (lhs_value:$t_measured_nearest_object, rhs_value: $nearest_object_greater_1_val) isa inequality_expression, has operator ">";
+$nearest_object_greater_1 (lhs_value:$t_measured_nearest_object, rhs_value: $nearest_object_greater_1_val) isa greater_than;
 
 $power_draw_leq_1_val isa ValueDouble, has double_value 40.0;
-$power_draw_leq_1 (lhs_value:$t_measured_power_draw, rhs_value: $power_draw_leq_1_val) isa inequality_expression, has operator "<=";
+$power_draw_leq_1 (lhs_value:$t_measured_power_draw, rhs_value: $power_draw_leq_1_val) isa less_than_equal;
 
 $current_velocity_less_1_val isa ValueDouble, has double_value 0.40;
-$current_velocity_less_1 (lhs_value:$t_measured_current_velocity, rhs_value: $current_velocity_less_1_val) isa inequality_expression, has operator "<";
+$current_velocity_less_1 (lhs_value:$t_measured_current_velocity, rhs_value: $current_velocity_less_1_val) isa less_than;
 
 $expr__3 (
 expression:$nearest_object_greater_1, 

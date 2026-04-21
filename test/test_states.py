@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import math
-
 import pytest
-
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+
 
 def fetch_tactic_rule_dependency_fulfillment(
         self, expression_name, tactic_rule_name):
@@ -33,6 +31,7 @@ def fetch_tactic_rule_dependency_fulfillment(
     query_result = self.fetch_database(query)
     return query_result
 
+
 def fetch_next_state_name(self):
     query = """
             match
@@ -43,7 +42,8 @@ def fetch_next_state_name(self):
     query_result = self.fetch_database(query)
     return query_result
 
-#Given an imaginary choice in tactic_rule, we dream up a new state and action that will result.
+
+# Given an imaginary choice in tactic_rule, we dream up a new state and action that will result.
 def dream(self, tactic_rule_name):
     query = f"""
             match
@@ -52,13 +52,15 @@ def dream(self, tactic_rule_name):
                 (action: $tr, current_state: $s, next_state:$s2) isa state_sequence;
                 $requirement isa relaxed_requirement,
                     has in_effect true;
-                $tactic_impact (tactic_rule: $tr, impacted: $requirement) isa tactic_rule_impacts_requirement;
+                $t_impact (tactic_rule: $tr,
+                impacted: $requirement) isa tactic_rule_impacts_requirement;
             fetch
                 $s2: state_name;
-                $tactic_impact: fulfillment; 
+                $t_impact: fulfillment;
     """
     query_result = self.fetch_database(query)
     return query_result
+
 
 @pytest.fixture(scope='module')
 def kb_interface():
@@ -66,17 +68,17 @@ def kb_interface():
         'localhost:1729',
         'test_states',
         ['schemas/data_structure/data_structure.tql',
-            'schemas/context_model/context_model.tql',
-            'schemas/logical_expressions/logical_expression.tql',
-            'schemas/logical_expressions/fuzzy_expression.tql',
-            'schemas/ros_model/ros_model.tql',
-            'schemas/feature_model/feature_model.tql',
-            'schemas/relaxed/relaxed_model.tql',
-            'schemas/tactics_model/tactics_model.tql',
-            'schemas/discover_hypothetical_req_fulfillment/'
-            'discover_hypothetical_req_fulfillment.tql',
-            'schemas/discover_tactics_model/discover_tactics_model.tql',
-			'schemas/states/states.tql'],
+         'schemas/context_model/context_model.tql',
+         'schemas/logical_expressions/logical_expression.tql',
+         'schemas/logical_expressions/fuzzy_expression.tql',
+         'schemas/ros_model/ros_model.tql',
+         'schemas/feature_model/feature_model.tql',
+         'schemas/relaxed/relaxed_model.tql',
+         'schemas/tactics_model/tactics_model.tql',
+         'schemas/discover_hypothetical_req_fulfillment/'
+         'discover_hypothetical_req_fulfillment.tql',
+         'schemas/discover_tactics_model/discover_tactics_model.tql',
+         'schemas/states/states.tql'],
         ['test/data/test_states.tql'],
         force_database=True,
         force_data=True,
@@ -127,7 +129,9 @@ def test_current_state(kb_interface):
     current_state = kb_interface.fetch_state_current()
 
     assert len(current_state[0]['s']['state_name']) == 1
-    assert current_state[0]['s']['state_name'][0]['value'] == "current_state" or current_state[1]['s']['state_name'][0]['value'] == "current_state"
+    possibly_current_state = current_state[0]['s']['state_name'][0]['value'] == "current_state"
+    other_pos_current = current_state[1]['s']['state_name'][0]['value'] == "current_state"
+    assert possibly_current_state or other_pos_current
 
     alt_state_1 = kb_interface.fetch_state_current_by_name('alt_state_1')
     alt_state_2 = kb_interface.fetch_state_current_by_name('alt_state_2')
@@ -142,7 +146,7 @@ def test_current_state(kb_interface):
 
     impact_part_of_precondition = kb_interface.fetch_tactic_rule_dependency_fulfillment(
         'measure_less_1_0', 'effective_rule')
-    
+
     assert len(impact_part_of_precondition) == 1
     assert impact_part_of_precondition[0]['tr_dependency']['fulfillment'][0]['value'] == 1.0
 
@@ -161,11 +165,11 @@ def test_current_state(kb_interface):
 
     impact_state_3_precondition = kb_interface.fetch_tactic_rule_impacts_fulfillment(
         'state_3_precondition', 'effective_rule')
-    
+
     assert len(impact_state_3_precondition) == 1
     assert impact_state_3_precondition[0]['fulfillment']['value'] == pytest.approx(
         0.0)
-    
+
     kb_interface.register_method(
         'fetch_next_state_name',
         fetch_next_state_name
@@ -176,14 +180,14 @@ def test_current_state(kb_interface):
 
     req_ful = kb_interface.fetch_in_effect_requirement_fulfillment()
 
-    kb_interface.register_method('dream',dream)
+    kb_interface.register_method('dream', dream)
 
     dream_result = kb_interface.dream("effective_rule")
 
     assert len(dream_result[0]['s2']['state_name']) == 1
     assert dream_result[0]['s2']['state_name'][0]['value'] == "alt_state_1"
 
-    assert len(dream_result[0]['tactic_impact']['fulfillment']) == 1
-
-    assert dream_result[0]['tactic_impact']['fulfillment'][0]['value'] > req_ful[0]['req']['fulfillment'][0]['value']
+    assert len(dream_result[0]['t_impact']['fulfillment']) == 1
+    some_value = dream_result[0]['t_impact']['fulfillment'][0]['value']
+    assert some_value > req_ful[0]['req']['fulfillment'][0]['value']
     # assert x[0]['s2']['state_name'][0]['value'] == "alt_state_1"

@@ -25,6 +25,7 @@ def kb_interface():
             'schemas/context_model/context_model.tql',
             'schemas/ros_model/ros_model.tql',
             'schemas/feature_model/feature_model.tql',
+            'schemas/logical_expressions/logical_expression.tql',
             'schemas/tactics_model/tactics_model.tql',
             'schemas/discover_tactics_model/discover_tactics_model.tql'],
         ['test/data/test_selected.tql'],
