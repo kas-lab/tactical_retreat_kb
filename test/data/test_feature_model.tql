@@ -24,12 +24,12 @@ $f_req_constrained_3 isa Feature, has feature_name "f_req_constrained_3";
 $f_req_constrained_4 isa Feature, has feature_name "f_req_constrained_4";
 $f_req_constrained_5 isa Feature, has feature_name "f_req_constrained_5";
 
-(constrained: $f_req_constrained_1, constraint: $f_selected_1) isa requires_constraint;      # selectable true
-(constrained: $f_req_constrained_2, constraint: $f_not_selected_1) isa requires_constraint;  # selectable false
+(constrained: $f_req_constrained_1, constraint: $f_selected_1) isa requires_constraint;    
+(constrained: $f_req_constrained_2, constraint: $f_not_selected_1) isa requires_constraint; 
 
-(constrained: $f_req_constrained_3, constraint: $f_selected_1, constraint: $f_selected_2) isa requires_constraint;          # selectable true
-(constrained: $f_req_constrained_4, constraint: $f_not_selected_1, constraint: $f_not_selected_2) isa requires_constraint;  # selectable false
-(constrained: $f_req_constrained_5, constraint: $f_selected_1, constraint: $f_not_selected_1) isa requires_constraint;      # selectable false
+(constrained: $f_req_constrained_3, constraint: $f_selected_1, constraint: $f_selected_2) isa requires_constraint;         
+(constrained: $f_req_constrained_4, constraint: $f_not_selected_1, constraint: $f_not_selected_2) isa requires_constraint;
+(constrained: $f_req_constrained_5, constraint: $f_selected_1, constraint: $f_not_selected_1) isa requires_constraint; 
 
 $f_excl_constrained_1 isa Feature, has feature_name "f_excl_constrained_1";
 $f_excl_constrained_2 isa Feature, has feature_name "f_excl_constrained_2";
@@ -37,12 +37,12 @@ $f_excl_constrained_3 isa Feature, has feature_name "f_excl_constrained_3";
 $f_excl_constrained_4 isa Feature, has feature_name "f_excl_constrained_4";
 $f_excl_constrained_5 isa Feature, has feature_name "f_excl_constrained_5";
 
-(constrained: $f_excl_constrained_1, constraint: $f_selected_1) isa excludes_constraint;      # selectable false
-(constrained: $f_excl_constrained_2, constraint: $f_not_selected_1) isa excludes_constraint;  # selectable true
+(constrained: $f_excl_constrained_1, constraint: $f_selected_1) isa excludes_constraint;
+(constrained: $f_excl_constrained_2, constraint: $f_not_selected_1) isa excludes_constraint;
 
-(constrained: $f_excl_constrained_3, constraint: $f_selected_1, constraint: $f_selected_2) isa excludes_constraint;          # selectable false
-(constrained: $f_excl_constrained_4, constraint: $f_not_selected_1, constraint: $f_not_selected_2) isa excludes_constraint;  # selectable true
-(constrained: $f_excl_constrained_5, constraint: $f_selected_1, constraint: $f_not_selected_1) isa excludes_constraint;      # selectable false
+(constrained: $f_excl_constrained_3, constraint: $f_selected_1, constraint: $f_selected_2) isa excludes_constraint;
+(constrained: $f_excl_constrained_4, constraint: $f_not_selected_1, constraint: $f_not_selected_2) isa excludes_constraint;
+(constrained: $f_excl_constrained_5, constraint: $f_selected_1, constraint: $f_not_selected_1) isa excludes_constraint;
 
 # Feature as proposition expression
 

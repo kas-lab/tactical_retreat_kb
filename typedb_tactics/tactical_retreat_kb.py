@@ -261,8 +261,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             try:
                 start_time = time.perf_counter()
                 self.get_logger().info('Fetching tactic actions...')
-                # self.typedb_interface.fetch_applicable_valid_adaptations(req.resolution_model, req.interface_name)
-                res.adaptations = self.typedb_interface.fetch_tactic_actions(req.tactic_name)
+                res.adaptations = self.typedb_interface.get_reconfiguration_plan(req.tactic_name).actions
+
                 elapsed_time = time.perf_counter() - start_time
                 self.get_logger().info(f'Tactic actions fetched in {elapsed_time:.4f} seconds.')
             except Exception as e:

@@ -18,38 +18,28 @@ from typing import Any
 from typing import Literal
 from typing import Sequence
 from typing import TypeAlias
-
+from aal_msgs.msg import Adaptation
 from ros_typedb.typedb_interface import convert_query_type_to_py_type
-
+from lifecycle_msgs.msg import Transition
+from rclpy.parameter import parameter_value_to_python, Parameter
 
 ParamScalar: TypeAlias = str | float | int | bool
 ParamValue: TypeAlias = ParamScalar | list[ParamScalar]
 LifecycleState: TypeAlias = Literal[
     'active', 'inactive', 'unconfigured', 'finalized']
 
-
-@dataclass(slots=True)
-class AdaptationAction:
-    """Marker base class for adaptation plan actions."""
-
-
-@dataclass(slots=True)
-class SetLifecycleAction(AdaptationAction):
-    node_name: str
-    lifecycle_state: LifecycleState
-
-
-@dataclass(slots=True)
-class SetParameterAction(AdaptationAction):
-    node_name: str
-    param_name: str
-    param_value: ParamValue
-
+# TODO: Redesign, see issue #88
+names_to_transitions = {
+    'active' : Transition(id=Transition.TRANSITION_ACTIVATE),
+    'inactive' : Transition(id=Transition.TRANSITION_DEACTIVATE),
+    # 'unconfigured' : Transition(id=Transition.TRANSITION_ACTIVE_SHUTDOWN),
+    'finalized' : Transition(id=Transition.TRANSITION_ACTIVE_SHUTDOWN)
+}
 
 @dataclass(slots=True)
 class AdaptationPlan:
     # A possible improvement is to make actions a graph
-    actions: list[AdaptationAction]
+    actions: list[Adaptation]
 
     @classmethod
     def from_typedb_results(
@@ -62,7 +52,7 @@ class AdaptationPlan:
         :param raw_actions: list of action dicts that include an ``index`` entry
             plus either ``set_lifecycle_action`` or ``set_parameter_action``.
         """
-        actions_with_index: list[tuple[int, AdaptationAction]] = []
+        actions_with_index: list[tuple[int, Adaptation]] = []
 
         for entry in raw_actions:
             index_value = convert_query_type_to_py_type(entry['index'])
@@ -83,13 +73,14 @@ class AdaptationPlan:
 
 def _parse_lifecycle_action(
     raw_action: dict[str, Any]
-) -> SetLifecycleAction:
+) -> Adaptation:
     node_name = raw_action['node']['node_name'][0]['value']
     lifecycle_state = raw_action['res_action']['lifecycle_state'][0]['value']
 
-    return SetLifecycleAction(
+    return Adaptation(
+        adaptation_target=Adaptation.STATETRANSITION,
         node_name=str(node_name),
-        lifecycle_state=str(lifecycle_state),
+        lifecycle_adaptation=names_to_transitions[str(lifecycle_state)],
     )
 
 
@@ -116,9 +107,11 @@ def _parse_param_singleton(param_singleton_block: dict[str, Any]) -> ParamValue:
 
 def _parse_parameter_action(
     raw_action: dict[str, Any],
-) -> SetParameterAction:
+) -> Adaptation:
     node_name = raw_action['node']['node_name'][0]['value']
     param_name_attr = raw_action.get('parameter').get('parameter_name')[0]['value']
+
+
 
     param_value: ParamValue
     param_array = raw_action.get('param_value_array') or []
@@ -128,8 +121,10 @@ def _parse_parameter_action(
         param_singleton = raw_action.get('param_value_singleton')
         param_value = _parse_param_singleton(param_singleton)
 
-    return SetParameterAction(
+    param = Parameter(str(param_name_attr), value=param_value)
+
+    return Adaptation(
+        adaptation_target=Adaptation.ROSPARAMETER,
         node_name=str(node_name),
-        param_name=str(param_name_attr),
-        param_value=param_value,
+        parameter_adaptation=param.to_parameter_msg()
     )

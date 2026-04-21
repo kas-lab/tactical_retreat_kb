@@ -110,88 +110,6 @@ def node_query_to_node_dict(
     return node_dict
 
 
-def extract_parameter_values(index_lists: List[IndexList],
-                            result_tree: ResultTree, INDEX_VAR: str) -> List:
-    parameterValues = []
-
-    for i in range(len(index_lists)):
-        parameterValues.append(None)
-
-    for index_list in index_lists:
-        parameterIndex = -1
-        parameterValue = None
-        for index in index_list.index:
-            q_r = result_tree.results[index]
-            if q_r.type != QueryResult.THING:
-                continue
-
-            thing = q_r.thing
-            if (thing.variable_name == INDEX_VAR):
-                for attr in thing.attributes:
-                    parameterIndex = attr.value.integer_array_value[0]
-
-            if (thing.variable_name == "value"):
-                for attr in thing.attributes:
-                    attribute_value = attr.value  # this is a ParameterValue type.
-                    valueList = parameter_value_to_python(attribute_value)
-                    parameterValue = valueList[0]
-
-            if (parameterIndex >= 0):
-                parameterValues[parameterIndex] = parameterValue
-
-    return parameterValues
-
-
-def extract_string_attribute(result_tree: ResultTree,
-                            thing_variable_name: str, att_variable_name: str):
-    for q_result in result_tree.results:
-        if (q_result.type != QueryResult.THING):
-            continue
-
-        thing = q_result.thing
-        if (not thing.variable_name == thing_variable_name):
-            continue
-
-        for attr in thing.attributes:
-            if (attr.variable_name == att_variable_name):
-                return attr.value.string_array_value[0]
-    return ""  # TODO: throw exception?
-
-
-def process_set_parameter(result_tree, index_lists):
-    node_name = ""
-
-    parameterValues = []
-
-    parameterValues = extract_parameter_values(index_lists,
-                                            result_tree, "index")
-
-    node_name = extract_string_attribute(result_tree, "node",
-                                        "node_name")
-
-    param_name = extract_string_attribute(result_tree, "parameter",
-                                        "parameter_name")
-
-    adaptation = Adaptation()
-    adaptation.adaptation_target = Adaptation.ROSPARAMETER
-
-    param = Parameter(param_name, value=parameterValues)
-
-    adaptation.node_name = node_name
-
-    adaptation.parameter_adaptation = param.to_parameter_msg()
-
-    return adaptation
-
-def find_subquery(result_tree_list: List[ResultTree], subquery_name):
-    for i in range(len(result_tree_list)):
-        result_tree = result_tree_list[i]
-        for query_result in result_tree.results:
-            if (query_result.type == QueryResult.SUB_QUERY) and \
-            (query_result.sub_query_name == subquery_name):
-                return query_result.children_index, i
-
-
 class TacticalRetreatInterface(TypeDBInterface):
     """Class to interact with the TacticalRetreat knowledge model in typeDB."""
 
@@ -803,95 +721,6 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
-    def fetch_tactic_actions(self,
-                                 rule_name: str) -> List[Adaptation]:
-        """
-        Fetch all tactics that are applicable and valid given an ROS action name and resolution model.
-
-        :param rule_name: name of the tactic
-        :return: fetch query result
-        """
-        query = f"""
-            match
-              $tactic_rule (tactic:$t, consequent:$fa) isa tactic_rule,  has rule_name "{rule_name}";
-            fetch
-                variant_activation: {{
-                    match
-                        $fa (activation: $feature_activate) isa feature_adaptation;
-                        (tactic:$t, variant_resolution:$vr) isa resolution_model;
-                        $vr (resolution_action:$res_action, variant: $feature_activate) isa variant_activation;
-                    fetch
-                        set_parameter_action: {{
-                            match
-                                $res_action (node: $node, parameter: $parameter, parameter_value: $parameter_value) isa! set_nodes_parameters;
-                            fetch
-                                $node: node_name;
-                                $parameter: parameter_name;
-                                param_values: {{
-                                    match
-                                        $parameter_value isa! ValueArray;
-                                        $index (array: $parameter_value, array_value: $value) isa at_index;
-                                    fetch
-                                        $index: index;
-                                        $value: attribute;
-                                }};
-                        }};
-                        set_lifecycle_action: {{
-                            match
-                                $res_action (node: $node) isa! set_lifecycle_state;
-                            fetch
-                                $node: node_name;
-                                $res_action: lifecycle_state;
-                        }};
-                }};
-                variant_deactivation: {{
-                    match
-                        $fa (deactivation: $feature_deactivate) isa feature_adaptation;
-                        (tactic:$t, variant_resolution:$vr) isa resolution_model;
-                        $vr (resolution_action:$res_action, variant: $feature_deactivate) isa variant_deactivation;
-                    fetch
-                        set_parameter_action: {{
-                            match
-                                $res_action (node: $node, parameter: $parameter, parameter_value: $parameter_value) isa! set_nodes_parameters;
-                            fetch
-                                $node: node_name;
-                                $parameter: parameter_name;
-                                param_values: {{
-                                    match
-                                        $parameter_value isa! ValueArray;
-                                        $index (array: $parameter_value, array_value: $value) isa at_index;
-                                    fetch
-                                        $index: index;
-                                        $value: attribute;
-                                }};
-                        }};
-                        set_lifecycle_action: {{
-                            match
-                                $res_action (node: $node) isa! set_lifecycle_state;
-                            fetch
-                                $node: node_name;
-                                $res_action: lifecycle_state;
-                        }};
-                }};
-        """
-        res = self.fetch_database(query)
-        result_tree_list = []
-        for result in res:
-            result_tree, _ = fetch_result_to_ros_result_tree(result)
-            result_tree_list.append(result_tree)
-
-        param_values_sq = find_subquery(result_tree_list,
-            "param_values")
-        if param_values_sq is None:
-                raise Exception(str(len(result_tree_list)) + "No parameter values subquery found in results. \
-                                        Aborting adaptation.")
-
-        index_lists, result_tree_index = param_values_sq
-
-        adaptation = process_set_parameter(result_tree_list[result_tree_index], index_lists)
-        
-        return [adaptation]
-
     def fetch_applicable_valid_adaptations(self,
                                  resolution_model: str,
                                  interface_name: str) -> List[dict[str,
@@ -995,14 +824,11 @@ class TacticalRetreatInterface(TypeDBInterface):
 
         for i, tactic_name in enumerate(tactic_names):
             match_block += f"""
-                $tactic_rule_{i} (antecedent: $ant_{i}, consequent: $fa_{i}) isa tactic_rule, has rule_name '{tactic_name}';
-                $fa_{i} ($feature_{i}) isa feature_adaptation;
+                $tactic_rule_{i} (antecedent: $ant_{i}) isa tactic_rule, has rule_name '{tactic_name}';
             """
 
             fetch_block += f"""
                 $ant_{i}: expression_satisfied;
-                $feature_{i}: selectable;
-
             """
         query = match_block + fetch_block
         return self.fetch_database(query)
@@ -1024,18 +850,16 @@ class TacticalRetreatInterface(TypeDBInterface):
             result['tactic_rule']['rule_name'][0]['value']
             for result in query_result
         )
-    
+
     def get_satisfied_tactics(
         self,
         tactic_names: List[str],):
         query_result = self.fetch_applicable_valid_adaptations_names(
             tactic_names)
         return [
-            query_result[0]['ant_' + str(i)]['expression_satisfied'][0]['value'] & query_result[0]['feature_' + str(i)]['selectable'][0]['value']
+            query_result[0]['ant_' + str(i)]['expression_satisfied'][0]['value']
             for i, _ in enumerate(tactic_names)
         ]
-
-
 
     def fetch_relaxed_requirement_fulfillment(
             self,
@@ -1557,22 +1381,6 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.fetch_tactic_rule_valid(tactic_rule)
         print(query_result)
         return query_result[0]['tr']['rule_valid'][0]['value']
-
-    def is_feature_selectable(self, feature_name: str) -> bool:
-        """
-        Return whether a feature is selectable.
-
-        :param feature_name: feature name
-        :return: true or false
-        """
-        query = f"""
-            match
-                $f isa Feature, has feature_name '{feature_name}';
-            fetch
-                $f: selectable;
-        """
-        query_result = self.fetch_database(query)
-        return query_result[0]['f']['selectable'][0]['value']
 
     def is_feature_selected(self, feature_name: str) -> bool:
         """

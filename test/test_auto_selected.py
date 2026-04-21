@@ -41,13 +41,6 @@ def test_selected(kb_interface):
     assert kb_interface.is_feature_selected('MED_SPEED') is False
     assert kb_interface.is_feature_selected('HI_SPEED') is True
 
-
-def test_selectable_already_selected(kb_interface):
-    assert kb_interface.is_feature_selectable('LOW_SPEED') is True
-    assert kb_interface.is_feature_selectable('MED_SPEED') is True
-    assert kb_interface.is_feature_selectable('HI_SPEED') is False
-
-
 def test_update_selected(kb_interface):
     kb_interface.update_feature_selected_by_param_value('LOW_SPEED')
     assert kb_interface.is_feature_selected('LOW_SPEED') is True

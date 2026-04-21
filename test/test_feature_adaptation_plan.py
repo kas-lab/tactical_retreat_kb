@@ -45,6 +45,7 @@ def kb_interface():
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
             'schemas/ros_model/ros_model.tql',
+            'schemas/logical_expressions/logical_expression.tql',
             'schemas/feature_model/feature_model.tql',
             'schemas/tactics_model/tactics_model.tql',
             'schemas/feature_adaptation_plan/feature_adaptation_plan.tql'],
