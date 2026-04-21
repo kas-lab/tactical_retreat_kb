@@ -31,10 +31,10 @@ $temperature_value isa ValueDouble,
 # ── Symbolic labels and intervals ─────────────────────────────────────────────
 
 
-$fast (measure: $velocity) isa medianValuation,
+$fast (measure: $velocity) isa MedianValuation,
     has median_bound_value 0.25;
 
-$near (measure: $distance) isa medianValuation,
+$near (measure: $distance) isa MedianValuation,
     has median_bound_value 0.30;
 
 # ── System state ──────────────────────────────────────────────────────────────

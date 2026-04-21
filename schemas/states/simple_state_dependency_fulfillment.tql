@@ -41,7 +41,7 @@ rule comparison_expression_state_dependency:
         $expression ($measure) isa comparison_expression;
         $measure isa Measure;
         $system_state (median_valuation: $med_val) isa state;
-        $med_val (measure: $measure) isa medianValuation;
+        $med_val (measure: $measure) isa MedianValuation;
     } then {
         (system_state: $system_state, dependent: $expression) isa comparison_state_dependency;
     };
@@ -51,7 +51,7 @@ rule fuzzy_expression_state_dependency:
         $expression (term: $measure) isa fuzzy_comparison_expression;
         $measure isa Measure;
         $system_state (median_valuation: $med_val) isa state;
-        $med_val (measure: $measure) isa medianValuation;
+        $med_val (measure: $measure) isa MedianValuation;
     } then {
         (system_state: $system_state, dependent: $expression) isa comparison_state_dependency;
     };
@@ -61,7 +61,7 @@ rule relaxed_fuzzy_expression_state_dependency:
         $expression (term: $measure) isa relaxed_fuzzy_expression;
         $measure isa Measure;
         $system_state (median_valuation: $med_val) isa state;
-        $med_val (measure: $measure) isa medianValuation;
+        $med_val (measure: $measure) isa MedianValuation;
     } then {
         (system_state: $system_state, dependent: $expression) isa comparison_state_dependency;
     };
@@ -89,13 +89,13 @@ sd_lhs_interval_operand sub relation,
     relates sd_dependency,
     relates lhs_interval;
 state_dependency plays sd_lhs_interval_operand:sd_dependency;
-medianValuation plays sd_lhs_interval_operand:lhs_interval;
+MedianValuation plays sd_lhs_interval_operand:lhs_interval;
 
-sd_rhs_interval_operand sub relation,
+sd_rhs_valuation_operand sub relation,
     relates sd_dependency,
-    relates rhs_interval;
-state_dependency plays sd_rhs_interval_operand:sd_dependency;
-medianValuation plays sd_rhs_interval_operand:rhs_interval;
+    relates rhs_valuation;
+state_dependency plays sd_rhs_valuation_operand:sd_dependency;
+MedianValuation plays sd_rhs_valuation_operand:rhs_valuation;
 
 # lhs/rhs is a Measure NOT covered by the state's intervals;
 # its value is resolved from the latest live measurement instead.
@@ -121,21 +121,21 @@ rule comparison_expression_state_dependency_lhs_interval:
         $expression (lhs_value: $lhs) isa comparison_expression;
         $lhs isa Measure;
         $state (median_valuation: $med_val) isa state;
-        $med_val (measure: $lhs) isa medianValuation;
+        $med_val (measure: $lhs) isa MedianValuation;
     } then {
         (sd_dependency: $sd, lhs_interval: $med_val) isa sd_lhs_interval_operand;
     };
 
 # rhs is a Measure covered by an interval of a label in the system_state.
-rule comparison_expression_state_dependency_rhs_interval:
+rule comparison_expression_state_dependency_rhs_valuation:
     when {
         $sd (dependent: $expression, system_state: $state) isa state_dependency;
         $expression (rhs_value: $rhs) isa comparison_expression;
         $rhs isa Measure;
         $state (median_valuation: $med_val) isa state;
-        $med_val (measure: $rhs) isa medianValuation;
+        $med_val (measure: $rhs) isa MedianValuation;
     } then {
-        (sd_dependency: $sd, rhs_interval: $med_val) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $med_val) isa sd_rhs_valuation_operand;
     };
 
 # lhs is a literal ValueDouble.
@@ -166,7 +166,7 @@ rule comparison_expression_state_dependency_lhs_measure_without_interval:
         $lhs isa Measure;
         not {
             $state (median_valuation: $med_val) isa state;
-            $med_val (measure: $lhs) isa medianValuation;
+            $med_val (measure: $lhs) isa MedianValuation;
         };
     } then {
         (sd_dependency: $sd, lhs_measure: $lhs) isa sd_lhs_measure_without_interval;
@@ -180,7 +180,7 @@ rule comparison_expression_state_dependency_rhs_measure_without_interval:
         $rhs isa Measure;
         not {
             $state (median_valuation: $med_val) isa state;
-            $med_val (measure: $rhs) isa medianValuation;
+            $med_val (measure: $rhs) isa MedianValuation;
         };
     } then {
         (sd_dependency: $sd, rhs_measure: $rhs) isa sd_rhs_measure_without_interval;
@@ -217,7 +217,7 @@ rule comparison_expression_state_dependency_less_than_interval_interval:
         $expression isa less_than;
         (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
         $lhs has median_bound_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs < $value_rhs;
     } then {
@@ -243,7 +243,7 @@ rule comparison_expression_state_dependency_less_than_double_interval:
         $expression isa less_than;
         (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
         $lhs has double_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs < $value_rhs;
     } then {
@@ -272,7 +272,7 @@ rule comparison_expression_state_dependency_less_than_equal_interval_interval:
         $expression isa less_than_equal;
         (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
         $lhs has median_bound_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs <= $value_rhs;
     } then {
@@ -298,7 +298,7 @@ rule comparison_expression_state_dependency_less_than_equal_double_interval:
         $expression isa less_than_equal;
         (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
         $lhs has double_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs <= $value_rhs;
     } then {
@@ -327,7 +327,7 @@ rule comparison_expression_state_dependency_greater_than_interval_interval:
         $expression isa greater_than;
         (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
         $lhs has median_bound_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs > $value_rhs;
     } then {
@@ -353,7 +353,7 @@ rule comparison_expression_state_dependency_greater_than_double_interval:
         $expression isa greater_than;
         (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
         $lhs has double_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs > $value_rhs;
     } then {
@@ -382,7 +382,7 @@ rule comparison_expression_state_dependency_greater_than_equal_interval_interval
         $expression isa greater_than_equal;
         (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
         $lhs has median_bound_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs >= $value_rhs;
     } then {
@@ -408,7 +408,7 @@ rule comparison_expression_state_dependency_greater_than_equal_double_interval:
         $expression isa greater_than_equal;
         (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
         $lhs has double_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs >= $value_rhs;
     } then {
@@ -437,7 +437,7 @@ rule comparison_expression_state_dependency_equal_interval_interval:
         $expression isa equal;
         (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
         $lhs has median_bound_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs == $value_rhs;
     } then {
@@ -463,7 +463,7 @@ rule comparison_expression_state_dependency_equal_double_interval:
         $expression isa equal;
         (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
         $lhs has double_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs == $value_rhs;
     } then {
@@ -492,7 +492,7 @@ rule comparison_expression_state_dependency_not_equal_interval_interval:
         $expression isa not_equal;
         (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
         $lhs has median_bound_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs != $value_rhs;
     } then {
@@ -518,7 +518,7 @@ rule comparison_expression_state_dependency_not_equal_double_interval:
         $expression isa not_equal;
         (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
         $lhs has double_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs != $value_rhs;
     } then {
@@ -552,7 +552,7 @@ rule comparison_expression_state_dependency_less_than_interval_interval_false:
         $expression isa less_than;
         (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
         $lhs has median_bound_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs >= $value_rhs;
     } then { $sd has fulfillment 0.0; };
@@ -574,7 +574,7 @@ rule comparison_expression_state_dependency_less_than_double_interval_false:
         $expression isa less_than;
         (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
         $lhs has double_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs >= $value_rhs;
     } then { $sd has fulfillment 0.0; };
@@ -598,7 +598,7 @@ rule comparison_expression_state_dependency_less_than_equal_interval_interval_fa
         $expression isa less_than_equal;
         (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
         $lhs has median_bound_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs > $value_rhs;
     } then { $sd has fulfillment 0.0; };
@@ -620,7 +620,7 @@ rule comparison_expression_state_dependency_less_than_equal_double_interval_fals
         $expression isa less_than_equal;
         (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
         $lhs has double_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs > $value_rhs;
     } then { $sd has fulfillment 0.0; };
@@ -644,7 +644,7 @@ rule comparison_expression_state_dependency_greater_than_interval_interval_false
         $expression isa greater_than;
         (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
         $lhs has median_bound_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs <= $value_rhs;
     } then { $sd has fulfillment 0.0; };
@@ -666,7 +666,7 @@ rule comparison_expression_state_dependency_greater_than_double_interval_false:
         $expression isa greater_than;
         (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
         $lhs has double_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs <= $value_rhs;
     } then { $sd has fulfillment 0.0; };
@@ -690,7 +690,7 @@ rule comparison_expression_state_dependency_greater_than_equal_interval_interval
         $expression isa greater_than_equal;
         (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
         $lhs has median_bound_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs < $value_rhs;
     } then { $sd has fulfillment 0.0; };
@@ -712,7 +712,7 @@ rule comparison_expression_state_dependency_greater_than_equal_double_interval_f
         $expression isa greater_than_equal;
         (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
         $lhs has double_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs < $value_rhs;
     } then { $sd has fulfillment 0.0; };
@@ -736,7 +736,7 @@ rule comparison_expression_state_dependency_equal_interval_interval_false:
         $expression isa equal;
         (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
         $lhs has median_bound_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs != $value_rhs;
     } then { $sd has fulfillment 0.0; };
@@ -758,7 +758,7 @@ rule comparison_expression_state_dependency_equal_double_interval_false:
         $expression isa equal;
         (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
         $lhs has double_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs != $value_rhs;
     } then { $sd has fulfillment 0.0; };
@@ -782,7 +782,7 @@ rule comparison_expression_state_dependency_not_equal_interval_interval_false:
         $expression isa not_equal;
         (sd_dependency: $sd, lhs_interval: $lhs) isa sd_lhs_interval_operand;
         $lhs has median_bound_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs == $value_rhs;
     } then { $sd has fulfillment 0.0; };
@@ -804,7 +804,7 @@ rule comparison_expression_state_dependency_not_equal_double_interval_false:
         $expression isa not_equal;
         (sd_dependency: $sd, lhs_double: $lhs) isa sd_lhs_double_operand;
         $lhs has double_value $value_lhs;
-        (sd_dependency: $sd, rhs_interval: $rhs) isa sd_rhs_interval_operand;
+        (sd_dependency: $sd, rhs_valuation: $rhs) isa sd_rhs_valuation_operand;
         $rhs has median_bound_value $value_rhs;
         $value_lhs == $value_rhs;
     } then { $sd has fulfillment 0.0; };
@@ -834,18 +834,18 @@ rule comparison_expression_state_dependency_not_equal_double_double_false:
 # ── New schema roles for inferred fuzzy expression instances ──────────────────
 
 fuzzy_comparison_expression relates sd_dependency;
-fuzzy_comparison_expression relates sd_interval;
+fuzzy_comparison_expression relates md_valuation;
 state_dependency plays fuzzy_comparison_expression:sd_dependency;
-medianValuation plays fuzzy_comparison_expression:sd_interval;
+MedianValuation plays fuzzy_comparison_expression:md_valuation;
 
 
 # ── Quantified value from interval ───────────────────────────────────────────
-# Fires for inferred fuzzy expression instances that have an sd_interval role
+# Fires for inferred fuzzy expression instances that have an md_valuation role
 # but no term.  Analogous to fuzzy_expression_quantified_value_effect.
 
 rule fuzzy_expression_quantified_value_interval:
     when {
-        $fuzzy_expression (sd_interval: $interval) isa fuzzy_comparison_expression;
+        $fuzzy_expression (md_valuation: $interval) isa fuzzy_comparison_expression;
         not { $fuzzy_expression (term: $term) isa fuzzy_comparison_expression; };
         $interval has median_bound_value $quantified_value;
         {
@@ -871,9 +871,9 @@ rule fuzzy_unimodal_expr_state_dependency_interval:
         $fuzzy_expression (fuzzy_set: $fuzzy_set, term: $term) isa fuzzy_unimodal_expression;
         $term isa Measure;
         $state (median_valuation: $med_val) isa state;
-        $med_val (measure: $term) isa medianValuation;
+        $med_val (measure: $term) isa MedianValuation;
     } then {
-        (sd_interval: $med_val, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_unimodal_expression;
+        (md_valuation: $med_val, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_unimodal_expression;
     };
 
 rule fuzzy_ascend_expr_state_dependency_interval:
@@ -882,9 +882,9 @@ rule fuzzy_ascend_expr_state_dependency_interval:
         $fuzzy_expression (fuzzy_set: $fuzzy_set, term: $term) isa fuzzy_ascend_expression;
         $term isa Measure;
         $state (median_valuation: $med_val) isa state;
-        $med_val (measure: $term) isa medianValuation;
+        $med_val (measure: $term) isa MedianValuation;
     } then {
-        (sd_interval: $med_val, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_ascend_expression;
+        (md_valuation: $med_val, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_ascend_expression;
     };
 
 rule fuzzy_decay_expr_state_dependency_interval:
@@ -893,9 +893,9 @@ rule fuzzy_decay_expr_state_dependency_interval:
         $fuzzy_expression (fuzzy_set: $fuzzy_set, term: $term) isa fuzzy_decay_expression;
         $term isa Measure;
         $state (median_valuation: $med_val) isa state;
-        $med_val (measure: $term) isa medianValuation;
+        $med_val (measure: $term) isa MedianValuation;
     } then {
-        (sd_interval: $med_val, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_decay_expression;
+        (md_valuation: $med_val, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_decay_expression;
     };
 
 
@@ -905,7 +905,7 @@ rule fuzzy_expr_state_dependency_fulfillment:
     when {
         $sd (dependent: $expr) isa state_dependency;
         $expr (term: $term, fuzzy_set: $fuzzy_set) isa fuzzy_comparison_expression;
-        (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_comparison_expression,
+        (md_valuation: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_comparison_expression,
             has membership_degree $membership_degree;
         ?membership_degree_ = $membership_degree;
     } then {
@@ -921,16 +921,16 @@ rule as_close_as_possible_state_dependency_interval:
         $relaxed_fuzzy_expression (term: $term, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression;
         $term isa Measure;
         $state (median_valuation: $med_val) isa state;
-        $med_val (measure: $term) isa medianValuation;
+        $med_val (measure: $term) isa MedianValuation;
     } then {
-        (sd_interval: $med_val, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_unimodal_expression;
+        (md_valuation: $med_val, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_unimodal_expression;
     };
 
 rule as_close_as_possible_state_dependency_offset:
     when {
         $sd (dependent: $expr) isa state_dependency;
-        $fuzzy_expr (sd_interval: $med_val, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_unimodal_expression;
-        $med_val (measure: $term) isa medianValuation;
+        $fuzzy_expr (md_valuation: $med_val, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_unimodal_expression;
+        $med_val (measure: $term) isa MedianValuation;
         $expr (term: $term, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression,
             has required_value $required_value;
         ?offset_value_ = -1.0 * $required_value;
@@ -942,7 +942,7 @@ rule as_close_as_possible_state_dependency_fulfillment:
     when {
         $sd (dependent: $expr) isa state_dependency;
         $expr (term: $term, fuzzy_set: $fuzzy_set) isa as_close_as_possible_expression;
-        (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_unimodal_expression,
+        (md_valuation: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_unimodal_expression,
             has membership_degree $membership_degree;
         ?membership_degree_ = $membership_degree;
     } then {
@@ -958,16 +958,16 @@ rule as_many_as_possible_state_dependency_interval:
         $relaxed_fuzzy_expression (term: $term, fuzzy_set: $fuzzy_set) isa as_many_as_possible_expression;
         $term isa Measure;
         $state (median_valuation: $med_val) isa state;
-        $med_val (measure: $term) isa medianValuation;
+        $med_val (measure: $term) isa MedianValuation;
     } then {
-        (sd_interval: $med_val, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_ascend_expression;
+        (md_valuation: $med_val, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_ascend_expression;
     };
 
 rule as_many_as_possible_state_dependency_fulfillment:
     when {
         $sd (dependent: $expr) isa state_dependency;
         $expr (term: $term, fuzzy_set: $fuzzy_set) isa as_many_as_possible_expression;
-        (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_ascend_expression,
+        (md_valuation: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_ascend_expression,
             has membership_degree $membership_degree;
         ?membership_degree_ = $membership_degree;
     } then {
@@ -983,16 +983,16 @@ rule as_few_as_possible_state_dependency_interval:
         $relaxed_fuzzy_expression (term: $term, fuzzy_set: $fuzzy_set) isa as_few_as_possible_expression;
         $term isa Measure;
         $state (median_valuation: $med_val) isa state;
-        $med_val (measure: $term) isa medianValuation;
+        $med_val (measure: $term) isa MedianValuation;
     } then {
-        (sd_interval: $med_val, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_decay_expression;
+        (md_valuation: $med_val, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_decay_expression;
     };
 
 rule as_few_as_possible_state_dependency_fulfillment:
     when {
         $sd (dependent: $expr) isa state_dependency;
         $expr (term: $term, fuzzy_set: $fuzzy_set) isa as_few_as_possible_expression;
-        (sd_interval: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_decay_expression,
+        (md_valuation: $interval, fuzzy_set: $fuzzy_set, sd_dependency: $sd) isa fuzzy_decay_expression,
             has membership_degree $membership_degree;
         ?membership_degree_ = $membership_degree;
     } then {

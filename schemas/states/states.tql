@@ -16,15 +16,15 @@ state sub relation,
 median_bound_value sub attribute,
     value double;
 
-medianValuation sub relation,
+MedianValuation sub relation,
     owns median_bound_value,
     relates measure;
 
 
 
-Measure plays medianValuation:measure;
+Measure plays MedianValuation:measure;
 
-medianValuation plays state:median_valuation;
+MedianValuation plays state:median_valuation;
 
 state_sequence sub relation,
     relates current_state,
