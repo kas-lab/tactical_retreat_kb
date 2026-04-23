@@ -1650,7 +1650,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.update_database(query)
         return query_result
 
-    def is_node_running(self, node_name: str) -> bool:
+    def is_node_running(self, node_name: str) -> bool | None:
         """
         Return whether a ROS node is running.
 
@@ -1664,7 +1664,10 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $node: running;
         """
         query_result = self.fetch_database(query)
-        return query_result[0]['node']['running'][0]['value']
+        try:
+            return query_result[0]['node']['running'][0]['value']
+        except IndexError:
+            return None
 
     def is_set_nodes_parameters_feasible(
             self, node_name: str, parameter_name: str) -> bool:

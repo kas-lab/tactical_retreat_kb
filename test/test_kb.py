@@ -16,9 +16,6 @@ import math
 import threading
 import time
 
-from lifecycle_msgs.srv import ChangeState
-from lifecycle_msgs.srv import GetState
-
 from nav_msgs.msg import Odometry
 
 import pytest
@@ -96,6 +93,7 @@ def test_node():
     finally:
         node.destroy_node()
 
+
 @pytest.fixture(scope='module')
 def executor(tactical_kb, test_node):
     ex = MultiThreadedExecutor()
@@ -108,6 +106,7 @@ def executor(tactical_kb, test_node):
     finally:
         ex.shutdown()
         t.join(timeout=2.0)
+
 
 class HelperNode(Node):
 
@@ -127,6 +126,7 @@ class HelperNode(Node):
             return None
 
         return future.result()
+
 
 def test_create_measure_topic_interface(executor, tactical_kb, test_node):
 
@@ -328,7 +328,8 @@ def test_create_measure_interface_service(executor, tactical_kb, test_node):
     deadline = time.time() + 5.0
     service_result = False
     while time.time() < deadline:
-        service_result = tactical_kb.typedb_interface.get_latest_measurement('measure_test_service')
+        service_result = tactical_kb.typedb_interface.get_latest_measurement(
+            'measure_test_service')
         if service_result is True:
             break
         time.sleep(0.05)
@@ -387,7 +388,8 @@ def test_create_proxy(executor, tactical_kb, test_node):
     deadline = time.time() + 5.0
     service_result = False
     while time.time() < deadline:
-        service_result = tactical_kb.typedb_interface.get_latest_measurement('measure_test_service')
+        service_result = tactical_kb.typedb_interface.get_latest_measurement(
+            'measure_test_service')
         if service_result == expected_msg:
             break
         time.sleep(0.05)

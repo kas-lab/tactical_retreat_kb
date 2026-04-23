@@ -27,7 +27,6 @@ from adapt_x_msgs.srv import SatisfiedTactic
 from adapt_x_msgs.srv import UpdateHasParamValue
 from adapt_x_msgs.srv import UpdateInEffect
 from adapt_x_msgs.srv import UpdateRunning
-import rclpy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.duration import Duration
 from rclpy.lifecycle import State
@@ -746,7 +745,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         if self.measurements:
             self.typedb_interface.add_measurements(self.measurements)
             current_state = self.typedb_interface.get_current_state()
-            if current_state != None:
+            if current_state is not None:
                 self.state_publisher.publish(
                     String(data=self.typedb_interface.get_current_state()))
 

@@ -78,11 +78,10 @@ $or_exp3 (expression: $exp2, expression:$exp3) isa or_expression, has expression
 ### resolution actions
 $node_running isa ROSNode,
 	has node_name "node_running",
-	has start_time 2025-09-06T11:57:56.666;
+	has running true;
 $node_not_running isa ROSNode,
 	has node_name "node_not_running",
-	has start_time 2025-09-06T11:57:56.666,
-	has end_time 2025-09-07T11:57:56.666;
+	has running false;
 
 $parameter isa ParameterDouble, has parameter_name "parameter";
 $parameter_value isa ValueDouble, has double_value 0.10;
@@ -91,22 +90,22 @@ $res_action_unfeasible (node: $node_not_running, parameter: $parameter, paramete
 
 $lifecycle_node_active isa LifeCycleNode,
 	has node_name "lifecycle_node_active",
-	has start_time 2025-09-06T11:57:56.666,
+	has running true,
     has lifecycle_state "active";
 
 $lifecycle_node_inactive isa LifeCycleNode,
 	has node_name "lifecycle_node_inactive",
-	has start_time 2025-09-06T11:57:56.666,
+	has running true,
     has lifecycle_state "inactive";
 
 $lifecycle_node_unconfigured isa LifeCycleNode,
 	has node_name "lifecycle_node_unconfigured",
-	has start_time 2025-09-06T11:57:56.666,
+	has running true,
     has lifecycle_state "unconfigured";
 
 $lifecycle_node_finalized isa LifeCycleNode,
 	has node_name "lifecycle_node_finalized",
-	has start_time 2025-09-06T11:57:56.666,
+	has running true,
     has lifecycle_state "finalized";
 
 (node: $lifecycle_node_active) isa set_lifecycle_state, has lifecycle_state "active";       # feasible is true

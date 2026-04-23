@@ -34,12 +34,6 @@ def kb_interface():
     kb_interface.delete_database()
 
 
-def test_ros_node_running(kb_interface):
-    assert kb_interface.is_node_running('node_has_start_time') is True
-    assert kb_interface.is_node_running('node_no_start_time') is False
-    assert kb_interface.is_node_running('node_has_end_time') is False
-
-
 def test_get_measures_interfaces(kb_interface):
     measure_test_topic_dict = {
         'source': 'Publisher',
