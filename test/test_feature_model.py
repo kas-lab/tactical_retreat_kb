@@ -14,8 +14,9 @@
 
 import pytest
 
-from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 from ros_typedb.typedb_interface import convert_py_type_to_query_type
+from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+
 
 def fetch_siblings(self, feature_name):
     query = f"""
@@ -28,13 +29,8 @@ def fetch_siblings(self, feature_name):
     query_result = self.fetch_database(query)
     return [q['f_sibling']['feature_name'][0]['value'] for q in query_result]
 
+
 def update_feature_selected(self, feature_name: str, selected: bool):
-    """
-    Update whether a feature is selected.
-
-    :param feature_name: feature name
-    """
-
     selected_tql_type = convert_py_type_to_query_type(selected)
 
     query = f"""
@@ -70,7 +66,7 @@ def kb_interface():
 
 def test_feature_selectable(kb_interface):
     # In an alternative group, only one child can be selected at a time.
-    kb_interface.register_method('update_feature_selected',update_feature_selected)
+    kb_interface.register_method('update_feature_selected', update_feature_selected)
     assert kb_interface.is_feature_selected('f_alternative_child_3') is True
     assert kb_interface.is_feature_selectable('f_alternative_child_1') is False
     assert kb_interface.is_feature_selectable('f_alternative_child_2') is False
@@ -82,7 +78,6 @@ def test_feature_selectable(kb_interface):
     assert kb_interface.is_feature_selectable('f_alternative_child_3') is True
     assert kb_interface.is_feature_selectable('f_alternative_child_1') is True
     assert kb_interface.is_feature_selectable('f_alternative_child_2') is True
-
 
     assert kb_interface.is_feature_selectable('f_or_group_child_1') is True
     assert kb_interface.is_feature_selectable('f_or_group_child_2') is True
@@ -105,6 +100,7 @@ def test_feature_selectable(kb_interface):
     assert kb_interface.is_feature_selectable('f_excl_constrained_4') is True
     assert kb_interface.is_feature_selectable('f_excl_constrained_5') is False
 
+
 def test_feature_as_proposition_expression(kb_interface):
     assert kb_interface.fetch_attribute_from_thing(
         'propositional_expression',
@@ -119,8 +115,9 @@ def test_feature_as_proposition_expression(kb_interface):
         [('expression_name', 'false_feature_prop_exp_2')],
         'expression_satisfied')[0] is False
 
+
 def test_feature_siblings(kb_interface):
     kb_interface.register_method('fetch_siblings', fetch_siblings)
-    siblings = kb_interface.fetch_siblings("f_alternative_child_1")
-    assert "f_alternative_child_2" in siblings
-    assert "f_alternative_child_3" in siblings
+    siblings = kb_interface.fetch_siblings('f_alternative_child_1')
+    assert 'f_alternative_child_2' in siblings
+    assert 'f_alternative_child_3' in siblings

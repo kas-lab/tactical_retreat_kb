@@ -25,8 +25,8 @@ from typing import Iterable
 
 
 DEFAULT_IGNORED_SCHEMA_FILENAMES = {
-    "discover_hypothetical_req_fulfillment.tql",
-    "discover_tactics_model.tql",
+    'discover_hypothetical_req_fulfillment.tql',
+    'discover_tactics_model.tql',
 }
 
 
@@ -46,7 +46,7 @@ def _load_schema_diagram_api() -> SchemaDiagramAPI:
         return SchemaDiagramAPI(parse_schema_files=parse_schema_files, write_graph=write_graph)
     except ImportError:
         script_path = Path(__file__).resolve()
-        candidate = script_path.parents[2] / "ros_typedb" / "ros_typedb_tools"
+        candidate = script_path.parents[2] / 'ros_typedb' / 'ros_typedb_tools'
         if candidate.is_dir():
             sys.path.insert(0, str(candidate))
             from ros_typedb_tools.schema_diagram import parse_schema_files
@@ -54,8 +54,8 @@ def _load_schema_diagram_api() -> SchemaDiagramAPI:
             return SchemaDiagramAPI(parse_schema_files=parse_schema_files, write_graph=write_graph)
 
     raise RuntimeError(
-        "Could not import ros_typedb_tools.schema_diagram. "
-        "Install ros_typedb_tools or run from this workspace source tree."
+        'Could not import ros_typedb_tools.schema_diagram. '
+        'Install ros_typedb_tools or run from this workspace source tree.'
     )
 
 
@@ -68,15 +68,15 @@ def discover_schema_files_for_merge(
     """Discover schema files for merge, applying ignore and content filters."""
     schemas_root = Path(schemas_root)
     if not schemas_root.is_dir():
-        raise FileNotFoundError(f"Schemas directory not found: {schemas_root}")
+        raise FileNotFoundError(f'Schemas directory not found: {schemas_root}')
 
-    ignored = {name for name in ignored_schema_filenames}
+    ignored = set(ignored_schema_filenames)
     selected: list[Path] = []
 
-    for schema_file in sorted(schemas_root.rglob("*.tql")):
+    for schema_file in sorted(schemas_root.rglob('*.tql')):
         relative_path = schema_file.relative_to(schemas_root)
-        is_query = "queries" in relative_path.parts
-        is_example = schema_file.stem.endswith("_example")
+        is_query = 'queries' in relative_path.parts
+        is_example = schema_file.stem.endswith('_example')
 
         if schema_file.name in ignored:
             continue
@@ -94,8 +94,8 @@ def discover_schema_files_for_merge(
 def generate_merged_schema_diagram(
     schemas_root: Path,
     output_path: Path,
-    output_format: str = "svg",
-    orientation: str = "vertical",
+    output_format: str = 'svg',
+    orientation: str = 'vertical',
     ignored_schema_filenames: Iterable[str] = (),
     include_examples: bool = False,
     include_queries: bool = False,
@@ -129,70 +129,70 @@ def generate_merged_schema_diagram(
 def build_argument_parser() -> argparse.ArgumentParser:
     """Build CLI argument parser for merged schema diagram generation."""
     parser = argparse.ArgumentParser(
-        prog="generate_merged_schema_diagram.py",
-        description="Generate one merged diagram for typedb_tactics schema files.",
+        prog='generate_merged_schema_diagram.py',
+        description='Generate one merged diagram for typedb_tactics schema files.',
     )
     script_path = Path(__file__).resolve()
-    default_schemas_root = script_path.parents[1] / "schemas"
+    default_schemas_root = script_path.parents[1] / 'schemas'
 
     parser.add_argument(
-        "--schemas-root",
+        '--schemas-root',
         type=Path,
         default=default_schemas_root,
-        help=f"Directory containing schema .tql files (default: {default_schemas_root}).",
+        help=f'Directory containing schema .tql files (default: {default_schemas_root}).',
     )
     parser.add_argument(
-        "--output",
-        "-o",
+        '--output',
+        '-o',
         type=Path,
-        help="Output file path for merged diagram. Defaults to "
-        "<package>/schemas_diagrams/merged_schema.<format>.",
+        help='Output file path for merged diagram. Defaults to '
+        '<package>/schemas_diagrams/merged_schema.<format>.',
     )
     parser.add_argument(
-        "--format",
-        choices=["svg", "dot"],
-        default="svg",
-        help="Output format (default: svg).",
+        '--format',
+        choices=['svg', 'dot'],
+        default='svg',
+        help='Output format (default: svg).',
     )
     parser.add_argument(
-        "--orientation",
-        choices=["vertical", "horizontal"],
-        default="vertical",
-        help="Diagram orientation (default: vertical).",
+        '--orientation',
+        choices=['vertical', 'horizontal'],
+        default='vertical',
+        help='Diagram orientation (default: vertical).',
     )
     parser.add_argument(
-        "--include-examples",
-        action="store_true",
-        help="Include schema files ending with _example.tql.",
+        '--include-examples',
+        action='store_true',
+        help='Include schema files ending with _example.tql.',
     )
     parser.add_argument(
-        "--include-queries",
-        action="store_true",
-        help="Include .tql files under any queries/ subdirectory.",
+        '--include-queries',
+        action='store_true',
+        help='Include .tql files under any queries/ subdirectory.',
     )
     parser.add_argument(
-        "--include-default-ignored",
-        action="store_true",
-        help="Include discovery schemas that are ignored by default.",
+        '--include-default-ignored',
+        action='store_true',
+        help='Include discovery schemas that are ignored by default.',
     )
     parser.add_argument(
-        "--ignore-schema",
-        action="append",
+        '--ignore-schema',
+        action='append',
         default=[],
-        help="Additional schema filename to ignore (can be passed multiple times).",
+        help='Additional schema filename to ignore (can be passed multiple times).',
     )
     return parser
 
 
 def _default_output_path(output_format: str) -> Path:
     script_path = Path(__file__).resolve()
-    return script_path.parents[1] / "schemas_diagrams" / f"merged_schema.{output_format}"
+    return script_path.parents[1] / 'schemas_diagrams' / f'merged_schema.{output_format}'
 
 
 def _is_define_schema_file(schema_file: Path) -> bool:
-    text = schema_file.read_text(encoding="utf-8")
-    cleaned = "\n".join(line.split("#", maxsplit=1)[0] for line in text.splitlines())
-    return re.search(r"\bdefine\b", cleaned, flags=re.IGNORECASE) is not None
+    text = schema_file.read_text(encoding='utf-8')
+    cleaned = '\n'.join(line.split('#', maxsplit=1)[0] for line in text.splitlines())
+    return re.search(r'\bdefine\b', cleaned, flags=re.IGNORECASE) is not None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -217,17 +217,17 @@ def main(argv: list[str] | None = None) -> int:
             include_queries=args.include_queries,
         )
     except Exception as exc:
-        print(f"Failed to generate merged schema diagram: {exc}", file=sys.stderr)
+        print(f'Failed to generate merged schema diagram: {exc}', file=sys.stderr)
         return 1
 
     if output_path is None:
-        print("No schema files matched the selection filters.")
+        print('No schema files matched the selection filters.')
         return 0
 
-    print(f"Generated merged schema diagram: {output_path}")
-    print(f"Merged {len(used_files)} schema file(s).")
+    print(f'Generated merged schema diagram: {output_path}')
+    print(f'Merged {len(used_files)} schema file(s).')
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     raise SystemExit(main())

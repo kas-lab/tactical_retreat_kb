@@ -129,8 +129,8 @@ def test_current_state(kb_interface):
     current_state = kb_interface.fetch_state_current()
 
     assert len(current_state[0]['s']['state_name']) == 1
-    possibly_current_state = current_state[0]['s']['state_name'][0]['value'] == "current_state"
-    other_pos_current = current_state[1]['s']['state_name'][0]['value'] == "current_state"
+    possibly_current_state = current_state[0]['s']['state_name'][0]['value'] == 'current_state'
+    other_pos_current = current_state[1]['s']['state_name'][0]['value'] == 'current_state'
     assert possibly_current_state or other_pos_current
 
     alt_state_1 = kb_interface.fetch_state_current_by_name('alt_state_1')
@@ -176,16 +176,16 @@ def test_current_state(kb_interface):
     )
     x = kb_interface.fetch_next_state_name()
     assert len(x[0]['s2']['state_name']) == 1
-    assert x[0]['s2']['state_name'][0]['value'] == "alt_state_1"
+    assert x[0]['s2']['state_name'][0]['value'] == 'alt_state_1'
 
     req_ful = kb_interface.fetch_in_effect_requirement_fulfillment()
 
     kb_interface.register_method('dream', dream)
 
-    dream_result = kb_interface.dream("effective_rule")
+    dream_result = kb_interface.dream('effective_rule')
 
     assert len(dream_result[0]['s2']['state_name']) == 1
-    assert dream_result[0]['s2']['state_name'][0]['value'] == "alt_state_1"
+    assert dream_result[0]['s2']['state_name'][0]['value'] == 'alt_state_1'
 
     assert len(dream_result[0]['t_impact']['fulfillment']) == 1
     some_value = dream_result[0]['t_impact']['fulfillment'][0]['value']
