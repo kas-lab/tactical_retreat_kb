@@ -736,7 +736,9 @@ class TacticalRetreatInterface(TypeDBInterface):
 
     def get_current_state(self):
         current_state = self.fetch_current_state()
-        return current_state[0]['s']['state_name'][0]['value']
+        if len(current_state) > 0:
+            return current_state[0]['s']['state_name'][0]['value']
+        return None
 
     def fetch_valid_rule(
             self,

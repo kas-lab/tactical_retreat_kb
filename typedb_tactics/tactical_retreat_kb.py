@@ -534,6 +534,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             self.get_name() + '/fetch_all_measurements',
             _fetch_all_measurements_cb
         )
+
         return super().on_activate(state)
 
     def on_deactivate(self, state: State) -> TransitionCallbackReturn:
@@ -548,8 +549,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
         :return: transition result
         """
-        super().get_logger().info('I have arisen')
         config_res = super().on_configure(state)
+        super().get_logger().info('I have arisen')
         return config_res
 
     def on_cleanup(self, state: State) -> TransitionCallbackReturn:
@@ -746,8 +747,10 @@ class TacticalRetreatKB(ROSTypeDBInterface):
     def measurement_processing(self):
         if self.measurements:
             self.typedb_interface.add_measurements(self.measurements)
-            self.state_publisher.publish(
-                String(data=self.typedb_interface.get_current_state()))
+            current_state = self.typedb_interface.get_current_state()
+            if current_state != None:
+                self.state_publisher.publish(
+                    String(data=self.typedb_interface.get_current_state()))
 
     def publish_fulfillments(self):
         fulfillments = self.typedb_interface.get_in_effect_requirement_fulfillment()

@@ -57,7 +57,16 @@ def tactical_kb():
         'tactical_kb',
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
-            'schemas/ros_model/ros_model.tql'],
+            'schemas/ros_model/ros_model.tql',
+            'schemas/logical_expressions/logical_expression.tql',
+            'schemas/logical_expressions/fuzzy_expression.tql',
+            'schemas/feature_model/feature_model.tql',
+            'schemas/feature_model/feature_model_logical_expression.tql',
+            'schemas/relaxed/relaxed_model.tql',
+            'schemas/tactics_model/tactics_model.tql',
+            'schemas/discover_hypothetical_req_fulfillment/'
+            'discover_hypothetical_req_fulfillment.tql',
+            'schemas/states/states.tql'],
         ['test/data/test_ros_model.tql'],
         force_database=True,
         force_data=True,
@@ -117,6 +126,19 @@ class HelperNode(Node):
             Empty, '/tactical_kb/delete_database'
         )
 
+    def get_tactical_kb_state(self):
+        get_state_req = GetState.Request()
+        return self.call_service(self.get_state_cli, get_state_req)
+
+    def change_tactical_kb_state(self, transition_id):
+        change_state_req = ChangeState.Request()
+        change_state_req.transition.id = transition_id
+        return self.call_service(self.change_state_cli, change_state_req)
+
+    def activate_tactical_kb(self):
+        self.change_tactical_kb_state(1)
+        self.change_tactical_kb_state(3)
+
     def call_service(self, cli, request):
         if cli.wait_for_service(timeout_sec=5.0) is False:
             self.get_logger().error(
@@ -133,6 +155,22 @@ class HelperNode(Node):
 
     def delete_database(self):
         self.call_service(self.delete_db_cli, Empty.Request())
+
+
+def test_ros_typedb_lc_states(executor, tactical_kb, test_node):
+    executor.add_node(test_node)
+    executor.add_node(tactical_kb)
+
+    configure_res = test_node.change_tactical_kb_state(1)
+    get_inactive_state_res = test_node.get_tactical_kb_state()
+
+    activate_res = test_node.change_tactical_kb_state(3)
+    get_active_state_res = test_node.get_tactical_kb_state()
+
+    assert configure_res.success is True and \
+        get_inactive_state_res.current_state.id == 2 and \
+        activate_res.success is True and \
+        get_active_state_res.current_state.id == 3
 
 
 def test_create_measure_topic_interface(executor, tactical_kb, test_node):
@@ -206,6 +244,12 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
     tactical_kb.create_measure_interface(odom_dict)
     assert 'measure_mean_velocity' in tactical_kb.measures_subscribers
 
+    tactical_kb.create_timer(
+        1.0,
+        tactical_kb.measurement_processing,
+        callback_group=tactical_kb.query_cb_group
+    )
+
     pub_qos = QoSProfile(
         reliability=QoSReliabilityPolicy.RELIABLE,
         history=QoSHistoryPolicy.KEEP_LAST,
@@ -231,12 +275,16 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
 
     publisher.publish(Float64(data=3.0))
 
-    t_end = time.time() + 1.0
-    while time.time() < t_end:
-        time.sleep(0.1)
+    deadline = time.time() + 5.0
+    measurement = float('nan')
 
-    measurement = tactical_kb.typedb_interface.get_latest_measurement(
-        'measure_test_topic')
+    while time.time() < deadline:
+        measurement = tactical_kb.typedb_interface.get_latest_measurement(
+            'measure_test_topic')
+        if measurement == 3.0:
+            break
+        time.sleep(0.05)
+
     assert measurement == 3.0
 
     odom_publisher = test_node.create_publisher(
@@ -266,10 +314,6 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
         # mean_velocity = mean_vel_monitor(None, odom_msg)
         odom_publisher.publish(odom_msg)
 
-        t_end = time.time() + 0.5
-        while time.time() < t_end:
-            time.sleep(0.1)
-
         # Manually compute expected mean velocity over the window
         window_start = ts - 5.0
         relevant_speeds = [
@@ -278,10 +322,18 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
             if t >= window_start and t <= ts
         ]
         expected_mean = sum(relevant_speeds) / len(relevant_speeds) if relevant_speeds else 0.0
-        mean_velocity = tactical_kb.typedb_interface.get_latest_measurement(
-            'measure_mean_velocity')
 
-        assert mean_velocity == pytest.approx(expected_mean)
+        deadline = time.time() + 5.0
+        measurement = float('nan')
+
+        while time.time() < deadline:
+            measurement = tactical_kb.typedb_interface.get_latest_measurement(
+                'measure_mean_velocity')
+            if measurement == pytest.approx(expected_mean):
+                break
+            time.sleep(0.05)
+
+        assert measurement == pytest.approx(expected_mean)
 
 
 def test_create_measure_interface_service(executor, tactical_kb, test_node):
