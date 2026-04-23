@@ -1595,7 +1595,6 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: true or false
         """
         query_result = self.fetch_tactic_rule_valid(tactic_rule)
-        print(query_result)
         return query_result[0]['tr']['rule_valid'][0]['value']
 
     def is_feature_selectable(self, feature_name: str) -> bool:

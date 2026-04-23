@@ -28,6 +28,7 @@ from adapt_x_msgs.srv import UpdateHasParamValue
 from adapt_x_msgs.srv import UpdateInEffect
 from adapt_x_msgs.srv import UpdateRunning
 import rclpy
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.duration import Duration
 from rclpy.lifecycle import State
 from rclpy.lifecycle import TransitionCallbackReturn
@@ -651,7 +652,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 ros_msg_type_str, 'srv')
             if (interface.get('measurement_proxy') is not True):
                 super().get_logger().info(
-                    f'Creating service client for: {ros_msg_type_str}')
+                    f'Creating service client for: {interface_name}')
                 service_request_kwargs_str = interface.get(
                     'service_request_kwargs')
                 service_request_kwargs = {}
@@ -663,60 +664,57 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                     self.measures_clients[measure_name] = self.create_client(
                         service_type,
                         interface_name,
-                        callback_group=self.query_cb_group
+                        callback_group=MutuallyExclusiveCallbackGroup()
                     )
 
                     def _cb(_measure_name=measure_name,
                             _measure_callable=measure_callable,
                             _function_args=callable_args):
-                        if (self.measures_clients[measure_name].wait_for_service(
+                        if (self.measures_clients[_measure_name].wait_for_service(
                            timeout_sec=10.0)):
                             request = service_type.Request(
                                 **service_request_kwargs)
-                            self.measures_clients[measure_name].call_async(
-                                request).add_done_callback(
-                                    lambda future, _measure_name=_measure_name,
+
+                            def _on_done(
+                                    future,
+                                    _measure_name=_measure_name,
                                     _measure_callable=_measure_callable,
-                                    _function_args=_function_args, _measurements=self.measurements:
-                                    # self.typedb_interface.add_measurement(
-                                    #     _measure_name,
-                                    # _measure_callable(self, future.result(),
-                                    # *_function_args)))
-                                    _measurements.__setitem__(
-                                        _measure_name, _measure_callable(
-                                            self, future.result(), *_function_args))
-                            )
+                                    _function_args=_function_args,
+                                    _measurements=self.measurements):
+                                _measurements[_measure_name] = _measure_callable(
+                                    self,
+                                    future.result(),
+                                    *_function_args
+                                )
+
+                            self.measures_clients[_measure_name].call_async(
+                                request).add_done_callback(_on_done)
                     self.measures_timers[measure_name] = self.create_timer(
                         interface['measurement_period'],
                         _cb)
             else:
                 super().get_logger().info(
-                    f'Creating proxy service for: {ros_msg_type_str}')
+                    f'Creating proxy service for: {interface_name}')
                 self.measures_clients[measure_name] = self.create_client(
                     service_type,
                     interface_name,
-                    callback_group=self.query_cb_group
+                    # callback_group=self.query_cb_group
+                    callback_group=MutuallyExclusiveCallbackGroup()
                 )
 
-                def _cb(request, response, _measure_name=measure_name,
-                        _measure_callable=measure_callable,
-                        _function_args=callable_args):
+                async def _cb(request, response, _measure_name=measure_name,
+                              _measure_callable=measure_callable,
+                              _function_args=callable_args):
                     if (self.measures_clients[measure_name].wait_for_service(
                             timeout_sec=10.0)):
-                        future = self.measures_clients[measure_name].call_async(
-                            request)
-                        # wait for future
-                        rclpy.spin_until_future_complete(self, future)
-                        # self.typedb_interface.add_measurement(_measure_name, _measure_callable(
-                        #     self,
-                        #     future.result(),
-                        #     *_function_args))
+                        proxied_response = await self.measures_clients[
+                            measure_name].call_async(request)
                         self.measurements[_measure_name] = _measure_callable(
                             self,
-                            future.result(),
+                            proxied_response,
                             *_function_args)
-                        response = future.result()
-                        return response
+                        return proxied_response
+                    return response
 
                 self.measures_services[measure_name] = self.create_service(
                     service_type,

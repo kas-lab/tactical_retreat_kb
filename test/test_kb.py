@@ -24,7 +24,7 @@ from nav_msgs.msg import Odometry
 import pytest
 
 import rclpy
-from rclpy.executors import SingleThreadedExecutor
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy
 from rclpy.qos import QoSHistoryPolicy
@@ -89,7 +89,7 @@ def rclpy_runtime():
 
 @pytest.fixture
 def executor():
-    ex = SingleThreadedExecutor()
+    ex = MultiThreadedExecutor()
     t = threading.Thread(target=ex.spin, daemon=True)
     t.start()
     try:
@@ -354,7 +354,7 @@ def test_create_measure_interface_service(executor, tactical_kb, test_node):
     )
 
     measure_test_service_dict = {
-        'source': 'Service',
+        'source': 'ServiceServer',
         'measure_name': 'measure_test_service',
         'interface_name': '/measure_test_service',
         'interface_type': 'std_srvs/srv/Trigger',
@@ -368,11 +368,19 @@ def test_create_measure_interface_service(executor, tactical_kb, test_node):
     tactical_kb.create_measure_interface(measure_test_service_dict)
     assert 'measure_test_service' in tactical_kb.measures_clients
 
-    deadline = time.time() + 2.0
-    while time.time() < deadline:
-        time.sleep(0.02)
+    tactical_kb.create_timer(
+        1.0,
+        tactical_kb.measurement_processing,
+        callback_group=tactical_kb.query_cb_group
+    )
 
-    service_result = tactical_kb.typedb_interface.get_latest_measurement('measure_test_service')
+    deadline = time.time() + 5.0
+    service_result = False
+    while time.time() < deadline:
+        service_result = tactical_kb.typedb_interface.get_latest_measurement('measure_test_service')
+        if service_result is True:
+            break
+        time.sleep(0.05)
     assert service_result is True
 
 
@@ -394,7 +402,7 @@ def test_create_proxy(executor, tactical_kb, test_node):
     )  # this is the original service that will be proxied
 
     measure_test_service_dict = {
-        'source': 'Service',
+        'source': 'ServiceServer',
         'measure_name': 'measure_test_service',
         'interface_name': '/measure_test_service',
         'interface_type': 'std_srvs/srv/Trigger',
@@ -408,6 +416,12 @@ def test_create_proxy(executor, tactical_kb, test_node):
     tactical_kb.create_measure_interface(measure_test_service_dict)
     assert 'measure_test_service' in tactical_kb.measures_clients
 
+    tactical_kb.create_timer(
+        1.0,
+        tactical_kb.measurement_processing,
+        callback_group=tactical_kb.query_cb_group
+    )
+
     service_client = test_node.create_client(
         Trigger,
         'proxy_' + measure_test_service_dict['interface_name']
@@ -419,6 +433,13 @@ def test_create_proxy(executor, tactical_kb, test_node):
     rclpy.spin_until_future_complete(test_node, future, timeout_sec=5.0)
     assert future.done()
 
-    service_result = tactical_kb.typedb_interface.get_latest_measurement('measure_test_service')
+    expected_msg = future.result().message
 
-    assert service_result == future.result().message
+    deadline = time.time() + 5.0
+    service_result = False
+    while time.time() < deadline:
+        service_result = tactical_kb.typedb_interface.get_latest_measurement('measure_test_service')
+        if service_result == expected_msg:
+            break
+        time.sleep(0.05)
+    assert service_result == expected_msg
