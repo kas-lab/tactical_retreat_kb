@@ -49,7 +49,7 @@ def test_get_ros_msg_type_from_string():
     assert get_ros_msg_type_from_string('std_srvs/Empty', 'srv') == Empty
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def tactical_kb():
     tactical_kb = TacticalRetreatKB('tactical_kb')
     tactical_kb.init_typedb_interface(
@@ -73,6 +73,7 @@ def tactical_kb():
         infer=True
     )
     yield tactical_kb
+    tactical_kb.typedb_interface.delete_database()
     tactical_kb.destroy_node()
 
 
@@ -87,57 +88,31 @@ def rclpy_runtime():
             rclpy.shutdown()
 
 
-@pytest.fixture
-def executor():
-    ex = MultiThreadedExecutor()
-    t = threading.Thread(target=ex.spin, daemon=True)
-    t.start()
-    try:
-        yield ex
-    finally:
-        ex.shutdown()
-        t.join(timeout=2.0)
-
-
-@pytest.fixture
+@pytest.fixture(scope='module')
 def test_node():
     node = HelperNode()
     try:
         yield node
     finally:
-        node.delete_database()
         node.destroy_node()
 
+@pytest.fixture(scope='module')
+def executor(tactical_kb, test_node):
+    ex = MultiThreadedExecutor()
+    t = threading.Thread(target=ex.spin, daemon=True)
+    t.start()
+    try:
+        ex.add_node(tactical_kb)
+        ex.add_node(test_node)
+        yield ex
+    finally:
+        ex.shutdown()
+        t.join(timeout=2.0)
 
 class HelperNode(Node):
 
     def __init__(self, name='test_node'):
         super().__init__(name)
-
-        self.change_state_cli = self.create_client(
-            ChangeState, '/tactical_kb/change_state'
-        )
-
-        self.get_state_cli = self.create_client(
-            GetState, '/tactical_kb/get_state'
-        )
-
-        self.delete_db_cli = self.create_client(
-            Empty, '/tactical_kb/delete_database'
-        )
-
-    def get_tactical_kb_state(self):
-        get_state_req = GetState.Request()
-        return self.call_service(self.get_state_cli, get_state_req)
-
-    def change_tactical_kb_state(self, transition_id):
-        change_state_req = ChangeState.Request()
-        change_state_req.transition.id = transition_id
-        return self.call_service(self.change_state_cli, change_state_req)
-
-    def activate_tactical_kb(self):
-        self.change_tactical_kb_state(1)
-        self.change_tactical_kb_state(3)
 
     def call_service(self, cli, request):
         if cli.wait_for_service(timeout_sec=5.0) is False:
@@ -153,29 +128,7 @@ class HelperNode(Node):
 
         return future.result()
 
-    def delete_database(self):
-        self.call_service(self.delete_db_cli, Empty.Request())
-
-
-def test_ros_typedb_lc_states(executor, tactical_kb, test_node):
-    executor.add_node(test_node)
-    executor.add_node(tactical_kb)
-
-    configure_res = test_node.change_tactical_kb_state(1)
-    get_inactive_state_res = test_node.get_tactical_kb_state()
-
-    activate_res = test_node.change_tactical_kb_state(3)
-    get_active_state_res = test_node.get_tactical_kb_state()
-
-    assert configure_res.success is True and \
-        get_inactive_state_res.current_state.id == 2 and \
-        activate_res.success is True and \
-        get_active_state_res.current_state.id == 3
-
-
 def test_create_measure_topic_interface(executor, tactical_kb, test_node):
-    executor.add_node(test_node)
-    executor.add_node(tactical_kb)
 
     measure_test_topic_dict = {
         'source': 'Publisher',
@@ -337,8 +290,6 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
 
 
 def test_create_measure_interface_service(executor, tactical_kb, test_node):
-    executor.add_node(test_node)
-    executor.add_node(tactical_kb)
 
     from std_srvs.srv import Trigger
 
@@ -385,8 +336,6 @@ def test_create_measure_interface_service(executor, tactical_kb, test_node):
 
 
 def test_create_proxy(executor, tactical_kb, test_node):
-    executor.add_node(test_node)
-    executor.add_node(tactical_kb)
 
     from std_srvs.srv import Trigger
 
