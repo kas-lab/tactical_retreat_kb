@@ -182,6 +182,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         self.monitor.register_monitor(
             'is_too_close', is_too_close
         )
+        self.declare_parameter("do_states", True)
 
     def _generate_context_combinations(self):
         """Generate all possible context combinations and assign indices."""
@@ -212,8 +213,11 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
         self.active = True
         self.get_logger().info(
-            self.get_name() + ': on_activate() is completed.')
+            self.get_name() + ': on_activate() is not yet completed.')
 
+        self.doing_states = self.get_parameter("do_states").value
+
+        self.get_logger().info(f": are we doing states? {self.doing_states}")
         self.fulfillment_publisher = self.create_publisher(
             String, 'requirements', 10)
 
@@ -744,14 +748,19 @@ class TacticalRetreatKB(ROSTypeDBInterface):
     def measurement_processing(self):
         if self.measurements:
             self.typedb_interface.add_measurements(self.measurements)
-            current_state = self.typedb_interface.get_current_state()
-            if current_state is not None:
-                self.state_publisher.publish(
-                    String(data=self.typedb_interface.get_current_state()))
+            if self.doing_states:
+                current_state = self.typedb_interface.get_current_state()
+                if current_state is not None:
+                    self.state_publisher.publish(
+                        String(data=self.typedb_interface.get_current_state()))
+        else:
+            self.get_logger().info("No measurements to process")
 
     def publish_fulfillments(self):
         fulfillments = self.typedb_interface.get_in_effect_requirement_fulfillment()
-        if(fulfillments):
+        if (fulfillments):
             fulfillment_msg = String()
             fulfillment_msg.data = json.dumps(fulfillments)
             self.fulfillment_publisher.publish(fulfillment_msg)
+        else:
+            self.get_logger().info("No fulfillments to published")
