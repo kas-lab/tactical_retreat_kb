@@ -11,6 +11,7 @@ state sub relation,
     owns current,   
     relates antecedent,
     relates rule,
+    relates ros_action,
     relates median_valuation;
 
 median_bound_value sub attribute,
@@ -20,7 +21,7 @@ MedianValuation sub relation,
     owns median_bound_value,
     relates measure;
 
-
+ActionInterface plays state:ros_action;
 
 Measure plays MedianValuation:measure;
 

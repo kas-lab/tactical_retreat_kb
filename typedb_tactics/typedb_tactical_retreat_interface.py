@@ -53,7 +53,7 @@ def create_value_query(value, suffix=''):
             'Unsupported type %s for value %s',
             type(value),
             value)
-        return None
+        return None, None
 
     variable_name = f'$value{suffix}'
 
@@ -723,6 +723,18 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
+    def fetch_current_state_action(self, action_name):
+        query = f"""
+            match
+                $action_server isa ActionServer, has interface_name "{action_name}";
+                $s (ros_action : $action_server) isa state,
+                    has current true;
+            fetch
+                $s: state_name;
+        """
+        query_result = self.fetch_database(query)
+        return query_result
+    
     def fetch_current_state(self):
         query = """
             match
@@ -736,6 +748,12 @@ class TacticalRetreatInterface(TypeDBInterface):
 
     def get_current_state(self):
         current_state = self.fetch_current_state()
+        if len(current_state) > 0:
+            return current_state[0]['s']['state_name'][0]['value']
+        return None
+
+    def get_current_state_action(self, action_name):
+        current_state = self.fetch_current_state_action(action_name)
         if len(current_state) > 0:
             return current_state[0]['s']['state_name'][0]['value']
         return None
@@ -1875,7 +1893,7 @@ class TacticalRetreatInterface(TypeDBInterface):
             query_fragments.append('$array isa ValueArray;')
             variable_name = '$array'
             for index, item in enumerate(value):
-                value_query_, variable_name_ = create_value_query(item, index)
+                value_query_, variable_name_ = create_value_query(item, str(index))
                 query_fragments.append(
                     f"""
                         {value_query_}
@@ -1902,8 +1920,7 @@ class TacticalRetreatInterface(TypeDBInterface):
 
         """
         for i, (measure_name, value) in enumerate(measure_value_pairs):
-            value_query, variable_name = self.value_query(
-                value, measure_name + str(i))
+            value_query, variable_name = self.value_query(value, measure_name + str(i))
 
             match_insert_query += f"""
                     $measure_{i} isa Measure, has measure_name '{measure_name}';
