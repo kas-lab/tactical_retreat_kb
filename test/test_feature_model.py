@@ -63,44 +63,6 @@ def kb_interface():
     yield kb_interface
     kb_interface.delete_database()
 
-
-def test_feature_selectable(kb_interface):
-    # In an alternative group, only one child can be selected at a time.
-    kb_interface.register_method('update_feature_selected', update_feature_selected)
-    assert kb_interface.is_feature_selected('f_alternative_child_3') is True
-    assert kb_interface.is_feature_selectable('f_alternative_child_1') is False
-    assert kb_interface.is_feature_selectable('f_alternative_child_2') is False
-
-    kb_interface.update_feature_selected('f_alternative_child_3', False)
-
-    assert kb_interface.is_feature_selected('f_alternative_child_3') is False
-
-    assert kb_interface.is_feature_selectable('f_alternative_child_3') is True
-    assert kb_interface.is_feature_selectable('f_alternative_child_1') is True
-    assert kb_interface.is_feature_selectable('f_alternative_child_2') is True
-
-    assert kb_interface.is_feature_selectable('f_or_group_child_1') is True
-    assert kb_interface.is_feature_selectable('f_or_group_child_2') is True
-    assert kb_interface.is_feature_selectable('f_or_group_child_3') is False
-    kb_interface.update_feature_selected('f_or_group_child_1', True)
-    kb_interface.update_feature_selected('f_or_group_child_2', True)
-    assert kb_interface.is_feature_selected('f_or_group_child_1') is True
-    assert kb_interface.is_feature_selected('f_or_group_child_2') is True
-    assert kb_interface.is_feature_selected('f_or_group_child_3') is True
-
-    assert kb_interface.is_feature_selectable('f_req_constrained_1') is True
-    assert kb_interface.is_feature_selectable('f_req_constrained_2') is False
-    assert kb_interface.is_feature_selectable('f_req_constrained_3') is True
-    assert kb_interface.is_feature_selectable('f_req_constrained_4') is False
-    assert kb_interface.is_feature_selectable('f_req_constrained_5') is False
-
-    assert kb_interface.is_feature_selectable('f_excl_constrained_1') is False
-    assert kb_interface.is_feature_selectable('f_excl_constrained_2') is True
-    assert kb_interface.is_feature_selectable('f_excl_constrained_3') is False
-    assert kb_interface.is_feature_selectable('f_excl_constrained_4') is True
-    assert kb_interface.is_feature_selectable('f_excl_constrained_5') is False
-
-
 def test_feature_as_proposition_expression(kb_interface):
     assert kb_interface.fetch_attribute_from_thing(
         'propositional_expression',

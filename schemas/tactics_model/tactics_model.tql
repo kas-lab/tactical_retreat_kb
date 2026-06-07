@@ -11,6 +11,7 @@ resolution_model_name sub name;
 tactic_name sub name;
 rule_name sub name;
 variant_name sub name;
+feature_adaptation_name sub name;
 
 tactic_resolution_model sub attribute,
     value string;
@@ -68,6 +69,7 @@ logical_expression plays tactic_rule:antecedent;
 
 # feature adaptation
 feature_adaptation sub relation,
+    owns feature_adaptation_name,
     relates deactivation,
     relates activation,
     plays tactic_rule:consequent;
@@ -94,8 +96,11 @@ variant_resolution sub relation,
 variant_activation sub variant_resolution;
 variant_deactivation sub variant_resolution;
 
+action_name sub attribute,
+    value string;
 resolution_action sub relation,
     abstract,
+    owns action_name,
     owns feasible,
     relates node,
     plays variant_resolution:resolution_action;
@@ -126,16 +131,6 @@ rule tactic_rule_antecedent_invalid:
     when {
         $tr (antecedent: $a) isa tactic_rule;
         $a isa logical_expression, has expression_satisfied false;
-    } then {
-        $tr has rule_valid false;
-    };
-
-rule tactic_rule_consequent_unfeasible:
-    when {
-        $tr (consequent: $fa) isa tactic_rule;
-        $fa ($feature) isa feature_adaptation;
-        $feature isa Feature;
-        $feature has selectable false;
     } then {
         $tr has rule_valid false;
     };

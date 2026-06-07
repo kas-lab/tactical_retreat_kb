@@ -63,12 +63,11 @@ def test_get_tactic_rule_valid(kb_interface):
     assert kb_interface.get_tactic_rule_valid('tr6') is True
     assert kb_interface.get_tactic_rule_valid('tr7') is False
 
-    assert kb_interface.get_tactic_rule_valid('tr_consequent_feasible') is True
-    assert kb_interface.get_tactic_rule_valid('tr_consequent_unfeasible') is False
-
     assert kb_interface.get_tactic_rule_valid('tr_variant_resolution_feasible') is True
     assert kb_interface.get_tactic_rule_valid('tr_variant_resolution_unfeasible_1') is False
     assert kb_interface.get_tactic_rule_valid('tr_variant_resolution_unfeasible_2') is False
+
+    assert kb_interface.get_tactic_rule_valid('MIN')
 
 
 def test_set_nodes_parameters_feasible(kb_interface):
@@ -114,18 +113,3 @@ def test_set_lifecycle_state_feasible(kb_interface):
         'lifecycle_node_finalized', 'unconfigured') is False
     assert kb_interface.is_set_lifecycle_state_feasible(
         'lifecycle_node_finalized', 'finalized') is True
-
-
-def test_tactic_min_valid(kb_interface):
-    assert kb_interface.get_tactic_rule_valid('MIN')
-
-
-def test_get_resulting_effect_value(kb_interface):
-    effect_value = kb_interface.get_resulting_effect_value('MIN', 'movement_power_measure')
-    assert effect_value == 0.3 + 0.05
-
-    effect_value = kb_interface.get_resulting_effect_value('MED', 'movement_power_measure')
-    assert effect_value == 0.3 + 0.07
-
-    effect_value = kb_interface.get_resulting_effect_value('MAX', 'movement_power_measure')
-    assert effect_value == 0.3 + 0.10

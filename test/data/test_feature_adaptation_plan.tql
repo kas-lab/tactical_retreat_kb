@@ -1,0 +1,99 @@
+insert
+
+### Nodes
+$node_1 isa ROSNode,
+	has node_name "node_1",
+	has start_time 2025-09-06T11:57:56.666;
+$node_2 isa ROSNode,
+	has node_name "node_2",
+	has start_time 2025-09-06T11:57:56.666;
+$node_3 isa ROSNode,
+	has node_name "node_3",
+	has start_time 2025-09-06T11:57:56.666;
+
+$parameter isa ParameterDouble, has parameter_name "parameter";
+$parameter_value isa ValueDouble, has double_value 0.10;
+(node: $node_1, parameter:$parameter) isa has_parameter;
+
+### Resolution actions
+
+$res_action_set_node_1_lc_active (node: $node_1) isa set_lifecycle_state,
+	has lifecycle_state 'active', has action_name 'res_action_set_node_1_lc_active';
+$res_action_set_node_1_lc_inactive (node: $node_1) isa set_lifecycle_state,
+	has lifecycle_state 'inactive', has action_name 'res_action_set_node_1_lc_inactive';
+
+$res_action_set_node_2_lc_active (node: $node_2) isa set_lifecycle_state,
+	has lifecycle_state 'active', has action_name 'res_action_set_node_2_lc_active';
+$res_action_set_node_2_lc_inactive (node: $node_2) isa set_lifecycle_state,
+	has lifecycle_state 'inactive', has action_name 'res_action_set_node_2_lc_inactive';
+
+$res_action_set_node_3_lc_active (node: $node_3) isa set_lifecycle_state,
+	has lifecycle_state 'active', has action_name 'res_action_set_node_3_lc_active';
+$res_action_set_node_3_lc_inactive (node: $node_3) isa set_lifecycle_state,
+	has lifecycle_state 'inactive', has action_name 'res_action_set_node_3_lc_inactive';
+
+$res_action_set_param_node_1 (node: $node_1, parameter: $parameter, parameter_value: $parameter_value) isa set_nodes_parameters;
+
+### Feature hierarchy
+
+$feature_parent_alternative isa Feature, has feature_name "feature_parent_alternative", has mandatory true;
+$f_alternative_child_1 isa Feature, has feature_name "f_alternative_child_1";
+$f_alternative_child_2 isa Feature, has feature_name "f_alternative_child_2";
+$f_alternative_child_3 isa Feature, has feature_name "f_alternative_child_3", has selected true;
+(parent: $feature_parent_alternative, child: $f_alternative_child_1, child: $f_alternative_child_2, child: $f_alternative_child_3) isa alternative;
+
+$f_req_constraint isa Feature, has feature_name "f_req_constraint";
+$f_req_constrained isa Feature, has feature_name "f_req_constrained";
+(constrained: $f_req_constrained, constraint: $f_req_constraint) isa requires_constraint;
+
+$f_req_constraint_2 isa Feature, has feature_name "f_req_constraint_2", has selected true;
+$f_req_constrained_2 isa Feature, has feature_name "f_req_constrained_2", has selected true;
+(constrained: $f_req_constrained_2, constraint: $f_req_constraint_2) isa requires_constraint;
+
+$f_exc_constraint isa Feature, has feature_name "f_exc_constraint", has selected true;
+$f_exc_constrained isa Feature, has feature_name "f_exc_constrained";
+(constrained: $f_exc_constrained, constraint: $f_exc_constraint) isa excludes_constraint;
+
+$f_node_1_param isa Feature, has feature_name "f_node_1_param";
+(constrained: $f_node_1_param, constraint: $f_alternative_child_1) isa requires_constraint;
+
+### Variant resolutions
+$vr_ac_1_act (resolution_action: $res_action_set_node_1_lc_active, variant: $f_alternative_child_1) isa variant_activation;
+$vr_ac_1_deact (resolution_action: $res_action_set_node_1_lc_inactive, variant: $f_alternative_child_1) isa variant_deactivation;
+
+$vr_ac_2_act (resolution_action: $res_action_set_node_2_lc_active, variant: $f_alternative_child_2) isa variant_activation;
+$vr_ac_2_deact (resolution_action: $res_action_set_node_2_lc_inactive, variant: $f_alternative_child_2) isa variant_deactivation;
+
+$vr_ac_3_act (resolution_action: $res_action_set_node_3_lc_active, variant: $f_alternative_child_3) isa variant_activation;
+$vr_ac_3_deact (resolution_action: $res_action_set_node_3_lc_inactive, variant: $f_alternative_child_3) isa variant_deactivation;
+
+$vr_req_constraint_act (resolution_action: $res_action_set_node_1_lc_active, variant: $f_req_constraint) isa variant_activation;
+$vr_req_constrained_act (resolution_action: $res_action_set_node_2_lc_active, variant: $f_req_constrained) isa variant_activation;
+
+$vr_req_constraint_deact (resolution_action: $res_action_set_node_1_lc_inactive, variant: $f_req_constraint_2) isa variant_deactivation;
+$vr_req_constrained_deact (resolution_action: $res_action_set_node_2_lc_inactive, variant: $f_req_constrained_2) isa variant_deactivation;
+
+$vr_exc_constraint_act (resolution_action: $res_action_set_node_1_lc_inactive, variant: $f_exc_constraint) isa variant_deactivation;
+$vr_exc_constrained_act (resolution_action: $res_action_set_node_2_lc_active, variant: $f_exc_constrained) isa variant_activation;
+
+$vr_set_param_1 (resolution_action: $res_action_set_param_node_1, variant: $f_node_1_param) isa variant_activation;
+
+### Feature adaptations
+$fa0 (deactivation: $f_alternative_child_3, activation: $f_alternative_child_1) isa feature_adaptation, has feature_adaptation_name 'fa0';
+$fa1 (activation: $f_alternative_child_1) isa feature_adaptation, has feature_adaptation_name 'fa1';
+
+$fa2 (activation: $f_req_constrained) isa feature_adaptation, has feature_adaptation_name 'fa2';
+$fa3 (activation: $f_exc_constrained) isa feature_adaptation, has feature_adaptation_name 'fa3';
+$fa4 (deactivation: $f_req_constraint_2) isa feature_adaptation, has feature_adaptation_name 'fa4';
+
+$fa5 (activation: $f_alternative_child_1, activation: $f_node_1_param) isa feature_adaptation, has feature_adaptation_name 'fa5';
+
+### Tactics
+$t isa Tactic, has tactic_name "tactic";
+
+(tactic:$t, consequent: $fa0) isa tactic_rule, has rule_name "tactic_rule_0";
+(tactic:$t, consequent: $fa1) isa tactic_rule, has rule_name "tactic_rule_1";
+(tactic:$t, consequent: $fa2) isa tactic_rule, has rule_name "tr_activate_req_constrained";
+(tactic:$t, consequent: $fa3) isa tactic_rule, has rule_name "tr_activate_exc_constrained";
+(tactic:$t, consequent: $fa4) isa tactic_rule, has rule_name "tr_deactivate_req_constrained";
+(tactic:$t, consequent: $fa5) isa tactic_rule, has rule_name "tactic_rule_2";
