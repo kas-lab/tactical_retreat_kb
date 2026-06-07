@@ -826,14 +826,6 @@ def test_tactic_impacts_requirement_in_effect_for_may_cases(kb_interface):
 
 
 def test_cnf_and_via_not(kb_interface):
-    """Case 1 — and_expression(not_expression(comparison_expression)).
-    These expressions are standalone (not inside any requirement), so
-    tactic_rule_impacts_and is seeded exclusively by
-    dependency_into_impacts_and_via_not.
-
-    Structure: and_only_not = AND(NOT(less_than_equal))
-    less_than_equal: lhs=0.15, rhs=0.10  (0.15 <= 0.10 → False, membership=0.0)
-    """
     # tactic_rule_rel_effect_measure_lhs: lhs → 0.10  →  0.10 <= 0.10 → 1.0
     # NOT(1.0) = 0.0  →  AND([0.0]) = 0.0
     result = kb_interface.fetch_tactic_rule_impacts_fulfillment(
@@ -850,11 +842,6 @@ def test_cnf_and_via_not(kb_interface):
 
 
 def test_cnf_and_via_or(kb_interface):
-    """Case 2 — and_expression(or_expression(comparison_expression)).
-    Seeded exclusively by dependency_into_impacts_and_via_or.
-
-    Structure: and_only_or = AND(OR(less_than_equal))
-    """
     # tactic_rule_rel_effect_measure_lhs: lhs → 0.10  →  0.10 <= 0.10 → 1.0
     # OR([1.0]) = 1.0  →  AND([1.0]) = 1.0
     result = kb_interface.fetch_tactic_rule_impacts_fulfillment(
@@ -871,11 +858,6 @@ def test_cnf_and_via_or(kb_interface):
 
 
 def test_cnf_and_via_or_not(kb_interface):
-    """Case 3 — and_expression(or_expression(not_expression(comparison_expression))).
-    Seeded exclusively by dependency_into_impacts_and_via_or_not.
-
-    Structure: and_only_or_not = AND(OR(NOT(less_than_equal)))
-    """
     # tactic_rule_rel_effect_measure_lhs: lhs → 0.10  →  0.10 <= 0.10 → 1.0
     # NOT(1.0) = 0.0  →  OR([0.0]) = 0.0  →  AND([0.0]) = 0.0
     result = kb_interface.fetch_tactic_rule_impacts_fulfillment(

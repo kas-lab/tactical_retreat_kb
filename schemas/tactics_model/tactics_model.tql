@@ -37,6 +37,7 @@ tactic_rule sub relation,
     relates tactic,
     relates antecedent,
     relates consequent,
+    relates involved_measure,
     relates effect;
 
 ### effect
@@ -59,6 +60,9 @@ Measure plays effect:measure;
 Value plays absolute_effect:effect_value;
 ValueDouble plays relative_effect:effect_value;
 ValueInteger plays relative_effect:effect_value;
+
+#### relevant for state math
+Measure plays tactic_rule:involved_measure;
 
 #### connection with logical_expression model
 logical_expression plays tactic_rule:antecedent;

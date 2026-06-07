@@ -14,10 +14,25 @@
 
 import importlib
 import inspect
+import json
 import time
 import traceback
-import json
-import rclpy
+
+from adapt_x_msgs.srv import FetchAdaptations
+from adapt_x_msgs.srv import FetchApplicable
+from adapt_x_msgs.srv import HypotheticalReqFulfillment
+from adapt_x_msgs.srv import HypotheticalReqsFulfillment
+from adapt_x_msgs.srv import RequirementsFulfillment
+from adapt_x_msgs.srv import SatisfiedTactic
+from adapt_x_msgs.srv import UpdateHasParamValue
+from adapt_x_msgs.srv import UpdateInEffect
+from adapt_x_msgs.srv import UpdateRunning
+from adapt_x_msgs.srv import GetState
+from adapt_x_msgs.msg import RelaxedRequirement
+from adapt_x_msgs.msg import RelaxedRequirements
+from adapt_x_msgs.msg import SymbolicState
+
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.duration import Duration
 from rclpy.lifecycle import State
 from rclpy.lifecycle import TransitionCallbackReturn
@@ -26,15 +41,19 @@ from rclpy.qos import QoSHistoryPolicy
 from rclpy.qos import QoSLivelinessPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import QoSReliabilityPolicy
+from rebet_monitors.rebet_monitors import is_too_close
+from rebet_monitors.rebet_monitors import MovementPowerDraw
+from rebet_monitors.rebet_monitors import PowerBudget
+from ros_monitors_functions.global_costmap_functions import GlobalCostmapChange, StableCostmap
+from ros_monitors_functions.system_monitors_funtions import AverageCPULoad1min
+from ros_monitors_functions.path_functions import average_curvature
 
-from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
-
-from std_srvs.srv import Trigger
-from std_msgs.msg import String
-from adapt_x_msgs.srv import FetchApplicable, UpdateRunning, FetchAdaptations, RequirementsFulfillment, UpdateInEffect, SatisfiedTactic, UpdateHasParamValue, HypotheticalReqFulfillment, HypotheticalReqsFulfillment
-from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 from ros_monitors_functions.factory import MonitorFactory
-from rebet_monitors.rebet_monitors import MovementPowerDraw, PowerBudget, is_too_close
+from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
+from std_msgs.msg import Header
+from std_srvs.srv import Trigger
+
+from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
 def publish_event(event_type: str):
@@ -113,7 +132,7 @@ def get_qos_from_qos_dict(qos_dict: dict) -> QoSProfile:
     if 'reliability' in qos_dict:
         qos.reliability = RELIABILITY_MAP[qos_dict['reliability']]
     if 'history' in qos_dict:
-        qos.history = HISTORY_MAP['KEEP_LAST'] # change back
+        qos.history = HISTORY_MAP['KEEP_LAST']  # change back
     if 'durability' in qos_dict:
         qos.durability = DURABILITY_MAP[qos_dict['durability']]
     if 'liveliness' in qos_dict:
@@ -157,9 +176,9 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         self.measures_timers = {}
         self.measures_services = {}  # For proxies
         self.context_dict = {
-            "nearest_object": "unknown",
-            "power_draw": "unknown",
-            "current_velocity": "unknown"
+            'nearest_object': 'unknown',
+            'power_draw': 'unknown',
+            'current_velocity': 'unknown'
         }
         self.measurements = {}
         # Create all possible combinations of contexts
@@ -170,15 +189,31 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         self.monitor.register_monitor(
             'PowerBudget', PowerBudget)
         self.monitor.register_monitor(
-            "is_too_close", is_too_close
+            'is_too_close', is_too_close
         )
+        self.monitor.register_monitor(
+            'GlobalCostmapChange', GlobalCostmapChange
+        )
+        self.monitor.register_monitor(
+            'StableCostmap', StableCostmap
+        )
+        self.monitor.register_monitor(
+            'AverageCPULoad1min', AverageCPULoad1min
+        )
+        self.monitor.register_monitor(
+            'average_curvature', average_curvature
+        )
+        self.declare_parameter("do_states", True)
+
+    def create_header(self):
+        return Header(stamp=self.get_clock().now().to_msg())
 
     def _generate_context_combinations(self):
         """Generate all possible context combinations and assign indices."""
-        nearest_object_states = ["near", "there", "far"]
-        power_draw_states = ["off", "drain"]
-        current_velocity_states = ["slow", "fast"]
-        
+        nearest_object_states = ['near', 'there', 'far']
+        power_draw_states = ['off', 'drain']
+        current_velocity_states = ['slow', 'fast']
+
         combinations = {}
         idx = 0
         for nearest in nearest_object_states:
@@ -187,13 +222,13 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                     combinations[(nearest, power, velocity)] = idx
                     idx += 1
         return combinations
-    
+
     def _get_context_combination_id(self):
         """Get the current context combination ID."""
         current_combo = (
-            self.context_dict["nearest_object"],
-            self.context_dict["power_draw"],
-            self.context_dict["current_velocity"]
+            self.context_dict['nearest_object'],
+            self.context_dict['power_draw'],
+            self.context_dict['current_velocity']
         )
         return self.context_combinations.get(current_combo, -1)
 
@@ -202,12 +237,20 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
         self.active = True
         self.get_logger().info(
-            self.get_name() + ': on_activate() is completed.')
+            self.get_name() + ': on_activate() is not yet completed.')
 
-        self.fulfillment_publisher = self.create_publisher(String, 'requirements', 10)
+        self.doing_states = self.get_parameter("do_states").value
 
-        self.state_publisher = self.create_publisher(String, 'symbolic_state', 10)
+        self.get_logger().info(f": are we doing states? {self.doing_states}")
+        self.reqs_publisher = self.create_publisher(
+            RelaxedRequirements, 'requirements', 10)
+
+        self.state_publisher = self.create_publisher(
+            SymbolicState, 'symbolic_state', 10)
+
+        self.prev_state = None
         # self.create_measures_interfaces()
+
         def _create_measures_cb(_, res):
             try:
                 self.get_logger().info('Creating measures interfaces...')
@@ -217,7 +260,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             except Exception as e:
                 self.get_logger().error(
                     f'Error creating measures interfaces: {e}')
-                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
                 res.success = False
             return res
 
@@ -225,17 +268,21 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             try:
                 start_time = time.perf_counter()
                 self.get_logger().info('Fetching applicable tactics...')
-                result = self.typedb_interface.get_applicable_tactics(req.resolution_model, req.interface_name)
+                result = self.typedb_interface.get_applicable_tactics(
+                    req.resolution_model, req.interface_name)
                 res.tactics = result
                 elapsed_time = time.perf_counter() - start_time
-                self.get_logger().info(f'Applicable tactics fetched {str(res)}')
-    
-                self.get_logger().info(f'Applicable tactics fetched in {elapsed_time:.4f} seconds.')
                 res.success = True
+
+                self.get_logger().info(
+                    f'Applicable tactics fetched {str(res)}')
+
+                self.get_logger().info(
+                    f'Applicable tactics fetched in {elapsed_time:.4f} seconds.')
             except Exception as e:
                 self.get_logger().error(
                     f'Error fetching applicable tactics: {e}')
-                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
                 res.success = False
             return res
 
@@ -243,17 +290,20 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             try:
                 start_time = time.perf_counter()
                 self.get_logger().info('Fetching applicable valid adaptations names...')
-                result = self.typedb_interface.get_satisfied_tactics(req.tactics)
+                result = self.typedb_interface.get_satisfied_tactics(
+                    req.tactics)
                 res.satisfied = result
                 res.success = True
                 elapsed_time = time.perf_counter() - start_time
-                self.get_logger().info(f'Applicable valid adaptations names fetched {str(res)}')
-    
-                self.get_logger().info(f'Applicable valid adaptations names fetched in {elapsed_time:.4f} seconds.')
+                self.get_logger().info(
+                    f'Applicable valid adaptations names fetched {str(res)}')
+
+                self.get_logger().info(
+                    f'Applicable valid adaptations names fetched in {elapsed_time:.4f} seconds.')
             except Exception as e:
                 self.get_logger().error(
                     f'Error fetching applicable valid adaptations names: {e}')
-                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
                 res.success = False
             return res
 
@@ -264,16 +314,16 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 res.adaptations = self.typedb_interface.get_reconfiguration_plan(req.tactic_name).actions
 
                 elapsed_time = time.perf_counter() - start_time
-                self.get_logger().info(f'Tactic actions fetched in {elapsed_time:.4f} seconds.')
+                self.get_logger().info(
+                    f'Tactic actions fetched in {elapsed_time:.4f} seconds.')
             except Exception as e:
                 self.get_logger().error(
                     f'Error fetching tactic actions: {e}')
-                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
             return res
 
-            
-
         # TODO: Implement properly.
+
         def _fetch_all_measurements_cb(_, res):
             pass
 
@@ -283,30 +333,32 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 self.get_logger().info('Updating running nodes...')
                 self.typedb_interface.manual_running_nodes(req.node_names)
                 elapsed_time = time.perf_counter() - start_time
-                self.get_logger().info(f'Running nodes updated in {elapsed_time:.4f} seconds.')
+                self.get_logger().info(
+                    f'Running nodes updated in {elapsed_time:.4f} seconds.')
                 res.success = True
             except Exception as e:
                 self.get_logger().error(
                     f'Error updating running nodes: {e}')
-                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
                 res.success = False
             return res
-
 
         def _fetch_req_fullfillment_cb(req, res):
             try:
                 start_time = time.perf_counter()
                 self.get_logger().info('Fetching requirements fulfillment...')
 
-                fulfillments = self.typedb_interface.get_relaxed_requirements_fulfillment(req.system_name, *req.requirement_names)
+                fulfillments = self.typedb_interface.get_relaxed_requirements_fulfillment(
+                    req.system_name, *req.requirement_names)
 
                 res.fulfillment_values = fulfillments
                 elapsed_time = time.perf_counter() - start_time
-                self.get_logger().info(f'Requirements fulfillment fetched in {elapsed_time:.4f} seconds.')
+                self.get_logger().info(
+                    f'Requirements fulfillment fetched in {elapsed_time:.4f} seconds.')
             except Exception as e:
                 self.get_logger().error(
                     f'Error fetching requirements fulfillment: {e}')
-                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
             return res
 
         def _fetch_req_hyp_req_cb(req, res):
@@ -314,33 +366,43 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 start_time = time.perf_counter()
                 self.get_logger().info('Fetching hypothetical requirement fulfillment...')
 
-                fulfillment = self.typedb_interface.get_relaxed_requirement_hypothetical_fulfillment(req.system_name, req.requirement_name, req.rule_name)
+                interface = self.typedb_interface
+                fulfillment = interface.get_relaxed_requirement_hypothetical_fulfillment(
+                    req.system_name, req.requirement_name, req.rule_name)
 
                 res.fulfillment_value = float(fulfillment)
                 res.success = True
                 elapsed_time = time.perf_counter() - start_time
-                self.get_logger().info(f'Requirements hypothetical fulfillment fetched in {elapsed_time:.4f} seconds.')
+                self.get_logger().info(
+                    'Requirements hypothetical fulfillment fetched in '
+                    f'{elapsed_time:.4f} seconds.')
             except Exception as e:
                 self.get_logger().error(
                     f'Error fetching requirements fulfillment: {e}')
-                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
             return res
-        
+
         def _fetch_req_hyp_reqs_cb(req, res):
             try:
                 start_time = time.perf_counter()
-                self.get_logger().info(f'\n\nFetching hypothetical requirements fulfillment...{str(req.rule_names)}')
+                self.get_logger().info(
+                    '\n\nFetching hypothetical requirements fulfillment...'
+                    f'{str(req.rule_names)}')
 
-                fulfillment = self.typedb_interface.get_relaxed_requirements_hypothetical_fulfillment(req.rule_names, req.system_name)
+                interface = self.typedb_interface
+                fulfillment = interface.get_relaxed_requirements_hypothetical_fulfillment(
+                    req.rule_names, req.system_name)
 
                 res.fulfillment_dict = json.dumps(fulfillment)
                 res.success = True
                 elapsed_time = time.perf_counter() - start_time
-                self.get_logger().info(f'Requirements hypothetical fulfillment fetched in {elapsed_time:.4f} seconds.\n\n')
+                self.get_logger().info(
+                    'Requirements hypothetical fulfillment fetched in '
+                    f'{elapsed_time:.4f} seconds.\n\n')
             except Exception as e:
                 self.get_logger().error(
                     f'Error fetching requirements fulfillment: {e}')
-                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
             return res
         # def _fetch_req_fullfillment_ineffect_cb(self, req, res):
         #     try:
@@ -351,7 +413,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
         #         res.fulfillment_values = [ful['fulfillment'] for ful in fulfillments]
         #         elapsed_time = time.perf_counter() - start_time
-        #         self.get_logger().info(f'Requirements fulfillment fetched in effect {elapsed_time:.4f} seconds.')
+        #         self.get_logger().info(
+        #             f'Requirements fulfillment fetched in effect {elapsed_time:.4f} seconds.')
         #     except Exception as e:
         #         self.get_logger().error(
         #             f'Error fetching requirements fulfillment: {e}')
@@ -362,30 +425,35 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             try:
                 start_time = time.perf_counter()
                 self.get_logger().info('Updating in-effect requirements...')
-                self.typedb_interface.update_requirements_in_effect(req.requirement_names, req.all_requirements)
+                self.typedb_interface.update_requirements_in_effect(
+                    req.requirement_names, req.all_requirements)
                 elapsed_time = time.perf_counter() - start_time
-                self.get_logger().info(f'In-effect requirements updated in {elapsed_time:.4f} seconds.')
+                self.get_logger().info(
+                    f'In-effect requirements updated in {elapsed_time:.4f} seconds.')
                 res.success = True
             except Exception as e:
                 self.get_logger().error(
                     f'Error updating in-effect requirements: {e}')
-                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
                 res.success = False
             return res
-    
+
         def _update_has_param_value_cb(req, res):
             try:
                 start_time = time.perf_counter()
                 self.get_logger().info('Updating has_param_value...')
-                query_res =self.typedb_interface.update_feature_selected_by_param_value(req.feature_name)
-                self.get_logger().info(f'update_feature_selected_by_param_value result: {query_res}')
+                query_res = self.typedb_interface.update_feature_selected_by_param_value(
+                    req.feature_name)
+                self.get_logger().info(
+                    f'update_feature_selected_by_param_value result: {query_res}')
                 elapsed_time = time.perf_counter() - start_time
-                self.get_logger().info(f'has_param_value updated in {elapsed_time:.4f} seconds.')
+                self.get_logger().info(
+                    f'has_param_value updated in {elapsed_time:.4f} seconds.')
                 res.success = True
             except Exception as e:
                 self.get_logger().error(
                     f'Error updating has_param_value: {e}')
-                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
                 res.success = False
             return res
 
@@ -393,16 +461,61 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             try:
                 start_time = time.perf_counter()
                 self.get_logger().info('Getting current state...')
-                current_state_string =self.typedb_interface.get_current_state()
-                self.get_logger().info(f'current_state result: {current_state_string}')
+                current_state_string = self.typedb_interface.get_current_state()
+                self.get_logger().info(
+                    f'current_state result: {current_state_string}')
                 elapsed_time = time.perf_counter() - start_time
-                self.get_logger().info(f'current_state retrieved in {elapsed_time:.4f} seconds.')
+                self.get_logger().info(
+                    f'current_state retrieved in {elapsed_time:.4f} seconds.')
                 res.success = True
                 res.message = current_state_string
             except Exception as e:
                 self.get_logger().error(
                     f'Error fetching state: {e}')
-                self.get_logger().error("Traceback:\n" + traceback.format_exc())
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
+                res.success = False
+            return res
+        
+        def _fetch_current_state_action_cb(req, res):
+            try:
+                start_time = time.perf_counter()
+                self.get_logger().info('Getting current state...')
+                current_state_string = self.typedb_interface.get_current_state_action(req.action_name)
+                self.get_logger().info(f"typee {str(type(current_state_string))}")
+                self.get_logger().info(f"rawww {current_state_string}")
+
+                res.current_state = SymbolicState(state_name=str(current_state_string),
+                                                  header=self.create_header())
+                self.get_logger().info(
+                    f'current_state result: {current_state_string}')
+                elapsed_time = time.perf_counter() - start_time
+                self.get_logger().info(
+                    f'current_state retrieved in {elapsed_time:.4f} seconds.')
+            except Exception as e:
+                self.get_logger().error(
+                    f'Error fetching state: {e}')
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
+                res.success = False
+            return res
+
+        def _fetch_relevant_states(_, res):
+            try:
+                start_time = time.perf_counter()
+                self.get_logger().info('Getting relevant states...')
+                relevant_states_dict = self.typedb_interface.get_relevant_states("MPPI_DYNAMIC")
+                self.get_logger().info(
+                    f'relevant_states result: {relevant_states_dict}')
+                self.get_logger().info(
+                    f'relevant_states len keys: {len(relevant_states_dict.keys())}')
+                elapsed_time = time.perf_counter() - start_time
+                self.get_logger().info(
+                    f'relevant_states retrieved in {elapsed_time:.4f} seconds.')
+                res.success = True
+                res.message = ""
+            except Exception as e:
+                self.get_logger().error(
+                    f'Error fetching state: {e}')
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
                 res.success = False
             return res
         # create service with a lambda calling the create_measures_interfaces
@@ -418,6 +531,12 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             self.get_name() + '/fetch_applicable_tactics',
             _fetch_applicable_cb,
             # callback_group=self.query_cb_group
+        )
+
+        self.get_state = self.create_service(
+            GetState,
+            self.get_name() + '/get_state',
+            _fetch_current_state_action_cb
         )
 
         self.requirements_fulfillment_service = self.create_service(
@@ -446,6 +565,13 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             callback_group=self.query_cb_group
         )
 
+        self.relevant_state_service = self.create_service(
+            Trigger,
+            self.get_name() + '/rel_state',
+            _fetch_relevant_states,
+            callback_group=self.query_cb_group
+        )
+
         self.hyp_requirements_fulfillment_service = self.create_service(
             HypotheticalReqsFulfillment,
             self.get_name() + '/fetch_hyp_requirements',
@@ -459,8 +585,6 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             _fetch_applicable_valid_name_cb,
             callback_group=self.query_cb_group
         )
-
-        
 
         self.tactic_actions_service = self.create_service(
             FetchAdaptations,
@@ -495,6 +619,10 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             self.get_name() + '/fetch_all_measurements',
             _fetch_all_measurements_cb
         )
+
+        self.get_logger().info(
+            self.get_name() + ': on_activate() is completing.')
+
         return super().on_activate(state)
 
     def on_deactivate(self, state: State) -> TransitionCallbackReturn:
@@ -509,8 +637,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
         :return: transition result
         """
-        super().get_logger().info('I have arisen')
         config_res = super().on_configure(state)
+        super().get_logger().info('I have arisen')
         return config_res
 
     def on_cleanup(self, state: State) -> TransitionCallbackReturn:
@@ -535,7 +663,6 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         - optional: 'measurement_function_args' (str, comma-separated args)
         - optional: 'qos' (dict for QoSProfile construction)
         """
-
         measure_name = interface['measure_name']
         interface_name = interface['interface_name']
         ros_msg_type_str = interface['interface_type']
@@ -556,7 +683,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         measure_function = self.monitor[function_name]
         # getattr(function_lib, function_name)
 
-        # Support both stateless functions and stateful callables (classes with __call__).
+        # Support both stateless functions and stateful callables (classes with
+        # __call__).
         if inspect.isclass(measure_function):
             # Instantiate once so state is preserved across callbacks.
             measure_callable = measure_function(*function_args)
@@ -568,7 +696,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         if (interface.get('source') == 'Publisher'):
             topic_type = get_ros_msg_type_from_string(ros_msg_type_str, 'msg')
             super().get_logger().info(
-                    f'Making a subscription for measure: {measure_name}')
+                f'Making a subscription for measure: {measure_name}')
+
             def _cb(msg,
                     _node=super(),
                     _measure_name=measure_name,
@@ -577,15 +706,24 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 res = _measure_callable(self, msg, *_function_args)
                 # self.typedb_interface.add_measurement(
                 #     _measure_name, res)
-                # _node.get_logger().info(f"measure_name called: {_measure_name}", throttle_duration_sec=1)
+                # _node.get_logger().info(
+                #     f"measure_name called: {_measure_name}",
+                #     throttle_duration_sec=1)
                 self.measurements[_measure_name] = res
 
-                # I want to consider the unique combination of each category as a unique context, so I will publish an event with the current context whenever a measure is updated.
+                # I want to consider the unique combination of each category as
+                # a unique context, so I will publish an event with the current
+                # context whenever a measure is updated.
 
                 # current_context_msg = String()
                 # combo_id = self._get_context_combination_id()
-                # current_context = (self.context_dict["nearest_object"], self.context_dict["power_draw"], self.context_dict["current_velocity"])
-                # # _node.get_logger().info(f"Current context: {current_context}, combo_id: {combo_id}", throttle_duration_sec=2)
+                # current_context = (
+                #     self.context_dict["nearest_object"],
+                #     self.context_dict["power_draw"],
+                #     self.context_dict["current_velocity"])
+                # # _node.get_logger().info(
+                #     f"Current context: {current_context}, combo_id: {combo_id}",
+                #     throttle_duration_sec=2)
                 # current_context_msg.data = str(combo_id)
                 # self.context_publisher.publish(current_context_msg)
 
@@ -597,10 +735,13 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 callback_group=self.query_cb_group
             )
         if (interface.get('source') == 'ServiceServer'):
-            service_type = get_ros_msg_type_from_string(ros_msg_type_str, 'srv')
+            service_type = get_ros_msg_type_from_string(
+                ros_msg_type_str, 'srv')
             if (interface.get('measurement_proxy') is not True):
-                super().get_logger().info(f'Creating service client for: {ros_msg_type_str}')
-                service_request_kwargs_str = interface.get('service_request_kwargs')
+                super().get_logger().info(
+                    f'Creating service client for: {interface_name}')
+                service_request_kwargs_str = interface.get(
+                    'service_request_kwargs')
                 service_request_kwargs = {}
                 if service_request_kwargs_str:
                     for kwarg in service_request_kwargs_str.split(','):
@@ -610,53 +751,57 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                     self.measures_clients[measure_name] = self.create_client(
                         service_type,
                         interface_name,
-                        callback_group=self.query_cb_group
+                        callback_group=MutuallyExclusiveCallbackGroup()
                     )
 
                     def _cb(_measure_name=measure_name,
                             _measure_callable=measure_callable,
                             _function_args=callable_args):
-                        if (self.measures_clients[measure_name].wait_for_service(
+                        if (self.measures_clients[_measure_name].wait_for_service(
                            timeout_sec=10.0)):
-                            request = service_type.Request(**service_request_kwargs)
-                            self.measures_clients[measure_name].call_async(
-                                request).add_done_callback(
-                                    lambda future, _measure_name=_measure_name,
+                            request = service_type.Request(
+                                **service_request_kwargs)
+
+                            def _on_done(
+                                    future,
+                                    _measure_name=_measure_name,
                                     _measure_callable=_measure_callable,
-                                    _function_args=_function_args, _measurements=self.measurements:
-                                    # self.typedb_interface.add_measurement(
-                                    #     _measure_name,
-                                    #     _measure_callable(self, future.result(), *_function_args)))
-                                    _measurements.__setitem__(_measure_name, _measure_callable(self, future.result(), *_function_args))
+                                    _function_args=_function_args,
+                                    _measurements=self.measurements):
+                                _measurements[_measure_name] = _measure_callable(
+                                    self,
+                                    future.result(),
+                                    *_function_args
                                 )
+
+                            self.measures_clients[_measure_name].call_async(
+                                request).add_done_callback(_on_done)
                     self.measures_timers[measure_name] = self.create_timer(
                         interface['measurement_period'],
                         _cb)
             else:
-                super().get_logger().info(f'Creating proxy service for: {ros_msg_type_str}')
+                super().get_logger().info(
+                    f'Creating proxy service for: {interface_name}')
                 self.measures_clients[measure_name] = self.create_client(
                     service_type,
                     interface_name,
-                    callback_group=self.query_cb_group
+                    # callback_group=self.query_cb_group
+                    callback_group=MutuallyExclusiveCallbackGroup()
                 )
 
-                def _cb(request, response, _measure_name=measure_name,
-                        _measure_callable=measure_callable,
-                        _function_args=callable_args):
-                    if (self.measures_clients[measure_name].wait_for_service(timeout_sec=10.0)):
-                        future = self.measures_clients[measure_name].call_async(request)
-                        # wait for future
-                        rclpy.spin_until_future_complete(self, future)
-                        # self.typedb_interface.add_measurement(_measure_name, _measure_callable(
-                        #     self,
-                        #     future.result(),
-                        #     *_function_args))
+                async def _cb(request, response, _measure_name=measure_name,
+                              _measure_callable=measure_callable,
+                              _function_args=callable_args):
+                    if (self.measures_clients[measure_name].wait_for_service(
+                            timeout_sec=10.0)):
+                        proxied_response = await self.measures_clients[
+                            measure_name].call_async(request)
                         self.measurements[_measure_name] = _measure_callable(
                             self,
-                            future.result(),
+                            proxied_response,
                             *_function_args)
-                        response = future.result()
-                        return response
+                        return proxied_response
+                    return response
 
                 self.measures_services[measure_name] = self.create_service(
                     service_type,
@@ -674,20 +819,40 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                     f'Creating measure interface: {interface}')
                 self.create_measure_interface(interface)
 
-            self.create_timer(1.0, self.measurement_processing, callback_group=self.query_cb_group)
-            self.create_timer(2.0, self.publish_fulfillments, callback_group=self.query_cb_group)
+            self.create_timer(
+                1.0,
+                self.measurement_processing,
+                callback_group=self.query_cb_group)
+            self.create_timer(2.0, self.publish_fulfillments,
+                              callback_group=self.query_cb_group)
 
         except Exception as e:
             raise e
-  
+
     def measurement_processing(self):
         if self.measurements:
-            self.typedb_interface.add_measurements(self.measurements)
-            self.state_publisher.publish(String(data=self.typedb_interface.get_current_state()))
+            self.get_logger().info(f"measurements {str(self.measurements)}")
+            filtered_measurements = {k: v for (k, v) in self.measurements.items() if v is not None}
+            self.get_logger().info(f"filtered measurements {str(filtered_measurements)}")
+            self.typedb_interface.add_measurements(filtered_measurements)
+            if self.doing_states:
+                current_state = self.typedb_interface.get_current_state()
+                if (current_state is not None) and current_state != self.prev_state:
+                    self.state_publisher.publish(
+                        SymbolicState(state_name=self.typedb_interface.get_current_state(),
+                                      header=self.create_header()))
+                    self.prev_state = current_state
+        else:
+            self.get_logger().info("No measurements to process", throttle_duration_sec=10)
 
     def publish_fulfillments(self):
-        fulfillments = self.typedb_interface.get_in_effect_requirement_fulfillment()
-        if(fulfillments):
-            fulfillment_msg = String()
-            fulfillment_msg.data = json.dumps(fulfillments)
-            self.fulfillment_publisher.publish(fulfillment_msg)
+        reqs = self.typedb_interface.get_in_effect_requirement_fulfillment()
+        if (reqs):
+            reqs_msgs = [RelaxedRequirement(name=req['requirement_name'],
+                                            fulfillment=req["fulfillment"],
+                                            system_name=req["system"]) for req in reqs]
+
+            reqs_msg = RelaxedRequirements(header=self.create_header(), requirements=reqs_msgs)
+            self.reqs_publisher.publish(reqs_msg)
+        else:
+            self.get_logger().info("No fulfillments to published", throttle_duration_sec=10)

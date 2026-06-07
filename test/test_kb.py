@@ -16,15 +16,12 @@ import math
 import threading
 import time
 
-from lifecycle_msgs.srv import ChangeState
-from lifecycle_msgs.srv import GetState
-
 from nav_msgs.msg import Odometry
 
 import pytest
 
 import rclpy
-from rclpy.executors import SingleThreadedExecutor
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.qos import QoSDurabilityPolicy
 from rclpy.qos import QoSHistoryPolicy
@@ -49,7 +46,7 @@ def test_get_ros_msg_type_from_string():
     assert get_ros_msg_type_from_string('std_srvs/Empty', 'srv') == Empty
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def tactical_kb():
     tactical_kb = TacticalRetreatKB('tactical_kb')
     tactical_kb.init_typedb_interface(
@@ -57,13 +54,23 @@ def tactical_kb():
         'tactical_kb',
         ['schemas/data_structure/data_structure.tql',
             'schemas/context_model/context_model.tql',
-            'schemas/ros_model/ros_model.tql'],
+            'schemas/ros_model/ros_model.tql',
+            'schemas/logical_expressions/logical_expression.tql',
+            'schemas/logical_expressions/fuzzy_expression.tql',
+            'schemas/feature_model/feature_model.tql',
+            'schemas/feature_model/feature_model_logical_expression.tql',
+            'schemas/relaxed/relaxed_model.tql',
+            'schemas/tactics_model/tactics_model.tql',
+            'schemas/discover_hypothetical_req_fulfillment/'
+            'discover_hypothetical_req_fulfillment.tql',
+            'schemas/states/states.tql'],
         ['test/data/test_ros_model.tql'],
         force_database=True,
         force_data=True,
         infer=True
     )
     yield tactical_kb
+    tactical_kb.typedb_interface.delete_database()
     tactical_kb.destroy_node()
 
 
@@ -78,44 +85,33 @@ def rclpy_runtime():
             rclpy.shutdown()
 
 
-@pytest.fixture
-def executor():
-    ex = SingleThreadedExecutor()
+@pytest.fixture(scope='module')
+def test_node():
+    node = HelperNode()
+    try:
+        yield node
+    finally:
+        node.destroy_node()
+
+
+@pytest.fixture(scope='module')
+def executor(tactical_kb, test_node):
+    ex = MultiThreadedExecutor()
     t = threading.Thread(target=ex.spin, daemon=True)
     t.start()
     try:
+        ex.add_node(tactical_kb)
+        ex.add_node(test_node)
         yield ex
     finally:
         ex.shutdown()
         t.join(timeout=2.0)
 
 
-@pytest.fixture
-def test_node():
-    node = HelperNode()
-    try:
-        yield node
-    finally:
-        node.delete_database()
-        node.destroy_node()
-
-
 class HelperNode(Node):
 
     def __init__(self, name='test_node'):
         super().__init__(name)
-
-        self.change_state_cli = self.create_client(
-            ChangeState, '/tactical_kb/change_state'
-        )
-
-        self.get_state_cli = self.create_client(
-            GetState, '/tactical_kb/get_state'
-        )
-
-        self.delete_db_cli = self.create_client(
-            Empty, '/tactical_kb/delete_database'
-        )
 
     def call_service(self, cli, request):
         if cli.wait_for_service(timeout_sec=5.0) is False:
@@ -131,13 +127,8 @@ class HelperNode(Node):
 
         return future.result()
 
-    def delete_database(self):
-        self.call_service(self.delete_db_cli, Empty.Request())
-
 
 def test_create_measure_topic_interface(executor, tactical_kb, test_node):
-    executor.add_node(test_node)
-    executor.add_node(tactical_kb)
 
     measure_test_topic_dict = {
         'source': 'Publisher',
@@ -206,6 +197,12 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
     tactical_kb.create_measure_interface(odom_dict)
     assert 'measure_mean_velocity' in tactical_kb.measures_subscribers
 
+    tactical_kb.create_timer(
+        1.0,
+        tactical_kb.measurement_processing,
+        callback_group=tactical_kb.query_cb_group
+    )
+
     pub_qos = QoSProfile(
         reliability=QoSReliabilityPolicy.RELIABLE,
         history=QoSHistoryPolicy.KEEP_LAST,
@@ -231,12 +228,16 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
 
     publisher.publish(Float64(data=3.0))
 
-    t_end = time.time() + 1.0
-    while time.time() < t_end:
-        time.sleep(0.1)
+    deadline = time.time() + 5.0
+    measurement = float('nan')
 
-    measurement = tactical_kb.typedb_interface.get_latest_measurement(
-        'measure_test_topic')
+    while time.time() < deadline:
+        measurement = tactical_kb.typedb_interface.get_latest_measurement(
+            'measure_test_topic')
+        if measurement == 3.0:
+            break
+        time.sleep(0.05)
+
     assert measurement == 3.0
 
     odom_publisher = test_node.create_publisher(
@@ -266,10 +267,6 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
         # mean_velocity = mean_vel_monitor(None, odom_msg)
         odom_publisher.publish(odom_msg)
 
-        t_end = time.time() + 0.5
-        while time.time() < t_end:
-            time.sleep(0.1)
-
         # Manually compute expected mean velocity over the window
         window_start = ts - 5.0
         relevant_speeds = [
@@ -278,15 +275,21 @@ def test_create_measure_topic_interface(executor, tactical_kb, test_node):
             if t >= window_start and t <= ts
         ]
         expected_mean = sum(relevant_speeds) / len(relevant_speeds) if relevant_speeds else 0.0
-        mean_velocity = tactical_kb.typedb_interface.get_latest_measurement(
-            'measure_mean_velocity')
 
-        assert mean_velocity == pytest.approx(expected_mean)
+        deadline = time.time() + 5.0
+        measurement = float('nan')
+
+        while time.time() < deadline:
+            measurement = tactical_kb.typedb_interface.get_latest_measurement(
+                'measure_mean_velocity')
+            if measurement == pytest.approx(expected_mean):
+                break
+            time.sleep(0.05)
+
+        assert measurement == pytest.approx(expected_mean)
 
 
 def test_create_measure_interface_service(executor, tactical_kb, test_node):
-    executor.add_node(test_node)
-    executor.add_node(tactical_kb)
 
     from std_srvs.srv import Trigger
 
@@ -302,7 +305,7 @@ def test_create_measure_interface_service(executor, tactical_kb, test_node):
     )
 
     measure_test_service_dict = {
-        'source': 'Service',
+        'source': 'ServiceServer',
         'measure_name': 'measure_test_service',
         'interface_name': '/measure_test_service',
         'interface_type': 'std_srvs/srv/Trigger',
@@ -316,17 +319,24 @@ def test_create_measure_interface_service(executor, tactical_kb, test_node):
     tactical_kb.create_measure_interface(measure_test_service_dict)
     assert 'measure_test_service' in tactical_kb.measures_clients
 
-    deadline = time.time() + 2.0
-    while time.time() < deadline:
-        time.sleep(0.02)
+    tactical_kb.create_timer(
+        1.0,
+        tactical_kb.measurement_processing,
+        callback_group=tactical_kb.query_cb_group
+    )
 
-    service_result = tactical_kb.typedb_interface.get_latest_measurement('measure_test_service')
+    deadline = time.time() + 5.0
+    service_result = False
+    while time.time() < deadline:
+        service_result = tactical_kb.typedb_interface.get_latest_measurement(
+            'measure_test_service')
+        if service_result is True:
+            break
+        time.sleep(0.05)
     assert service_result is True
 
 
 def test_create_proxy(executor, tactical_kb, test_node):
-    executor.add_node(test_node)
-    executor.add_node(tactical_kb)
 
     from std_srvs.srv import Trigger
 
@@ -342,7 +352,7 @@ def test_create_proxy(executor, tactical_kb, test_node):
     )  # this is the original service that will be proxied
 
     measure_test_service_dict = {
-        'source': 'Service',
+        'source': 'ServiceServer',
         'measure_name': 'measure_test_service',
         'interface_name': '/measure_test_service',
         'interface_type': 'std_srvs/srv/Trigger',
@@ -356,6 +366,12 @@ def test_create_proxy(executor, tactical_kb, test_node):
     tactical_kb.create_measure_interface(measure_test_service_dict)
     assert 'measure_test_service' in tactical_kb.measures_clients
 
+    tactical_kb.create_timer(
+        1.0,
+        tactical_kb.measurement_processing,
+        callback_group=tactical_kb.query_cb_group
+    )
+
     service_client = test_node.create_client(
         Trigger,
         'proxy_' + measure_test_service_dict['interface_name']
@@ -367,6 +383,14 @@ def test_create_proxy(executor, tactical_kb, test_node):
     rclpy.spin_until_future_complete(test_node, future, timeout_sec=5.0)
     assert future.done()
 
-    service_result = tactical_kb.typedb_interface.get_latest_measurement('measure_test_service')
+    expected_msg = future.result().message
 
-    assert service_result == future.result().message
+    deadline = time.time() + 5.0
+    service_result = False
+    while time.time() < deadline:
+        service_result = tactical_kb.typedb_interface.get_latest_measurement(
+            'measure_test_service')
+        if service_result == expected_msg:
+            break
+        time.sleep(0.05)
+    assert service_result == expected_msg
