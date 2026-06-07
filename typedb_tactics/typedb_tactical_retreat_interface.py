@@ -21,17 +21,12 @@ from typing import Optional
 from typing import TypedDict
 from typing import Union
 
-from aal_msgs.msg import Adaptation
-from rclpy.parameter import Parameter
-from rclpy.parameter import parameter_value_to_python
-from ros_typedb.ros_typedb_interface import fetch_result_to_ros_result_tree
 from ros_typedb.typedb_interface import convert_py_type_to_query_type
 from ros_typedb.typedb_interface import convert_query_type_to_py_type
 from ros_typedb.typedb_interface import MatchResultDict
 from ros_typedb.typedb_interface import TypeDBInterface
-from ros_typedb_msgs.msg import IndexList
-from ros_typedb_msgs.msg import QueryResult
-from ros_typedb_msgs.msg import ResultTree
+from typedb_tactics.utils import AdaptationPlan
+
 from typedb.driver import ConceptMap
 
 logger = logging.getLogger(__name__)
@@ -110,93 +105,6 @@ def node_query_to_node_dict(
     node_dict.sort(key=lambda d: (d['node_name'], d['namespace']))
     return node_dict
 
-
-def extract_parameter_values(
-        index_lists: List[IndexList],
-        result_tree: ResultTree,
-        INDEX_VAR: str) -> List:
-    parameterValues = []
-
-    for i in range(len(index_lists)):
-        parameterValues.append(None)
-
-    for index_list in index_lists:
-        parameterIndex = -1
-        parameterValue = None
-        for index in index_list.index:
-            q_r = result_tree.results[index]
-            if q_r.type != QueryResult.THING:
-                continue
-
-            thing = q_r.thing
-            if (thing.variable_name == INDEX_VAR):
-                for attr in thing.attributes:
-                    parameterIndex = attr.value.integer_array_value[0]
-
-            if (thing.variable_name == 'value'):
-                for attr in thing.attributes:
-                    # this is a ParameterValue type.
-                    attribute_value = attr.value
-                    valueList = parameter_value_to_python(attribute_value)
-                    parameterValue = valueList[0]
-
-            if (parameterIndex >= 0):
-                parameterValues[parameterIndex] = parameterValue
-
-    return parameterValues
-
-
-def extract_string_attribute(
-        result_tree: ResultTree,
-        thing_variable_name: str,
-        att_variable_name: str):
-    for q_result in result_tree.results:
-        if (q_result.type != QueryResult.THING):
-            continue
-
-        thing = q_result.thing
-        if (not thing.variable_name == thing_variable_name):
-            continue
-
-        for attr in thing.attributes:
-            if (attr.variable_name == att_variable_name):
-                return attr.value.string_array_value[0]
-    return ''  # TODO: throw exception?
-
-
-def process_set_parameter(result_tree, index_lists):
-    node_name = ''
-
-    parameterValues = []
-
-    parameterValues = extract_parameter_values(
-        index_lists, result_tree, 'index')
-
-    node_name = extract_string_attribute(result_tree, 'node', 'node_name')
-
-    param_name = extract_string_attribute(
-        result_tree, 'parameter', 'parameter_name')
-
-    adaptation = Adaptation()
-    adaptation.adaptation_target = Adaptation.ROSPARAMETER
-
-    param = Parameter(param_name, value=parameterValues)
-
-    adaptation.node_name = node_name
-
-    adaptation.parameter_adaptation = param.to_parameter_msg()
-
-    return adaptation
-
-
-def find_subquery(result_tree_list: List[ResultTree], subquery_name):
-    for i in range(len(result_tree_list)):
-        result_tree = result_tree_list[i]
-        for query_result in result_tree.results:
-            if (
-                    query_result.type == QueryResult.SUB_QUERY
-                    and query_result.sub_query_name == subquery_name):
-                return query_result.children_index, i
 
 
 class TacticalRetreatInterface(TypeDBInterface):

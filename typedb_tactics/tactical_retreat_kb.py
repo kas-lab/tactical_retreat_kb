@@ -475,7 +475,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 self.get_logger().error('Traceback:\n' + traceback.format_exc())
                 res.success = False
             return res
-        
+
         def _fetch_current_state_action_cb(req, res):
             try:
                 start_time = time.perf_counter()
@@ -498,26 +498,6 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 res.success = False
             return res
 
-        def _fetch_relevant_states(_, res):
-            try:
-                start_time = time.perf_counter()
-                self.get_logger().info('Getting relevant states...')
-                relevant_states_dict = self.typedb_interface.get_relevant_states("MPPI_DYNAMIC")
-                self.get_logger().info(
-                    f'relevant_states result: {relevant_states_dict}')
-                self.get_logger().info(
-                    f'relevant_states len keys: {len(relevant_states_dict.keys())}')
-                elapsed_time = time.perf_counter() - start_time
-                self.get_logger().info(
-                    f'relevant_states retrieved in {elapsed_time:.4f} seconds.')
-                res.success = True
-                res.message = ""
-            except Exception as e:
-                self.get_logger().error(
-                    f'Error fetching state: {e}')
-                self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                res.success = False
-            return res
         # create service with a lambda calling the create_measures_interfaces
         # function
         self.measures_service = self.create_service(
@@ -562,13 +542,6 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             Trigger,
             self.get_name() + '/get_current_state',
             _fetch_current_state_cb,
-            callback_group=self.query_cb_group
-        )
-
-        self.relevant_state_service = self.create_service(
-            Trigger,
-            self.get_name() + '/rel_state',
-            _fetch_relevant_states,
             callback_group=self.query_cb_group
         )
 
