@@ -20,6 +20,7 @@ from typedb_tactics.utils import names_to_transitions
 from aal_msgs.msg import Adaptation
 from rclpy.parameter import Parameter
 
+
 def get_feature_resolution_dependency(self, name):
     query = f"""
         match
@@ -60,12 +61,14 @@ def kb_interface():
     yield kb_interface
     kb_interface.delete_database()
 
+
 def SetLifecycleAction(node_name, transition):
-    return  Adaptation(
+    return Adaptation(
         adaptation_target=Adaptation.STATETRANSITION,
         node_name=node_name,
         lifecycle_adaptation=names_to_transitions[transition],
     )
+
 
 def SetParameterAction(node_name, param_name, param_value):
     param = Parameter(param_name, value=param_value)
@@ -74,6 +77,7 @@ def SetParameterAction(node_name, param_name, param_value):
         node_name=node_name,
         parameter_adaptation=param.to_parameter_msg()
     )
+
 
 def test_feature_resolution_dependency(kb_interface):
     dependencies = kb_interface.get_feature_resolution_dependency('fa0')
@@ -99,7 +103,6 @@ def test_feature_resolution_dependency(kb_interface):
 
 def test_reconfiguration_plan(kb_interface):
     plan = kb_interface.get_reconfiguration_plan('tactic_rule_0')
-
 
     assert AdaptationPlan(
         [SetLifecycleAction('node_3', 'inactive'),

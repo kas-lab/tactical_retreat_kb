@@ -36,6 +36,7 @@ names_to_transitions = {
     'finalized' : Transition(id=Transition.TRANSITION_ACTIVE_SHUTDOWN)
 }
 
+
 @dataclass(slots=True)
 class AdaptationPlan:
     # A possible improvement is to make actions a graph

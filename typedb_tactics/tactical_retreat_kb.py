@@ -611,6 +611,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         :return: transition result
         """
         config_res = super().on_configure(state)
+        self.feature_model = self.typedb_interface.build_feature_model()
         super().get_logger().info('I have arisen')
         return config_res
 

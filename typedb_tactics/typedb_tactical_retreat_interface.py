@@ -25,6 +25,7 @@ from ros_typedb.typedb_interface import convert_py_type_to_query_type
 from ros_typedb.typedb_interface import convert_query_type_to_py_type
 from ros_typedb.typedb_interface import MatchResultDict
 from ros_typedb.typedb_interface import TypeDBInterface
+from typedb_tactics.feature_model import FeatureModel
 from typedb_tactics.utils import AdaptationPlan
 
 from typedb.driver import ConceptMap
@@ -642,7 +643,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_database(query)
         return query_result
-    
+
     def fetch_current_state(self):
         query = """
             match
@@ -2210,3 +2211,57 @@ class TacticalRetreatInterface(TypeDBInterface):
     def get_reconfiguration_plan(self, tactic_rule: str) -> AdaptationPlan:
         query_result = self.fetch_reconfiguration_plan(tactic_rule)
         return AdaptationPlan.from_typedb_results(query_result)
+
+    def fetch_feature_model(self) -> List[dict]:
+        """Fetch raw feature model data from TypeDB. Returns one entry per Feature."""
+        query = """
+            match $f isa Feature;
+            fetch
+                $f: feature_name, selected, mandatory;
+                feature_hierarchy: {
+                    match (parent: $f, child: $c) isa! feature_hierarchy;
+                    fetch $c: feature_name;
+                };
+                alt_children: {
+                    match (parent: $f, child: $c) isa alternative;
+                    fetch $c: feature_name;
+                };
+                or_children: {
+                    match (parent: $f, child: $c) isa or_group;
+                    fetch $c: feature_name;
+                };
+                requires: {
+                    match (constraint: $req, constrained: $f) isa requires_constraint;
+                    fetch $req: feature_name;
+                };
+                excludes: {
+                    match
+                        $con isa Feature;
+                        $f isa Feature;
+                        {
+                            (constraint: $f, constrained: $con) isa excludes_constraint;
+                        } or {
+                            (constraint: $con, constrained: $f) isa excludes_constraint;
+                        };
+                        not { $f is $con; };
+                    fetch $con: feature_name;
+                };
+        """
+        return self.fetch_database_unordered(query)
+
+    def build_feature_model(self) -> FeatureModel:
+        """Build a FeatureModel from TypeDB base facts. Call once at initialisation."""
+        return FeatureModel.from_typedb_results(self.fetch_feature_model())
+
+    def fetch_feature_selected(self) -> List[dict]:
+        """Fetch feature names and their current selected state from TypeDB."""
+        query = """
+            match $f isa Feature;
+            fetch
+                $f: feature_name, selected;
+        """
+        return self.fetch_database_unordered(query)
+
+    def refresh_feature_model_selected(self, model: FeatureModel) -> None:
+        """Refresh the selected state of an existing FeatureModel from TypeDB."""
+        model.refresh_selected(self.fetch_feature_selected())
