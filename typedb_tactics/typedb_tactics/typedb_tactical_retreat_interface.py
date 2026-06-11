@@ -26,6 +26,7 @@ from ros_typedb.typedb_interface import convert_query_type_to_py_type
 from ros_typedb.typedb_interface import MatchResultDict
 from ros_typedb.typedb_interface import TypeDBInterface
 from typedb_tactics.feature_model import FeatureModel
+from typedb_tactics.feature_model import ReconfigurationStep
 from typedb_tactics.utils import AdaptationPlan
 
 from typedb.driver import ConceptMap
@@ -2265,3 +2266,88 @@ class TacticalRetreatInterface(TypeDBInterface):
     def refresh_feature_model_selected(self, model: FeatureModel) -> None:
         """Refresh the selected state of an existing FeatureModel from TypeDB."""
         model.refresh_selected(self.fetch_feature_selected())
+
+    def _fetch_feature_resolution_actions(
+            self, feature_name: str, activate: bool,
+            resolution_model: str = '') -> list[dict]:
+        """
+        Fetch TypeDB resolution actions for a single feature activation or deactivation.
+
+        Assumes each feature has at most one resolution path globally when
+        resolution_model is not specified.
+        """
+        relation = 'variant_activation' if activate else 'variant_deactivation'
+        rm_clause = (
+            f"""$rm (variant_resolution: $vr) isa resolution_model,
+                has resolution_model_name "{resolution_model}";"""
+            if resolution_model else '')
+        query = f"""
+            match
+                $f isa Feature, has feature_name "{feature_name}";
+                {rm_clause}
+                $vr (resolution_action: $res_action, variant: $f) isa {relation};
+            fetch
+                set_parameter_action: {{
+                    match
+                        $res_action (
+                            node: $node,
+                            parameter: $parameter,
+                            parameter_value: $parameter_value) isa! set_nodes_parameters;
+                    fetch
+                        $node: node_name;
+                        $parameter: parameter_name;
+                        param_value_array: {{
+                            match
+                                $parameter_value isa ValueArray;
+                                $param_index
+                                 (array: $parameter_value, array_value: $value) isa at_index;
+                            fetch
+                                $param_index: index;
+                                $value: attribute;
+                        }};
+                        param_value_singleton: {{
+                            match
+                                $parameter_value isa $value_type;
+                                $value_type sub! ValueSingleton;
+                            fetch
+                                $parameter_value: attribute;
+                        }};
+                }};
+                set_lifecycle_action: {{
+                    match
+                        $res_action (node: $node) isa! set_lifecycle_state;
+                    fetch
+                        $node: node_name;
+                        $res_action: lifecycle_state;
+                }};
+        """
+        return self.fetch_database_unordered(query)
+
+    def get_adaptation_plan_from_feature_reconfig_plan(
+            self, feature_plan: List[ReconfigurationStep],
+            resolution_model: str = '') -> AdaptationPlan:
+        """
+        Build an AdaptationPlan from a feature reconfiguration plan.
+
+        Queries TypeDB for the resolution action(s) of each feature and assembles
+        an AdaptationPlan ordered by execution wave index.
+
+        :param feature_plan: ordered steps from FeatureModel.get_feature_reconfiguration_plan
+        :param resolution_model: resolution model name to scope the lookup;
+            empty string performs a global lookup (valid when each feature has
+            exactly one resolution path across all models).
+        :return: AdaptationPlan with actions sorted by execution wave
+        """
+        steps_with_results: list[tuple[int, dict]] = []
+        for step in feature_plan:
+            results = self._fetch_feature_resolution_actions(
+                step.feature_name,
+                step.action == 'activate',
+                resolution_model)
+            if not results:
+                logger.warning(
+                    'No resolution actions found for feature %r (%s)',
+                    step.feature_name, step.action)
+            for result in results:
+                steps_with_results.append((step.index, result))
+        return AdaptationPlan.from_feature_plan_results(steps_with_results)

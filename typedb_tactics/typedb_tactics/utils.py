@@ -18,10 +18,11 @@ from typing import Any
 from typing import Literal
 from typing import Sequence
 from typing import TypeAlias
-from aal_msgs.msg import Adaptation
+from typing import cast
+from execution_layer_msgs.msg import Adaptation
 from ros_typedb.typedb_interface import convert_query_type_to_py_type
 from lifecycle_msgs.msg import Transition
-from rclpy.parameter import parameter_value_to_python, Parameter
+from rclpy.parameter import Parameter
 
 ParamScalar: TypeAlias = str | float | int | bool
 ParamValue: TypeAlias = ParamScalar | list[ParamScalar]
@@ -30,10 +31,10 @@ LifecycleState: TypeAlias = Literal[
 
 # TODO: Redesign, see issue #88
 names_to_transitions = {
-    'active' : Transition(id=Transition.TRANSITION_ACTIVATE),
-    'inactive' : Transition(id=Transition.TRANSITION_DEACTIVATE),
+    'active': Transition(id=Transition.TRANSITION_ACTIVATE),
+    'inactive': Transition(id=Transition.TRANSITION_DEACTIVATE),
     # 'unconfigured' : Transition(id=Transition.TRANSITION_ACTIVE_SHUTDOWN),
-    'finalized' : Transition(id=Transition.TRANSITION_ACTIVE_SHUTDOWN)
+    'finalized': Transition(id=Transition.TRANSITION_ACTIVE_SHUTDOWN)
 }
 
 
@@ -56,7 +57,8 @@ class AdaptationPlan:
         actions_with_index: list[tuple[int, Adaptation]] = []
 
         for entry in raw_actions:
-            index_value = convert_query_type_to_py_type(entry['index'])
+            # cast is used to get rid of pylance type warning
+            index_value = cast(int, convert_query_type_to_py_type(entry['index']))
 
             for lifecycle_entry in entry.get('set_lifecycle_action', []):
                 actions_with_index.append(
@@ -71,6 +73,31 @@ class AdaptationPlan:
         ]
         return cls(actions=ordered_actions)
 
+    @classmethod
+    def from_feature_plan_results(
+        cls,
+        steps_with_results: list[tuple[int, dict[str, Any]]]
+    ) -> AdaptationPlan:
+        """
+        Build an AdaptationPlan from (execution_index, typedb_result_dict) pairs.
+
+        :param steps_with_results: list of (index, result_dict) where result_dict
+            has 'set_lifecycle_action' and/or 'set_parameter_action' keys and
+            index is the execution wave from ReconfigurationStep.
+        """
+        actions_with_index: list[tuple[int, Adaptation]] = []
+        for index_value, entry in steps_with_results:
+            for lifecycle_entry in entry.get('set_lifecycle_action', []):
+                actions_with_index.append(
+                    (index_value, _parse_lifecycle_action(lifecycle_entry)))
+            for parameter_entry in entry.get('set_parameter_action', []):
+                actions_with_index.append(
+                    (index_value, _parse_parameter_action(parameter_entry)))
+        ordered_actions = [
+            action for _, action in sorted(actions_with_index, key=lambda pair: pair[0])
+        ]
+        return cls(actions=ordered_actions)
+
 
 def _parse_lifecycle_action(
     raw_action: dict[str, Any]
@@ -79,9 +106,9 @@ def _parse_lifecycle_action(
     lifecycle_state = raw_action['res_action']['lifecycle_state'][0]['value']
 
     return Adaptation(
-        adaptation_target=Adaptation.STATETRANSITION,
+        target_type_str='execution_layer/lifecycle',
         node_name=str(node_name),
-        lifecycle_adaptation=names_to_transitions[str(lifecycle_state)],
+        lifecycle_transition=names_to_transitions[str(lifecycle_state)],
     )
 
 
@@ -112,8 +139,6 @@ def _parse_parameter_action(
     node_name = raw_action['node']['node_name'][0]['value']
     param_name_attr = raw_action.get('parameter').get('parameter_name')[0]['value']
 
-
-
     param_value: ParamValue
     param_array = raw_action.get('param_value_array') or []
     if param_array:
@@ -125,7 +150,7 @@ def _parse_parameter_action(
     param = Parameter(str(param_name_attr), value=param_value)
 
     return Adaptation(
-        adaptation_target=Adaptation.ROSPARAMETER,
+        target_type_str='execution_layer/parameter',
         node_name=str(node_name),
-        parameter_adaptation=param.to_parameter_msg()
+        parameter=param.to_parameter_msg()
     )

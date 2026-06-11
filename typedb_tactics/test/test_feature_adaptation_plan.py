@@ -17,7 +17,7 @@ import pytest
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 from typedb_tactics.utils import AdaptationPlan
 from typedb_tactics.utils import names_to_transitions
-from aal_msgs.msg import Adaptation
+from execution_layer_msgs.msg import Adaptation
 from rclpy.parameter import Parameter
 
 
@@ -64,18 +64,18 @@ def kb_interface():
 
 def SetLifecycleAction(node_name, transition):
     return Adaptation(
-        adaptation_target=Adaptation.STATETRANSITION,
+        target_type_str='execution_layer/lifecycle',
         node_name=node_name,
-        lifecycle_adaptation=names_to_transitions[transition],
+        lifecycle_transition=names_to_transitions[transition],
     )
 
 
 def SetParameterAction(node_name, param_name, param_value):
     param = Parameter(param_name, value=param_value)
     return Adaptation(
-        adaptation_target=Adaptation.ROSPARAMETER,
+        target_type_str='execution_layer/parameter',
         node_name=node_name,
-        parameter_adaptation=param.to_parameter_msg()
+        parameter=param.to_parameter_msg()
     )
 
 

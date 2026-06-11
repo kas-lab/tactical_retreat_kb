@@ -13,7 +13,11 @@
 # limitations under the License.
 import pytest
 
+from execution_layer_msgs.msg import Adaptation
+from typedb_tactics.feature_model import ReconfigurationStep
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+from typedb_tactics.utils import AdaptationPlan
+from typedb_tactics.utils import names_to_transitions
 
 
 @pytest.fixture(scope='module')
@@ -258,3 +262,54 @@ def test_add_measurement(kb_interface_test_model):
         'measure_bool_array', [True, True, False])
     assert kb_interface_test_model.get_latest_measurement(
         'measure_bool_array') == [True, True, False]
+
+
+def _lc(node_name, state):
+    return Adaptation(
+        target_type_str='execution_layer/lifecycle',
+        node_name=node_name,
+        lifecycle_transition=names_to_transitions[state],
+    )
+
+
+def test_plan_single_activation(kb_interface_test_model):
+    plan = kb_interface_test_model.get_adaptation_plan_from_feature_reconfig_plan(
+        [ReconfigurationStep('f1', 'activate', 1)])
+    assert plan == AdaptationPlan([_lc('mock_node1', 'active')])
+
+
+def test_plan_single_deactivation(kb_interface_test_model):
+    plan = kb_interface_test_model.get_adaptation_plan_from_feature_reconfig_plan(
+        [ReconfigurationStep('f2', 'deactivate', 1)])
+    assert plan == AdaptationPlan([_lc('mock_node2', 'inactive')])
+
+
+def test_plan_ordered_by_wave(kb_interface_test_model):
+    # wave 1: deactivate f3 — wave 2: activate f1
+    plan = kb_interface_test_model.get_adaptation_plan_from_feature_reconfig_plan([
+        ReconfigurationStep('f3', 'deactivate', 1),
+        ReconfigurationStep('f1', 'activate', 2),
+    ])
+    assert plan == AdaptationPlan([
+        _lc('mock_node3', 'inactive'),
+        _lc('mock_node1', 'active'),
+    ])
+
+
+def test_plan_scoped_to_resolution_model(kb_interface_test_model):
+    plan = kb_interface_test_model.get_adaptation_plan_from_feature_reconfig_plan(
+        [ReconfigurationStep('f1', 'activate', 1)],
+        resolution_model='res_mock')
+    assert plan == AdaptationPlan([_lc('mock_node1', 'active')])
+
+
+def test_plan_empty_steps(kb_interface_test_model):
+    plan = kb_interface_test_model.get_adaptation_plan_from_feature_reconfig_plan([])
+    assert plan == AdaptationPlan([])
+
+
+def test_plan_feature_without_resolution(kb_interface_test_model):
+    # f4 has no variant_activation — plan should be empty, warning logged
+    plan = kb_interface_test_model.get_adaptation_plan_from_feature_reconfig_plan(
+        [ReconfigurationStep('f4', 'activate', 1)])
+    assert plan == AdaptationPlan([])
