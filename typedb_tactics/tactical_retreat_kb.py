@@ -19,6 +19,7 @@ import time
 import traceback
 
 from adapt_x_msgs.srv import FetchAdaptations
+from adapt_x_msgs.srv import FetchPlan
 from adapt_x_msgs.srv import FetchApplicable
 from adapt_x_msgs.srv import HypotheticalReqFulfillment
 from adapt_x_msgs.srv import HypotheticalReqsFulfillment
@@ -31,6 +32,9 @@ from adapt_x_msgs.srv import GetState
 from adapt_x_msgs.msg import RelaxedRequirement
 from adapt_x_msgs.msg import RelaxedRequirements
 from adapt_x_msgs.msg import SymbolicState
+from adapt_x_msgs.msg import TableEntry
+from adapt_x_msgs.msg import Resolution
+from adapt_x_msgs.srv import ActionDetails
 
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.duration import Duration
@@ -242,11 +246,11 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         self.doing_states = self.get_parameter("do_states").value
 
         self.get_logger().info(f": are we doing states? {self.doing_states}")
+        pub_qos = QoSProfile(reliability=QoSReliabilityPolicy.BEST_EFFORT,
+                             history=QoSHistoryPolicy.KEEP_LAST,
+                             depth=3)
         self.reqs_publisher = self.create_publisher(
-            RelaxedRequirements, 'requirements', 10)
-
-        self.state_publisher = self.create_publisher(
-            SymbolicState, 'symbolic_state', 10)
+            RelaxedRequirements, 'requirements', qos_profile=pub_qos)
 
         self.prev_state = None
         # self.create_measures_interfaces()
@@ -310,12 +314,35 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         def _fetch_actions_cb(req, res):
             try:
                 start_time = time.perf_counter()
-                self.get_logger().info('Fetching tactic actions...')
-                res.adaptations = self.typedb_interface.get_reconfiguration_plan(req.tactic_name).actions
+                self.get_logger().info('Fetching all resolution actions...')
+                x = self.typedb_interface.get_resolution_adaptations()
+                res.resolutions = []
+                for name, adaptations in x.items():
+                    res.resolutions.append(
+                        Resolution(resolution_action_name=name, adaptations=adaptations))
 
                 elapsed_time = time.perf_counter() - start_time
+                res.success = True
                 self.get_logger().info(
                     f'Tactic actions fetched in {elapsed_time:.4f} seconds.')
+            except Exception as e:
+                self.get_logger().error(
+                    f'Error fetching tactic actions: {e}')
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
+                res.success = False
+            return res
+
+        def _fetch_reconfiguration_plan_cb(req, res):
+            try:
+                start_time = time.perf_counter()
+                self.get_logger().info('Fetching tactic actions...')
+                # res.adaptations = self.typedb_interface.get_reconfiguration_plan(req.tactic_name).actions
+                vation = "activation" if req.activation else "deactivation"
+                x = self.typedb_interface.get_reconfiguration_plan_compact(req.feature_name, vation)
+                elapsed_time = time.perf_counter() - start_time
+                self.get_logger().info(
+                    f'Tactic actions {x} fetched in {elapsed_time:.4f} seconds.')
+                res.resolution_actions = x
             except Exception as e:
                 self.get_logger().error(
                     f'Error fetching tactic actions: {e}')
@@ -481,11 +508,11 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 start_time = time.perf_counter()
                 self.get_logger().info('Getting current state...')
                 current_state_string = self.typedb_interface.get_current_state_action(req.action_name)
-                self.get_logger().info(f"typee {str(type(current_state_string))}")
-                self.get_logger().info(f"rawww {current_state_string}")
-
-                res.current_state = SymbolicState(state_name=str(current_state_string),
-                                                  header=self.create_header())
+                res.success = False
+                if (current_state_string is not None):
+                    res.current_state = SymbolicState(state_name=str(current_state_string),
+                                                      header=self.create_header())
+                    res.success = True
                 self.get_logger().info(
                     f'current_state result: {current_state_string}')
                 elapsed_time = time.perf_counter() - start_time
@@ -494,6 +521,34 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             except Exception as e:
                 self.get_logger().error(
                     f'Error fetching state: {e}')
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
+                res.success = False
+            return res
+
+        def _action_details_cb(req, res):
+            try:
+                start_time = time.perf_counter()
+                self.get_logger().info('Getting rules for action...')
+                state_dict, table, reconfigurations = self.typedb_interface.get_action_details(req.action_name)
+                entries = []
+
+                for (fa, s), r in table.items():
+                    t = TableEntry(state=SymbolicState(state_name=s),
+                                   feature_adaptation=fa, rule_name=r)
+                    entries.append(t)
+
+                states = [SymbolicState(state_name=p[0])
+                          for p in state_dict.items()]
+                res.table_entries = entries
+                res.states = states
+                res.reconfigurations = reconfigurations
+                res.success = True
+                elapsed_time = time.perf_counter() - start_time
+                self.get_logger().info(
+                    f' " retrieved in {elapsed_time:.4f} seconds.')
+            except Exception as e:
+                self.get_logger().error(
+                    f'Error getting rules fpr action: {e}')
                 self.get_logger().error('Traceback:\n' + traceback.format_exc())
                 res.success = False
             return res
@@ -566,6 +621,13 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             callback_group=self.query_cb_group
         )
 
+        self.adaptation_plan_service = self.create_service(
+            FetchPlan,
+            self.get_name() + '/fetch_plan',
+            _fetch_reconfiguration_plan_cb,
+            callback_group=self.query_cb_group
+        )
+
         self.update_running_service = self.create_service(
             UpdateRunning,
             self.get_name() + '/update_running',
@@ -591,6 +653,12 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             Trigger,
             self.get_name() + '/fetch_all_measurements',
             _fetch_all_measurements_cb
+        )
+
+        self.fetch_rules_for_action_service = self.create_service(
+            ActionDetails,
+            self.get_name() + '/action_details',
+            _action_details_cb
         )
 
         self.get_logger().info(
@@ -640,7 +708,10 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         interface_name = interface['interface_name']
         ros_msg_type_str = interface['interface_type']
 
-        measurement_qos = get_qos_from_qos_dict(interface.get('qos', {}))
+        measurement_qos = QoSProfile(reliability=QoSReliabilityPolicy.BEST_EFFORT,
+                                     history=QoSHistoryPolicy.KEEP_LAST,
+                                     depth=3)
+        # get_qos_from_qos_dict(interface.get('qos', {}))
 
         # function_lib_name = (interface.get('measurement_function_lib')
         #                      or 'ros_monitors_functions.monitor_functions')
@@ -806,26 +877,26 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         if self.measurements:
             self.get_logger().info(f"measurements {str(self.measurements)}")
             filtered_measurements = {k: v for (k, v) in self.measurements.items() if v is not None}
-            self.get_logger().info(f"filtered measurements {str(filtered_measurements)}")
-            self.typedb_interface.add_measurements(filtered_measurements)
-            if self.doing_states:
-                current_state = self.typedb_interface.get_current_state()
-                if (current_state is not None) and current_state != self.prev_state:
-                    self.state_publisher.publish(
-                        SymbolicState(state_name=self.typedb_interface.get_current_state(),
-                                      header=self.create_header()))
-                    self.prev_state = current_state
-        else:
-            self.get_logger().info("No measurements to process", throttle_duration_sec=10)
+            if (filtered_measurements):
+                self.typedb_interface.add_measurements(filtered_measurements, self.get_logger())
+                return
+        self.get_logger().info("No measurements to process", throttle_duration_sec=10)
 
     def publish_fulfillments(self):
         reqs = self.typedb_interface.get_in_effect_requirement_fulfillment()
         if (reqs):
-            reqs_msgs = [RelaxedRequirement(name=req['requirement_name'],
-                                            fulfillment=req["fulfillment"],
-                                            system_name=req["system"]) for req in reqs]
+            reqs_msgs = []
+            for req in reqs:
+                if (req["fulfillment"] is not None):
 
-            reqs_msg = RelaxedRequirements(header=self.create_header(), requirements=reqs_msgs)
-            self.reqs_publisher.publish(reqs_msg)
-        else:
-            self.get_logger().info("No fulfillments to published", throttle_duration_sec=10)
+                    req_msg = RelaxedRequirement(name=req['requirement_name'],
+                                                 fulfillment=req["fulfillment"],
+                                                 system_name=req["system"])
+                    reqs_msgs.append(req_msg)
+
+            if (len(reqs_msgs) > 0):
+                reqs_msg = RelaxedRequirements(header=self.create_header(), requirements=reqs_msgs)
+                self.get_logger().info("publishing reqs")
+                self.reqs_publisher.publish(reqs_msg)
+                return
+        self.get_logger().info("No fulfillments to published", throttle_duration_sec=10)
