@@ -80,17 +80,18 @@ RUN --mount=type=secret,id=gh_token,uid=1000,gid=1000,mode=0400 bash -lc '\
   vcs import --input $HOME/tactical_retreat_ws/dependencies.repos src ; \
 '
 
-COPY fuzzy $HOME/tactical_retreat_ws/src/typedb_tactics/fuzzy
-COPY launch $HOME/tactical_retreat_ws/src/typedb_tactics/launch
-COPY resource $HOME/tactical_retreat_ws/src/typedb_tactics/resource
-COPY schemas $HOME/tactical_retreat_ws/src/typedb_tactics/schemas
-COPY test $HOME/tactical_retreat_ws/src/typedb_tactics/test
-COPY typedb_tactics $HOME/tactical_retreat_ws/src/typedb_tactics/typedb_tactics
-COPY LICENSE $HOME/tactical_retreat_ws/src/typedb_tactics/LICENSE
-COPY package.xml $HOME/tactical_retreat_ws/src/typedb_tactics/package.xml
-COPY setup.cfg $HOME/tactical_retreat_ws/src/typedb_tactics/setup.cfg
-COPY setup.py $HOME/tactical_retreat_ws/src/typedb_tactics/setup.py
+COPY . $HOME/tactical_retreat_ws/src/typedb_tactics/
 
+# COPY typedb_tactics/fuzzy $HOME/tactical_retreat_ws/src/typedb_tactics/typedb_tactics/fuzzy
+# COPY typedb_tactics/launch $HOME/tactical_retreat_ws/src/typedb_tactics/typedb_tactics/launch
+# COPY typedb_tactics/resource $HOME/tactical_retreat_ws/src/typedb_tactics/typedb_tactics/resource
+# COPY typedb_tactics/schemas $HOME/tactical_retreat_ws/src/typedb_tactics/typedb_tactics/schemas
+# COPY typedb_tactics/test $HOME/tactical_retreat_ws/src/typedb_tactics/typedb_tactics/test
+# COPY typedb_tactics/typedb_tactics $HOME/tactical_retreat_ws/src/typedb_tactics/typedb_tactics/typedb_tactics
+# COPY typedb_tactics/package.xml $HOME/tactical_retreat_ws/src/typedb_tactics/typedb_tactics/package.xml
+# COPY typedb_tactics/setup.cfg $HOME/tactical_retreat_ws/src/typedb_tactics/typedb_tactics/setup.cfg
+# COPY typedb_tactics/setup.py $HOME/tactical_retreat_ws/src/typedb_tactics/typedb_tactics/setup.py
+# COPY typedb_tactics/LICENSE $HOME/tactical_retreat_ws/src/typedb_tactics/LICENSE
 
 WORKDIR $HOME/tactical_retreat_ws/
 RUN ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash \
