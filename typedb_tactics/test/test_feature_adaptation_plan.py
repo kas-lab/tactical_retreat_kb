@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from execution_layer_msgs.msg import Adaptation
+from lifecycle_msgs.msg import State as LifecycleStateMsg
 import pytest
-
+from rclpy.parameter import Parameter
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 from typedb_tactics.utils import AdaptationPlan
-from typedb_tactics.utils import names_to_transitions
-from execution_layer_msgs.msg import Adaptation
-from rclpy.parameter import Parameter
 
 
 def get_feature_resolution_dependency(self, name):
@@ -62,11 +61,20 @@ def kb_interface():
     kb_interface.delete_database()
 
 
-def SetLifecycleAction(node_name, transition):
+_STATE_IDS = {
+    'unconfigured': LifecycleStateMsg.PRIMARY_STATE_UNCONFIGURED,
+    'inactive': LifecycleStateMsg.PRIMARY_STATE_INACTIVE,
+    'active': LifecycleStateMsg.PRIMARY_STATE_ACTIVE,
+    'finalized': LifecycleStateMsg.PRIMARY_STATE_FINALIZED,
+}
+
+
+def SetLifecycleAction(node_name, state_label):
     return Adaptation(
         target_type_str='execution_layer/lifecycle',
         node_name=node_name,
-        lifecycle_transition=names_to_transitions[transition],
+        lifecycle_state_goal=LifecycleStateMsg(
+            id=_STATE_IDS[state_label], label=state_label),
     )
 
 

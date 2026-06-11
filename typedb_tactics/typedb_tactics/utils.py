@@ -15,26 +15,26 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+from typing import cast
 from typing import Literal
 from typing import Sequence
 from typing import TypeAlias
-from typing import cast
+
 from execution_layer_msgs.msg import Adaptation
-from ros_typedb.typedb_interface import convert_query_type_to_py_type
-from lifecycle_msgs.msg import Transition
+from lifecycle_msgs.msg import State as LifecycleStateMsg
 from rclpy.parameter import Parameter
+from ros_typedb.typedb_interface import convert_query_type_to_py_type
 
 ParamScalar: TypeAlias = str | float | int | bool
 ParamValue: TypeAlias = ParamScalar | list[ParamScalar]
-LifecycleState: TypeAlias = Literal[
+LifecycleStateLabel: TypeAlias = Literal[
     'active', 'inactive', 'unconfigured', 'finalized']
 
-# TODO: Redesign, see issue #88
-names_to_transitions = {
-    'active': Transition(id=Transition.TRANSITION_ACTIVATE),
-    'inactive': Transition(id=Transition.TRANSITION_DEACTIVATE),
-    # 'unconfigured' : Transition(id=Transition.TRANSITION_ACTIVE_SHUTDOWN),
-    'finalized': Transition(id=Transition.TRANSITION_ACTIVE_SHUTDOWN)
+_LIFECYCLE_STATE_IDS: dict[str, int] = {
+    'unconfigured': LifecycleStateMsg.PRIMARY_STATE_UNCONFIGURED,
+    'inactive': LifecycleStateMsg.PRIMARY_STATE_INACTIVE,
+    'active': LifecycleStateMsg.PRIMARY_STATE_ACTIVE,
+    'finalized': LifecycleStateMsg.PRIMARY_STATE_FINALIZED,
 }
 
 
@@ -103,12 +103,14 @@ def _parse_lifecycle_action(
     raw_action: dict[str, Any]
 ) -> Adaptation:
     node_name = raw_action['node']['node_name'][0]['value']
-    lifecycle_state = raw_action['res_action']['lifecycle_state'][0]['value']
+    lifecycle_state = str(raw_action['res_action']['lifecycle_state'][0]['value'])
 
     return Adaptation(
         target_type_str='execution_layer/lifecycle',
         node_name=str(node_name),
-        lifecycle_transition=names_to_transitions[str(lifecycle_state)],
+        lifecycle_state_goal=LifecycleStateMsg(
+            id=_LIFECYCLE_STATE_IDS[lifecycle_state],
+            label=lifecycle_state),
     )
 
 

@@ -11,13 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import pytest
-
 from execution_layer_msgs.msg import Adaptation
+from lifecycle_msgs.msg import State as LifecycleStateMsg
+import pytest
 from typedb_tactics.feature_model import ReconfigurationStep
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 from typedb_tactics.utils import AdaptationPlan
-from typedb_tactics.utils import names_to_transitions
+
+_STATE_IDS = {
+    'unconfigured': LifecycleStateMsg.PRIMARY_STATE_UNCONFIGURED,
+    'inactive': LifecycleStateMsg.PRIMARY_STATE_INACTIVE,
+    'active': LifecycleStateMsg.PRIMARY_STATE_ACTIVE,
+    'finalized': LifecycleStateMsg.PRIMARY_STATE_FINALIZED,
+}
 
 
 @pytest.fixture(scope='module')
@@ -264,11 +270,12 @@ def test_add_measurement(kb_interface_test_model):
         'measure_bool_array') == [True, True, False]
 
 
-def _lc(node_name, state):
+def _lc(node_name, state_label):
     return Adaptation(
         target_type_str='execution_layer/lifecycle',
         node_name=node_name,
-        lifecycle_transition=names_to_transitions[state],
+        lifecycle_state_goal=LifecycleStateMsg(
+            id=_STATE_IDS[state_label], label=state_label),
     )
 
 
