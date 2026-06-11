@@ -1,0 +1,10 @@
+# Goal — what configuration the system should reach
+tactical_msgs/DesiredFeatures desired_features
+string resolution_model  # empty = best-effort (warns if feature has multiple resolution paths)
+---
+# Result
+bool success
+string message  # is this needed?
+---
+# Feedback
+string current_step

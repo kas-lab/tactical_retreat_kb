@@ -11,9 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from execution_layer_msgs.msg import Adaptation
+from lifecycle_msgs.msg import State as LifecycleStateMsg
 import pytest
-
+from typedb_tactics.feature_model import ReconfigurationStep
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+from typedb_tactics.utils import AdaptationPlan
+
+_STATE_IDS = {
+    'unconfigured': LifecycleStateMsg.PRIMARY_STATE_UNCONFIGURED,
+    'inactive': LifecycleStateMsg.PRIMARY_STATE_INACTIVE,
+    'active': LifecycleStateMsg.PRIMARY_STATE_ACTIVE,
+    'finalized': LifecycleStateMsg.PRIMARY_STATE_FINALIZED,
+}
 
 
 @pytest.fixture(scope='module')
@@ -258,3 +268,55 @@ def test_add_measurement(kb_interface_test_model):
         'measure_bool_array', [True, True, False])
     assert kb_interface_test_model.get_latest_measurement(
         'measure_bool_array') == [True, True, False]
+
+
+def _lc(node_name, state_label):
+    return Adaptation(
+        target_type_str='execution_layer/lifecycle',
+        node_name=node_name,
+        lifecycle_state_goal=LifecycleStateMsg(
+            id=_STATE_IDS[state_label], label=state_label),
+    )
+
+
+def test_plan_single_activation(kb_interface_test_model):
+    plan = kb_interface_test_model.get_adaptation_plan_from_feature_reconfig_plan(
+        [ReconfigurationStep('f1', 'activate', 1)])
+    assert plan == AdaptationPlan([_lc('mock_node1', 'active')])
+
+
+def test_plan_single_deactivation(kb_interface_test_model):
+    plan = kb_interface_test_model.get_adaptation_plan_from_feature_reconfig_plan(
+        [ReconfigurationStep('f2', 'deactivate', 1)])
+    assert plan == AdaptationPlan([_lc('mock_node2', 'inactive')])
+
+
+def test_plan_ordered_by_wave(kb_interface_test_model):
+    # wave 1: deactivate f3 — wave 2: activate f1
+    plan = kb_interface_test_model.get_adaptation_plan_from_feature_reconfig_plan([
+        ReconfigurationStep('f3', 'deactivate', 1),
+        ReconfigurationStep('f1', 'activate', 2),
+    ])
+    assert plan == AdaptationPlan([
+        _lc('mock_node3', 'inactive'),
+        _lc('mock_node1', 'active'),
+    ])
+
+
+def test_plan_scoped_to_resolution_model(kb_interface_test_model):
+    plan = kb_interface_test_model.get_adaptation_plan_from_feature_reconfig_plan(
+        [ReconfigurationStep('f1', 'activate', 1)],
+        resolution_model='res_mock')
+    assert plan == AdaptationPlan([_lc('mock_node1', 'active')])
+
+
+def test_plan_empty_steps(kb_interface_test_model):
+    plan = kb_interface_test_model.get_adaptation_plan_from_feature_reconfig_plan([])
+    assert plan == AdaptationPlan([])
+
+
+def test_plan_feature_without_resolution(kb_interface_test_model):
+    # f4 has no variant_activation — plan should be empty, warning logged
+    plan = kb_interface_test_model.get_adaptation_plan_from_feature_reconfig_plan(
+        [ReconfigurationStep('f4', 'activate', 1)])
+    assert plan == AdaptationPlan([])

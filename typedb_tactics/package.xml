@@ -13,6 +13,7 @@
   <test_depend>python3-pytest</test_depend>
   <test_depend>launch_pytest</test_depend>
 
+  <exec_depend>execution_layer_msgs</exec_depend>
   <exec_depend>ros_typedb</exec_depend>
   <exec_depend>ros_typedb_msgs</exec_depend>
   <exec_depend>adapt_x_msgs</exec_depend>

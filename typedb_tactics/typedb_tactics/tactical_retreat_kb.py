@@ -18,6 +18,8 @@ import json
 import time
 import traceback
 
+from execution_layer_msgs.srv import ExecuteAdaptations
+
 from adapt_x_msgs.srv import FetchAdaptations
 from adapt_x_msgs.srv import FetchApplicable
 from adapt_x_msgs.srv import HypotheticalReqFulfillment
@@ -32,6 +34,7 @@ from adapt_x_msgs.msg import RelaxedRequirement
 from adapt_x_msgs.msg import RelaxedRequirements
 from adapt_x_msgs.msg import SymbolicState
 
+from rclpy.action import ActionServer
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.duration import Duration
 from rclpy.lifecycle import State
@@ -53,6 +56,8 @@ from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
 from std_msgs.msg import Header
 from std_srvs.srv import Trigger
 
+from tactical_msgs.action import SetDesiredFeatures
+from tactical_msgs.msg import DesiredFeatures
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
@@ -611,6 +616,20 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         :return: transition result
         """
         config_res = super().on_configure(state)
+
+        self._action_server = ActionServer(
+            self,
+            SetDesiredFeatures,
+            'set_desired_features',
+            self._cb_set_desired_features_action,
+            callback_group=MutuallyExclusiveCallbackGroup())
+
+        self._execute_adaptations_client = self.create_client(
+            ExecuteAdaptations,
+            'execute_adaptations',
+            callback_group=MutuallyExclusiveCallbackGroup())
+
+        self.feature_model = self.typedb_interface.build_feature_model()
         super().get_logger().info('I have arisen')
         return config_res
 
@@ -829,3 +848,30 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             self.reqs_publisher.publish(reqs_msg)
         else:
             self.get_logger().info("No fulfillments to published", throttle_duration_sec=10)
+
+    async def _cb_set_desired_features_action(self, goal_handle):
+        desired_features: DesiredFeatures = goal_handle.request.desired_features
+        resolution_model: str = goal_handle.request.resolution_model
+
+        self.typedb_interface.refresh_feature_model_selected(self.feature_model)
+        feature_plan = self.feature_model.get_feature_reconfiguration_plan(
+            desired_features.active_features, desired_features.inactive_features)
+
+        adaptation_plan = self.typedb_interface.get_adaptation_plan_from_feature_reconfig_plan(
+            feature_plan, resolution_model)
+
+        request = ExecuteAdaptations.Request()
+        request.adaptations = adaptation_plan.actions
+        service_response = await self._execute_adaptations_client.call_async(request)
+
+        result = SetDesiredFeatures.Result()
+        if service_response is not None:
+            result.success = service_response.success
+        else:
+            result.success = False
+
+        if result.success:
+            goal_handle.succeed()
+        else:
+            goal_handle.abort()
+        return result

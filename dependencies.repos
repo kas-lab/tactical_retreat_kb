@@ -27,3 +27,7 @@ repositories:
     type: git
     url: https://github.com/EGAlberts/BehaviorTree.ROS2.git
     version: humble
+  adaptation_execution_layer:
+    type: git
+    url: https://github.com/kas-lab/adaptation_execution_layer.git
+    version: main
