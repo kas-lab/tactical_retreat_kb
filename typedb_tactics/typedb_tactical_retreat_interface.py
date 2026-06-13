@@ -119,7 +119,8 @@ class TacticalRetreatInterface(TypeDBInterface):
             force_database: Optional[bool] = False,
             force_data: Optional[bool] = False,
             infer: Optional[bool] = False,
-            sort_fetch_results: Optional[bool] = False) -> None:
+            sort_fetch_results: Optional[bool] = False,
+            driver_timeout_s: Optional[float] = 10.0) -> None:
         self._sort_fetch_results = bool(sort_fetch_results)
         super_init = inspect.signature(TypeDBInterface.__init__)
         if 'sort_fetch_results' in super_init.parameters:
@@ -131,7 +132,8 @@ class TacticalRetreatInterface(TypeDBInterface):
                 force_database,
                 force_data,
                 infer,
-                sort_fetch_results
+                sort_fetch_results,
+                driver_timeout_s
             )
         else:
             super().__init__(
@@ -141,7 +143,8 @@ class TacticalRetreatInterface(TypeDBInterface):
                 data_path,
                 force_database,
                 force_data,
-                infer
+                infer,
+                driver_timeout_s=driver_timeout_s
             )
 
     def fetch_database(
