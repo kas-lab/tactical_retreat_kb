@@ -290,12 +290,12 @@ class TacticalRetreatInterface(TypeDBInterface):
             if len(action['interface_type']) > 1:
                 logger.error(
                     'In get_action_clients_names: action {} has more than 1 action_type'.format(
-                        action['action_name']))
+                        action['interface_name']))
                 return ros_action_result_dict
             if len(action['interface_type']) == 0:
                 logger.error(
                     'In get_action_clients_names: action {} does not have an action_type'.format(
-                        action['action_name']))
+                        action['interface_name']))
                 return ros_action_result_dict
             ros_action_result_dict.append({
                 'action_name': action['interface_name'][0]['value'],
