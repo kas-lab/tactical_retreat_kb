@@ -1389,22 +1389,6 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
-    def fetch_all_tactic_rules(  # noqa: F811
-            self) -> List[dict[str, MatchResultDict]]:
-        """
-        Fetch all tactic_ rules.
-
-        :param tactic_rule: tactic rule name
-        :return: fetch query result
-        """
-        query = """
-            match
-                $tr isa tactic_rule;
-            fetch
-                $tr: rule_name;
-        """
-        return self.fetch_database(query)
-
     def get_tactic_rule_valid(self, tactic_rule: str) -> bool:
         """
         Get whether a tactic_rule is valid.
