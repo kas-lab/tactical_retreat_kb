@@ -642,7 +642,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_database(query)
         return query_result
-    
+
     def fetch_current_state(self):
         query = """
             match
@@ -1155,7 +1155,6 @@ class TacticalRetreatInterface(TypeDBInterface):
                 isa tactic_rule_impacts_requirement;
             """
             fetch_block += f"""
-            $tactic_impact_{i} : fulfillment;
             $tactic_impact_{i} : fulfillment;
             """
         query = match_block + fetch_block
