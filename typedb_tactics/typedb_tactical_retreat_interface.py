@@ -960,7 +960,7 @@ class TacticalRetreatInterface(TypeDBInterface):
     def get_relaxed_requirements_fulfillment(
             self,
             system_name: str,
-            *requirement_names: List[str]) -> List[dict[str, MatchResultDict]]:
+            *requirement_names: List[str]) -> List[float]:
         """
         Fetch multiple relaxed requirements fulfillment.
 
@@ -1345,12 +1345,10 @@ class TacticalRetreatInterface(TypeDBInterface):
     def get_latest_measurement(
             self, measure_name: str) -> Union[float, int, str, bool, List]:
         """
-        Get all tactics that are applicable given an ROS action name and resolution model.
+        Get latest measurement of a measure.
 
-        :param resolution_model: name of the resolution model to check
-        :param action_name: name of the ROS action
-        :param action_name: type of the ROS action
-        :return: list containing all tactic's names that are applicable
+        :param measure_name: name of the measure
+        :return: measurement value
         """
         query_result = self.fetch_latest_measurement(
             measure_name)
@@ -1372,6 +1370,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         if array_values:
             return [entry['value']['attribute'][0]['value']
                     for entry in array_values]
+        return float('nan')
 
     def fetch_tactic_rule_valid(
             self, tactic_rule: str) -> List[dict[str, MatchResultDict]]:
