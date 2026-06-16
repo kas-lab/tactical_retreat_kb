@@ -370,6 +370,9 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 fulfillment = interface.get_relaxed_requirement_hypothetical_fulfillment(
                     req.system_name, req.requirement_name, req.rule_name)
 
+                if fulfillment is None:
+                    res.success = False
+                    return res
                 res.fulfillment_value = float(fulfillment)
                 res.success = True
                 elapsed_time = time.perf_counter() - start_time

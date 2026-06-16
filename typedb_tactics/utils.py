@@ -132,6 +132,29 @@ def _parse_parameter_action(
     )
 
 
+def _first_attr(row: dict, variable: str, attribute: str):
+    """Extract `row[variable][attribute][0]['value']` with safe error handling."""
+    try:
+        values = row[variable][attribute]
+    except KeyError:
+        logger.error('_first_attr: key %r.%r not found in result row', variable, attribute)
+        return None
+    if not values:
+        logger.warning('_first_attr: empty attribute list for %r.%r', variable, attribute)
+        return None
+    return values[0]['value']
+
+
+def _first_value(row: dict, key: str):
+    """Extract `row[key]['value']` with safe error handling."""
+    try:
+        entry = row[key]
+    except KeyError:
+        logger.error('_first_value: key %r not found in result row', key)
+        return None
+    return entry.get('value')
+
+
 def build_value_query(
         value: str | float | int | bool | list,
         suffix: str = '') -> tuple[str, str] | tuple[None, None]:
