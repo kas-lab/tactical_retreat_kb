@@ -118,7 +118,8 @@ class TacticalRetreatInterface(TypeDBInterface):
             force_database: Optional[bool] = False,
             force_data: Optional[bool] = False,
             infer: Optional[bool] = False,
-            sort_fetch_results: Optional[bool] = False) -> None:
+            sort_fetch_results: Optional[bool] = False,
+            driver_timeout_s: Optional[float] = 10.0) -> None:
         self._sort_fetch_results = bool(sort_fetch_results)
         super_init = inspect.signature(TypeDBInterface.__init__)
         if 'sort_fetch_results' in super_init.parameters:
@@ -130,7 +131,8 @@ class TacticalRetreatInterface(TypeDBInterface):
                 force_database,
                 force_data,
                 infer,
-                sort_fetch_results
+                sort_fetch_results,
+                driver_timeout_s
             )
         else:
             super().__init__(
@@ -140,7 +142,8 @@ class TacticalRetreatInterface(TypeDBInterface):
                 data_path,
                 force_database,
                 force_data,
-                infer
+                infer,
+                driver_timeout_s=driver_timeout_s
             )
 
     def fetch_database(
@@ -289,12 +292,12 @@ class TacticalRetreatInterface(TypeDBInterface):
             if len(action['interface_type']) > 1:
                 logger.error(
                     'In get_action_clients_names: action {} has more than 1 action_type'.format(
-                        action['action_name']))
+                        action['interface_name']))
                 return ros_action_result_dict
             if len(action['interface_type']) == 0:
                 logger.error(
                     'In get_action_clients_names: action {} does not have an action_type'.format(
-                        action['action_name']))
+                        action['interface_name']))
                 return ros_action_result_dict
             ros_action_result_dict.append({
                 'action_name': action['interface_name'][0]['value'],
@@ -958,7 +961,7 @@ class TacticalRetreatInterface(TypeDBInterface):
     def get_relaxed_requirements_fulfillment(
             self,
             system_name: str,
-            *requirement_names: List[str]) -> List[dict[str, MatchResultDict]]:
+            *requirement_names: List[str]) -> List[float]:
         """
         Fetch multiple relaxed requirements fulfillment.
 
@@ -1155,7 +1158,6 @@ class TacticalRetreatInterface(TypeDBInterface):
             """
             fetch_block += f"""
             $tactic_impact_{i} : fulfillment;
-            $tactic_impact_{i} : fulfillment;
             """
         query = match_block + fetch_block
 
@@ -1345,12 +1347,10 @@ class TacticalRetreatInterface(TypeDBInterface):
     def get_latest_measurement(
             self, measure_name: str) -> Union[float, int, str, bool, List]:
         """
-        Get all tactics that are applicable given an ROS action name and resolution model.
+        Get latest measurement of a measure.
 
-        :param resolution_model: name of the resolution model to check
-        :param action_name: name of the ROS action
-        :param action_name: type of the ROS action
-        :return: list containing all tactic's names that are applicable
+        :param measure_name: name of the measure
+        :return: measurement value
         """
         query_result = self.fetch_latest_measurement(
             measure_name)
@@ -1372,6 +1372,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         if array_values:
             return [entry['value']['attribute'][0]['value']
                     for entry in array_values]
+        return float('nan')
 
     def fetch_tactic_rule_valid(
             self, tactic_rule: str) -> List[dict[str, MatchResultDict]]:
