@@ -202,6 +202,10 @@ class TacticalRetreatInterface(TypeDBInterface):
         ros_action_result_dict = []
         for result in self.fetch_action_clients_names(node_name, namespace):
             action = result.get('action_client')
+            if action is None:
+                logger.error(
+                    'In get_action_clients_names: query returned None')
+                return []
             if len(action['interface_name']) == 0:
                 logger.error(
                     'In get_action_clients_names: action does not have an action_name')
