@@ -13,18 +13,19 @@
 # limitations under the License.
 from dataclasses import dataclass
 from datetime import datetime
-import inspect
 import logging
 from typing import Iterator
 from typing import List
 from typing import Optional
-from typing import TypedDict
 from typing import Union
 
 from ros_typedb.typedb_interface import convert_py_type_to_query_type
 from ros_typedb.typedb_interface import convert_query_type_to_py_type
 from ros_typedb.typedb_interface import MatchResultDict
 from ros_typedb.typedb_interface import TypeDBInterface
+from typedb_tactics.ros_model_utils import node_query_to_node_dict
+from typedb_tactics.ros_model_utils import ROSActionResultDict
+from typedb_tactics.ros_model_utils import RuntimeNodeDict
 from typedb_tactics.utils import _first_attr
 from typedb_tactics.utils import _first_value
 from typedb_tactics.utils import AdaptationPlan
@@ -43,49 +44,6 @@ class RequirementImpactDict():
     requirement_name: str  #: name of the requirement
     tactic_rule: str  #: name of the tactic rule
     fulfillment: float  #: fulfillment value
-
-
-
-
-class ROSActionResultDict(TypedDict):
-    """TypedDict for get_subnodes method result."""
-
-    action_name: str  #: action name
-    action_type: str  #: action type
-
-
-class RuntimeNodeDict(TypedDict):
-    """TypedDict for get_subnodes method result."""
-
-    namespace: str  #: node namespace
-    node_name: str  #: node name
-
-
-def node_query_to_node_dict(
-        query_result: List[dict[str, MatchResultDict]],
-        node_variable: str = 'node') -> List[RuntimeNodeDict]:
-    node_dict = []
-    for result in query_result:
-        node = result.get(node_variable)
-        if len(node['namespace']) > 1:
-            logger.error(
-                'In node_query_to_node_dict: '
-                'runtime node has more than 1 namespace')
-            return node_dict
-        if len(node['node_name']) > 1:
-            logger.error(
-                'In node_query_to_node_dict: '
-                'runtime node has more than 1 node_name')
-            return node_dict
-        node_dict.append({
-            'node_name': node['node_name'][0]['value'],
-            'namespace': node['namespace'][0]['value'],
-        }
-        )
-    # Sort list to guarantee deterministic list order
-    node_dict.sort(key=lambda d: (d['node_name'], d['namespace']))
-    return node_dict
-
 
 
 class TacticalRetreatInterface(TypeDBInterface):
@@ -284,7 +242,7 @@ class TacticalRetreatInterface(TypeDBInterface):
             ros_action_result_dict.append({
                 'action_name': action['interface_name'][0]['value'],
                 'action_type': action['interface_type'][0]['value'],
-            }
+                }
             )
         # Sort list to guarantee deterministic list order
         ros_action_result_dict.sort(
@@ -731,10 +689,10 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
-    def fetch_applicable_valid_adaptations(self,
-                                 resolution_model: str,
-                                 interface_name: str) -> List[dict[str,
-                                                                MatchResultDict]]:
+    def fetch_applicable_valid_adaptations(
+            self,
+            resolution_model: str,
+            interface_name: str) -> List[dict[str, MatchResultDict]]:
         """
         Fetch applicable and valid adaptations for a ROS interface and resolution model.
 
@@ -1039,7 +997,7 @@ class TacticalRetreatInterface(TypeDBInterface):
     # requirement_names.
     def update_requirements_in_effect(
             self, requirement_names, all_requirements):
-        if(not all_requirements):
+        if not all_requirements:
             match_block = """
             match
                 $requirement isa relaxed_requirement, has in_effect $in_effect,

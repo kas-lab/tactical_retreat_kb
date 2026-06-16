@@ -311,7 +311,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             try:
                 start_time = time.perf_counter()
                 self.get_logger().info('Fetching tactic actions...')
-                res.adaptations = self.typedb_interface.get_reconfiguration_plan(req.tactic_name).actions
+                res.adaptations = self.typedb_interface.get_reconfiguration_plan(
+                    req.tactic_name).actions
 
                 elapsed_time = time.perf_counter() - start_time
                 self.get_logger().info(
@@ -483,7 +484,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             try:
                 start_time = time.perf_counter()
                 self.get_logger().info('Getting current state...')
-                current_state_string = self.typedb_interface.get_current_state_action(req.action_name)
+                current_state_string = self.typedb_interface.get_current_state_action(
+                    req.action_name)
                 self.get_logger().info(f"typee {str(type(current_state_string))}")
                 self.get_logger().info(f"rawww {current_state_string}")
 

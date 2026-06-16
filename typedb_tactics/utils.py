@@ -34,11 +34,12 @@ LifecycleState: TypeAlias = Literal[
 
 # TODO: Redesign, see issue #88
 names_to_transitions = {
-    'active' : Transition(id=Transition.TRANSITION_ACTIVATE),
-    'inactive' : Transition(id=Transition.TRANSITION_DEACTIVATE),
+    'active': Transition(id=Transition.TRANSITION_ACTIVATE),
+    'inactive': Transition(id=Transition.TRANSITION_DEACTIVATE),
     # 'unconfigured' : Transition(id=Transition.TRANSITION_ACTIVE_SHUTDOWN),
-    'finalized' : Transition(id=Transition.TRANSITION_ACTIVE_SHUTDOWN)
+    'finalized': Transition(id=Transition.TRANSITION_ACTIVE_SHUTDOWN)
 }
+
 
 @dataclass(slots=True)
 class AdaptationPlan:
@@ -158,7 +159,8 @@ def _first_value(row: dict, key: str):
 def build_value_query(
         value: str | float | int | bool | list,
         suffix: str = '') -> tuple[str, str] | tuple[None, None]:
-    """Build a TypeQL insertion snippet and variable name for a typed value.
+    """
+    Build a TypeQL insertion snippet and variable name for a typed value.
 
     :param value: the Python value to serialise
     :param suffix: appended to the scalar variable name to make it unique

@@ -63,7 +63,7 @@ def test_bool_false():
 
 
 def test_bool_not_treated_as_int():
-    """bool is a subclass of int; True must produce ValueBool, not ValueInteger."""
+    """Bool is a subclass of int; True must produce ValueBool, not ValueInteger."""
     query_bool, _ = build_value_query(True)
     query_int, _ = build_value_query(1)
     assert query_bool is not None
