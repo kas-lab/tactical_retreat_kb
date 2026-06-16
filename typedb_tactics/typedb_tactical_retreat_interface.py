@@ -26,6 +26,7 @@ from ros_typedb.typedb_interface import convert_query_type_to_py_type
 from ros_typedb.typedb_interface import MatchResultDict
 from ros_typedb.typedb_interface import TypeDBInterface
 from typedb_tactics.utils import AdaptationPlan
+from typedb_tactics.utils import build_value_query
 
 from typedb.driver import ConceptMap
 
@@ -42,28 +43,6 @@ class RequirementImpactDict():
     fulfillment: float  #: fulfillment value
 
 
-def create_value_query(value, suffix=''):
-    if not isinstance(value, (str, float, int, bool, list)):
-        logger.error(
-            'Unsupported type %s for value %s',
-            type(value),
-            value)
-        return None, None
-
-    variable_name = f'$value{suffix}'
-
-    value_query = ''
-    if isinstance(value, str):
-        value_query = f'{variable_name} isa ValueString, has string_value "{value}";'
-    elif isinstance(value, float):
-        formatted = format(value, '.15f')
-        value_query = f'{variable_name} isa ValueDouble, has double_value {formatted};'
-    elif isinstance(value, bool):
-        value_query = f"""{variable_name} isa ValueBool,
-            has bool_value {convert_py_type_to_query_type(value)};"""
-    elif isinstance(value, int):
-        value_query = f'{variable_name} isa ValueInteger, has integer_value {value};'
-    return value_query, variable_name
 
 
 class ROSActionResultDict(TypedDict):
@@ -1646,37 +1625,6 @@ class TacticalRetreatInterface(TypeDBInterface):
 
         self.delete_from_database(match_del_query + delete_del_query)
 
-    def value_query(self, value: Union[
-            str,
-            float,
-            int,
-            bool,
-            List[str],
-            List[float],
-            List[int],
-            List[bool],
-    ], suffix):
-        value_query = ''
-        variable_name = ''
-        if (isinstance(value, list)):
-            query_fragments = []
-            query_fragments.append('$array isa ValueArray;')
-            variable_name = '$array'
-            for index, item in enumerate(value):
-                value_query_, variable_name_ = create_value_query(item, str(index))
-                query_fragments.append(
-                    f"""
-                        {value_query_}
-                        (array: $array, array_value: {variable_name_}) isa at_index,
-                            has index {index};
-                    """
-                )
-            value_query = '\n'.join(query_fragments)
-        else:
-            value_query, variable_name = create_value_query(value, suffix)
-
-        return value_query, variable_name
-
     def insert_measurement_query(
             self,
             *measure_value_pairs):
@@ -1690,7 +1638,7 @@ class TacticalRetreatInterface(TypeDBInterface):
 
         """
         for i, (measure_name, value) in enumerate(measure_value_pairs):
-            value_query, variable_name = self.value_query(value, measure_name + str(i))
+            value_query, variable_name = build_value_query(value, measure_name + str(i))
 
             match_insert_query += f"""
                     $measure_{i} isa Measure, has measure_name '{measure_name}';
