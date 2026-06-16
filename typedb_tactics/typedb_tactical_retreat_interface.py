@@ -1738,66 +1738,6 @@ class TacticalRetreatInterface(TypeDBInterface):
         self.delete_latest_measurement(*measure_dict.keys())
         self.insert_measurement_query(*list(measure_dict.items()))
 
-    def fetch_expression_measure_dependency(self, expression_name: str):
-        """
-        Fetch the measure names that the expression depends on.
-
-        :param expression_name: expression name
-        :return: query result
-        """
-        query = f"""
-            match
-                $expr isa expression,
-                    has expression_name '{expression_name}';
-                (dependent: $expr, measure: $measure) isa measure_dependency;
-            fetch
-                $measure: measure_name;
-        """
-        return self.fetch_database(query)
-
-    def get_expression_measure_dependency(
-            self, expression_name: str) -> List[str]:
-        """
-        Get the measure names that the expression depends on.
-
-        :param expression_name: expression name
-        :return: list of measure names
-        """
-        query_result = self.fetch_expression_measure_dependency(
-            expression_name)
-        return [result['measure']['measure_name'][0]['value']
-                for result in query_result]
-
-    def fetch_requirement_measure_dependency(self, requirement_name: str):
-        """
-        Fetch the measure names that the requirement depends on.
-
-        :param requirement_name: requirement name
-        :return: query result
-        """
-        query = f"""
-            match
-                $req isa relaxed_requirement,
-                    has requirement_name '{requirement_name}';
-                (dependent: $req, measure: $measure) isa measure_dependency;
-            fetch
-                $measure: measure_name;
-        """
-        return self.fetch_database(query)
-
-    def get_requirement_measure_dependency(
-            self, requirement_name: str) -> List[str]:
-        """
-        Get the measure names that the requirement depends on.
-
-        :param requirement_name: requirement name
-        :return: list of measure names
-        """
-        query_result = self.fetch_requirement_measure_dependency(
-            requirement_name)
-        return [result['measure']['measure_name'][0]['value']
-                for result in query_result]
-
     def fetch_tactic_rule_impacts_fulfillment(
             self, impacted_name: str, tactic_rule_name: str):
         """
