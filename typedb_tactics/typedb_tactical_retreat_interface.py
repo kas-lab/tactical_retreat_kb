@@ -61,43 +61,24 @@ class TacticalRetreatInterface(TypeDBInterface):
             sort_fetch_results: Optional[bool] = False,
             driver_timeout_s: Optional[float] = 10.0) -> None:
         self._sort_fetch_results = bool(sort_fetch_results)
-        super_init = inspect.signature(TypeDBInterface.__init__)
-        if 'sort_fetch_results' in super_init.parameters:
-            super().__init__(
-                address,
-                database_name,
-                schema_path,
-                data_path,
-                force_database,
-                force_data,
-                infer,
-                sort_fetch_results,
-                driver_timeout_s
-            )
-        else:
-            super().__init__(
-                address,
-                database_name,
-                schema_path,
-                data_path,
-                force_database,
-                force_data,
-                infer,
-                driver_timeout_s=driver_timeout_s
-            )
+        super().__init__(
+            address,
+            database_name,
+            schema_path,
+            data_path,
+            force_database,
+            force_data,
+            infer,
+            sort_fetch_results,
+            driver_timeout_s
+        )
 
     def fetch_database(
             self,
             query: str,
-            sort_result: Optional[bool] = None) -> List[dict[str, MatchResultDict]]:
+            sort_result: Optional[bool] = False) -> List[dict[str, MatchResultDict]]:
         """Perform fetch query using interface-level default ordering policy."""
-        should_sort = self._sort_fetch_results if sort_result is None else sort_result
-        try:
-            return super().fetch_database(query, sort_result=should_sort)
-        except TypeError:
-            # Backward compatibility with base versions without sort_result
-            # support.
-            return super().fetch_database(query)
+        return super().fetch_database(query, sort_result=sort_result)
 
     def fetch_subnodes(self, node_name: str,
                        namespace: str = '') -> List[dict[str, MatchResultDict]]:
@@ -511,13 +492,7 @@ class TacticalRetreatInterface(TypeDBInterface):
     def fetch_database_unordered(
             self, query: str) -> List[dict[str, MatchResultDict]]:
         """Perform fetch query without recursively sorting result keys."""
-        try:
-            return super().fetch_database_unordered(query)
-        except AttributeError:
-            try:
-                return self.fetch_database(query, sort_result=False)
-            except TypeError:
-                return self.fetch_database(query)
+        return self.fetch_database(query, sort_result=False)
 
     def fetch_applicable_tactics(self,
                                  resolution_model: str,
