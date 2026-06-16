@@ -1766,43 +1766,6 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.fetch_database(query)
         return query_result
 
-    def fetch_tactic_rule_impacts_requirement(
-            self, impacted_name: str, tactic_rule_name: str):
-        """
-        Fetch hypothetical fulfillment of a requirement given a tactic rule.
-
-        :param impacted_name: requirement name
-        :param rule_name: tactic rule name
-        :return: fetch query result
-        """
-        query = f"""
-            match
-                $impacted isa relaxed_requirement,
-                    has requirement_name '{impacted_name}';
-                $tr isa tactic_rule,
-                    has rule_name '{tactic_rule_name}';
-                $tr_impacts (impacted: $impacted, tactic_rule: $tr) isa tactic_rule_impacts,
-                    has fulfillment $fulfillment;
-            fetch
-                $fulfillment;
-        """
-        query_result = self.fetch_database(query)
-        return query_result
-
-    def get_tactic_rule_impacts_requirement(
-            self, impacted_name: str, rule_name: str) -> float:
-        """
-        Get hypothetical fulfillment of a expression or requirement given a tactic rule.
-
-        :param impacted_name: expression or requirement name
-        :param rule_name: tactic rule name
-        :return: fulfillment
-        """
-        query_result = self.fetch_tactic_rule_impacts_requirement(
-            impacted_name, rule_name)
-        return [result['fulfillment']['value']
-                for result in query_result]
-
     def fetch_resulting_effect_value(self, tactic_rule: str, measure_name: str
                                      ) -> List[dict[str, MatchResultDict]]:
         """
