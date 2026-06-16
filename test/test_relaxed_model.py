@@ -139,3 +139,40 @@ def test_set_requirement_in_effect(kb_interface):
     assert kb_interface.get_requirement_in_effect('fake_req') is True
     kb_interface.set_requirement_in_effect('fake_req', False)
     assert kb_interface.get_requirement_in_effect('fake_req') is False
+
+
+def test_fetch_requirements_fulfillment_row_has_all_keys(kb_interface):
+    """Raw fetch returns one row with a key per requirement (both present)."""
+    rows = kb_interface.fetch_relaxed_requirements_fulfillment(
+        'Mirte', 'R1.1 Velocity', 'R1.2 Velocity with obstacles')
+    assert len(rows) == 1
+    row = rows[0]
+    assert 'fulfillment_0' in row
+    assert 'fulfillment_1' in row
+
+
+def test_get_requirements_fulfillment_single(kb_interface):
+    """Single requirement via the plural API returns a list of length 1."""
+    result = kb_interface.get_relaxed_requirements_fulfillment(
+        'Mirte', 'R1.1 Velocity')
+    assert len(result) == 1
+    assert result[0] == pytest.approx(0.92442)
+
+
+def test_get_requirements_fulfillment_two(kb_interface):
+    """Two requirements return a list of length 2 with correct values (NB1)."""
+    result = kb_interface.get_relaxed_requirements_fulfillment(
+        'Mirte', 'R1.1 Velocity', 'R1.2 Velocity with obstacles')
+    assert len(result) == 2
+    assert result[0] == pytest.approx(0.92442)
+    assert result[1] == pytest.approx(0.91558)
+
+
+def test_get_requirements_fulfillment_three(kb_interface):
+    """Three requirements return a list of length 3 with correct values (NB1)."""
+    result = kb_interface.get_relaxed_requirements_fulfillment(
+        'Mirte', 'R1.1 Velocity', 'R1.2 Velocity with obstacles', 'R1.3 Movement Power')
+    assert len(result) == 3
+    assert result[0] == pytest.approx(0.92442)
+    assert result[1] == pytest.approx(0.91558)
+    assert result[2] == pytest.approx(0.941764572)
