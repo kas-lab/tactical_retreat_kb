@@ -559,11 +559,6 @@ class TacticalRetreatInterface(TypeDBInterface):
             except TypeError:
                 return self.fetch_database(query)
 
-    def fetch_database_unsorted(
-            self, query: str) -> List[dict[str, MatchResultDict]]:
-        """Backward-compatible alias for fetch_database_unordered."""
-        return self.fetch_database_unordered(query)
-
     def fetch_applicable_tactics(self,
                                  resolution_model: str,
                                  interface_name: str) -> List[dict[str,
