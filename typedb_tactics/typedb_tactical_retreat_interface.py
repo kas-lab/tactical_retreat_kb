@@ -290,12 +290,12 @@ class TacticalRetreatInterface(TypeDBInterface):
             if len(action['interface_type']) > 1:
                 logger.error(
                     'In get_action_clients_names: action {} has more than 1 action_type'.format(
-                        action['action_name']))
+                        action['interface_name']))
                 return ros_action_result_dict
             if len(action['interface_type']) == 0:
                 logger.error(
                     'In get_action_clients_names: action {} does not have an action_type'.format(
-                        action['action_name']))
+                        action['interface_name']))
                 return ros_action_result_dict
             ros_action_result_dict.append({
                 'action_name': action['interface_name'][0]['value'],
@@ -642,7 +642,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_database(query)
         return query_result
-    
+
     def fetch_current_state(self):
         query = """
             match
@@ -960,7 +960,7 @@ class TacticalRetreatInterface(TypeDBInterface):
     def get_relaxed_requirements_fulfillment(
             self,
             system_name: str,
-            *requirement_names: List[str]) -> List[dict[str, MatchResultDict]]:
+            *requirement_names: List[str]) -> List[float]:
         """
         Fetch multiple relaxed requirements fulfillment.
 
@@ -1156,7 +1156,6 @@ class TacticalRetreatInterface(TypeDBInterface):
             """
             fetch_block += f"""
             $tactic_impact_{i} : fulfillment;
-            $tactic_impact_{i} : fulfillment;
             """
         query = match_block + fetch_block
 
@@ -1346,12 +1345,10 @@ class TacticalRetreatInterface(TypeDBInterface):
     def get_latest_measurement(
             self, measure_name: str) -> Union[float, int, str, bool, List]:
         """
-        Get all tactics that are applicable given an ROS action name and resolution model.
+        Get latest measurement of a measure.
 
-        :param resolution_model: name of the resolution model to check
-        :param action_name: name of the ROS action
-        :param action_name: type of the ROS action
-        :return: list containing all tactic's names that are applicable
+        :param measure_name: name of the measure
+        :return: measurement value
         """
         query_result = self.fetch_latest_measurement(
             measure_name)
@@ -1373,6 +1370,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         if array_values:
             return [entry['value']['attribute'][0]['value']
                     for entry in array_values]
+        return float('nan')
 
     def fetch_tactic_rule_valid(
             self, tactic_rule: str) -> List[dict[str, MatchResultDict]]:
@@ -1387,22 +1385,6 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $tr isa tactic_rule, has rule_name '{tactic_rule}';
             fetch
                 $tr: rule_valid;
-        """
-        return self.fetch_database(query)
-
-    def fetch_all_tactic_rules(  # noqa: F811
-            self) -> List[dict[str, MatchResultDict]]:
-        """
-        Fetch all tactic_ rules.
-
-        :param tactic_rule: tactic rule name
-        :return: fetch query result
-        """
-        query = """
-            match
-                $tr isa tactic_rule;
-            fetch
-                $tr: rule_name;
         """
         return self.fetch_database(query)
 
