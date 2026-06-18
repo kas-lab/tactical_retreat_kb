@@ -18,13 +18,13 @@ import json
 import time
 import traceback
 
-from adapt_x_msgs.srv import FetchAdaptations
+from adapt_x_msgs.srv import FetchResolutions
 from adapt_x_msgs.srv import FetchPlan
-from adapt_x_msgs.srv import FetchApplicable
+from adapt_x_msgs.srv import FetchRules
 from adapt_x_msgs.srv import HypotheticalReqFulfillment
 from adapt_x_msgs.srv import HypotheticalReqsFulfillment
 from adapt_x_msgs.srv import RequirementsFulfillment
-from adapt_x_msgs.srv import SatisfiedTactic
+from adapt_x_msgs.srv import SatisfiedRule
 from adapt_x_msgs.srv import UpdateHasParamValue
 from adapt_x_msgs.srv import UpdateInEffect
 from adapt_x_msgs.srv import UpdateRunning
@@ -34,7 +34,8 @@ from adapt_x_msgs.msg import RelaxedRequirements
 from adapt_x_msgs.msg import SymbolicState
 from adapt_x_msgs.msg import TableEntry
 from adapt_x_msgs.msg import Resolution
-from adapt_x_msgs.srv import ActionDetails
+from adapt_x_msgs.msg import TacticRule
+from adapt_x_msgs.srv import FetchPolicy
 
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.duration import Duration
@@ -274,7 +275,9 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 self.get_logger().info('Fetching applicable tactics...')
                 result = self.typedb_interface.get_applicable_tactics(
                     req.resolution_model, req.interface_name)
-                res.tactics = result
+
+                res.tactic_rules = [TacticRule(name=rule_name, reconfigurations=fa_list)
+                                    for rule_name, fa_list in result.items()]
                 elapsed_time = time.perf_counter() - start_time
                 res.success = True
 
@@ -290,23 +293,20 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 res.success = False
             return res
 
-        def _fetch_applicable_valid_name_cb(req, res):
+        def _fetch_satisfied_tactic_cb(req, res):
             try:
                 start_time = time.perf_counter()
-                self.get_logger().info('Fetching applicable valid adaptations names...')
+                self.get_logger().info('Fetching satisfied tactics...')
                 result = self.typedb_interface.get_satisfied_tactics(
-                    req.tactics)
+                    req.tactic_rules)
                 res.satisfied = result
                 res.success = True
                 elapsed_time = time.perf_counter() - start_time
                 self.get_logger().info(
-                    f'Applicable valid adaptations names fetched {str(res)}')
-
-                self.get_logger().info(
-                    f'Applicable valid adaptations names fetched in {elapsed_time:.4f} seconds.')
+                    f'Satisfied tactics fetched in {elapsed_time:.4f} seconds.')
             except Exception as e:
                 self.get_logger().error(
-                    f'Error fetching applicable valid adaptations names: {e}')
+                    f'Error fetching Satisfied tactics : {e}')
                 self.get_logger().error('Traceback:\n' + traceback.format_exc())
                 res.success = False
             return res
@@ -525,11 +525,11 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                 res.success = False
             return res
 
-        def _action_details_cb(req, res):
+        def _fetch_policy_cb(req, res):
             try:
                 start_time = time.perf_counter()
                 self.get_logger().info('Getting rules for action...')
-                state_dict, table, reconfigurations = self.typedb_interface.get_action_details(req.action_name)
+                state_dict, table, reconfigurations = self.typedb_interface.get_fetch_policy(req.action_name)
                 entries = []
 
                 for (fa, s), r in table.items():
@@ -563,8 +563,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         )
 
         self.applicable_tactics_service = self.create_service(
-            FetchApplicable,
-            self.get_name() + '/fetch_applicable_tactics',
+            FetchRules,
+            self.get_name() + '/fetch_rules',
             _fetch_applicable_cb,
             callback_group=self.query_cb_group
         )
@@ -609,16 +609,16 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             callback_group=self.query_cb_group
         )
 
-        self.applicable_valid_adaptations_service = self.create_service(
-            SatisfiedTactic,
+        self.satisfied_tactic_service = self.create_service(
+            SatisfiedRule,
             self.get_name() + '/satisfied_tactic',
-            _fetch_applicable_valid_name_cb,
+            _fetch_satisfied_tactic_cb,
             callback_group=self.query_cb_group
         )
 
         self.tactic_actions_service = self.create_service(
-            FetchAdaptations,
-            self.get_name() + '/fetch_tactic_actions',
+            FetchResolutions,
+            self.get_name() + '/fetch_resolutions',
             _fetch_actions_cb,
             callback_group=self.query_cb_group
         )
@@ -651,16 +651,16 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             callback_group=self.query_cb_group
         )
 
-        self.all_measurements_service = self.create_service(
-            Trigger,
-            self.get_name() + '/fetch_all_measurements',
-            _fetch_all_measurements_cb
-        )
+        # self.all_measurements_service = self.create_service(
+        #     Trigger,
+        #     self.get_name() + '/fetch_all_measurements',
+        #     _fetch_all_measurements_cb
+        # )
 
         self.fetch_rules_for_action_service = self.create_service(
-            ActionDetails,
-            self.get_name() + '/action_details',
-            _action_details_cb,
+            FetchPolicy,
+            self.get_name() + '/fetch_policy',
+            _fetch_policy_cb,
             callback_group=self.query_cb_group
         )
 
@@ -745,11 +745,9 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             super().get_logger().info(
                 f'Making a subscription for measure: {measure_name}')
 
-            def _cb(msg,
-                    _node=super(),
-                    _measure_name=measure_name,
-                    _measure_callable=measure_callable,
-                    _function_args=callable_args):
+            def topic_cb(msg, _node=super(), _measure_name=measure_name,
+                         _measure_callable=measure_callable,
+                         _function_args=callable_args):
                 res = _measure_callable(self, msg, *_function_args)
                 # self.typedb_interface.add_measurement(
                 #     _measure_name, res)
@@ -777,7 +775,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             self.measures_subscribers[measure_name] = self.create_subscription(
                 topic_type,
                 interface_name,
-                _cb,
+                topic_cb,
                 measurement_qos,
                 callback_group=self.query_cb_group
             )
@@ -801,9 +799,9 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                         callback_group=MutuallyExclusiveCallbackGroup()
                     )
 
-                    def _cb(_measure_name=measure_name,
-                            _measure_callable=measure_callable,
-                            _function_args=callable_args):
+                    def srv_cb(_measure_name=measure_name,
+                               _measure_callable=measure_callable,
+                               _function_args=callable_args):
                         if (self.measures_clients[_measure_name].wait_for_service(
                            timeout_sec=10.0)):
                             request = service_type.Request(
@@ -825,7 +823,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                                 request).add_done_callback(_on_done)
                     self.measures_timers[measure_name] = self.create_timer(
                         interface['measurement_period'],
-                        _cb)
+                        srv_cb)
             else:
                 super().get_logger().info(
                     f'Creating proxy service for: {interface_name}')

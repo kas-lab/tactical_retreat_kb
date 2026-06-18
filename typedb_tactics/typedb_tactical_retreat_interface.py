@@ -603,8 +603,25 @@ class TacticalRetreatInterface(TypeDBInterface):
                 (interface: $interface,
                     resolution_model: $resolution_model, tactic_rule: $tactic_rule)
                     isa applicable_tactics;
+                $tactic_rule (consequent:$f_adapt) isa tactic_rule, has rule_name $rule_name;
+
             fetch
-                $tactic_rule: rule_name;
+                $rule_name;
+                selecting_rules:{{
+                    match
+                        $f_adapt(activation: $f_child) isa feature_adaptation;
+                        $f_child isa Feature, has feature_name $f_name;
+                    fetch
+                        $f_name;
+                }};
+                deselecting_rules:{{
+                    match
+                        $f_adapt(deactivation: $f_child) isa feature_adaptation;
+                        $f_child isa Feature, has feature_name $f_name;
+                    fetch
+                        $f_name;
+                }};
+
         """
         return self.fetch_database_unordered(query)
 
@@ -871,24 +888,6 @@ class TacticalRetreatInterface(TypeDBInterface):
             """
         query = match_block + fetch_block
         return self.fetch_database(query)
-
-    def get_applicable_tactics(
-            self,
-            resolution_model: str,
-            interface_name: str) -> List[str]:
-        """
-        Get all tactics that are applicable given an ROS action name and resolution model.
-
-        :param resolution_model: name of the resolution model to check
-        :param interface_name: name of the ROS interface
-        :return: list containing all tactic's names that are applicable
-        """
-        query_result = self.fetch_applicable_tactics(
-            resolution_model, interface_name)
-        return sorted(
-            result['tactic_rule']['rule_name'][0]['value']
-            for result in query_result
-        )
 
     def get_satisfied_tactics(
             self,
@@ -1441,23 +1440,23 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $f_child_name;
                     selecting_rules:{{
                         match
-                        $f_adapt(activation: $f_child) isa feature_adaptation;
-                        $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
-                        $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule, has rule_name $r_name;
-                        $state(rule: $rule, ros_action : $action_server) isa state, has state_name $state_name;
+                            $f_adapt(activation: $f_child) isa feature_adaptation;
+                            $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
+                            $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule, has rule_name $r_name;
+                            $state(rule: $rule, ros_action : $action_server) isa state, has state_name $state_name;
                         fetch
-                        $r_name;
-                        $state_name;
+                            $r_name;
+                            $state_name;
                     }};
                     deselecting_rules:{{
                         match
-                        $f_adapt(deactivation: $f_child) isa feature_adaptation;
-                        $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
-                        $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule, has rule_name $r_name;
-                        $state(rule: $rule, ros_action : $action_server) isa state, has state_name $state_name;
+                            $f_adapt(deactivation: $f_child) isa feature_adaptation;
+                            $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
+                            $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule, has rule_name $r_name;
+                            $state(rule: $rule, ros_action : $action_server) isa state, has state_name $state_name;
                         fetch
-                        $r_name;
-                        $state_name;
+                            $r_name;
+                            $state_name;
                     }};
         """
         return self.fetch_database(query)
@@ -1496,55 +1495,6 @@ class TacticalRetreatInterface(TypeDBInterface):
                 }};
         """
         return self.fetch_database(query)
-
-    def get_action_details(self, action_name: str):
-        # fetch_rules_result = self.fetch_action_rules(action_name)
-
-        available_alts = self.fetch_available_alternatives(action_name)
-        available_opts = self.fetch_available_optionals(action_name)
-
-        table = {}
-        reconfigurations = []
-        for alt in available_alts:
-            feat = alt['f_child_name']['value']
-            feat = 'select_' + feat
-            reconfigurations.append(feat)
-            for rule_state_pair in alt['selecting_rules']:
-                state = rule_state_pair['state_name']['value']
-                rule = rule_state_pair['r_name']['value']
-                table[(feat, state)] = rule
-
-        for opt in available_opts:
-            feat = opt['f_child_name']['value']
-
-            sel_feat = 'select_' + feat
-            desel_feat = 'deselect_' + feat
-            reconfigurations.append(sel_feat)
-            reconfigurations.append(desel_feat)
-            for rule_state_pair in opt['selecting_rules']:
-                state = rule_state_pair['state_name']['value']
-                rule = rule_state_pair['r_name']['value']
-                table[(sel_feat, state)] = rule
-            for rule_state_pair in opt['deselecting_rules']:
-                state = rule_state_pair['state_name']['value']
-                rule = rule_state_pair['r_name']['value']
-                table[(desel_feat, state)] = rule
-
-        # TODO: eliminate based on equiv relation
-
-        fetch_states_result = self.fetch_all_states(action_name)
-        state_dict = {}
-
-        for state_name_result in fetch_states_result:
-            state_name = state_name_result['state_name']['value']
-            rule_name = state_name_result['associated_rule_name']['value']
-
-            if (state_name not in state_dict):
-                state_dict[state_name] = [rule_name]
-            else:
-                state_dict[state_name].append(rule_name)
-
-        return state_dict, table, reconfigurations
 
     def is_feature_selected(self, feature_name: str) -> bool:
         """
@@ -2415,6 +2365,84 @@ class TacticalRetreatInterface(TypeDBInterface):
                 };
         """
         return self.fetch_database(query)
+
+    def get_applicable_tactics(
+            self,
+            resolution_model: str,
+            interface_name: str) -> dict[str, List[str]]:
+        """
+        Get all tactics that are applicable given an ROS action name and resolution model.
+
+        :param resolution_model: name of the resolution model to check
+        :param interface_name: name of the ROS interface
+        :return: dict of rules to feature adaptations
+        """
+        query_result = self.fetch_applicable_tactics(
+            resolution_model, interface_name)
+
+        rules = {}
+        for rule_query in query_result:
+            rule_name = rule_query["rule_name"]["value"]
+
+            rules[rule_name] = []
+
+            for deselection in rule_query["deselecting_rules"]:
+                feat = deselection["f_name"]["value"]
+                rules[rule_name].append("deselect_" + feat)
+            for selection in rule_query["selecting_rules"]:
+                feat = selection["f_name"]["value"]
+                rules[rule_name].append("select_" + feat)
+
+        return rules
+
+    def get_fetch_policy(self, action_name: str):
+        # fetch_rules_result = self.fetch_action_rules(action_name)
+
+        available_alts = self.fetch_available_alternatives(action_name)
+        available_opts = self.fetch_available_optionals(action_name)
+
+        table = {}
+        reconfigurations = []
+        for alt in available_alts:
+            feat = alt['f_child_name']['value']
+            feat = 'select_' + feat
+            reconfigurations.append(feat)
+            for rule_state_pair in alt['selecting_rules']:
+                state = rule_state_pair['state_name']['value']
+                rule = rule_state_pair['r_name']['value']
+                table[(feat, state)] = rule
+
+        for opt in available_opts:
+            feat = opt['f_child_name']['value']
+
+            sel_feat = 'select_' + feat
+            desel_feat = 'deselect_' + feat
+            reconfigurations.append(sel_feat)
+            reconfigurations.append(desel_feat)
+            for rule_state_pair in opt['selecting_rules']:
+                state = rule_state_pair['state_name']['value']
+                rule = rule_state_pair['r_name']['value']
+                table[(sel_feat, state)] = rule
+            for rule_state_pair in opt['deselecting_rules']:
+                state = rule_state_pair['state_name']['value']
+                rule = rule_state_pair['r_name']['value']
+                table[(desel_feat, state)] = rule
+
+        # TODO: eliminate based on equiv relation
+
+        fetch_states_result = self.fetch_all_states(action_name)
+        state_dict = {}
+
+        for state_name_result in fetch_states_result:
+            state_name = state_name_result['state_name']['value']
+            rule_name = state_name_result['associated_rule_name']['value']
+
+            if (state_name not in state_dict):
+                state_dict[state_name] = [rule_name]
+            else:
+                state_dict[state_name].append(rule_name)
+
+        return state_dict, table, reconfigurations
 
     def get_reconfiguration_plan(self, tactic_rule: str) -> AdaptationPlan:
         query_result = self.fetch_reconfiguration_plan(tactic_rule)
