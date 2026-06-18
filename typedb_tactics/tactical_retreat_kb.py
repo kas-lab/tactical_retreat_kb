@@ -46,12 +46,7 @@ from rclpy.qos import QoSHistoryPolicy
 from rclpy.qos import QoSLivelinessPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import QoSReliabilityPolicy
-from rebet_monitors.rebet_monitors import is_too_close
-from rebet_monitors.rebet_monitors import MovementPowerDraw
-from rebet_monitors.rebet_monitors import PowerBudget
-from ros_monitors_functions.global_costmap_functions import GlobalCostmapChange, StableCostmap
-from ros_monitors_functions.system_monitors_funtions import AverageCPULoad1min
-from ros_monitors_functions.path_functions import average_curvature
+import rebet_monitors.rebet_monitors as rebet_monitors_module
 
 from ros_monitors_functions.factory import MonitorFactory
 from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
@@ -189,25 +184,8 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         # Create all possible combinations of contexts
         self.context_combinations = self._generate_context_combinations()
         self.monitor = MonitorFactory()
-        self.monitor.register_monitor(
-            'MovementPowerDraw', MovementPowerDraw)
-        self.monitor.register_monitor(
-            'PowerBudget', PowerBudget)
-        self.monitor.register_monitor(
-            'is_too_close', is_too_close
-        )
-        self.monitor.register_monitor(
-            'GlobalCostmapChange', GlobalCostmapChange
-        )
-        self.monitor.register_monitor(
-            'StableCostmap', StableCostmap
-        )
-        self.monitor.register_monitor(
-            'AverageCPULoad1min', AverageCPULoad1min
-        )
-        self.monitor.register_monitor(
-            'average_curvature', average_curvature
-        )
+        self.monitor.load_module(rebet_monitors_module)
+
         self.declare_parameter("do_states", True)
 
     def create_header(self):
