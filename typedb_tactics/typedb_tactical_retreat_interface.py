@@ -25,8 +25,8 @@ from ros_typedb.typedb_interface import convert_py_type_to_query_type
 from ros_typedb.typedb_interface import convert_query_type_to_py_type
 from ros_typedb.typedb_interface import MatchResultDict
 from ros_typedb.typedb_interface import TypeDBInterface
-from typedb_tactics.utils import AdaptationPlan
-
+from typedb_tactics.utils import AdaptationPlan, _parse_lifecycle_action, _parse_parameter_action
+import traceback
 from typedb.driver import ConceptMap
 
 logger = logging.getLogger(__name__)
@@ -104,7 +104,6 @@ def node_query_to_node_dict(
     # Sort list to guarantee deterministic list order
     node_dict.sort(key=lambda d: (d['node_name'], d['namespace']))
     return node_dict
-
 
 
 class TacticalRetreatInterface(TypeDBInterface):
@@ -604,8 +603,25 @@ class TacticalRetreatInterface(TypeDBInterface):
                 (interface: $interface,
                     resolution_model: $resolution_model, tactic_rule: $tactic_rule)
                     isa applicable_tactics;
+                $tactic_rule (consequent:$f_adapt) isa tactic_rule, has rule_name $rule_name;
+
             fetch
-                $tactic_rule: rule_name;
+                $rule_name;
+                selecting_rules:{{
+                    match
+                        $f_adapt(activation: $f_child) isa feature_adaptation;
+                        $f_child isa Feature, has feature_name $f_name;
+                    fetch
+                        $f_name;
+                }};
+                deselecting_rules:{{
+                    match
+                        $f_adapt(deactivation: $f_child) isa feature_adaptation;
+                        $f_child isa Feature, has feature_name $f_name;
+                    fetch
+                        $f_name;
+                }};
+
         """
         return self.fetch_database_unordered(query)
 
@@ -639,9 +655,9 @@ class TacticalRetreatInterface(TypeDBInterface):
             match
                 $action_server isa ActionServer, has interface_name "{action_name}";
                 $s (ros_action : $action_server) isa state,
-                    has current true;
+                    has current true, has state_name $state_name;
             fetch
-                $s: state_name;
+                $state_name;
         """
         query_result = self.fetch_database(query)
         return query_result
@@ -650,9 +666,9 @@ class TacticalRetreatInterface(TypeDBInterface):
         query = """
             match
                 $s isa state,
-                    has current true;
+                    has current true, has state_name $state_name;
             fetch
-                $s: state_name;
+                $state_name;
         """
         query_result = self.fetch_database(query)
         return query_result
@@ -666,7 +682,8 @@ class TacticalRetreatInterface(TypeDBInterface):
     def get_current_state_action(self, action_name):
         current_state = self.fetch_current_state_action(action_name)
         if len(current_state) > 0:
-            return current_state[0]['s']['state_name'][0]['value']
+            return current_state[0]['state_name']['value']
+
         return None
 
     def fetch_valid_rule(
@@ -755,10 +772,8 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
-    def fetch_applicable_valid_adaptations(self,
-                                 resolution_model: str,
-                                 interface_name: str) -> List[dict[str,
-                                                                MatchResultDict]]:
+    def fetch_applicable_valid_adaptations(self, resolution_model: str,
+                                           interface_name: str) -> List[dict[str, MatchResultDict]]:
         """
         Fetch applicable and valid adaptations for a ROS interface and resolution model.
 
@@ -874,24 +889,6 @@ class TacticalRetreatInterface(TypeDBInterface):
         query = match_block + fetch_block
         return self.fetch_database(query)
 
-    def get_applicable_tactics(
-            self,
-            resolution_model: str,
-            interface_name: str) -> List[str]:
-        """
-        Get all tactics that are applicable given an ROS action name and resolution model.
-
-        :param resolution_model: name of the resolution model to check
-        :param interface_name: name of the ROS interface
-        :return: list containing all tactic's names that are applicable
-        """
-        query_result = self.fetch_applicable_tactics(
-            resolution_model, interface_name)
-        return sorted(
-            result['tactic_rule']['rule_name'][0]['value']
-            for result in query_result
-        )
-
     def get_satisfied_tactics(
             self,
             tactic_names: List[str]):
@@ -998,9 +995,10 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: fetch query result
         """
         query_result = self.fetch_in_effect_requirement_fulfillment()
+
         query_dict = [
             {'requirement_name': result['req']['requirement_name'][0]['value'],
-             'fulfillment': result['req']['fulfillment'][0]['value'],
+             'fulfillment': float(result['req']['fulfillment'][0]['value']) if len(result['req']['fulfillment']) > 0 else None,
              'system': result['system']['system_name'][0]['value']}
             for result in query_result]
         return sorted(query_dict, key=lambda item: item['requirement_name'])
@@ -1401,6 +1399,103 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.fetch_tactic_rule_valid(tactic_rule)
         return query_result[0]['tr']['rule_valid'][0]['value']
 
+    def fetch_action_rules(self, action_name: str):
+        """
+        """
+        query = f"""
+            match
+                $action_server isa ActionServer, has interface_name "{action_name}";
+                $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
+                $t isa Tactic;
+                $rule(tactic:$t) isa tactic_rule, has rule_name $rule_name;
+            fetch
+                $rule_name;
+        """
+        return self.fetch_database(query)
+
+    def fetch_all_states(self, action_name: str):
+        """
+        """
+        query = f"""
+            match
+                $action_server isa ActionServer, has interface_name "{action_name}";
+                $s (ros_action : $action_server, rule: $associated_rule) isa state, has state_name $state_name;
+                $associated_rule isa tactic_rule, has rule_name $associated_rule_name;
+            fetch
+                $state_name;
+                $associated_rule_name;
+        """
+        return self.fetch_database(query)
+
+    def fetch_available_alternatives(self, action_name: str):
+        query = f"""
+            match
+                $action_server isa ActionServer, has interface_name "{action_name}";
+                $map(feature: $root, ros_action:$action_server) isa functional_mapping;
+                $subt(root: $root, member: $subt_node) isa feature_subtree;
+                $subt_node isa Feature;
+                $alt(parent: $subt_node, child: $f_child) isa alternative;
+                $f_child isa Feature, has feature_name $f_child_name;
+            fetch
+                $f_child_name;
+                    selecting_rules:{{
+                        match
+                            $f_adapt(activation: $f_child) isa feature_adaptation;
+                            $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
+                            $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule, has rule_name $r_name;
+                            $state(rule: $rule, ros_action : $action_server) isa state, has state_name $state_name;
+                        fetch
+                            $r_name;
+                            $state_name;
+                    }};
+                    deselecting_rules:{{
+                        match
+                            $f_adapt(deactivation: $f_child) isa feature_adaptation;
+                            $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
+                            $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule, has rule_name $r_name;
+                            $state(rule: $rule, ros_action : $action_server) isa state, has state_name $state_name;
+                        fetch
+                            $r_name;
+                            $state_name;
+                    }};
+        """
+        return self.fetch_database(query)
+
+    def fetch_available_optionals(self, action_name: str):
+        query = f"""
+            match
+                $action_server isa ActionServer, has interface_name "{action_name}";
+                $map(feature: $root, ros_action:$action_server) isa functional_mapping;
+                $subt(root: $root, member: $f_child) isa feature_subtree;
+                $f_child isa Feature, has feature_name $f_child_name, has mandatory false;
+                not {{
+                    (parent: $any_parent, child: $f_child) isa alternative;
+                }};
+            fetch
+                $f_child_name;
+                selecting_rules:{{
+                    match
+                    $f_adapt(activation: $f_child) isa feature_adaptation;
+                    $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
+                    $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule, has rule_name $r_name;
+                    $state(rule: $rule, ros_action : $action_server) isa state, has state_name $state_name;
+                    fetch
+                    $r_name;
+                    $state_name;
+                   }};
+                deselecting_rules:{{
+                    match
+                    $f_adapt(deactivation: $f_child) isa feature_adaptation;
+                    $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
+                    $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule, has rule_name $r_name;
+                    $state(rule: $rule, ros_action : $action_server) isa state, has state_name $state_name;
+                    fetch
+                    $r_name;
+                    $state_name;
+                }};
+        """
+        return self.fetch_database(query)
+
     def is_feature_selected(self, feature_name: str) -> bool:
         """
         Return whether a feature is selected.
@@ -1623,7 +1718,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         return result_dict_list
 
     def delete_latest_measurement(
-            self, *measure_names: str) -> Optional[Iterator[ConceptMap]]:
+            self, *measure_names: str, logger) -> Optional[Iterator[ConceptMap]]:
         """
         Delete latest measurement.
 
@@ -1644,7 +1739,17 @@ class TacticalRetreatInterface(TypeDBInterface):
             """
             delete_del_query += f"""$measurement_{i} has $latest_{i}; """
 
-        self.delete_from_database(match_del_query + delete_del_query)
+        full_query = match_del_query + delete_del_query
+
+        try:
+            self.delete_from_database(match_del_query + delete_del_query)
+        except Exception as e:
+            logger.info(f"Something went wrong while deleting this is the query \n {full_query}")
+            logger.info(f"Measure names \n {str(measure_names)}")
+
+            logger.error(f"Exception in delete_latest_measurement {e}\n{traceback.format_exc()}")
+
+
 
     def value_query(self, value: Union[
             str,
@@ -1718,7 +1823,7 @@ class TacticalRetreatInterface(TypeDBInterface):
             List[float],
             List[int],
             List[bool],
-        ],
+        ], logger=logger
     ) -> Optional[Iterator[ConceptMap]]:
         """
         Add new measurement.
@@ -1727,15 +1832,15 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param value: measured value
         :return: query result
         """
-        self.delete_latest_measurement(measure_name)
+        # self.delete_latest_measurement(measure_name, logger)
 
         return self.insert_measurement_query((measure_name, value))
 
     def add_measurements(
             self,
-            measure_dict):
+            measure_dict, logger=logger):
         """Add new measurements."""
-        self.delete_latest_measurement(*measure_dict.keys())
+        self.delete_latest_measurement(*measure_dict.keys(), logger=logger)
         self.insert_measurement_query(*list(measure_dict.items()))
 
     def fetch_expression_measure_dependency(self, expression_name: str):
@@ -1860,8 +1965,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_tactic_rule_impacts_requirement(
             impacted_name, rule_name)
-        return [result['fulfillment']['value']
-                for result in query_result]
+        return [result['fulfillment']['value'] for result in query_result]
 
     def fetch_resulting_effect_value(self, tactic_rule: str, measure_name: str
                                      ) -> List[dict[str, MatchResultDict]]:
@@ -2192,6 +2296,180 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
+    def fetch_reconfiguration_plan_compact(self, feature_name: str, vation: str):
+        """
+        Fetch adaptation plan for a rule.
+
+        :param rule_name: rule name
+        :param value: measured value
+        :return: query result
+        """
+        query = f"""
+            match
+                $f isa Feature, has feature_name "{feature_name}";
+                $fa ({vation}: $f) isa feature_adaptation;
+                $plan (feature_adaptation: $fa) isa reconfiguration_plan;
+                (plan:$plan, action: $res_action) isa plan_action_indexed, has action_index $index;
+                $res_action isa resolution_action, has action_name $action_name;
+            fetch
+                $index;
+                $action_name;
+        """
+        return self.fetch_database(query)
+
+    def fetch_resolution_adaptations(self):
+        """
+        Fetch adaptation plan for a rule.
+
+        :param rule_name: rule name
+        :param value: measured value
+        :return: query result
+        """
+        query = """
+            match
+                $res_action isa resolution_action, has action_name $action_name;
+            fetch
+                $action_name;
+                set_parameter_action: {
+                    match
+                        $res_action (
+                            node: $node,
+                            parameter: $parameter,
+                            parameter_value: $parameter_value) isa! set_nodes_parameters;
+                    fetch
+                        $node: node_name;
+                        $parameter: parameter_name;
+                        param_value_array: {
+                            match
+                                $parameter_value isa ValueArray;
+                                $param_index
+                                 (array: $parameter_value, array_value: $value) isa at_index;
+                            fetch
+                                $param_index: index;
+                                $value: attribute;
+                        };
+                        param_value_singleton: {
+                            match
+                                $parameter_value isa $value_type;
+                                $value_type sub! ValueSingleton;
+                            fetch
+                                $parameter_value: attribute;
+                        };
+                };
+                set_lifecycle_action: {
+                    match
+                        $res_action (node: $node) isa! set_lifecycle_state;
+                    fetch
+                        $node: node_name;
+                        $res_action: lifecycle_state;
+                };
+        """
+        return self.fetch_database(query)
+
+    def get_applicable_tactics(
+            self,
+            resolution_model: str,
+            interface_name: str) -> dict[str, List[str]]:
+        """
+        Get all tactics that are applicable given an ROS action name and resolution model.
+
+        :param resolution_model: name of the resolution model to check
+        :param interface_name: name of the ROS interface
+        :return: dict of rules to feature adaptations
+        """
+        query_result = self.fetch_applicable_tactics(
+            resolution_model, interface_name)
+
+        rules = {}
+        for rule_query in query_result:
+            rule_name = rule_query["rule_name"]["value"]
+
+            rules[rule_name] = []
+
+            for deselection in rule_query["deselecting_rules"]:
+                feat = deselection["f_name"]["value"]
+                rules[rule_name].append("deselect_" + feat)
+            for selection in rule_query["selecting_rules"]:
+                feat = selection["f_name"]["value"]
+                rules[rule_name].append("select_" + feat)
+
+        return rules
+
+    def get_fetch_policy(self, action_name: str):
+        # fetch_rules_result = self.fetch_action_rules(action_name)
+
+        available_alts = self.fetch_available_alternatives(action_name)
+        available_opts = self.fetch_available_optionals(action_name)
+
+        table = {}
+        reconfigurations = []
+        for alt in available_alts:
+            feat = alt['f_child_name']['value']
+            feat = 'select_' + feat
+            reconfigurations.append(feat)
+            for rule_state_pair in alt['selecting_rules']:
+                state = rule_state_pair['state_name']['value']
+                rule = rule_state_pair['r_name']['value']
+                table[(feat, state)] = rule
+
+        for opt in available_opts:
+            feat = opt['f_child_name']['value']
+
+            sel_feat = 'select_' + feat
+            desel_feat = 'deselect_' + feat
+            reconfigurations.append(sel_feat)
+            reconfigurations.append(desel_feat)
+            for rule_state_pair in opt['selecting_rules']:
+                state = rule_state_pair['state_name']['value']
+                rule = rule_state_pair['r_name']['value']
+                table[(sel_feat, state)] = rule
+            for rule_state_pair in opt['deselecting_rules']:
+                state = rule_state_pair['state_name']['value']
+                rule = rule_state_pair['r_name']['value']
+                table[(desel_feat, state)] = rule
+
+        # TODO: eliminate based on equiv relation
+
+        fetch_states_result = self.fetch_all_states(action_name)
+        state_dict = {}
+
+        for state_name_result in fetch_states_result:
+            state_name = state_name_result['state_name']['value']
+            rule_name = state_name_result['associated_rule_name']['value']
+
+            if (state_name not in state_dict):
+                state_dict[state_name] = [rule_name]
+            else:
+                state_dict[state_name].append(rule_name)
+
+        return state_dict, table, reconfigurations
+
     def get_reconfiguration_plan(self, tactic_rule: str) -> AdaptationPlan:
         query_result = self.fetch_reconfiguration_plan(tactic_rule)
         return AdaptationPlan.from_typedb_results(query_result)
+
+    def get_reconfiguration_plan_compact(self, feature_name: str, vation: str) -> list[str]:
+        query_result = self.fetch_reconfiguration_plan_compact(feature_name, vation)
+        actions_with_index: list[tuple[int, str]] = []
+        for ftch in query_result:
+            actions_with_index.append(
+                (ftch["index"]["value"], ftch["action_name"]["value"]))
+        ordered_actions = [
+            action for _, action in sorted(actions_with_index, key=lambda pair: pair[0])
+        ]
+
+        return ordered_actions
+
+    def get_resolution_adaptations(self):
+        query_result = self.fetch_resolution_adaptations()
+        resolution_to_adaptations = {}
+        for part in query_result:
+            actions = []
+            for lifecycle_entry in part.get('set_lifecycle_action', []):
+                actions.append(_parse_lifecycle_action(lifecycle_entry))
+
+            for parameter_entry in part.get('set_parameter_action', []):
+                actions.append(_parse_parameter_action(parameter_entry))
+            resolution_to_adaptations[part["action_name"]["value"]] = actions
+
+        return resolution_to_adaptations

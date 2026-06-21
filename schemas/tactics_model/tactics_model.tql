@@ -40,6 +40,14 @@ tactic_rule sub relation,
     relates involved_measure,
     relates effect;
 
+tactic_to_action sub relation,
+    relates ros_action,
+    relates tactic;
+
+ActionInterface plays tactic_to_action:ros_action;
+Tactic plays tactic_to_action:tactic;
+
+
 ### effect
 
 resulting_effect_value sub attribute,
@@ -73,6 +81,14 @@ feature_adaptation sub relation,
     relates deactivation,
     relates activation,
     plays tactic_rule:consequent;
+
+functional_mapping sub relation,
+    relates feature,
+    relates ros_action;
+
+ActionInterface plays functional_mapping:ros_action;
+Feature plays functional_mapping:feature;
+
 
 # Connection with feature model
 Feature plays variant_resolution:variant;

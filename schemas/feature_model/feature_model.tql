@@ -18,6 +18,10 @@ feature_hierarchy sub relation,
 feature_siblings sub relation,
     relates sibling;
 
+feature_subtree sub relation,
+    relates root,
+    relates member;
+
 alternative sub feature_hierarchy; # exclusive or (XOR)
 or_group sub feature_hierarchy;
 
@@ -37,7 +41,10 @@ Feature sub entity,
     plays feature_hierarchy:child,
     plays cross_tree_constraint:constraint,
     plays cross_tree_constraint:constrained,
-    plays feature_siblings:sibling;
+    plays feature_siblings:sibling,
+    plays feature_subtree:member,
+    plays feature_subtree:root;
+
 
 # Rules
 
@@ -48,4 +55,19 @@ rule siblings:
         not {$f_child is $f_child_2;};
     } then {
         (sibling: $f_child, sibling: $f_child_2) isa feature_siblings;
+    };
+
+rule subtree:
+    when {
+        (parent: $root, child: $f_child) isa feature_hierarchy;
+    } then {
+        (root: $root, member: $f_child) isa feature_subtree;
+    };
+
+rule subtree_recursive:
+    when {
+        (root: $root, member: $f_ancestor) isa feature_subtree;
+        (parent: $f_ancestor, child: $f_descendant) isa feature_hierarchy;
+    } then {
+        (root: $root, member: $f_descendant) isa feature_subtree;
     };
