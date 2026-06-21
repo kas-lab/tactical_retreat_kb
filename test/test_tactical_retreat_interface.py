@@ -163,16 +163,28 @@ def test_get_applicable_tactics(kb_interface):
     tactics = kb_interface.get_applicable_tactics(
         'rebetmc', '/navigate_to_pose')
     assert len(tactics) == 3
-    assert tactics[0] == 'MAX'
-    assert tactics[1] == 'MED'
-    assert tactics[2] == 'MIN'
+
+    assert 'MAX' in tactics
+    assert tactics['MAX'] == ['select_HIGH_SPEED']
+
+    assert 'MED' in tactics
+    assert tactics['MED'] == ['select_MED_SPEED']
+
+    assert 'MIN' in tactics
+    assert tactics['MIN'] == ['select_LOW_SPEED']
 
     tactics = kb_interface.get_applicable_tactics(
         'rebetmc', '/follow_path')
     assert len(tactics) == 3
-    assert tactics[0] == 'MAX'
-    assert tactics[1] == 'MED'
-    assert tactics[2] == 'MIN'
+
+    assert 'MAX' in tactics
+    assert tactics['MAX'] == ['select_HIGH_SPEED']
+
+    assert 'MED' in tactics
+    assert tactics['MED'] == ['select_MED_SPEED']
+
+    assert 'MIN' in tactics
+    assert tactics['MIN'] == ['select_LOW_SPEED']
 
     tactics = kb_interface.get_applicable_tactics(
         'rebetmc', '/compute_path_to_pose')
@@ -182,17 +194,29 @@ def test_get_applicable_tactics(kb_interface):
     tactics = kb_interface.get_applicable_tactics(
         'rebetmc', '~/change_state')
     assert len(tactics) == 3
-    assert tactics[0] == 'MAX'
-    assert tactics[1] == 'MED'
-    assert tactics[2] == 'MIN'
+
+    assert 'MAX' in tactics
+    assert tactics['MAX'] == ['select_HIGH_SPEED']
+
+    assert 'MED' in tactics
+    assert tactics['MED'] == ['select_MED_SPEED']
+
+    assert 'MIN' in tactics
+    assert tactics['MIN'] == ['select_LOW_SPEED']
 
     # publisher
     tactics = kb_interface.get_applicable_tactics(
         'rebetmc', '~/transition_event')
     assert len(tactics) == 3
-    assert tactics[0] == 'MAX'
-    assert tactics[1] == 'MED'
-    assert tactics[2] == 'MIN'
+
+    assert 'MAX' in tactics
+    assert tactics['MAX'] == ['select_HIGH_SPEED']
+
+    assert 'MED' in tactics
+    assert tactics['MED'] == ['select_MED_SPEED']
+
+    assert 'MIN' in tactics
+    assert tactics['MIN'] == ['select_LOW_SPEED']
 
     # subscriber
     tactics = kb_interface.get_applicable_tactics(
