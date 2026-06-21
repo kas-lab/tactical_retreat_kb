@@ -1749,7 +1749,7 @@ class TacticalRetreatInterface(TypeDBInterface):
 
             logger.error(f"Exception in delete_latest_measurement {e}\n{traceback.format_exc()}")
 
-            
+
 
     def value_query(self, value: Union[
             str,
@@ -1823,7 +1823,7 @@ class TacticalRetreatInterface(TypeDBInterface):
             List[float],
             List[int],
             List[bool],
-        ], logger
+        ], logger=logger
     ) -> Optional[Iterator[ConceptMap]]:
         """
         Add new measurement.
@@ -1838,7 +1838,7 @@ class TacticalRetreatInterface(TypeDBInterface):
 
     def add_measurements(
             self,
-            measure_dict, logger):
+            measure_dict, logger=logger):
         """Add new measurements."""
         self.delete_latest_measurement(*measure_dict.keys(), logger=logger)
         self.insert_measurement_query(*list(measure_dict.items()))
@@ -2310,13 +2310,13 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $fa ({vation}: $f) isa feature_adaptation;
                 $plan (feature_adaptation: $fa) isa reconfiguration_plan;
                 (plan:$plan, action: $res_action) isa plan_action_indexed, has action_index $index;
-                $res_action isa resolution_action, has action_name $action_name; 
+                $res_action isa resolution_action, has action_name $action_name;
             fetch
                 $index;
                 $action_name;
         """
         return self.fetch_database(query)
-    
+
     def fetch_resolution_adaptations(self):
         """
         Fetch adaptation plan for a rule.
