@@ -14,7 +14,7 @@ repositories:
   adapt_x:
     type: git
     url: https://github.com/kas-lab/adapt_x.git
-    version: main
+    version: eval2
   rebet_monitors:
     type: git
     url: https://github.com/kas-lab/rebet_monitors.git
