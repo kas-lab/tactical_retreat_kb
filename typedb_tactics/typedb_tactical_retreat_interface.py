@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import inspect
 import logging
+import traceback
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -25,9 +26,11 @@ from ros_typedb.typedb_interface import convert_py_type_to_query_type
 from ros_typedb.typedb_interface import convert_query_type_to_py_type
 from ros_typedb.typedb_interface import MatchResultDict
 from ros_typedb.typedb_interface import TypeDBInterface
-from typedb_tactics.utils import AdaptationPlan, _parse_lifecycle_action, _parse_parameter_action
-import traceback
+
 from typedb.driver import ConceptMap
+
+from typedb_tactics.utils import _parse_lifecycle_action, _parse_parameter_action, AdaptationPlan
+
 
 logger = logging.getLogger(__name__)
 
@@ -772,8 +775,9 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
-    def fetch_applicable_valid_adaptations(self, resolution_model: str,
-                                           interface_name: str) -> List[dict[str, MatchResultDict]]:
+    def fetch_applicable_valid_adaptations(
+            self, resolution_model: str,
+            interface_name: str) -> List[dict[str, MatchResultDict]]:
         """
         Fetch applicable and valid adaptations for a ROS interface and resolution model.
 
@@ -895,7 +899,8 @@ class TacticalRetreatInterface(TypeDBInterface):
         query_result = self.fetch_applicable_valid_adaptations_names(
             tactic_names)
         return [
-            query_result[0]['ant_' + str(i)]['expression_satisfied'][0]['value']
+            query_result[0]['ant_' +
+                            str(i)]['expression_satisfied'][0]['value']
             for i, _ in enumerate(tactic_names)
         ]
 
@@ -998,7 +1003,8 @@ class TacticalRetreatInterface(TypeDBInterface):
 
         query_dict = [
             {'requirement_name': result['req']['requirement_name'][0]['value'],
-             'fulfillment': float(result['req']['fulfillment'][0]['value']) if len(result['req']['fulfillment']) > 0 else None,
+             'fulfillment': float(result['req']['fulfillment'][0]['value'])
+             if len(result['req']['fulfillment']) > 0 else None,
              'system': result['system']['system_name'][0]['value']}
             for result in query_result]
         return sorted(query_dict, key=lambda item: item['requirement_name'])
@@ -1050,7 +1056,7 @@ class TacticalRetreatInterface(TypeDBInterface):
     # requirement_names.
     def update_requirements_in_effect(
             self, requirement_names, all_requirements):
-        if(not all_requirements):
+        if (not all_requirements):
             match_block = """
             match
                 $requirement isa relaxed_requirement, has in_effect $in_effect,
@@ -1419,7 +1425,8 @@ class TacticalRetreatInterface(TypeDBInterface):
         query = f"""
             match
                 $action_server isa ActionServer, has interface_name "{action_name}";
-                $s (ros_action : $action_server, rule: $associated_rule) isa state, has state_name $state_name;
+                $s (ros_action : $action_server, rule: $associated_rule) isa state,
+                    has state_name $state_name;
                 $associated_rule isa tactic_rule, has rule_name $associated_rule_name;
             fetch
                 $state_name;
@@ -1442,8 +1449,10 @@ class TacticalRetreatInterface(TypeDBInterface):
                         match
                             $f_adapt(activation: $f_child) isa feature_adaptation;
                             $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
-                            $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule, has rule_name $r_name;
-                            $state(rule: $rule, ros_action : $action_server) isa state, has state_name $state_name;
+                            $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule,
+                                has rule_name $r_name;
+                            $state(rule: $rule, ros_action : $action_server) isa state,
+                                has state_name $state_name;
                         fetch
                             $r_name;
                             $state_name;
@@ -1452,8 +1461,10 @@ class TacticalRetreatInterface(TypeDBInterface):
                         match
                             $f_adapt(deactivation: $f_child) isa feature_adaptation;
                             $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
-                            $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule, has rule_name $r_name;
-                            $state(rule: $rule, ros_action : $action_server) isa state, has state_name $state_name;
+                            $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule,
+                                has rule_name $r_name;
+                            $state(rule: $rule, ros_action : $action_server) isa state,
+                                has state_name $state_name;
                         fetch
                             $r_name;
                             $state_name;
@@ -1475,23 +1486,27 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $f_child_name;
                 selecting_rules:{{
                     match
-                    $f_adapt(activation: $f_child) isa feature_adaptation;
-                    $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
-                    $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule, has rule_name $r_name;
-                    $state(rule: $rule, ros_action : $action_server) isa state, has state_name $state_name;
+                        $f_adapt(activation: $f_child) isa feature_adaptation;
+                        $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
+                        $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule,
+                            has rule_name $r_name;
+                        $state(rule: $rule, ros_action : $action_server) isa state,
+                            has state_name $state_name;
                     fetch
-                    $r_name;
-                    $state_name;
+                        $r_name;
+                        $state_name;
                    }};
                 deselecting_rules:{{
                     match
-                    $f_adapt(deactivation: $f_child) isa feature_adaptation;
-                    $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
-                    $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule, has rule_name $r_name;
-                    $state(rule: $rule, ros_action : $action_server) isa state, has state_name $state_name;
+                        $f_adapt(deactivation: $f_child) isa feature_adaptation;
+                        $t_to_a (ros_action : $action_server, tactic:$t) isa tactic_to_action;
+                        $rule (tactic:$t, consequent:$f_adapt) isa tactic_rule,
+                            has rule_name $r_name;
+                        $state(rule: $rule, ros_action : $action_server) isa state,
+                            has state_name $state_name;
                     fetch
-                    $r_name;
-                    $state_name;
+                        $r_name;
+                        $state_name;
                 }};
         """
         return self.fetch_database(query)
@@ -1744,12 +1759,12 @@ class TacticalRetreatInterface(TypeDBInterface):
         try:
             self.delete_from_database(match_del_query + delete_del_query)
         except Exception as e:
-            logger.info(f"Something went wrong while deleting this is the query \n {full_query}")
-            logger.info(f"Measure names \n {str(measure_names)}")
+            logger.info(
+                f'Something went wrong while deleting this is the query \n {full_query}')
+            logger.info(f'Measure names \n {str(measure_names)}')
 
-            logger.error(f"Exception in delete_latest_measurement {e}\n{traceback.format_exc()}")
-
-
+            logger.error(
+                f'Exception in delete_latest_measurement {e}\n{traceback.format_exc()}')
 
     def value_query(self, value: Union[
             str,
@@ -1768,7 +1783,8 @@ class TacticalRetreatInterface(TypeDBInterface):
             query_fragments.append('$array isa ValueArray;')
             variable_name = '$array'
             for index, item in enumerate(value):
-                value_query_, variable_name_ = create_value_query(item, str(index))
+                value_query_, variable_name_ = create_value_query(
+                    item, str(index))
                 query_fragments.append(
                     f"""
                         {value_query_}
@@ -1795,7 +1811,8 @@ class TacticalRetreatInterface(TypeDBInterface):
 
         """
         for i, (measure_name, value) in enumerate(measure_value_pairs):
-            value_query, variable_name = self.value_query(value, measure_name + str(i))
+            value_query, variable_name = self.value_query(
+                value, measure_name + str(i))
 
             match_insert_query += f"""
                     $measure_{i} isa Measure, has measure_name '{measure_name}';
@@ -2382,16 +2399,16 @@ class TacticalRetreatInterface(TypeDBInterface):
 
         rules = {}
         for rule_query in query_result:
-            rule_name = rule_query["rule_name"]["value"]
+            rule_name = rule_query['rule_name']['value']
 
             rules[rule_name] = []
 
-            for deselection in rule_query["deselecting_rules"]:
-                feat = deselection["f_name"]["value"]
-                rules[rule_name].append("deselect_" + feat)
-            for selection in rule_query["selecting_rules"]:
-                feat = selection["f_name"]["value"]
-                rules[rule_name].append("select_" + feat)
+            for deselection in rule_query['deselecting_rules']:
+                feat = deselection['f_name']['value']
+                rules[rule_name].append('deselect_' + feat)
+            for selection in rule_query['selecting_rules']:
+                feat = selection['f_name']['value']
+                rules[rule_name].append('select_' + feat)
 
         return rules
 
@@ -2449,11 +2466,12 @@ class TacticalRetreatInterface(TypeDBInterface):
         return AdaptationPlan.from_typedb_results(query_result)
 
     def get_reconfiguration_plan_compact(self, feature_name: str, vation: str) -> list[str]:
-        query_result = self.fetch_reconfiguration_plan_compact(feature_name, vation)
+        query_result = self.fetch_reconfiguration_plan_compact(
+            feature_name, vation)
         actions_with_index: list[tuple[int, str]] = []
         for ftch in query_result:
             actions_with_index.append(
-                (ftch["index"]["value"], ftch["action_name"]["value"]))
+                (ftch['index']['value'], ftch['action_name']['value']))
         ordered_actions = [
             action for _, action in sorted(actions_with_index, key=lambda pair: pair[0])
         ]
@@ -2470,6 +2488,6 @@ class TacticalRetreatInterface(TypeDBInterface):
 
             for parameter_entry in part.get('set_parameter_action', []):
                 actions.append(_parse_parameter_action(parameter_entry))
-            resolution_to_adaptations[part["action_name"]["value"]] = actions
+            resolution_to_adaptations[part['action_name']['value']] = actions
 
         return resolution_to_adaptations

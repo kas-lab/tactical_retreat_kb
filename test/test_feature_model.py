@@ -63,6 +63,7 @@ def kb_interface():
     yield kb_interface
     kb_interface.delete_database()
 
+
 def test_feature_as_proposition_expression(kb_interface):
     assert kb_interface.fetch_attribute_from_thing(
         'propositional_expression',
