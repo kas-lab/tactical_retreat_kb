@@ -15,7 +15,6 @@
 
 from __future__ import annotations
 
-import builtins
 import importlib.util
 from pathlib import Path
 import sys
@@ -150,32 +149,3 @@ def test_generate_schema_diagrams_handles_duplicate_stems_without_aborting(tmp_p
     assert len(output_names) == 2
     assert all(name.startswith('shared') and name.endswith('.dot') for name in output_names)
     assert all('__' in name for name in output_names)
-
-
-def test_load_schema_diagram_api_source_tree_fallback(monkeypatch):
-    module = _load_script_module()
-    script_path = Path(module.__file__).resolve()
-    candidate = script_path.parents[2] / 'ros_typedb' / 'ros_typedb_tools'
-
-    path_without_candidate = [entry for entry in module.sys.path if entry != str(candidate)]
-    monkeypatch.setattr(module.sys, 'path', path_without_candidate)
-    module.sys.modules.pop('ros_typedb_tools', None)
-    module.sys.modules.pop('ros_typedb_tools.schema_diagram', None)
-
-    original_import = builtins.__import__
-    state = {'forced': False}
-
-    def import_with_forced_first_failure(name, globals_=None, locals_=None, fromlist=(), level=0):
-        if name == 'ros_typedb_tools.schema_diagram' and not state['forced']:
-            state['forced'] = True
-            raise ImportError('forced import failure for fallback path')
-        return original_import(name, globals_, locals_, fromlist, level)
-
-    monkeypatch.setattr(builtins, '__import__', import_with_forced_first_failure)
-
-    api = module._load_schema_diagram_api()
-
-    assert state['forced'] is True
-    assert module.sys.path[0] == str(candidate)
-    assert callable(api.parse_schema_file)
-    assert callable(api.write_graph)

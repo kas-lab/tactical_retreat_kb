@@ -33,24 +33,18 @@ class RuleDiagramAPI:
 
 
 def _load_rule_diagram_api() -> RuleDiagramAPI:
-    """Load ros_typedb_tools rule diagram utilities from installed env or source tree."""
+    """Load ros_typedb_tools rule utilities from the sourced environment."""
     try:
         from ros_typedb_tools.rule_diagram import parse_rule_file
         from ros_typedb_tools.rule_diagram import write_rule_graph
-        return RuleDiagramAPI(parse_rule_file=parse_rule_file, write_rule_graph=write_rule_graph)
-    except ImportError:
-        script_path = Path(__file__).resolve()
-        candidate = script_path.parents[2] / 'ros_typedb' / 'ros_typedb_tools'
-        if candidate.is_dir():
-            sys.path.insert(0, str(candidate))
-            from ros_typedb_tools.rule_diagram import parse_rule_file
-            from ros_typedb_tools.rule_diagram import write_rule_graph
-            return RuleDiagramAPI(parse_rule_file=parse_rule_file,
-                                  write_rule_graph=write_rule_graph)
-
-    raise RuntimeError(
-        'Could not import ros_typedb_tools.rule_diagram. '
-        'Install ros_typedb_tools or run from this workspace source tree.'
+    except ImportError as exc:
+        raise RuntimeError(
+            'Could not import ros_typedb_tools.rule_diagram. '
+            'Build and source the workspace before running this script.'
+        ) from exc
+    return RuleDiagramAPI(
+        parse_rule_file=parse_rule_file,
+        write_rule_graph=write_rule_graph,
     )
 
 
