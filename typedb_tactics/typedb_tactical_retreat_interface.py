@@ -967,14 +967,21 @@ class TacticalRetreatInterface(TypeDBInterface):
             system_name: str,
             *requirement_names: List[str]) -> List[float]:
         """
-        Fetch multiple relaxed requirements fulfillment.
+        Get multiple relaxed requirements fulfillment.
 
         :param system_name: system name
-        :param requirement_names: list of requirement names
-        :return: list of fulfillment values
+        :param requirement_names: requirement names
+        :return: list of fulfillment values in the same order as requirement_names
         """
-        return [x['fulfillment_' + str(i)]['value'] for i, x in enumerate(
-            self.fetch_relaxed_requirements_fulfillment(system_name, *requirement_names))]
+        if not requirement_names:
+            return []
+        query_result = self.fetch_relaxed_requirements_fulfillment(
+            system_name, *requirement_names)
+        if not query_result:
+            return []
+        row = query_result[0]
+        return [row['fulfillment_' + str(i)]['value']
+                for i in range(len(requirement_names))]
 
     def fetch_in_effect_requirement_fulfillment(
             self) -> List[dict[str, MatchResultDict]]:
