@@ -12,13 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from aal_msgs.msg import Adaptation
+
 import pytest
+
+from rclpy.parameter import Parameter
 
 from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 from typedb_tactics.utils import AdaptationPlan
 from typedb_tactics.utils import names_to_transitions
-from aal_msgs.msg import Adaptation
-from rclpy.parameter import Parameter
+
 
 
 def get_feature_resolution_dependency(self, name):
@@ -123,7 +126,8 @@ def test_reconfiguration_plan(kb_interface):
         [SetLifecycleAction('node_1', 'inactive'),
          SetLifecycleAction('node_2', 'active')])
 
-    plan = kb_interface.get_reconfiguration_plan('tr_deactivate_req_constrained')
+    plan = kb_interface.get_reconfiguration_plan(
+        'tr_deactivate_req_constrained')
     assert AdaptationPlan(
         [SetLifecycleAction('node_1', 'inactive'),
          SetLifecycleAction('node_2', 'inactive')]) == plan

@@ -19,6 +19,7 @@ from typing import Any
 from typing import Literal
 from typing import Sequence
 from typing import TypeAlias
+
 from aal_msgs.msg import Adaptation
 from ros_typedb.typedb_interface import convert_py_type_to_query_type
 from ros_typedb.typedb_interface import convert_query_type_to_py_type
@@ -94,7 +95,8 @@ def _parse_param_array(param_values_block: dict[str, Any]) -> ParamValue:
     for param_dict in param_values_block:
         param_index = convert_query_type_to_py_type(
             param_dict['param_index']['index'][0])
-        value = convert_query_type_to_py_type(param_dict['value']['attribute'][0])
+        value = convert_query_type_to_py_type(
+            param_dict['value']['attribute'][0])
         values_with_index.append((int(param_index), value))
 
     values_with_index.sort(key=lambda pair: pair[0])
@@ -114,7 +116,8 @@ def _parse_parameter_action(
     raw_action: dict[str, Any],
 ) -> Adaptation:
     node_name = raw_action['node']['node_name'][0]['value']
-    param_name_attr = raw_action.get('parameter').get('parameter_name')[0]['value']
+    param_name_attr = raw_action.get(
+        'parameter').get('parameter_name')[0]['value']
 
     param_value: ParamValue
     param_array = raw_action.get('param_value_array') or []
