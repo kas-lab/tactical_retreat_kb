@@ -120,7 +120,9 @@ class TacticalRetreatInterface(TypeDBInterface):
             force_data: Optional[bool] = False,
             infer: Optional[bool] = False,
             sort_fetch_results: Optional[bool] = False,
-            driver_timeout_s: Optional[float] = 10.0) -> None:
+            driver_timeout_s: Optional[float] = 10.0,
+            query_timeout_s: Optional[float] = None,
+            reload_schema: Optional[bool] = True) -> None:
         self._sort_fetch_results = bool(sort_fetch_results)
         super().__init__(
             address,
