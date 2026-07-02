@@ -111,8 +111,6 @@ def _parse_parameter_action(
     node_name = raw_action['node']['node_name'][0]['value']
     param_name_attr = raw_action.get('parameter').get('parameter_name')[0]['value']
 
-
-
     param_value: ParamValue
     param_array = raw_action.get('param_value_array') or []
     if param_array:

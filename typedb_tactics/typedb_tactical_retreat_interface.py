@@ -679,7 +679,8 @@ class TacticalRetreatInterface(TypeDBInterface):
             return current_state[0]['s']['state_name'][0]['value']
         return None
 
-    def get_current_state_action(self, action_name):
+    def get_current_state_action(self, action_name, logger):
+        logger.info("Fetching state internal")
         current_state = self.fetch_current_state_action(action_name)
         if len(current_state) > 0:
             return current_state[0]['state_name']['value']
@@ -1717,6 +1718,37 @@ class TacticalRetreatInterface(TypeDBInterface):
 
         return result_dict_list
 
+    def delet_measurement(
+            self, *measure_names: str, logger) -> Optional[Iterator[ConceptMap]]:
+        """
+        Delete latest measurement.
+
+        :param measure_names: measure names
+        :return: query result
+        """
+        match_del_query = """
+            match
+        """
+        delete_del_query = 'delete \n'
+
+        for i, measure_name in enumerate(measure_names):
+            match_del_query += f"""
+                    $measure_{i} isa Measure, has measure_name '{measure_name}';
+                    $measurement_{i} (measure: $measure_{i}) isa measurement,
+                    has latest true;
+            """
+            delete_del_query += f"""$measurement_{i} isa measurement; """
+
+        full_query = match_del_query + delete_del_query
+
+        try:
+            self.delete_from_database(match_del_query + delete_del_query)
+        except Exception as e:
+            logger.info(f"Something went wrong while deleting this is the query \n {full_query}")
+            logger.info(f"Measure names \n {str(measure_names)}")
+
+            logger.error(f"Exception in delete_latest_measurement {e}\n{traceback.format_exc()}")
+
     def delete_latest_measurement(
             self, *measure_names: str, logger) -> Optional[Iterator[ConceptMap]]:
         """
@@ -1744,12 +1776,12 @@ class TacticalRetreatInterface(TypeDBInterface):
         try:
             self.delete_from_database(match_del_query + delete_del_query)
         except Exception as e:
-            logger.info(f"Something went wrong while deleting this is the query \n {full_query}")
-            logger.info(f"Measure names \n {str(measure_names)}")
+            logger.info(
+                f'Something went wrong while deleting this is the query \n {full_query}')
+            logger.info(f'Measure names \n {str(measure_names)}')
 
-            logger.error(f"Exception in delete_latest_measurement {e}\n{traceback.format_exc()}")
-
-            
+            logger.error(
+                f'Exception in delete_latest_measurement {e}\n{traceback.format_exc()}')
 
     def value_query(self, value: Union[
             str,
@@ -1811,30 +1843,30 @@ class TacticalRetreatInterface(TypeDBInterface):
             """
         return self.insert_database(match_insert_query + insert_insert_query)
 
-    def add_measurement(
-        self,
-        measure_name: str,
-        value: Union[
-            str,
-            float,
-            int,
-            bool,
-            List[str],
-            List[float],
-            List[int],
-            List[bool],
-        ], logger
-    ) -> Optional[Iterator[ConceptMap]]:
-        """
-        Add new measurement.
+    # def add_measurement(
+    #     self,
+    #     measure_name: str,
+    #     value: Union[
+    #         str,
+    #         float,
+    #         int,
+    #         bool,
+    #         List[str],
+    #         List[float],
+    #         List[int],
+    #         List[bool],
+    #     ], logger
+    # ) -> Optional[Iterator[ConceptMap]]:
+    #     """
+    #     Add new measurement.
 
-        :param measure_name: measure name
-        :param value: measured value
-        :return: query result
-        """
-        # self.delete_latest_measurement(measure_name, logger)
+    #     :param measure_name: measure name
+    #     :param value: measured value
+    #     :return: query result
+    #     """
+    #     # self.delete_latest_measurement(measure_name, logger)
 
-        return self.insert_measurement_query((measure_name, value))
+    #     return self.insert_measurement_query((measure_name, value))
 
     def add_measurements(
             self,
@@ -2304,19 +2336,22 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param value: measured value
         :return: query result
         """
-        query = f"""
-            match
-                $f isa Feature, has feature_name "{feature_name}";
-                $fa ({vation}: $f) isa feature_adaptation;
-                $plan (feature_adaptation: $fa) isa reconfiguration_plan;
-                (plan:$plan, action: $res_action) isa plan_action_indexed, has action_index $index;
-                $res_action isa resolution_action, has action_name $action_name; 
-            fetch
-                $index;
-                $action_name;
-        """
-        return self.fetch_database(query)
-    
+        try:
+            query = f"""
+                match
+                    $f isa Feature, has feature_name "{feature_name}";
+                    $fa ({vation}: $f) isa feature_adaptation;
+                    $plan (feature_adaptation: $fa) isa reconfiguration_plan;
+                    (plan:$plan, action: $res_action) isa plan_action_indexed, has action_index $index;
+                    $res_action isa resolution_action, has action_name $action_name; 
+                fetch
+                    $index;
+                    $action_name;
+            """
+            return self.fetch_database(query)
+        except Exception as e:
+            raise e
+
     def fetch_resolution_adaptations(self):
         """
         Fetch adaptation plan for a rule.
@@ -2449,19 +2484,24 @@ class TacticalRetreatInterface(TypeDBInterface):
         return AdaptationPlan.from_typedb_results(query_result)
 
     def get_reconfiguration_plan_compact(self, feature_name: str, vation: str) -> list[str]:
-        query_result = self.fetch_reconfiguration_plan_compact(feature_name, vation)
-        actions_with_index: list[tuple[int, str]] = []
-        for ftch in query_result:
-            actions_with_index.append(
-                (ftch["index"]["value"], ftch["action_name"]["value"]))
-        ordered_actions = [
-            action for _, action in sorted(actions_with_index, key=lambda pair: pair[0])
-        ]
+        try:
+            query_result = self.fetch_reconfiguration_plan_compact(feature_name, vation)
+            actions_with_index: list[tuple[int, str]] = []
+            for ftch in query_result:
+                actions_with_index.append(
+                    (ftch["index"]["value"], ftch["action_name"]["value"]))
+            ordered_actions = [
+                action for _, action in sorted(actions_with_index, key=lambda pair: pair[0])
+            ]
+
+        except Exception as e:
+            raise e
 
         return ordered_actions
 
-    def get_resolution_adaptations(self):
+    def get_resolution_adaptations(self, logger=logger):
         query_result = self.fetch_resolution_adaptations()
+
         resolution_to_adaptations = {}
         for part in query_result:
             actions = []
@@ -2471,5 +2511,4 @@ class TacticalRetreatInterface(TypeDBInterface):
             for parameter_entry in part.get('set_parameter_action', []):
                 actions.append(_parse_parameter_action(parameter_entry))
             resolution_to_adaptations[part["action_name"]["value"]] = actions
-
         return resolution_to_adaptations
