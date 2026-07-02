@@ -23,6 +23,7 @@ from typedb_tactics.utils import AdaptationPlan
 from typedb_tactics.utils import names_to_transitions
 
 
+
 def get_feature_resolution_dependency(self, name):
     query = f"""
         match

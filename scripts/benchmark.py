@@ -527,11 +527,6 @@ def build_method_calls(
             ([], {}),
             ([], {'include_qos': False}),
         ]
-    elif method_name == 'get_tactic_rule_impacts_requirement':
-        call_specs = [
-            ([requirement_name, rule_name], {})
-            for requirement_name, rule_name in product(requirement_names, tactic_rule_names)
-        ]
     elif method_name == 'get_resulting_effect_value':
         call_specs = [
             ([rule_name, measure_name], {})

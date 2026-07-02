@@ -13,13 +13,11 @@
 # limitations under the License.
 from dataclasses import dataclass
 from datetime import datetime
-import inspect
 import logging
 import traceback
 from typing import Iterator
 from typing import List
 from typing import Optional
-from typing import TypedDict
 from typing import Union
 
 from ros_typedb.typedb_interface import convert_py_type_to_query_type
@@ -124,43 +122,24 @@ class TacticalRetreatInterface(TypeDBInterface):
             sort_fetch_results: Optional[bool] = False,
             driver_timeout_s: Optional[float] = 10.0) -> None:
         self._sort_fetch_results = bool(sort_fetch_results)
-        super_init = inspect.signature(TypeDBInterface.__init__)
-        if 'sort_fetch_results' in super_init.parameters:
-            super().__init__(
-                address,
-                database_name,
-                schema_path,
-                data_path,
-                force_database,
-                force_data,
-                infer,
-                sort_fetch_results,
-                driver_timeout_s
-            )
-        else:
-            super().__init__(
-                address,
-                database_name,
-                schema_path,
-                data_path,
-                force_database,
-                force_data,
-                infer,
-                driver_timeout_s=driver_timeout_s
-            )
+        super().__init__(
+            address,
+            database_name,
+            schema_path,
+            data_path,
+            force_database,
+            force_data,
+            infer,
+            sort_fetch_results,
+            driver_timeout_s
+        )
 
     def fetch_database(
             self,
             query: str,
-            sort_result: Optional[bool] = None) -> List[dict[str, MatchResultDict]]:
+            sort_result: Optional[bool] = False) -> List[dict[str, MatchResultDict]]:
         """Perform fetch query using interface-level default ordering policy."""
-        should_sort = self._sort_fetch_results if sort_result is None else sort_result
-        try:
-            return super().fetch_database(query, sort_result=should_sort)
-        except TypeError:
-            # Backward compatibility with base versions without sort_result
-            # support.
-            return super().fetch_database(query)
+        return super().fetch_database(query, sort_result=sort_result)
 
     def fetch_subnodes(self, node_name: str,
                        namespace: str = '') -> List[dict[str, MatchResultDict]]:
@@ -284,6 +263,10 @@ class TacticalRetreatInterface(TypeDBInterface):
         ros_action_result_dict = []
         for result in self.fetch_action_clients_names(node_name, namespace):
             action = result.get('action_client')
+            if action is None:
+                logger.error(
+                    'In get_action_clients_names: query returned None')
+                return []
             if len(action['interface_name']) == 0:
                 logger.error(
                     'In get_action_clients_names: action does not have an action_name')
@@ -305,7 +288,7 @@ class TacticalRetreatInterface(TypeDBInterface):
             ros_action_result_dict.append({
                 'action_name': action['interface_name'][0]['value'],
                 'action_type': action['interface_type'][0]['value'],
-            }
+                }
             )
         # Sort list to guarantee deterministic list order
         ros_action_result_dict.sort(
@@ -574,18 +557,7 @@ class TacticalRetreatInterface(TypeDBInterface):
     def fetch_database_unordered(
             self, query: str) -> List[dict[str, MatchResultDict]]:
         """Perform fetch query without recursively sorting result keys."""
-        try:
-            return super().fetch_database_unordered(query)
-        except AttributeError:
-            try:
-                return self.fetch_database(query, sort_result=False)
-            except TypeError:
-                return self.fetch_database(query)
-
-    def fetch_database_unsorted(
-            self, query: str) -> List[dict[str, MatchResultDict]]:
-        """Backward-compatible alias for fetch_database_unordered."""
-        return self.fetch_database_unordered(query)
+        return self.fetch_database(query, sort_result=False)
 
     def fetch_applicable_tactics(self,
                                  resolution_model: str,
@@ -678,9 +650,9 @@ class TacticalRetreatInterface(TypeDBInterface):
 
     def get_current_state(self):
         current_state = self.fetch_current_state()
-        if len(current_state) > 0:
-            return current_state[0]['s']['state_name'][0]['value']
-        return None
+        if not current_state:
+            return None
+        return _first_attr(current_state[0], 's', 'state_name')
 
     def get_current_state_action(self, action_name):
         current_state = self.fetch_current_state_action(action_name)
@@ -776,7 +748,8 @@ class TacticalRetreatInterface(TypeDBInterface):
         return self.fetch_database(query)
 
     def fetch_applicable_valid_adaptations(
-            self, resolution_model: str,
+            self,
+            resolution_model: str,
             interface_name: str) -> List[dict[str, MatchResultDict]]:
         """
         Fetch applicable and valid adaptations for a ROS interface and resolution model.
@@ -950,8 +923,7 @@ class TacticalRetreatInterface(TypeDBInterface):
     def get_relaxed_requirement_fulfillment(
             self,
             system_name: str,
-            requirement_name: str) -> List[dict[str,
-                                                MatchResultDict]]:
+            requirement_name: str) -> float | None:
         """
         Fetch relaxed requirement fulfillment.
 
@@ -959,13 +931,18 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param requirement_name: requirement name
         :return: fulfillment value
         """
-        return self.fetch_relaxed_requirement_fulfillment(
-            system_name, requirement_name)[0]['fulfillment_0']['value']
+        query_result = self.fetch_relaxed_requirement_fulfillment(system_name, requirement_name)
+        if not query_result:
+            self.logger.warning(
+                'get_relaxed_requirement_fulfillment: no result for system %r requirement %r',
+                system_name, requirement_name)
+            return None
+        return _first_value(query_result[0], 'fulfillment_0')
 
     def get_relaxed_requirements_fulfillment(
             self,
             system_name: str,
-            *requirement_names: List[str]) -> List[float]:
+            *requirement_names: List[str]) -> List[float | None]:
         """
         Fetch multiple relaxed requirements fulfillment.
 
@@ -973,8 +950,15 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param requirement_names: list of requirement names
         :return: list of fulfillment values
         """
-        return [x['fulfillment_' + str(i)]['value'] for i, x in enumerate(
-            self.fetch_relaxed_requirements_fulfillment(system_name, *requirement_names))]
+        if not requirement_names:
+            return []
+        query_result = self.fetch_relaxed_requirements_fulfillment(system_name, *requirement_names)
+        if not query_result:
+            self.logger.warning(
+                'get_relaxed_requirements_fulfillment: no result for system %r', system_name)
+            return []
+        row = query_result[0]
+        return [_first_value(row, 'fulfillment_' + str(i)) for i in range(len(requirement_names))]
 
     def fetch_in_effect_requirement_fulfillment(
             self) -> List[dict[str, MatchResultDict]]:
@@ -1056,7 +1040,7 @@ class TacticalRetreatInterface(TypeDBInterface):
     # requirement_names.
     def update_requirements_in_effect(
             self, requirement_names, all_requirements):
-        if (not all_requirements):
+        if not all_requirements:
             match_block = """
             match
                 $requirement isa relaxed_requirement, has in_effect $in_effect,
@@ -1170,7 +1154,7 @@ class TacticalRetreatInterface(TypeDBInterface):
 
     def get_relaxed_requirement_hypothetical_fulfillment(
             self, system_name: str, requirement_name: str, tactic_rule: str
-    ) -> List[dict[str, MatchResultDict]]:
+    ) -> float | None:
         """
         Get hypothetical fulfillment of a relaxed requirement after applying a tactic rule.
 
@@ -1181,7 +1165,12 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         query_result = self.fetch_relaxed_requirement_hypothetical_fulfillment(
             system_name, requirement_name, tactic_rule)
-        return query_result[0]['tactic_impact']['fulfillment'][0]['value']
+        if not query_result:
+            self.logger.warning(
+                'get_relaxed_requirement_hypothetical_fulfillment: no result for '
+                'system %r requirement %r rule %r', system_name, requirement_name, tactic_rule)
+            return None
+        return _first_attr(query_result[0], 'tactic_impact', 'fulfillment')
 
     def get_relaxed_requirements_hypothetical_fulfillment(
             self, tactic_rules: List[str], system_name: str
@@ -1395,7 +1384,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
-    def get_tactic_rule_valid(self, tactic_rule: str) -> bool:
+    def get_tactic_rule_valid(self, tactic_rule: str) -> bool | None:
         """
         Get whether a tactic_rule is valid.
 
@@ -1403,7 +1392,10 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: true or false
         """
         query_result = self.fetch_tactic_rule_valid(tactic_rule)
-        return query_result[0]['tr']['rule_valid'][0]['value']
+        if not query_result:
+            self.logger.warning('get_tactic_rule_valid: no result for %r', tactic_rule)
+            return None
+        return _first_attr(query_result[0], 'tr', 'rule_valid')
 
     def fetch_action_rules(self, action_name: str):
         """
@@ -1525,7 +1517,10 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $f: selected;
         """
         query_result = self.fetch_database(query)
-        return query_result[0]['f']['selected'][0]['value']
+        if not query_result:
+            self.logger.warning('is_feature_selected: no result for feature %r', feature_name)
+            return None
+        return _first_attr(query_result[0], 'f', 'selected')
 
     def update_feature_selected_by_param_value(self, feature_name: str):
         """
@@ -1562,13 +1557,12 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $node: running;
         """
         query_result = self.fetch_database(query)
-        try:
-            return query_result[0]['node']['running'][0]['value']
-        except IndexError:
+        if not query_result:
             return None
+        return _first_attr(query_result[0], 'node', 'running')
 
     def is_set_nodes_parameters_feasible(
-            self, node_name: str, parameter_name: str) -> bool:
+            self, node_name: str, parameter_name: str) -> bool | None:
         """
         Return whether a set_nodes_parameters action is feasible.
 
@@ -1585,10 +1579,15 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $ra: feasible;
         """
         query_result = self.fetch_database(query)
-        return query_result[0]['ra']['feasible'][0]['value']
+        if not query_result:
+            self.logger.warning(
+                'is_set_nodes_parameters_feasible: no result for node %r parameter %r',
+                node_name, parameter_name)
+            return None
+        return _first_attr(query_result[0], 'ra', 'feasible')
 
     def is_set_lifecycle_state_feasible(
-            self, node_name: str, lifecycle_state: str) -> bool:
+            self, node_name: str, lifecycle_state: str) -> bool | None:
         """
         Return whether a set_lifecycle_state action is feasible.
 
@@ -1604,7 +1603,12 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $ra: feasible;
         """
         query_result = self.fetch_database(query)
-        return query_result[0]['ra']['feasible'][0]['value']
+        if not query_result:
+            self.logger.warning(
+                'is_set_lifecycle_state_feasible: no result for node %r state %r',
+                node_name, lifecycle_state)
+            return None
+        return _first_attr(query_result[0], 'ra', 'feasible')
 
     def fetch_measures_interfaces(
             self, include_qos: bool = True):
@@ -1860,66 +1864,6 @@ class TacticalRetreatInterface(TypeDBInterface):
         self.delete_latest_measurement(*measure_dict.keys(), logger=logger)
         self.insert_measurement_query(*list(measure_dict.items()))
 
-    def fetch_expression_measure_dependency(self, expression_name: str):
-        """
-        Fetch the measure names that the expression depends on.
-
-        :param expression_name: expression name
-        :return: query result
-        """
-        query = f"""
-            match
-                $expr isa expression,
-                    has expression_name '{expression_name}';
-                (dependent: $expr, measure: $measure) isa measure_dependency;
-            fetch
-                $measure: measure_name;
-        """
-        return self.fetch_database(query)
-
-    def get_expression_measure_dependency(
-            self, expression_name: str) -> List[str]:
-        """
-        Get the measure names that the expression depends on.
-
-        :param expression_name: expression name
-        :return: list of measure names
-        """
-        query_result = self.fetch_expression_measure_dependency(
-            expression_name)
-        return [result['measure']['measure_name'][0]['value']
-                for result in query_result]
-
-    def fetch_requirement_measure_dependency(self, requirement_name: str):
-        """
-        Fetch the measure names that the requirement depends on.
-
-        :param requirement_name: requirement name
-        :return: query result
-        """
-        query = f"""
-            match
-                $req isa relaxed_requirement,
-                    has requirement_name '{requirement_name}';
-                (dependent: $req, measure: $measure) isa measure_dependency;
-            fetch
-                $measure: measure_name;
-        """
-        return self.fetch_database(query)
-
-    def get_requirement_measure_dependency(
-            self, requirement_name: str) -> List[str]:
-        """
-        Get the measure names that the requirement depends on.
-
-        :param requirement_name: requirement name
-        :return: list of measure names
-        """
-        query_result = self.fetch_requirement_measure_dependency(
-            requirement_name)
-        return [result['measure']['measure_name'][0]['value']
-                for result in query_result]
-
     def fetch_tactic_rule_impacts_fulfillment(
             self, impacted_name: str, tactic_rule_name: str):
         """
@@ -2006,7 +1950,7 @@ class TacticalRetreatInterface(TypeDBInterface):
     def get_resulting_effect_value(
             self,
             tactic_rule: str,
-            measure_name: str) -> float:
+            measure_name: str) -> float | None:
         """
         Get resulting effect value of a tactic on a measure.
 
@@ -2014,9 +1958,13 @@ class TacticalRetreatInterface(TypeDBInterface):
         :param measure_name: measure name
         :return: resulting effect value
         """
-        query_result = self.fetch_resulting_effect_value(
-            tactic_rule, measure_name)
-        return query_result[0]['resulting_effect_value']['value']
+        query_result = self.fetch_resulting_effect_value(tactic_rule, measure_name)
+        if not query_result:
+            self.logger.warning(
+                'get_resulting_effect_value: no result for rule %r measure %r',
+                tactic_rule, measure_name)
+            return None
+        return _first_value(query_result[0], 'resulting_effect_value')
 
     def fetch_fuzzy_membership_degree(self, expression_name: str
                                       ) -> List[dict[str, MatchResultDict]]:
@@ -2035,7 +1983,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
-    def get_fuzzy_membership_degree(self, expression_name: str) -> str:
+    def get_fuzzy_membership_degree(self, expression_name: str) -> str | None:
         """
         Get fuzzy membership of a fuzzy expression.
 
@@ -2043,7 +1991,11 @@ class TacticalRetreatInterface(TypeDBInterface):
         :return: membership type
         """
         query_result = self.fetch_fuzzy_membership_degree(expression_name)
-        return query_result[0]['membership_degree']['value']
+        if not query_result:
+            self.logger.warning(
+                'get_fuzzy_membership_degree: no result for expression %r', expression_name)
+            return None
+        return _first_value(query_result[0], 'membership_degree')
 
     def fetch_relaxed_expression_fulfillment(
             self, expression_name: str) -> List[dict[str, MatchResultDict]]:
@@ -2062,16 +2014,19 @@ class TacticalRetreatInterface(TypeDBInterface):
         """
         return self.fetch_database(query)
 
-    def get_relaxed_expression_fulfillment(self, expression_name: str) -> str:
+    def get_relaxed_expression_fulfillment(self, expression_name: str) -> float | None:
         """
         Get fuzzy fulfillment of a fuzzy expression.
 
         :param expression_name: fuzzy expression name
-        :return: fulfillment type
+        :return: fulfillment value
         """
-        query_result = self.fetch_relaxed_expression_fulfillment(
-            expression_name)
-        return query_result[0]['fulfillment']['value']
+        query_result = self.fetch_relaxed_expression_fulfillment(expression_name)
+        if not query_result:
+            self.logger.warning(
+                'get_relaxed_expression_fulfillment: no result for expression %r', expression_name)
+            return None
+        return _first_value(query_result[0], 'fulfillment')
 
     def fetch_potential_requirements_fulfillment(
             self,
@@ -2249,7 +2204,7 @@ class TacticalRetreatInterface(TypeDBInterface):
         return [result['expr']['expression_name'][0]['value']
                 for result in query_result if len(result['expr']['expression_name']) > 0]
 
-    def get_expression_satisfied(self, expression_name):
+    def get_expression_satisfied(self, expression_name) -> bool | None:
         query = f"""
             match
                 $expr isa logical_expression,
@@ -2259,7 +2214,11 @@ class TacticalRetreatInterface(TypeDBInterface):
                 $expression_satisfied;
         """
         query_result = self.fetch_database(query)
-        return query_result[0]['expression_satisfied']['value']
+        if not query_result:
+            self.logger.warning(
+                'get_expression_satisfied: no result for expression %r', expression_name)
+            return None
+        return _first_value(query_result[0], 'expression_satisfied')
 
     def fetch_reconfiguration_plan(self, rule_name: str):
         """
