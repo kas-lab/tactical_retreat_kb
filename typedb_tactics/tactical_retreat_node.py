@@ -14,13 +14,15 @@
 import rclpy
 
 from typedb_tactics.tactical_retreat_kb import TacticalRetreatKB
+from typedb_tactics.tactical_retreat_kb_xtext import TacticalRetreatKB as TacticalRetreatKBXText
+
 
 
 def main():
     rclpy.init()
 
     executor = rclpy.executors.MultiThreadedExecutor()
-    lc_node = TacticalRetreatKB('tactical_retreat_kb')
+    lc_node = TacticalRetreatKBXText('tactical_retreat_kb')
     executor.add_node(lc_node)
     try:
         executor.spin()

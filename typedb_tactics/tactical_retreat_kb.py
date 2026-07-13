@@ -495,7 +495,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
                         entries.append(t)
 
                     states = [SymbolicState(state_name=p[0])
-                            for p in state_dict.items()]
+                              for p in state_dict.items()]
                     res.table_entries = entries
                     res.states = states
                     res.reconfigurations = reconfigurations

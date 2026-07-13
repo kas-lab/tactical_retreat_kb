@@ -35,13 +35,13 @@ jars_path = os.path.join(get_package_share_directory("adapt_x"), "jars", "rem")
 jpype.startJVM(
     classpath=[jars_path + "/*"]
 )
-
+from system import RosPublisherReference
 from rosToolingSupport import RosToolingSupport
 from de.fraunhofer.ipa.ros import RosStandaloneSetupGenerated
 from de.fraunhofer.ipa.rossystem import RosSystemStandaloneSetupGenerated
 from de.fraunhofer.ipa.ros2 import Ros2StandaloneSetupGenerated
 from eu.coresense.variability import FeatureModelStandaloneSetupGenerated
-from eu.coresense.resolution import ResolutionModelStandaloneSetupGenerated
+from eu.coresense.resolution import ResolutionModelStandaloneSetupGenerated, Resolver
 from eu.coresense.context import ContextModelStandaloneSetupGenerated
 from eu.coresense.requirements import RequirementsModelStandaloneSetupGenerated
 from eu.coresense.adaptation import TacticsStandaloneSetupGenerated
@@ -55,20 +55,50 @@ from eu.coresense.common import RosNameProvider, MathOperator, Literal, IntLiter
 
 from eu.coresense.adaptation.tactics import TacticsModel, AtomicRule, ConditionAction, MeasurementThresholdCondition, MeasurementMeasurementCondition, LogicalOperator, AtomicActionDeselectFeature, AtomicActionSelectFeature
 from eu.coresense.requirements.generator import RequirementsModelGenerator
-from eu.coresense.requirements.requirementsModel import RequirementsModel
-from eu.coresense.resolution.resolutionModel import ResolutionModel, Reconfiguration, SetParam, SetLifecycle, LifeCycleState
+from eu.coresense.requirements.requirementsModel import RequirementsModel, AsCloseLit, Shall, Negation, CompoundExpression, Quantifiable
+from eu.coresense.requirements.requirementsModel import FuzzyTriangular as J_FuzzyTriangular
+
+from eu.coresense.resolution.resolutionModel import ResolutionModel, Reconfiguration, SetParam, SetLifecycle, LifecycleState
 from eu.coresense.context.contextModel import ContextModel, QualifiedPublisherRef, QualifiedActionServerRef, QualifiedServiceServerRef
 from uma.caosd.rhea.AdvancedConstraintsFMmetamodel import AdvancedConstraintsFMmetamodelPackage
 from uma.caosd.rhea.BasicFMmetamodel import Feature, Alternative, OrGroup
 from java.lang import String, Integer
-from java.util import HashSet
+from java.util import HashSet, ArrayList
+from java.nio.file import Files
+from java.io import FileWriter
 from ros import ParameterBoolean, ParameterInteger, ParameterDouble, ParameterString, ParameterSequence
+from eu.coresense.variability.generator import FeatureModelGenerator
+from de.ovgu.featureide.fm.core.io.manager import FeatureModelManager, ConfigurationIO
+
+from de.ovgu.featureide.fm.core.analysis.cnf.formula import FeatureModelFormula
+from de.ovgu.featureide.fm.core.configuration import Configuration, Selection, ConfigurationPropagator, ConfigurationAnalyzer
+from de.ovgu.featureide.fm.core.job import LongRunningWrapper, SliceFeatureModel
+from de.ovgu.featureide.fm.core.base import FeatureUtils
+
+from typedb_tactics.fuzzy.fuzzy_expressions import Proposition, Expression
+from typedb_tactics.fuzzy.fuzzy_sets import FuzzyTriangular
+from typedb_tactics.fuzzy.relaxed_requirements import AsCloseAsPossibleExpression, ShallExpression
+
 
 
 logger = logging.getLogger(__name__)
 
+
 def instanceis(clas, obj):
-    return isinstance(obj,clas)
+    return isinstance(obj, clas)
+
+
+def _value_from_lit(lit):
+    if (isinstance(lit, DecimalLiteral)):
+        return float((DecimalLiteral @ lit).getValue().longValue())
+    if (isinstance(lit, IntLiteral)):
+        return int((IntLiteral @ lit).getValue())
+    if (isinstance(lit, StringLiteral)):
+        return str((StringLiteral @ lit).getValue())
+    if (isinstance(lit, BooleanLiteral)):
+        return bool((BooleanLiteral @ lit).isValue())
+    return lit
+
 
 def valueOf(param):
     if (isinstance(param, ParameterBoolean)):
@@ -83,83 +113,59 @@ def valueOf(param):
         return list(((ParameterSequence) @ param).getValue().stream().map(valueOf).toList())
 
 
-
-# @dataclass
-# class RequirementImpactDict():
-#     """Dataclass for requirement impact information."""
-
-#     action_name: str  #: name of the action
-#     requirement_name: str  #: name of the requirement
-#     tactic_rule: str  #: name of the tactic rule
-#     fulfillment: float  #: fulfillment value
-
-
-# def create_value_query(value, suffix=''):
-#     if not isinstance(value, (str, float, int, bool, list)):
-#         logger.error(
-#             'Unsupported type %s for value %s',
-#             type(value),
-#             value)
-#         return None, None
-
-#     variable_name = f'$value{suffix}'
-
-#     value_query = ''
-#     if isinstance(value, str):
-#         value_query = f'{variable_name} isa ValueString, has string_value "{value}";'
-#     elif isinstance(value, float):
-#         formatted = format(value, '.15f')
-#         value_query = f'{variable_name} isa ValueDouble, has double_value {formatted};'
-#     elif isinstance(value, bool):
-#         value_query = f"""{variable_name} isa ValueBool,
-#             has bool_value {convert_py_type_to_query_type(value)};"""
-#     elif isinstance(value, int):
-#         value_query = f'{variable_name} isa ValueInteger, has integer_value {value};'
-#     return value_query, variable_name
-
-
-# class ROSActionResultDict(TypedDict):
-#     """TypedDict for get_subnodes method result."""
-
-#     action_name: str  #: action name
-#     action_type: str  #: action type
-
-
-# class RuntimeNodeDict(TypedDict):
-#     """TypedDict for get_subnodes method result."""
-
-#     namespace: str  #: node namespace
-#     node_name: str  #: node name
-
-
-# def node_query_to_node_dict(
-#         query_result: List[dict[str, MatchResultDict]],
-#         node_variable: str = 'node') -> List[RuntimeNodeDict]:
-#     node_dict = []
-#     for result in query_result:
-#         node = result.get(node_variable)
-#         if len(node['namespace']) > 1:
-#             logger.error(
-#                 'In node_query_to_node_dict: '
-#                 'runtime node has more than 1 namespace')
-#             return node_dict
-#         if len(node['node_name']) > 1:
-#             logger.error(
-#                 'In node_query_to_node_dict: '
-#                 'runtime node has more than 1 node_name')
-#             return node_dict
-#         node_dict.append({
-#             'node_name': node['node_name'][0]['value'],
-#             'namespace': node['namespace'][0]['value'],
-#         }
-#         )
-#     # Sort list to guarantee deterministic list order
-#     node_dict.sort(key=lambda d: (d['node_name'], d['namespace']))
-#     return node_dict
-
-
 YELLOW_BOLD = "\033[33;1m"
 RESET = "\033[0m"
+
+
+def getSubtreeFeatures(root):
+    res = ArrayList()
+    if (not res.contains(root.getName())):
+        res.add(root.getName())
+
+    children = FeatureUtils.getChildren(root)
+    if (children is not None):
+        for f in children:
+            res.addAll(getSubtreeFeatures(f))
+    return res
+
+
+def clear_siblings(configuration, formula, feature_name, logger):
+    logger.info("Something here?")
+    feature = configuration.getSelectableFeature(feature_name)
+
+    # 1. Clear manual on tree siblings (alt/or groups)
+    parent_struct = feature.getFeature().getStructure().getParent()
+    if parent_struct is not None:
+        logger.info("aaa")
+
+        for child_struct in parent_struct.getChildren():
+            sibling_name = child_struct.getFeature().getName()
+            if sibling_name != feature_name:
+                logger.info(f"bbb {sibling_name}")
+
+                sibling = configuration.getSelectableFeature(sibling_name)
+                if sibling.getManual() != Selection.UNDEFINED:
+                    configuration.setManual(sibling_name, Selection.UNDEFINED)
+
+    # 2. Clear manual on anything sharing a cross-tree constraint with this feature
+    for constraint in formula.getFeatureModel().getConstraints():
+        contained = constraint.getContainedFeatures()
+        names = [f.getName() for f in contained]
+        if feature_name in names:
+            for other_name in names:
+                if other_name != feature_name:
+                    other = configuration.getSelectableFeature(other_name)
+                    if other.getManual() != Selection.UNDEFINED:
+                        configuration.setManual(other_name, Selection.UNDEFINED)
+
+
+def select_alternatives(configuration, formula, feature_name, selection, logger):
+    clear_siblings(configuration, formula, feature_name, logger)
+    configuration.setManual(feature_name, selection)
+
+
+def tofloat(bigdecimal) -> float:
+    return float(bigdecimal.longValue())
 
 
 class TacticalRetreatInterface:
@@ -177,7 +183,7 @@ class TacticalRetreatInterface:
                  require_nodes_running: bool = False,
                  verify_parameters: bool = False,
                  generate_state: bool = True,
-                 consider_features_in_state: bool = False, logger=None) -> None:
+                 consider_features_in_state: bool = False, logger=logger) -> None:
         RosToolingSupport.registerEPackages()
         AdvancedConstraintsFMmetamodelPackage.eINSTANCE.eClass()
 
@@ -186,10 +192,13 @@ class TacticalRetreatInterface:
         self.logger.info(f"{ros_path}")
         self.load_model("ros", RosStandaloneSetupGenerated(), ros_path)
         self.ros2Resources = self.load_model("ros2", Ros2StandaloneSetupGenerated(), ros2_path)
-        self.rosSystemResources = self.load_model("rossystem", RosSystemStandaloneSetupGenerated(), rossystem_path)
+        self.rosSystemResources = self.load_model("rossystem", RosSystemStandaloneSetupGenerated(),
+                                                  rossystem_path)
         fmResources = self.load_model("var", FeatureModelStandaloneSetupGenerated(), var_path)
-        resSources = self.load_model("resolution", ResolutionModelStandaloneSetupGenerated(), resolution_path)
-        contextResources = self.load_model("context", ContextModelStandaloneSetupGenerated(), context_path)
+        resSources = self.load_model("resolution", ResolutionModelStandaloneSetupGenerated(),
+                                     resolution_path)
+        contextResources = self.load_model("context", ContextModelStandaloneSetupGenerated(),
+                                           context_path)
         requirementsResources = self.load_model("reqs",
                                                 RequirementsModelStandaloneSetupGenerated(),
                                                 reqs_path)
@@ -207,13 +216,14 @@ class TacticalRetreatInterface:
         self.contextModel = (ContextModel) @ \
             self.contextModelResource.getContents().get(0)
 
-
         self.resolutionModelResource = resSources.get(0)
         self.resolutionModel = (ResolutionModel) @ \
             self.resolutionModelResource.getContents().get(0)
 
+        self.resolver = Resolver(self.resolutionModel)
         if (generate_state):
-            from eu.coresense.adaptation.generator import State
+            from eu.coresense.adaptation.generator import State, TQLGenerator
+            TQLGenerator.setGlobalResource(self.tacticsModelResource)
 
             if hasattr(fmResources, "get"):
                 resource0 = fmResources.get(0)
@@ -241,13 +251,87 @@ class TacticalRetreatInterface:
             self.DSLFeatureModel = root_obj
 
             for j_action_rule in self.tacticsModel.getActionRules():
-                self.j_states = State.FromRules(j_action_rule.getAdaptationRules(),
-                                self.DSLFeatureModel.getFm(), consider_features_in_state)
+                self.j_states_map = TQLGenerator.createStates(self.tacticsModel,
+                                                              self.requirementsModel,
+                                                              consider_features_in_state)
+                for key in self.j_states_map.keySet():
+                    self.logger.info(f"{str(key)} - {str(self.j_states_map.get(key).size())} states generated")
 
-                self.logger.info(f"{str(self.j_states.size())} states generated")
+        self.namer = NameProvider()
+        self.namer.register(ResolutionNameProvider())
 
+        path = Files.createTempFile("featuremodel", ".xml")
+        fw = FileWriter(path.toFile(), True)
+
+        generator = FeatureModelGenerator()
+        fm_xml = generator.generateXml(self.DSLFeatureModel.getFm())
+        fw.write(fm_xml)
+        fw.close()
+
+        conf_path = Files.createTempFile("configuration", ".xml")
+        fw = FileWriter(conf_path.toFile(), True)
+
+        conf_xml = generator.generateConfiguration(self.DSLFeatureModel.getFm())
+
+        fw.write(conf_xml)
+        fw.close()
+
+        self.featureModel = FeatureModelManager.load(path)
+
+        # formula = FeatureModelFormula(self.featureModel)
+        self.fmConfiguration = ConfigurationIO.getInstance().load(conf_path,
+                                                           FeatureModelManager.getInstance(path))
+        self.logger.info(f"conf ? {str(self.fmConfiguration.toString())}")
+        # select_exclusive(configuration, formula, "MPPI", Selection.UNSELECTED, logger)
+        # select_exclusive(configuration, formula, "RPP", Selection.SELECTED, logger)
+        # propagator = ConfigurationPropagator(formula, self.fmConfiguration)
+
+        self.action_currconf = {}
+        self.action_allconf = {}
+        self.latest_measures = {}
+        self.in_effect_requirements = []
+        self.traversed_requirements = {}
+
+        for j_req in self.requirementsModel.getRequirements():
+            some_list = []
+            self.traverseExpression(j_req.getExpression(), some_list)
+            self.traversed_requirements[j_req] = some_list
+
+        # LongRunningWrapper.runMethod(propagator.update())
+
+        # self.logger.info(f"conf aft ? {str(self.fmConfiguration.getSelectedFeatureNames())}")
+
+        # valid = LongRunningWrapper.runMethod(propagator.isValid())
+        # if not valid:
+        #     self.logger.warning("Update produced an invalid/contradictory configuration!")
 
         self.logger.info("ready")
+
+    def to_fuzzy(self, j_expression_list: list) -> Optional[Expression]:
+        j_expression = j_expression_list[0]
+        if isinstance(j_expression, AsCloseLit):
+            j_as_close_lit = (AsCloseLit) @ j_expression
+            req_value = _value_from_lit(j_as_close_lit.getQuantity())
+            j_fuzzy_tri = (J_FuzzyTriangular) @ j_as_close_lit.getMembershipFunction()
+            measure_name = str(j_as_close_lit.getComparator().getContextVariable().getName())
+
+            mes = self.latest_measures.get(measure_name, None)
+            if (mes is None):
+                return None
+            prop = Proposition(name=measure_name, value=mes)
+            a = tofloat(j_fuzzy_tri.getA())
+            b = tofloat(j_fuzzy_tri.getB())
+            c = tofloat(j_fuzzy_tri.getC())
+            fuzzy_tri = FuzzyTriangular(a=a, b=b, c=c)
+            return AsCloseAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_tri,
+                                               required_value=float(req_value))
+
+        # if isinstance(j_expression, Shall):
+        #     self.logger.info("s")
+        #     j_shall = (Shall) @ j_expression
+        #     j_expression_list.append(j_shall)
+        #     self.traverseExpression(j_shall.getExpression(), j_expression_list)
+        #     return
 
     def progress_message(self, msg: str):
         self.logger.info(f"{YELLOW_BOLD}{msg}{RESET}")
@@ -263,6 +347,11 @@ class TacticalRetreatInterface:
         self.progress_message(f"Loaded {int(resources.size())}.{ext} files")
         return resources
 
+    def getContextVar(self, string_name):
+        for contextVar in self.contextModel.getEnvironmental_variables():
+            if (contextVar.getName() == string_name):
+                return contextVar
+        raise Exception(f"Couldn't find contextVar {string_name}")
 
     def manual_running_nodes(self, node_names: List[str]):
         """
@@ -288,27 +377,16 @@ class TacticalRetreatInterface:
         # """
         # return self.insert_database(query)
 
-
     def _get_condition_action(self, j_atomic_rule: AtomicRule) -> ConditionAction:
         if (isinstance(j_atomic_rule, AtomicRule)):
             j_atomic_rule = (AtomicRule) @ j_atomic_rule
             j_rule_body = j_atomic_rule.getRuleBody()
             if (isinstance(j_rule_body, ConditionAction)):
                 return (ConditionAction) @ j_rule_body
-            
-    def _value_from_lit(self, lit):
-        if (isinstance(lit,DecimalLiteral)):
-            return float((DecimalLiteral @ lit).getValue().longValue())
-        if (isinstance(lit,IntLiteral)):
-            return int((IntLiteral @ lit).getValue())
-        if (isinstance(lit,StringLiteral)):
-            return str((StringLiteral @ lit).getValue())
-        if (isinstance(lit,BooleanLiteral)):
-            return bool((BooleanLiteral @ lit).isValue())
 
     def _eval_measurement_condition(self, j_measurement_condition, measures) -> bool:
         self.logger.info("called")
-        
+
         context_var_name = str(j_measurement_condition
                                .getMeasurement().getName())
         context_val = measures.get(context_var_name, None)
@@ -318,11 +396,10 @@ class TacticalRetreatInterface:
 
         j_operator = j_measurement_condition.getOperator()
 
-
         comparator = None
         if (isinstance(j_measurement_condition, MeasurementThresholdCondition)):
             j_threshold = ((MeasurementThresholdCondition) @ j_measurement_condition).getThresholdValue()
-            comparator = self._value_from_lit(j_threshold)
+            comparator = _value_from_lit(j_threshold)
 
          # if(isinstance(j_measurmement_condition,MeasurementMeasurementCondition)):
 
@@ -373,6 +450,39 @@ class TacticalRetreatInterface:
 
         return satisfied
 
+    def traverseExpression(self, j_expression, j_expression_list: list):
+        self.logger.info(f"expr {j_expression}")
+        if isinstance(j_expression, AsCloseLit):
+            self.logger.info(f"asl")
+
+            j_expression_list.append(j_expression)
+            return
+        if isinstance(j_expression, CompoundExpression):
+            j_compound = (CompoundExpression) @ j_expression
+            j_left_expr = j_compound.getLeftExpression()
+            j_right_expr = j_compound.getRightExpression()
+
+            j_expression_list.append(j_compound)
+            self.traverseExpression(j_left_expr, j_expression_list)
+            self.traverseExpression(j_right_expr, j_expression_list)
+            return
+        if isinstance(j_expression, Shall):
+            self.logger.info(f"s")
+            j_shall = (Shall) @ j_expression
+            j_expression_list.append(j_shall)
+            self.traverseExpression(j_shall.getExpression(), j_expression_list)
+            return
+        if isinstance(j_expression, Negation):
+            j_neg = (Negation) @ j_expression
+            j_expression_list.append(j_neg)
+            self.traverseExpression(j_neg.getExpression(), j_expression_list)
+            return
+        if isinstance(j_expression, Quantifiable):
+            j_expression_list.append(j_expression)
+            return
+
+        raise Exception(f"{j_expression} {j_expression_list} unknown type")
+
     def get_relaxed_requirements_fulfillment(
             self,
             system_name: str,
@@ -385,68 +495,17 @@ class TacticalRetreatInterface:
         :return: list of fulfillment values
         """
         pass
-        # return [x['fulfillment_' + str(i)]['value'] for i, x in enumerate(
-        #     self.fetch_relaxed_requirements_fulfillment(system_name, *requirement_names))]
 
-
-    # # This only works if there are more requirements than those mentioned in
-    # # requirement_names.
-    def update_requirements_in_effect(
-            self, requirement_names, all_requirements):
-        pass
-        # if(not all_requirements):
-        #     match_block = """
-        #     match
-        #         $requirement isa relaxed_requirement, has in_effect $in_effect,
-        #         has requirement_name $req_name;
-        #     """
-        #     delete_block = """
-        #     delete
-        #     $requirement has $in_effect;
-        #     """
-        #     insert_block = """
-        #     insert
-        #     $requirement has in_effect false;
-        #     """
-        #     for i, requirement_name in enumerate(requirement_names):
-        #         match_block += f"""
-        #         $req_name != '{requirement_name}';
-        #         $req_{i} isa relaxed_requirement,
-        #         has requirement_name '{requirement_name}',
-        #         has in_effect $eff_{i};
-        #         """
-        #         delete_block += f"""
-        #             $req_{i} has $eff_{i};
-        #         """
-        #         insert_block += f"""
-        #             $req_{i} has in_effect true;
-        #         """
-        #     query = match_block + delete_block + insert_block
-        #     return self.update_database(query)
-        # else:
-        #     match_block = """
-        #     match
-        #     """
-        #     delete_block = """
-        #     delete
-        #     """
-        #     insert_block = """
-        #     insert
-        #     """
-        #     for i, requirement_name in enumerate(requirement_names):
-        #         match_block += f"""
-        #         $req_{i} isa relaxed_requirement,
-        #         has requirement_name '{requirement_name}',
-        #         has in_effect $eff_{i};
-        #         """
-        #         delete_block += f"""
-        #             $req_{i} has $eff_{i};
-        #         """
-        #         insert_block += f"""
-        #             $req_{i} has in_effect true;
-        #         """
-        #     query = match_block + delete_block + insert_block
-        #     return self.update_database(query)
+    def update_requirements_in_effect(self, requirement_names, all_requirements):
+        if (all_requirements):
+            self.in_effect_requirements = [j_req
+                                           for j_req in self.requirementsModel.getRequirements()]
+        else:
+            self.in_effect_requirements = []
+            for req_name in requirement_names:
+                for j_req in self.requirementsModel.getRequirements():
+                    if j_req.getName() == req_name:
+                        self.in_effect_requirements.append(j_req)
 
     def get_relaxed_requirement_hypothetical_fulfillment(
             self, system_name: str, requirement_name: str, tactic_rule: str
@@ -491,7 +550,6 @@ class TacticalRetreatInterface:
 # 
         # return x
 
-
     def get_measures_interfaces(self, include_qos: bool = True):
         """
         Get measures and source interfaces.
@@ -512,6 +570,12 @@ class TacticalRetreatInterface:
                 # TODO: account for remapping
                 result_dict['interface_type'] = str(j_pub_ref.getPublisher().getMessage().getFullname())
                 result_dict['interface_name'] = str(j_pub_ref.getPublisher().getName())
+
+                for interface in j_pub_ref.getNode().getRosinterfaces():
+                    reference = interface.getReference()
+                    if (isinstance(reference, RosPublisherReference)):
+                        if (reference.getFrom() == j_pub_ref.getPublisher()):
+                            result_dict['interface_name'] = str(interface.getName())
 
                 # for j_publisher in j_node.getFrom().getPublisher():
                 #     if(str(j_publisher.getMessage().getFullname()) == result_dict['interface_type']):
@@ -581,8 +645,6 @@ class TacticalRetreatInterface:
         """Add new measurements."""
         self.latest_measures = measure_dict
 
-
-
     def get_applicable_tactics(
             self,
             resolution_model: str,
@@ -614,11 +676,29 @@ class TacticalRetreatInterface:
 
         # return rules
 
+    def get_in_effect_requirement_fulfillment(self):
+        ff = []
+        for j_req in self.in_effect_requirements:
+            traversed = self.traversed_requirements[j_req]
+            j_first_expr = traversed[0]
+            if (isinstance(j_first_expr, Shall)):
+                fuzzified = self.to_fuzzy(traversed[1:])
+                if (fuzzified is not None):
+                    s = ShallExpression(fuzzified)
+                    ff.append(
+                        {
+                            'requirement_name': str(j_req.getName()),
+                            'fulfillment': s.fulfillment,
+                            'system': ''
+                        }
+                    )
+        return ff
+
     def _functional_mapping(self, action_name: str) -> Feature:
         j_func_maps = self.resolutionModel.getFunctionalMapping()
         for j_func_map in j_func_maps:
             self.logger.info(f"acc name {j_func_map.getAction().getName()}")
-            if(action_name == str(j_func_map.getAction().getName())):
+            if (action_name == str(j_func_map.getAction().getName())):
                 return j_func_map.getFeature()
 
     def _subtree_features(self, feature, subtree: List[Feature],
@@ -633,7 +713,7 @@ class TacticalRetreatInterface:
     def _isOptional(self, feature: Feature):
         return (not feature.isMandatory()) and (not isinstance(feature.getParent(), Alternative))
 
-    def _featuresInvolvedInRule(feature, rule):
+    def _featuresInvolvedInRule(self, rule):
         selected_by = []
         deselected_by = []
         j_atomic_rule = (AtomicRule) @ rule
@@ -651,40 +731,75 @@ class TacticalRetreatInterface:
         reconfigurations = []
         state_dict = {}
         j_feature = self._functional_mapping(action_name)
+        if (j_feature is None):
+            raise Exception(f"Action name {action_name} not found to belong to a functional mapping")
         self.logger.info(f"acc name {str(j_feature)}")
+        subtreeFeatures = getSubtreeFeatures(self.featureModel.getFeature(j_feature.getName()))
+        slicedModel = LongRunningWrapper.runMethod(SliceFeatureModel(self.featureModel,
+                                                                     subtreeFeatures, True))
+        slicedFormula = FeatureModelFormula(slicedModel)
+        subconf = Configuration(self.fmConfiguration, slicedFormula)
+        undef_subconf = Configuration(slicedFormula)
 
-        p_available_alts = []
+        # p_available_alts = []
+        configurationAnalyzer = ConfigurationAnalyzer(slicedFormula, undef_subconf)
+        allConfigurations = configurationAnalyzer.getSolutions(100000)
+        all_configurations = []
+        for k, featureList in enumerate(allConfigurations):
+            all_configurations.append(sorted({str(feature) for feature in featureList
+                                      if str(feature) != "__root__"}))
+            reconfigurations.append(str(sorted({str(feature) for feature in featureList
+                                        if str(feature) != "__root__"})))
+
+        self.action_allconf[action_name] = all_configurations
+        self.action_currconf[action_name] = sorted({str(feat) for feat in subconf.getSelectedFeatureNames()})
+
+        self.logger.info(f"all configurations {str(all_configurations)}")
+
         # TODO: ensure alternative is mandatory.
-        self._subtree_features(j_feature, p_available_alts, partial(instanceis, Alternative))
-        available_alts_feats = []
-        for feat in p_available_alts:
-            available_alts_feats.extend(feat.getChildren())
-        available_opts_feats = []
-        self._subtree_features(j_feature, available_opts_feats, self._isOptional)
+        # self._subtree_features(j_feature, p_available_alts, partial(instanceis, Alternative))
+        # available_alts_feats = []
+        # for feat in p_available_alts:
+        #   available_alts_feats.extend(feat.getChildren())
+        # available_opts_feats = []
+        # self._subtree_features(j_feature, available_opts_feats, self._isOptional)
 
-        for i, j_state in enumerate(self.j_states):
+        for i, j_state in enumerate(self.j_states_map.get(action_name)):
             state_name = f"state_{i}"
+            state_dict[state_name] = []
             if (int(j_state.associatedRules.size()) > 0):
                 state_dict[state_name] = [str(rule.getName()) for rule in j_state.associatedRules]
             for rule in j_state.associatedRules:
                 selected_by, deselected_by = self._featuresInvolvedInRule(rule)
-                for alt in available_alts_feats:
-                    sel_feat = 'select_' + str(alt.getName())
 
-                    if (alt in selected_by):
-                        reconfigurations.append(sel_feat)
-                        table[(sel_feat, state_name)] = rule.getName()
-                    # It is not allowed to deselect a mandatory alt.
-                for opt in available_opts_feats:
-                    sel_feat = 'select_' + str(opt.getName())
-                    desel_feat = 'deselect_' + str(opt.getName())
+                for selected_feature in selected_by:
+                    for conf in all_configurations:
 
-                    if (opt in selected_by):
-                        reconfigurations.append(sel_feat)
-                        table[(sel_feat, state_name)] = str(rule.getName())
-                    if (opt in deselected_by):
-                        reconfigurations.append(desel_feat)
-                        table[(desel_feat, state_name)] = str(rule.rule.getName())
+                        if str(selected_feature.getName()) in conf:
+                            table[(str(conf), state_name)] = str(rule.getName())
+                for deselected_feature in deselected_by:
+                    for conf in all_configurations:
+                        if not (str(deselected_feature.getName()) in conf):
+                            table[(str(conf), state_name)] = str(rule.getName())
+                # for alt in available_alts_feats:
+                #     sel_feat = 'select_' + str(alt.getName())
+
+                #     if (alt in selected_by):
+                #         reconfigurations.append(sel_feat)
+                #         table[(sel_feat, state_name)] = rule.getName()
+                #     # It is not allowed to deselect a mandatory alt.
+                # for opt in available_opts_feats:
+                #     sel_feat = 'select_' + str(opt.getName())
+                #     desel_feat = 'deselect_' + str(opt.getName())
+
+                #     if (opt in selected_by):
+                #         reconfigurations.append(sel_feat)
+                #         table[(sel_feat, state_name)] = str(rule.getName())
+                #     if (opt in deselected_by):
+                #         reconfigurations.append(desel_feat)
+                #         table[(desel_feat, state_name)] = str(rule.rule.getName())
+
+        self.logger.info(f"table {str(table)}")
 
         return state_dict, table, reconfigurations
 
@@ -692,36 +807,38 @@ class TacticalRetreatInterface:
     #     query_result = self.fetch_reconfiguration_plan(tactic_rule)
     #     return AdaptationPlan.from_typedb_results(query_result)
 
-    def get_reconfiguration_plan_compact(self, feature_name: str, vation: str) -> list[str]:
-        pass
-        # try:
-        #     query_result = self.fetch_reconfiguration_plan_compact(feature_name, vation)
-        #     actions_with_index: list[tuple[int, str]] = []
-        #     for ftch in query_result:
-        #         actions_with_index.append(
-        #             (ftch["index"]["value"], ftch["action_name"]["value"]))
-        #     ordered_actions = [
-        #         action for _, action in sorted(actions_with_index, key=lambda pair: pair[0])
-        #     ]
+    def get_reconfiguration_plan_compact(self, configuration_string: str, action_name: str) -> list[str]:
+        configuration = set(eval(configuration_string))
+        current_configuration = set(self.action_currconf[action_name])
+        deselection_set = current_configuration - configuration
+        selection_set = configuration - current_configuration
+        reconfigurations = []
+        for feat in deselection_set:
+            desels = self.resolver.deselectionActions(feat)
+            if (not desels.isEmpty()):
+                reconfigurations.extend(list(desels))
 
-        # except Exception as e:
-        #     raise e
+        for feat in selection_set:
+            sels = self.resolver.selectionActions(feat)
+            if (not sels.isEmpty()):
+                reconfigurations.extend(list(sels))
 
-        # return ordered_actions
+        self.action_currconf[action_name] = configuration
+        return [str(self.namer.uniqueName(reconf)) for reconf in reconfigurations]
 
     # TODO: use dict?
-    def lifecycleStateToTransition(self, j_lc_state: LifeCycleState):
-        if (j_lc_state == LifeCycleState.UNCONFIGURED):
+    def lifecycleStateToTransition(self, j_lc_state: LifecycleState):
+        if (j_lc_state == LifecycleState.UNCONFIGURED):
             return Transition(id=Transition.TRANSITION_CLEANUP),
-        if (j_lc_state == LifeCycleState.INACTIVE):
+        if (j_lc_state == LifecycleState.INACTIVE):
             return Transition(id=Transition.TRANSITION_DEACTIVATE),
-        if (j_lc_state == LifeCycleState.ACTIVE):
+        if (j_lc_state == LifecycleState.ACTIVE):
             return Transition(id=Transition.TRANSITION_ACTIVATE)
-        if (j_lc_state == LifeCycleState.FINALIZED):
+        if (j_lc_state == LifecycleState.FINALIZED):
             return Transition(id=Transition.TRANSITION_ACTIVE_SHUTDOWN)
 
     def paramToRosParameterMsg(self, j_param, j_param_value):
-        param_name = j_param.getName()
+        param_name = str(j_param.getName())
         param_value = valueOf(j_param_value)
         return Parameter(param_name, value=param_value).to_parameter_msg()
 
@@ -747,23 +864,67 @@ class TacticalRetreatInterface:
 
         resolution_to_adaptations = {}
         for j_resolution in self.resolutionModel.getResolutions():
-            j_resolution.getSelection_actions()
+            for sel_ac in j_resolution.getSelection_actions():
+                reconf_name = str(self.namer.uniqueName(sel_ac))
+                resolution_to_adaptations[reconf_name] = [self.reconfigurationToAdaptation(sel_ac)]
+            for desel_ac in j_resolution.getDeselection_actions():
+                reconf_name = str(self.namer.uniqueName(desel_ac))
+                resolution_to_adaptations[reconf_name] = [self.reconfigurationToAdaptation(desel_ac)]
 
-            
-            j_resolution.getDeselection_actions()
+        return resolution_to_adaptations
 
-        # logger.info("Testsss")
-        # query_result = self.fetch_resolution_adaptations()
-        # logger.info("1")
+    def eval_bound(self, value, j_bound_pair):
+        if (value is None):
+            return False
+        lower_bound = _value_from_lit(j_bound_pair.getKey())
+        logger.info(f"lb {str(lower_bound)}")
+        upper_bound = _value_from_lit(j_bound_pair.getValue())
+        logger.info(f"ub {str(upper_bound)}")
 
-        # resolution_to_adaptations = {}
-        # for part in query_result:
-        #     actions = []
-        #     for lifecycle_entry in part.get('set_lifecycle_action', []):
-        #         actions.append(_parse_lifecycle_action(lifecycle_entry))
+        low_bound_eval = True
 
-        #     for parameter_entry in part.get('set_parameter_action', []):
-        #         actions.append(_parse_parameter_action(parameter_entry))
-        #     resolution_to_adaptations[part["action_name"]["value"]] = actions
-        # logger.info("2")
-        # return resolution_to_adaptations
+        if (lower_bound is not None):
+            low_bound_eval = value >= lower_bound
+
+        up_bound_eval = True
+
+        if (upper_bound is not None):
+            up_bound_eval = value < upper_bound
+
+        return (low_bound_eval and up_bound_eval)
+
+    def eval_bool_condition(self, value, j_bool_value):
+        if (value is None):
+            return False
+        bool_value = bool(j_bool_value)
+
+        return value == bool_value
+
+    def get_current_state_action(self, action_name, logger):
+        logger.info("Fetching state internal")
+        j_states = self.j_states_map[action_name]
+        measures: dict = self.latest_measures
+        states = []
+        # TODO: can be optimized to end as soon as any state is found.
+        for i, j_state in enumerate(j_states):
+            checks = []
+            while (all(checks)):
+                for j_entry in j_state.getContextBoundPairs():
+                    value = measures.get(j_entry.getKey().getName(), None)
+                    j_bound_pair = j_entry.getValue()
+                    logger.info(f"{str(j_bound_pair)}")
+                    checks.append(self.eval_bound(value, j_bound_pair))
+                for j_entry in j_state.getContextBoolConditions():
+                    value = measures.get(j_entry.getKey().getName(), None)
+                    j_bool_val = j_entry.getValue()
+                    checks.append(self.eval_bool_condition(value, j_bool_val))
+
+                if (all(checks)):
+                    states.append(f"state_{i}")
+                    break
+        logger.info(f"states {states}")
+        if (len(states) > 1):
+            raise Exception("More than one current state")
+        elif (len(states) == 1):
+            return states[0]
+        return None

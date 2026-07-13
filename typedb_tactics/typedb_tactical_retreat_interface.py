@@ -1420,11 +1420,17 @@ class TacticalRetreatInterface(TypeDBInterface):
         query = f"""
             match
                 $action_server isa ActionServer, has interface_name "{action_name}";
-                $s (ros_action : $action_server, rule: $associated_rule) isa state, has state_name $state_name;
-                $associated_rule isa tactic_rule, has rule_name $associated_rule_name;
+                $s (ros_action : $action_server) isa state, has state_name $state_name;
             fetch
                 $state_name;
-                $associated_rule_name;
+                    states_with_rules: {{
+                      match
+                      $s (ros_action : $action_server, rule: $associated_rule) isa state, has state_name $state_name;
+                      $associated_rule isa tactic_rule, has rule_name $associated_rule_name;
+                      fetch
+                        $associated_rule_name;
+                        $state_name;
+                    }};
         """
         return self.fetch_database(query)
 
@@ -2343,7 +2349,7 @@ class TacticalRetreatInterface(TypeDBInterface):
                     $fa ({vation}: $f) isa feature_adaptation;
                     $plan (feature_adaptation: $fa) isa reconfiguration_plan;
                     (plan:$plan, action: $res_action) isa plan_action_indexed, has action_index $index;
-                    $res_action isa resolution_action, has action_name $action_name; 
+                    $res_action isa resolution_action, has action_name $action_name;
                 fetch
                     $index;
                     $action_name;
@@ -2470,11 +2476,13 @@ class TacticalRetreatInterface(TypeDBInterface):
 
         for state_name_result in fetch_states_result:
             state_name = state_name_result['state_name']['value']
-            rule_name = state_name_result['associated_rule_name']['value']
 
-            if (state_name not in state_dict):
-                state_dict[state_name] = [rule_name]
-            else:
+            state_dict[state_name] = []
+
+        for state_name_result in fetch_states_result:
+            for state_with_rule_result in state_name_result['states_with_rules']:
+                state_name = state_with_rule_result['state_name']['value']
+                rule_name = state_with_rule_result['associated_rule_name']['value']
                 state_dict[state_name].append(rule_name)
 
         return state_dict, table, reconfigurations

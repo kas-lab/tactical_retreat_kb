@@ -227,7 +227,7 @@ class TacticalRetreatKB(Node):
                     self.get_logger()
         )
 
-        self.typedb_interface.get_fetch_policy("FollowPath")
+        # self.typedb_interface.get_fetch_policy("FollowPath")
 
         self.query_cb_group = MutuallyExclusiveCallbackGroup()
 
@@ -347,8 +347,8 @@ class TacticalRetreatKB(Node):
                     start_time = time.perf_counter()
                     self.get_logger().info('Fetching tactic actions...')
                     # res.adaptations = self.typedb_interface.get_reconfiguration_plan(req.tactic_name).actions
-                    vation = "activation" if req.activation else "deactivation"
-                    x = self.typedb_interface.get_reconfiguration_plan_compact(req.feature_name, vation)
+
+                    x = self.typedb_interface.get_reconfiguration_plan_compact(req.feature_name, req.action_name)
                     elapsed_time = time.perf_counter() - start_time
                     self.get_logger().info(
                         f'Tactic actions {x} fetched in {elapsed_time:.4f} seconds.')
@@ -550,11 +550,11 @@ class TacticalRetreatKB(Node):
 
                     for (fa, s), r in table.items():
                         t = TableEntry(state=SymbolicState(state_name=s),
-                                    feature_adaptation=fa, rule_name=r)
+                                       feature_adaptation=fa, rule_name=r)
                         entries.append(t)
 
                     states = [SymbolicState(state_name=p[0])
-                            for p in state_dict.items()]
+                              for p in state_dict.items()]
                     res.table_entries = entries
                     res.states = states
                     res.reconfigurations = reconfigurations
@@ -694,6 +694,7 @@ class TacticalRetreatKB(Node):
         self.get_logger().info(
             self.get_name() + ': on_activate() is completing.')
 
+        self.create_measures_interfaces()
         return super().on_activate(state)
 
     def on_deactivate(self, state: State) -> TransitionCallbackReturn:
@@ -736,6 +737,9 @@ class TacticalRetreatKB(Node):
         """
         measure_name = interface['measure_name']
         interface_name = interface['interface_name']
+
+        super().get_logger().info(
+                f'Making a subscription for interface_name: {interface_name}')
         ros_msg_type_str = interface['interface_type']
 
         measurement_qos = QoSProfile(reliability=QoSReliabilityPolicy.BEST_EFFORT,
@@ -775,7 +779,12 @@ class TacticalRetreatKB(Node):
             def topic_cb(msg, _node=super(), _measure_name=measure_name,
                          _measure_callable=measure_callable,
                          _function_args=callable_args):
-                res = _measure_callable(self, msg, *_function_args)
+                try:
+                    # self.get_logger().info(f"Measure cb {_measure_name}")
+                    res = _measure_callable(self, msg, *_function_args)
+                except Exception as e:
+                    self.get_logger().error('Error while using measure in subscriber Traceback:\n' + traceback.format_exc())
+                    raise e
 
                 self.measurements[_measure_name] = res
 
