@@ -119,3 +119,55 @@ class FuzzyRationalDecay(FuzzySet):
 
     def membership(self, x: float) -> float:
         return _clamp(self.curvature / (x + self.curvature))
+
+
+# --------------------------------------------------------------------------
+# Extra: shoulder / ramp sets -- not in the original TQL, but a common shape
+# for "at least X" style requirements (flat membership above a point,
+# degrading below it). Conceptually these are AscendSet / DecaySet members
+# (they'd plug into fuzzy_ascend_expression / fuzzy_decay_expression the
+# same way), they just saturate exactly at 1/0 instead of asymptotically.
+# --------------------------------------------------------------------------
+
+@dataclass
+class FuzzyRightShoulder(FuzzySet):
+    """
+    Flat plateau on the RIGHT (large x): "at least as good as `shoulder`,
+    degrading below `foot`, equally good anywhere at/above `shoulder`":
+      m(x) = 0,                              x <= foot
+      m(x) = (x - foot) / (shoulder - foot), foot < x < shoulder
+      m(x) = 1,                              x >= shoulder
+    An AscendSet-like shape with a hard-flat top instead of an asymptote.
+    e.g. FuzzyRightShoulder(foot=0.0, shoulder=0.3): anything >= 0.3 scores
+    1.0, values between 0 and 0.3 are fuzzified linearly, <= 0 scores 0.
+    """
+    foot: float
+    shoulder: float
+
+    def membership(self, x: float) -> float:
+        if x <= self.foot:
+            return 0.0
+        if x >= self.shoulder:
+            return 1.0
+        return _clamp((x - self.foot) / (self.shoulder - self.foot))
+
+
+@dataclass
+class FuzzyLeftShoulder(FuzzySet):
+    """
+    Mirror of FuzzyRightShoulder -- flat plateau on the LEFT (small x):
+    "at most as good as `shoulder`, degrading above `foot`" -- a
+    DecaySet-like shape with a hard-flat top.
+      m(x) = 1,                               x <= shoulder
+      m(x) = (foot - x) / (foot - shoulder),  shoulder < x < foot
+      m(x) = 0,                               x >= foot
+    """
+    shoulder: float
+    foot: float
+
+    def membership(self, x: float) -> float:
+        if x <= self.shoulder:
+            return 1.0
+        if x >= self.foot:
+            return 0.0
+        return _clamp((self.foot - x) / (self.foot - self.shoulder))
