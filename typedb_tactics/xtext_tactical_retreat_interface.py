@@ -75,7 +75,8 @@ from de.ovgu.featureide.fm.core.analysis.cnf.formula import FeatureModelFormula
 from de.ovgu.featureide.fm.core.configuration import Configuration, Selection, ConfigurationPropagator, ConfigurationAnalyzer
 from de.ovgu.featureide.fm.core.job import LongRunningWrapper, SliceFeatureModel
 from de.ovgu.featureide.fm.core.base import FeatureUtils
-
+from de.ovgu.featureide.fm.core.init import LibraryManager
+from de.ovgu.featureide.fm.core.init import FMCoreLibrary
 from typedb_tactics.fuzzy.fuzzy_expressions import Proposition, Expression
 from typedb_tactics.fuzzy.fuzzy_sets import FuzzyTriangular, FuzzyRightShoulder
 from typedb_tactics.fuzzy.relaxed_requirements import AsCloseAsPossibleExpression, ShallExpression, AsManyAsPossibleExpression
@@ -216,16 +217,24 @@ class TacticalRetreatInterface:
 
             self.DSLFeatureModel = root_obj
 
-            for j_action_rule in self.tacticsModel.getActionRules():
-                self.j_states_map = TQLGenerator.createStates(self.tacticsModel,
-                                                              self.requirementsModel,
-                                                              consider_features_in_state)
-                for key in self.j_states_map.keySet():
-                    self.logger.info(f"{str(key)} - \
-                                      {str(self.j_states_map.get(key).size())} states generated")
+            # for j_action_rule in self.tacticsModel.getActionRules():
+            #     self.j_states_map = TQLGenerator.createStates(self.tacticsModel,
+            #                                                   self.requirementsModel,
+            #                                                   consider_features_in_state)
+            #     for key in self.j_states_map.keySet():
+            #         self.logger.info(f"{str(key)} - \
+            #                           {str(self.j_states_map.get(key).size())} states generated")
+
+            self.j_states = TQLGenerator.createStates(self.contextModel)
+
+            self.logger.info(f"{str(self.j_states.size())} states generated")
+            for j_state in self.j_states:
+                self.logger.info(f"{str(j_state.describe())} states generated")
 
         self.namer = NameProvider()
         self.namer.register(ResolutionNameProvider())
+
+        LibraryManager.registerLibrary(FMCoreLibrary.getInstance())
 
         path = Files.createTempFile("featuremodel", ".xml")
         fw = FileWriter(path.toFile(), True)
@@ -242,7 +251,6 @@ class TacticalRetreatInterface:
 
         fw.write(conf_xml)
         fw.close()
-
         self.featureModel = FeatureModelManager.load(path)
 
         # formula = FeatureModelFormula(self.featureModel)
@@ -728,7 +736,8 @@ class TacticalRetreatInterface:
         # available_opts_feats = []
         # self._subtree_features(j_feature, available_opts_feats, self._isOptional)
 
-        for i, j_state in enumerate(self.j_states_map.get(action_name)):
+        # for i, j_state in enumerate(self.j_states_map.get(action_name)):
+        for i, j_state in enumerate(self.j_states):
             state_name = str(j_state.name())
             state_dict[state_name] = []
             if (int(j_state.associatedRules.size()) > 0):
@@ -867,7 +876,8 @@ class TacticalRetreatInterface:
 
     def get_current_state_action(self, action_name, logger):
         # logger.info("Fetching state internal")
-        j_states = self.j_states_map[action_name]
+        # j_states = self.j_states_map[action_name]
+        j_states = self.j_states
         measures: dict = self.latest_measures
         states = []
         # TODO: can be optimized to end as soon as any state is found.
