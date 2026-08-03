@@ -527,13 +527,13 @@ class TacticalRetreatKB(Node):
                     res.success = False
                     if (current_state_string is not None):
                         res.current_state = SymbolicState(state_name=str(current_state_string),
-                                                        header=self.create_header())
+                                                          header=self.create_header())
                         res.success = True
                     # self.get_logger().info(
                         # f'current_state result: {current_state_string}')
                     elapsed_time = time.perf_counter() - start_time
                     self.get_logger().info(
-                        f'current_state retrieved in {elapsed_time:.4f} seconds.')
+                        f'current_state {str(current_state_string)} retrieved in {elapsed_time:.4f} seconds.')
                 except Exception as e:
                     self.get_logger().error(
                         f'Error fetching state: {e}')

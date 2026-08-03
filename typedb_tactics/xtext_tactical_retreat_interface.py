@@ -47,32 +47,42 @@ from eu.coresense.requirements import RequirementsModelStandaloneSetupGenerated
 from eu.coresense.adaptation import TacticsStandaloneSetupGenerated
 
 from org.eclipse.xtext.resource import XtextResourceSet
+from org.eclipse.xtext.serializer import ISerializer
 from eu.coresense.common import NameProvider
 from eu.coresense.context.generator import ContextNameProvider
 from eu.coresense.resolution.generator import ResolutionNameProvider
 from eu.coresense.adaptation.generator import TacticsNameProvider
-from eu.coresense.common import RosNameProvider, MathOperator, Literal, IntLiteral, DecimalLiteral, StringLiteral, BooleanLiteral
+from eu.coresense.common import RosNameProvider, MathOperator, Literal, IntLiteral, DecimalLiteral
+from eu.coresense.common import StringLiteral, BooleanLiteral
 
-from eu.coresense.adaptation.tactics import TacticsModel, AtomicRule, ConditionAction, MeasurementThresholdCondition, MeasurementMeasurementCondition, LogicalOperator, AtomicActionDeselectFeature, AtomicActionSelectFeature
+from eu.coresense.adaptation.tactics import TacticsModel, AtomicRule, ConditionAction
+from eu.coresense.adaptation.tactics import MeasurementThresholdCondition, LogicalOperator
+from eu.coresense.adaptation.tactics import AtomicActionDeselectFeature, AtomicActionSelectFeature
+from eu.coresense.adaptation.tactics import TacticsFactory
 from eu.coresense.requirements.generator import RequirementsModelGenerator
-from eu.coresense.requirements.requirementsModel import RequirementsModel, AsCloseLit, Shall, Negation, CompoundExpression, Quantifiable, AsAsPossible
+from eu.coresense.requirements.requirementsModel import RequirementsModel, AsCloseLit, Shall
+from eu.coresense.requirements.requirementsModel import Negation, CompoundExpression
+from eu.coresense.requirements.requirementsModel import Quantifiable, AsAsPossible
 from eu.coresense.requirements.requirementsModel import FuzzyTriangular as J_FuzzyTriangular
 from eu.coresense.requirements.requirementsModel import FuzzyRightShoulder as J_FuzzyRightShoulder
 
-from eu.coresense.resolution.resolutionModel import ResolutionModel, Reconfiguration, SetParam, SetLifecycle, LifecycleState
-from eu.coresense.context.contextModel import ContextModel, QualifiedPublisherRef, QualifiedActionServerRef, QualifiedServiceServerRef
+from eu.coresense.resolution.resolutionModel import ResolutionModel, Reconfiguration, SetParam
+from eu.coresense.resolution.resolutionModel import SetLifecycle, LifecycleState
+from eu.coresense.context.contextModel import ContextModel, QualifiedPublisherRef
+from eu.coresense.context.contextModel import QualifiedActionServerRef, QualifiedServiceServerRef
 from uma.caosd.rhea.AdvancedConstraintsFMmetamodel import AdvancedConstraintsFMmetamodelPackage
 from uma.caosd.rhea.BasicFMmetamodel import Feature, Alternative, OrGroup
 from java.lang import String, Integer
 from java.util import HashSet, ArrayList
 from java.nio.file import Files
 from java.io import FileWriter
-from ros import ParameterBoolean, ParameterInteger, ParameterDouble, ParameterString, ParameterSequence
+from ros import ParameterBoolean, ParameterInteger, ParameterDouble
+from ros import ParameterString, ParameterSequence
 from eu.coresense.variability.generator import FeatureModelGenerator
 from de.ovgu.featureide.fm.core.io.manager import FeatureModelManager, ConfigurationIO
 
 from de.ovgu.featureide.fm.core.analysis.cnf.formula import FeatureModelFormula
-from de.ovgu.featureide.fm.core.configuration import Configuration, Selection, ConfigurationPropagator, ConfigurationAnalyzer
+from de.ovgu.featureide.fm.core.configuration import Configuration, ConfigurationAnalyzer
 from de.ovgu.featureide.fm.core.job import LongRunningWrapper, SliceFeatureModel
 from de.ovgu.featureide.fm.core.base import FeatureUtils
 from de.ovgu.featureide.fm.core.init import LibraryManager
@@ -80,7 +90,7 @@ from de.ovgu.featureide.fm.core.init import FMCoreLibrary
 from typedb_tactics.fuzzy.fuzzy_expressions import Proposition, Expression
 from typedb_tactics.fuzzy.fuzzy_sets import FuzzyTriangular, FuzzyRightShoulder
 from typedb_tactics.fuzzy.relaxed_requirements import AsCloseAsPossibleExpression, ShallExpression, AsManyAsPossibleExpression
-
+from eu.coresense.adaptation.generator import State, TQLGenerator
 
 
 logger = logging.getLogger(__name__)
@@ -92,7 +102,7 @@ def instanceis(clas, obj):
 
 def _value_from_lit(lit):
     if (isinstance(lit, DecimalLiteral)):
-        return float((DecimalLiteral @ lit).getValue().longValue())
+        return float((DecimalLiteral @ lit).getValue().floatValue())
     if (isinstance(lit, IntLiteral)):
         return int((IntLiteral @ lit).getValue())
     if (isinstance(lit, StringLiteral)):
@@ -161,16 +171,16 @@ class TacticalRetreatInterface:
         self.ros2Resources = self.load_model("ros2", Ros2StandaloneSetupGenerated(), ros2_path)
         self.rosSystemResources = self.load_model("rossystem", RosSystemStandaloneSetupGenerated(),
                                                   rossystem_path)
-        fmResources = self.load_model("var", FeatureModelStandaloneSetupGenerated(), var_path)
-        resSources = self.load_model("resolution", ResolutionModelStandaloneSetupGenerated(),
-                                     resolution_path)
-        contextResources = self.load_model("context", ContextModelStandaloneSetupGenerated(),
-                                           context_path)
-        requirementsResources = self.load_model("reqs",
-                                                RequirementsModelStandaloneSetupGenerated(),
-                                                reqs_path)
-        tacticsResources = self.load_model("tactics", TacticsStandaloneSetupGenerated(),
-                                           tactics_path)
+        fmResources, _ = self.load_model("var", FeatureModelStandaloneSetupGenerated(), var_path)
+        resSources, _ = self.load_model("resolution", ResolutionModelStandaloneSetupGenerated(),
+                                        resolution_path)
+        contextResources, _ = self.load_model("context", ContextModelStandaloneSetupGenerated(),
+                                              context_path)
+        requirementsResources, _ = self.load_model("reqs",
+                                                   RequirementsModelStandaloneSetupGenerated(),
+                                                   reqs_path)
+        tacticsResources, self.tacticsInjector = self.load_model("tactics", TacticsStandaloneSetupGenerated(),
+                                                                 tactics_path)
 
         self.tacticsModelResource = tacticsResources.get(0)
         self.tacticsModel = (TacticsModel) @ self.tacticsModelResource.getContents().get(0)
@@ -189,7 +199,6 @@ class TacticalRetreatInterface:
 
         self.resolver = Resolver(self.resolutionModel)
         if (generate_state):
-            from eu.coresense.adaptation.generator import State, TQLGenerator
             TQLGenerator.setGlobalResource(self.tacticsModelResource)
 
             if hasattr(fmResources, "get"):
@@ -229,7 +238,7 @@ class TacticalRetreatInterface:
 
             self.logger.info(f"{str(self.j_states.size())} states generated")
             for j_state in self.j_states:
-                self.logger.info(f"{str(j_state.describe())} states generated")
+                self.logger.info(f"{str(State.render(j_state.precondition))} states generated")
 
         self.namer = NameProvider()
         self.namer.register(ResolutionNameProvider())
@@ -273,6 +282,7 @@ class TacticalRetreatInterface:
             self.traverseExpression(j_req.getExpression(), some_list)
             self.traversed_requirements[j_req] = some_list
 
+        # self.to_xtext(first_state)
         # LongRunningWrapper.runMethod(propagator.update())
 
         # self.logger.info(f"conf aft ? {str(self.fmConfiguration.getSelectedFeatureNames())}")
@@ -282,6 +292,49 @@ class TacticalRetreatInterface:
         #     self.logger.warning("Update produced an invalid/contradictory configuration!")
 
         self.logger.info("ready")
+
+    def to_xtext(self, j_state):
+
+        TacticsFactory.eINSTANCE.createMeasurementCondition()
+        j_context_guard = TacticsFactory.eINSTANCE.createContextGuard()
+        j_context_guard.setContextCondition(j_state.precondition)
+        j_condition_action = TacticsFactory.eINSTANCE.createConditionAction()
+        j_atomic_rule = TacticsFactory.eINSTANCE.createAtomicRule()
+        j_condition_action.setContextGuard(j_context_guard)
+
+        res_model = TQLGenerator.getResolutionModel(self.tacticsModel, self.tacticsModelResource).get(Integer @ 0)
+
+        j_f_qref = TacticsFactory.eINSTANCE.createQualifiedFeatureRef()
+        j_f_qref.setModel(res_model)
+        j_f_qref.setFeature(res_model.getResolutions().get(Integer @ 0).getFeatureRef().getFeature())
+
+        j_a = TacticsFactory.eINSTANCE.createAtomicActionSelectFeature()
+        j_a.setVariant(j_f_qref)
+
+        j_b = TacticsFactory.eINSTANCE.createAtomicAction()
+        j_b.getActions().add(j_a)
+        j_condition_action.setAtomicAction(j_b)
+
+        j_atomic_rule.setRuleBody(j_condition_action)  # condition action extends rulebody
+        j_atomic_rule.setName("placeholder")
+        # j_tactics_model = TacticsFactory.eINSTANCE.createTacticsModel()
+        j_action_rules = TacticsFactory.eINSTANCE.createActionRules()
+        j_action_rules.getAdaptationRules().add(j_atomic_rule)
+
+        j_func_map = self.resolutionModel.getFunctionalMapping().get(Integer @ 0)
+        j_action_rules.setAction(j_func_map.getAction())
+
+        self.tacticsModel.getActionRules().get(Integer @ 0).getAdaptationRules().add(j_atomic_rule)
+
+        # injector = TacticsStandaloneSetupGenerated().createInjectorAndDoEMFRegistration()
+        serializer = self.tacticsInjector.getInstance(ISerializer.class_)
+
+        # self.tacticsModelResource.getContents().add(j_tactics_model)
+        dslText = serializer.serialize(self.tacticsModel)
+
+        self.logger.info(f"dsltext {str(dslText)}")
+        # createActionRules
+        # createAdaptationRule
 
     def to_fuzzy(self, j_expression_list: list) -> Optional[Expression]:
         j_expression = j_expression_list[0]
@@ -331,15 +384,15 @@ class TacticalRetreatInterface:
         self.logger.info(f"{YELLOW_BOLD}{msg}{RESET}")
 
     def load_model(self, ext, setup_obj, path):
-        resources = RosToolingSupport.loadModel(
+        loadresult = RosToolingSupport.loadModel(
             setup_obj,
             self.resSet,
             ext,
             path,
         )
 
-        self.progress_message(f"Loaded {int(resources.size())}.{ext} files")
-        return resources
+        self.progress_message(f"Loaded {int(loadresult.resources.size())}.{ext} files")
+        return loadresult.resources, loadresult.injector
 
     def getContextVar(self, string_name):
         for contextVar in self.contextModel.getEnvironmental_variables():
@@ -440,10 +493,13 @@ class TacticalRetreatInterface:
             for j_adaptation_rule in j_action_rule.getAdaptationRules():
                 if (str(j_adaptation_rule.getName()) in tactic_names):
                     j_condition_action = self._get_condition_action(j_adaptation_rule)
-                    j_measurement_condition = j_condition_action.getContextGuard() \
-                        .getContextCondition()
-                    satisfied.append(self._eval_measurement_condition(j_measurement_condition,
-                                                                      measures))
+                    if (j_condition_action.getContextGuard() is not None):
+                        j_measurement_condition = j_condition_action.getContextGuard() \
+                            .getContextCondition()
+                        satisfied.append(self._eval_measurement_condition(j_measurement_condition,
+                                                                          measures))
+                    else:
+                        satisfied.append(True)
 
         return satisfied
 
@@ -851,9 +907,7 @@ class TacticalRetreatInterface:
         if (value is None):
             return False
         lower_bound = _value_from_lit(j_bound_pair.getKey())
-        logger.info(f"lb {str(lower_bound)}")
         upper_bound = _value_from_lit(j_bound_pair.getValue())
-        logger.info(f"ub {str(upper_bound)}")
 
         low_bound_eval = True
 
@@ -887,7 +941,6 @@ class TacticalRetreatInterface:
                 for j_entry in j_state.getContextBoundPairs():
                     value = measures.get(j_entry.getKey().getName(), None)
                     j_bound_pair = j_entry.getValue()
-                    # logger.info(f"{str(j_bound_pair)}")
                     checks.append(self.eval_bound(value, j_bound_pair))
                 for j_entry in j_state.getContextBoolConditions():
                     value = measures.get(j_entry.getKey().getName(), None)
