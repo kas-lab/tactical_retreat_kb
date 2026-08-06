@@ -48,14 +48,13 @@ from rclpy.qos import QoSHistoryPolicy
 from rclpy.qos import QoSLivelinessPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import QoSReliabilityPolicy
-import rebet_monitors.rebet_monitors as rebet_monitors_module
 
 from ros_monitors_functions.factory import MonitorFactory
-from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
+# from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
 from std_msgs.msg import Header
 from std_srvs.srv import Trigger
 
-from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+# from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 from typedb_tactics.xtext_tactical_retreat_interface import TacticalRetreatInterface as XTextInterface
 
 
@@ -234,7 +233,6 @@ class TacticalRetreatKB(Node):
         self.measurements = {}
 
         self.monitor = MonitorFactory()
-        self.monitor.load_module(rebet_monitors_module)
         # Lock for synchronizing measurement_processing and state fetching
         # self.measurement_lock = threading.Lock()
 
@@ -347,8 +345,11 @@ class TacticalRetreatKB(Node):
                     start_time = time.perf_counter()
                     self.get_logger().info('Fetching tactic actions...')
                     # res.adaptations = self.typedb_interface.get_reconfiguration_plan(req.tactic_name).actions
-
-                    x = self.typedb_interface.get_reconfiguration_plan_compact(req.feature_name, req.action_name)
+                    x = None
+                    if(req.full_configuration):
+                        x = self.typedb_interface.change_configuration(req.full_configuration_string, req.action_name)
+                    else:
+                        x = self.typedb_interface.reconfiguration(req.reconfiguration_string, req.action_name)
                     elapsed_time = time.perf_counter() - start_time
                     self.get_logger().info(
                         f'Tactic actions {x} fetched in {elapsed_time:.4f} seconds.')
@@ -593,7 +594,7 @@ class TacticalRetreatKB(Node):
 
             self.get_state = self.create_service(
                 GetState,
-                self.get_name() + '/get_state',
+                self.get_name() + '/determine_state',
                 _fetch_current_state_action_cb,
                 callback_group=self.query_cb_group
             )

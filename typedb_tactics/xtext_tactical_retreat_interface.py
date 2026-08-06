@@ -82,7 +82,7 @@ from eu.coresense.variability.generator import FeatureModelGenerator
 from de.ovgu.featureide.fm.core.io.manager import FeatureModelManager, ConfigurationIO
 
 from de.ovgu.featureide.fm.core.analysis.cnf.formula import FeatureModelFormula
-from de.ovgu.featureide.fm.core.configuration import Configuration, ConfigurationAnalyzer
+from de.ovgu.featureide.fm.core.configuration import Configuration, ConfigurationAnalyzer, ConfigurationPropagator, Selection
 from de.ovgu.featureide.fm.core.job import LongRunningWrapper, SliceFeatureModel
 from de.ovgu.featureide.fm.core.base import FeatureUtils
 from de.ovgu.featureide.fm.core.init import LibraryManager
@@ -198,33 +198,32 @@ class TacticalRetreatInterface:
             self.resolutionModelResource.getContents().get(0)
 
         self.resolver = Resolver(self.resolutionModel)
-        if (generate_state):
-            TQLGenerator.setGlobalResource(self.tacticsModelResource)
+        TQLGenerator.setGlobalResource(self.tacticsModelResource)
 
-            if hasattr(fmResources, "get"):
-                resource0 = fmResources.get(0)
-            else:
-                resource0 = fmResources[0]
+        if hasattr(fmResources, "get"):
+            resource0 = fmResources.get(0)
+        else:
+            resource0 = fmResources[0]
 
-            try:
-                from org.eclipse.emf.ecore.util import EcoreUtil
-                EcoreUtil.resolveAll(resource0)
-            except Exception:
-                pass
+        try:
+            from org.eclipse.emf.ecore.util import EcoreUtil
+            EcoreUtil.resolveAll(resource0)
+        except Exception:
+            pass
 
-            try:
-                root_obj = resource0.getContents().get(0)
-            except Exception:
-                root_obj = resource0.contents().get(0)
+        try:
+            root_obj = resource0.getContents().get(0)
+        except Exception:
+            root_obj = resource0.contents().get(0)
 
-            try:
-                from org.eclipse.emf.ecore.resource import Resource as EMFResource
-                if isinstance(root_obj, EMFResource):
-                    root_obj = root_obj.getContents().get(0)
-            except Exception:
-                pass
+        try:
+            from org.eclipse.emf.ecore.resource import Resource as EMFResource
+            if isinstance(root_obj, EMFResource):
+                root_obj = root_obj.getContents().get(0)
+        except Exception:
+            pass
 
-            self.DSLFeatureModel = root_obj
+        self.DSLFeatureModel = root_obj
 
             # for j_action_rule in self.tacticsModel.getActionRules():
             #     self.j_states_map = TQLGenerator.createStates(self.tacticsModel,
@@ -233,7 +232,7 @@ class TacticalRetreatInterface:
             #     for key in self.j_states_map.keySet():
             #         self.logger.info(f"{str(key)} - \
             #                           {str(self.j_states_map.get(key).size())} states generated")
-
+        if (generate_state):
             self.j_states = TQLGenerator.createStates(self.contextModel)
 
             self.logger.info(f"{str(self.j_states.size())} states generated")
@@ -262,7 +261,7 @@ class TacticalRetreatInterface:
         fw.close()
         self.featureModel = FeatureModelManager.load(path)
 
-        # formula = FeatureModelFormula(self.featureModel)
+        formula = FeatureModelFormula(self.featureModel)
         self.fmConfiguration = ConfigurationIO.getInstance().load(conf_path,
                                                                   FeatureModelManager
                                                                   .getInstance(path))
@@ -281,6 +280,17 @@ class TacticalRetreatInterface:
             some_list = []
             self.traverseExpression(j_req.getExpression(), some_list)
             self.traversed_requirements[j_req] = some_list
+
+        self.configurationPropagator = ConfigurationPropagator(formula, self.fmConfiguration)
+          
+        # p = LongRunningWrapper.runMethod(propagator.coverFeatures(["MPPI_DIFF"], False)) 
+        # self.logger.info(f"assertTrue ? {str(p)}")
+
+        # self.logger.info(f"assertTrue ? {str(LongRunningWrapper.runMethod(propagator.isValid()))}")
+
+
+        # self.logger.info(f"assertEquals Selection.UNDEFINED = {str(self.fmConfiguration.getSelectableFeature("MPPI_OMNI").getManual())}")
+        # self.logger.info(f"assertEquals Selection.SELECTED = {str(self.fmConfiguration.getSelectableFeature("MPPI_DIFF").getManual())}")
 
         # self.to_xtext(first_state)
         # LongRunningWrapper.runMethod(propagator.update())
@@ -701,8 +711,25 @@ class TacticalRetreatInterface:
         :return: dict of rules to feature adaptations
         """
 
-        pass
+        res = {}
+        self.logger.info("1")
+        for j_action_rule in self.tacticsModel.getActionRules():
+            self.logger.info(f"{interface_name} 2 { str(j_action_rule.getAction().getName()) }")
 
+            if(interface_name == str(j_action_rule.getAction().getName())):
+                self.logger.info("3")
+
+                for j_adap_rule in j_action_rule.getAdaptationRules():
+                    selected_by, deselected_by = self._featuresInvolvedInRule(j_adap_rule)
+                    reconfs = []
+
+                    for feat in selected_by:
+                        reconfs.append("SEL_" + str(feat.getName()))
+                    for feat in deselected_by:
+                        reconfs.append("DESEL_" + str(feat.getName()))
+                    
+                    res[str(j_adap_rule.getName())] = reconfs
+        return res
     def get_in_effect_requirement_fulfillment(self):
         ff = []
         for j_req in self.in_effect_requirements:
@@ -753,10 +780,7 @@ class TacticalRetreatInterface:
                 selected_by.append(j_simple_action.getVariant().getFeature())
         return selected_by, deselected_by
 
-    def get_fetch_policy(self, action_name: str):
-        table = {}
-        reconfigurations = []
-        state_dict = {}
+    def _find_subconfiguration(self, action_name):
         j_feature = self._functional_mapping(action_name)
         if (j_feature is None):
             raise Exception(f"Action name {action_name} not found to belong to a func mapping")
@@ -766,6 +790,16 @@ class TacticalRetreatInterface:
                                                                      subtreeFeatures, True))
         slicedFormula = FeatureModelFormula(slicedModel)
         subconf = Configuration(self.fmConfiguration, slicedFormula)
+
+        return slicedFormula, subconf
+
+
+    def get_fetch_policy(self, action_name: str):
+        table = {}
+        reconfigurations = []
+        state_dict = {}
+
+        slicedFormula, subconf = self._find_subconfiguration(action_name)
         undef_subconf = Configuration(slicedFormula)
 
         # p_available_alts = []
@@ -836,10 +870,7 @@ class TacticalRetreatInterface:
     #     query_result = self.fetch_reconfiguration_plan(tactic_rule)
     #     return AdaptationPlan.from_typedb_results(query_result)
 
-    def get_reconfiguration_plan_compact(self,
-                                         configuration_string: str, action_name: str) -> list[str]:
-        configuration = set(eval(configuration_string))
-        current_configuration = set(self.action_currconf[action_name])
+    def configuration_delta(self, current_configuration, configuration):
         deselection_set = current_configuration - configuration
         selection_set = configuration - current_configuration
         reconfigurations = []
@@ -853,8 +884,42 @@ class TacticalRetreatInterface:
             if (not sels.isEmpty()):
                 reconfigurations.extend(list(sels))
 
-        self.action_currconf[action_name] = configuration
         return [str(self.namer.uniqueName(reconf)) for reconf in reconfigurations]
+
+    def change_configuration(self, configuration_string: str, action_name: str) -> list[str]:
+        configuration = set(eval(configuration_string))
+        current_configuration = set(self.action_currconf[action_name])
+
+        self.action_currconf[action_name] = configuration
+
+        reconfigurations = self.configuration_delta(current_configuration, configuration)
+
+        return reconfigurations
+
+    def _process_selection(self, reconfigurations):
+        for reconf in reconfigurations:
+            if("DESEL_" in reconf):
+                self.fmConfiguration.setManual(reconf[6:], Selection.UNSELECTED)
+            elif("SEL_" in reconf):
+                self.fmConfiguration.setManual(reconf[4:], Selection.SELECTED)
+
+    def reconfiguration(self, reconfigurations : list[str], action_name : str) -> list[str]:
+        initial_conf = [str(f) for f in self.fmConfiguration.getSelectedFeatureNames()]
+        self.fmConfiguration.resetAutomaticValues()
+        self.logger.info(f"initialConf ? {str(initial_conf)}")
+        self._process_selection(reconfigurations)
+        LongRunningWrapper.runMethod(self.configurationPropagator.resolve())
+        self._process_selection(reconfigurations)
+        LongRunningWrapper.runMethod(self.configurationPropagator.resolve())
+        LongRunningWrapper.runMethod(self.configurationPropagator.update())
+        if(not bool(LongRunningWrapper.runMethod(self.configurationPropagator.isValid()))):
+            raise Exception("Invalid Configuration after reconfiguration!")
+
+        configuration = [str(f) for f in self.fmConfiguration.getSelectedFeatureNames()]
+
+        self.logger.info(f"postConf ? {str(configuration)}")
+
+        return self.configuration_delta(set(initial_conf), set(configuration))
 
     # TODO: use dict?
     def lifecycleStateToTransition(self, j_lc_state: LifecycleState):

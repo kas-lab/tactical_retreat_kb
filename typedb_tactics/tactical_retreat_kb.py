@@ -48,7 +48,7 @@ from rclpy.qos import QoSHistoryPolicy
 from rclpy.qos import QoSLivelinessPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import QoSReliabilityPolicy
-import rebet_monitors.rebet_monitors as rebet_monitors_module
+# import rebet_monitors.rebet_monitors as rebet_monitors_module
 
 from ros_monitors_functions.factory import MonitorFactory
 from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
@@ -184,7 +184,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
         self.measurements = {}
 
         self.monitor = MonitorFactory()
-        self.monitor.load_module(rebet_monitors_module)
+        # self.monitor.load_module(rebet_monitors_module)
 
         self.declare_parameter("do_states", True)
 
@@ -531,7 +531,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
             self.get_state = self.create_service(
                 GetState,
-                self.get_name() + '/get_state',
+                self.get_name() + '/determine_state',
                 _fetch_current_state_action_cb,
                 callback_group=self.query_cb_group
             )
