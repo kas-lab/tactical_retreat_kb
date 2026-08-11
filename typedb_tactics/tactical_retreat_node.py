@@ -13,7 +13,7 @@
 # limitations under the License.
 import rclpy
 
-from typedb_tactics.tactical_retreat_kb import TacticalRetreatKB
+# from typedb_tactics.tactical_retreat_kb import TacticalRetreatKB
 from typedb_tactics.tactical_retreat_kb_xtext import TacticalRetreatKB as TacticalRetreatKBXText
 
 
