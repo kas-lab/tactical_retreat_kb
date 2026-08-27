@@ -571,7 +571,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
 
             self.satisfied_tactic_service = self.create_service(
                 SatisfiedRule,
-                self.get_name() + '/satisfied_tactic',
+                self.get_name() + '/satisfied_rule',
                 _fetch_satisfied_tactic_cb,
                 callback_group=self.query_cb_group
             )

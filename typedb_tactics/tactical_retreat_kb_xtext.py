@@ -15,10 +15,10 @@
 import importlib
 import inspect
 import json
-import threading
 import time
 import traceback
-
+from dataclasses import dataclass
+from typing import Optional
 from adapt_x_msgs.srv import FetchResolutions
 from adapt_x_msgs.srv import FetchPlan
 from adapt_x_msgs.srv import FetchRules
@@ -57,6 +57,29 @@ from std_srvs.srv import Trigger
 # from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
 from typedb_tactics.xtext_tactical_retreat_interface import TacticalRetreatInterface as XTextInterface
 
+
+@dataclass
+class TopicMeta:
+    topic: str
+    any_message_received: bool = False
+    message_count: int = 0
+    last_msg_wall_time: Optional[float] = None
+
+    def message_received(self):
+        self.any_message_received = True
+        self.message_count += 1
+        self.last_msg_wall_time = time.time()
+
+    def seconds_since_last(self) -> Optional[float]:
+        if self.last_msg_wall_time is None:
+            return None
+        return time.time() - self.last_msg_wall_time
+
+    def has_published(self) -> bool:
+        return self.any_message_received
+
+    def count(self) -> float:
+        return self.message_count
 
 
 def publish_event(event_type: str):
@@ -210,7 +233,7 @@ class TacticalRetreatKB(Node):
         generate_state = self.get_parameter("generate_state").value
         consider_features_in_state = self.get_parameter("consider_features_in_state").value
 
-        self.typedb_interface = XTextInterface(
+        self.interface = XTextInterface(
                     resolution_path,
                     var_path,
                     context_path,
@@ -226,11 +249,13 @@ class TacticalRetreatKB(Node):
                     self.get_logger()
         )
 
-        # self.typedb_interface.get_fetch_policy("FollowPath")
+        # self.interface.get_fetch_policy("FollowPath")
 
         self.query_cb_group = MutuallyExclusiveCallbackGroup()
 
         self.measurements = {}
+        self.meta_registry = {}
+        self.composite_measurements = {}
 
         self.monitor = MonitorFactory()
         # Lock for synchronizing measurement_processing and state fetching
@@ -280,11 +305,12 @@ class TacticalRetreatKB(Node):
                 try:
                     start_time = time.perf_counter()
                     self.get_logger().info('Fetching applicable tactics...')
-                    result = self.typedb_interface.get_applicable_tactics(
+                    result = self.interface.get_applicable_tactics(
                         req.resolution_model, req.interface_name)
 
-                    res.tactic_rules = [TacticRule(name=rule_name, reconfigurations=fa_list)
-                                        for rule_name, fa_list in result.items()]
+                    res.tactic_rules = [TacticRule(name=rule_name, reconfigurations=fa_list,
+                                                   requirement_name=req_name)
+                                        for (rule_name, req_name), fa_list in result.items()]
                     elapsed_time = time.perf_counter() - start_time
                     res.success = True
 
@@ -305,8 +331,9 @@ class TacticalRetreatKB(Node):
                 try:
                     start_time = time.perf_counter()
                     self.get_logger().info('Fetching satisfied tactics...')
-                    result = self.typedb_interface.get_satisfied_tactics(
-                        req.tactic_rules)
+                    result = self.interface.get_satisfied_tactics(
+                        req.tactic_rules,
+                        req.action_name)
                     res.satisfied = result
                     res.success = True
                     elapsed_time = time.perf_counter() - start_time
@@ -323,7 +350,7 @@ class TacticalRetreatKB(Node):
                 try:
                     start_time = time.perf_counter()
                     self.get_logger().info('Fetching all resolution actions...')
-                    x = self.typedb_interface.get_resolution_adaptations(logger=self.get_logger())
+                    x = self.interface.get_resolution_adaptations(logger=self.get_logger())
                     res.resolutions = []
                     for name, adaptations in x.items():
                         res.resolutions.append(
@@ -344,12 +371,14 @@ class TacticalRetreatKB(Node):
                 try:
                     start_time = time.perf_counter()
                     self.get_logger().info('Fetching tactic actions...')
-                    # res.adaptations = self.typedb_interface.get_reconfiguration_plan(req.tactic_name).actions
+                    # res.adaptations = self.interface.get_reconfiguration_plan(req.tactic_name).actions
                     x = None
-                    if(req.full_configuration):
-                        x = self.typedb_interface.change_configuration(req.full_configuration_string, req.action_name)
+                    if (req.full_configuration):
+                        x = self.interface.change_configuration(
+                            req.full_configuration_string, req.action_name)
                     else:
-                        x = self.typedb_interface.reconfiguration(req.reconfiguration_string, req.action_name)
+                        x = self.interface.reconfiguration(req.reconfiguration_string,
+                                                                  req.action_name)
                     elapsed_time = time.perf_counter() - start_time
                     self.get_logger().info(
                         f'Tactic actions {x} fetched in {elapsed_time:.4f} seconds.')
@@ -370,7 +399,7 @@ class TacticalRetreatKB(Node):
                 try:
                     start_time = time.perf_counter()
                     self.get_logger().info('Updating running nodes...')
-                    self.typedb_interface.manual_running_nodes(req.node_names)
+                    self.interface.manual_running_nodes(req.node_names)
                     elapsed_time = time.perf_counter() - start_time
                     self.get_logger().info(
                         f'Running nodes updated in {elapsed_time:.4f} seconds.')
@@ -387,7 +416,7 @@ class TacticalRetreatKB(Node):
                     start_time = time.perf_counter()
                     self.get_logger().info('Fetching requirements fulfillment...')
 
-                    fulfillments = self.typedb_interface.get_relaxed_requirements_fulfillment(
+                    fulfillments = self.interface.get_relaxed_requirements_fulfillment(
                         req.system_name, *req.requirement_names)
 
                     res.fulfillment_values = fulfillments
@@ -405,7 +434,7 @@ class TacticalRetreatKB(Node):
                     start_time = time.perf_counter()
                     self.get_logger().info('Fetching hypothetical requirement fulfillment...')
 
-                    interface = self.typedb_interface
+                    interface = self.interface
                     fulfillment = interface.get_relaxed_requirement_hypothetical_fulfillment(
                         req.system_name, req.requirement_name, req.rule_name)
 
@@ -429,7 +458,7 @@ class TacticalRetreatKB(Node):
                         '\n\nFetching hypothetical requirements fulfillment...'
                         f'{str(req.rule_names)}')
 
-                    interface = self.typedb_interface
+                    interface = self.interface
                     fulfillment = interface.get_relaxed_requirements_hypothetical_fulfillment(
                         req.rule_names, req.system_name)
 
@@ -469,7 +498,7 @@ class TacticalRetreatKB(Node):
                 try:
                     start_time = time.perf_counter()
                     self.get_logger().info('Updating in-effect requirements...')
-                    self.typedb_interface.update_requirements_in_effect(
+                    self.interface.update_requirements_in_effect(
                         req.requirement_names, req.all_requirements)
                     elapsed_time = time.perf_counter() - start_time
                     self.get_logger().info(
@@ -486,7 +515,7 @@ class TacticalRetreatKB(Node):
                 try:
                     start_time = time.perf_counter()
                     self.get_logger().info('Updating has_param_value...')
-                    query_res = self.typedb_interface.update_feature_selected_by_param_value(
+                    query_res = self.interface.update_feature_selected_by_param_value(
                         req.feature_name)
                     self.get_logger().info(
                         f'update_feature_selected_by_param_value result: {query_res}')
@@ -505,7 +534,7 @@ class TacticalRetreatKB(Node):
                 try:
                     start_time = time.perf_counter()
                     # self.get_logger().info('Getting current state...')
-                    current_state_string = self.typedb_interface.get_current_state()
+                    current_state_string = self.interface.get_current_state()
                     # self.get_logger().info(
                     #     f'current_state result: {current_state_string}')
                     elapsed_time = time.perf_counter() - start_time
@@ -524,7 +553,7 @@ class TacticalRetreatKB(Node):
                 try:
                     start_time = time.perf_counter()
                     self.get_logger().info('Getting current state...')
-                    current_state_string = self.typedb_interface.get_current_state_action(req.action_name, self.get_logger())
+                    current_state_string = self.interface.get_current_state_action(req.action_name, self.get_logger())
                     res.success = False
                     if (current_state_string is not None):
                         res.current_state = SymbolicState(state_name=str(current_state_string),
@@ -546,7 +575,7 @@ class TacticalRetreatKB(Node):
                 try:
                     start_time = time.perf_counter()
                     self.get_logger().info('Getting rules for action...')
-                    state_dict, table, reconfigurations = self.typedb_interface.get_fetch_policy(req.action_name)
+                    state_dict, table, reconfigurations = self.interface.get_fetch_policy(req.action_name)
                     entries = []
 
                     for (fa, s), r in table.items():
@@ -636,7 +665,7 @@ class TacticalRetreatKB(Node):
 
             self.satisfied_tactic_service = self.create_service(
                 SatisfiedRule,
-                self.get_name() + '/satisfied_tactic',
+                self.get_name() + '/satisfied_rule',
                 _fetch_satisfied_tactic_cb,
                 callback_group=self.query_cb_group
             )
@@ -723,6 +752,7 @@ class TacticalRetreatKB(Node):
         self.active = False
         return super().on_cleanup(state)
 
+
     def create_measure_interface(self, interface):
         """
         Create a subscription for a measure topic using details in `topic_interface`.
@@ -736,12 +766,12 @@ class TacticalRetreatKB(Node):
         - optional: 'measurement_function_args' (str, comma-separated args)
         - optional: 'qos' (dict for QoSProfile construction)
         """
-        measure_name = interface['measure_name']
-        interface_name = interface['interface_name']
+        measure_name = interface.get('measure_name')
+        interface_name = interface.get('interface_name')
 
         super().get_logger().info(
                 f'Making a subscription for interface_name: {interface_name}')
-        ros_msg_type_str = interface['interface_type']
+        ros_msg_type_str = interface.get('interface_type')  
 
         measurement_qos = QoSProfile(reliability=QoSReliabilityPolicy.BEST_EFFORT,
                                      history=QoSHistoryPolicy.KEEP_LAST,
@@ -753,34 +783,55 @@ class TacticalRetreatKB(Node):
         function_name = (interface.get('measurement_function_name')
                          or 'get_data_field')
 
+        function_name = function_name.strip('\"')
+
         function_args_str = interface.get('measurement_function_args')
         function_args = [arg.strip() for arg in function_args_str.split(
             ',')] if function_args_str else []
 
         # function_lib = self.monitor[function_lib_name]
         # importlib.import_module(function_lib_name)
-        measure_function = self.monitor[function_name]
-        # getattr(function_lib, function_name)
-
-        # Support both stateless functions and stateful callables (classes with
-        # __call__).
-        if inspect.isclass(measure_function):
-            # Instantiate once so state is preserved across callbacks.
-            measure_callable = measure_function(*function_args)
-            callable_args = []
+        def measure_callable(node, msg): return None
+        callable_args = []
+        topic_meta = TopicMeta(interface_name)
+        if function_name in ["meta_has_published", "meta_last_published", "meta_count"]:
+            if (function_name == "meta_has_published"):
+                self.meta_registry[measure_name] = topic_meta.has_published
+            if (function_name == "meta_last_published"):
+                self.meta_registry[measure_name] = topic_meta.seconds_since_last
+            if (function_name == "meta_count"):
+                self.meta_registry[measure_name] = topic_meta.count
         else:
-            measure_callable = measure_function
-            callable_args = function_args
+            super().get_logger().info(
+                f'he: {self.monitor}')
+            measure_function = self.monitor[function_name]
+            # getattr(function_lib, function_name)
 
+            # Support both stateless functions and stateful callables (classes with
+            # __call__).
+            if inspect.isclass(measure_function):
+                # Instantiate once so state is preserved across callbacks.
+                measure_callable = measure_function(*function_args)
+            else:
+                measure_callable = measure_function
+                callable_args = function_args
+
+        if (interface.get('source') == 'Composite'):
+            self.composite_measurements[measure_name] = (interface.get("measure_names"),
+                                                         measure_callable)
         if (interface.get('source') == 'Publisher'):
             topic_type = get_ros_msg_type_from_string(ros_msg_type_str, 'msg')
             super().get_logger().info(
                 f'Making a subscription for measure: {measure_name}')
 
+            meta_entry = self.meta_registry.get(measure_name, None)
+
             def topic_cb(msg, _node=super(), _measure_name=measure_name,
                          _measure_callable=measure_callable,
-                         _function_args=callable_args):
+                         _function_args=callable_args, _metadata=topic_meta):
                 try:
+                    if topic_meta is not None:
+                        topic_meta.message_received()
                     # self.get_logger().info(f"Measure cb {_measure_name}")
                     res = _measure_callable(self, msg, *_function_args)
                 except Exception as e:
@@ -872,7 +923,7 @@ class TacticalRetreatKB(Node):
 
     def create_measures_interfaces(self):
         try:
-            measures_interfaces = self.typedb_interface.get_measures_interfaces()
+            measures_interfaces = self.interface.get_measures_interfaces()
             if (len(measures_interfaces) == 0):
                 raise Exception('No measures interfaces to create.')
 
@@ -895,18 +946,37 @@ class TacticalRetreatKB(Node):
             raise e
 
     def measurement_processing(self):
+        if self.meta_registry:
+            for (measure_name, func) in self.meta_registry.items():
+                self.measurements[measure_name] = func()
         if self.measurements:
             self.get_logger().info(f"measurements {str(self.measurements)}",
                                    throttle_duration_sec=5)
             filtered_measurements = {k: v for (k, v) in self.measurements.items() if v is not None}
             if (filtered_measurements):
-                self.typedb_interface.add_measurements(filtered_measurements, self.get_logger())
-                return
-        self.get_logger().info("No measurements to process", throttle_duration_sec=10)
+                if self.composite_measurements:
+                    self.get_logger().info("composite measurements to process")
+
+                    for (key, (var_list, func)) in self.composite_measurements.items():
+                        measures = [filtered_measurements.get(var, None) for var in var_list]
+                        if all(measure is not None for measure in measures):
+                            filtered_measurements[key] = func(self, *measures)
+                        else:
+                            self.get_logger().info("missing measurements to process")
+
+                else:
+                    self.get_logger().info("No composite measurements to process")
+
+                self.get_logger().info(f"measurements to be added {str(filtered_measurements)}",
+                                       throttle_duration_sec=5)
+                self.interface.add_measurements(filtered_measurements, self.get_logger())
+
+        else:
+            self.get_logger().info("No measurements to process", throttle_duration_sec=10)   
 
     def fetch_requirements(self):
         try:
-            reqs = self.typedb_interface.get_in_effect_requirement_fulfillment()
+            reqs = self.interface.get_in_effect_requirement_fulfillment()
             if (reqs):
                 reqs_msgs = []
                 for req in reqs:

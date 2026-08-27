@@ -68,7 +68,7 @@ from eu.coresense.requirements.requirementsModel import FuzzyRightShoulder as J_
 
 from eu.coresense.resolution.resolutionModel import ResolutionModel, Reconfiguration, SetParam
 from eu.coresense.resolution.resolutionModel import SetLifecycle, LifecycleState
-from eu.coresense.context.contextModel import ContextModel, QualifiedPublisherRef
+from eu.coresense.context.contextModel import ContextModel, QualifiedPublisherRef, QualifiedRef, CompositeRef
 from eu.coresense.context.contextModel import QualifiedActionServerRef, QualifiedServiceServerRef
 from uma.caosd.rhea.AdvancedConstraintsFMmetamodel import AdvancedConstraintsFMmetamodelPackage
 from uma.caosd.rhea.BasicFMmetamodel import Feature, Alternative, OrGroup
@@ -282,12 +282,11 @@ class TacticalRetreatInterface:
             self.traversed_requirements[j_req] = some_list
 
         self.configurationPropagator = ConfigurationPropagator(formula, self.fmConfiguration)
-          
+
         # p = LongRunningWrapper.runMethod(propagator.coverFeatures(["MPPI_DIFF"], False)) 
         # self.logger.info(f"assertTrue ? {str(p)}")
 
         # self.logger.info(f"assertTrue ? {str(LongRunningWrapper.runMethod(propagator.isValid()))}")
-
 
         # self.logger.info(f"assertEquals Selection.UNDEFINED = {str(self.fmConfiguration.getSelectableFeature("MPPI_OMNI").getManual())}")
         # self.logger.info(f"assertEquals Selection.SELECTED = {str(self.fmConfiguration.getSelectableFeature("MPPI_DIFF").getManual())}")
@@ -300,7 +299,7 @@ class TacticalRetreatInterface:
         # valid = LongRunningWrapper.runMethod(propagator.isValid())
         # if not valid:
         #     self.logger.warning("Update produced an invalid/contradictory configuration!")
-
+        self.update_requirements_in_effect(requirement_names=[], all_requirements=True)
         self.logger.info("ready")
 
     def to_xtext(self, j_state):
@@ -354,6 +353,8 @@ class TacticalRetreatInterface:
             j_fuzzy_tri = (J_FuzzyTriangular) @ j_as_close_lit.getMembershipFunction()
 
             prop = self.to_fuzzy([j_as_close_lit.getComparator()])
+            if (prop is None):
+                return None
             a = tofloat(j_fuzzy_tri.getA())
             b = tofloat(j_fuzzy_tri.getB())
             c = tofloat(j_fuzzy_tri.getC())
@@ -375,7 +376,7 @@ class TacticalRetreatInterface:
                 prop = Proposition(name=measure_name, value=mes)
                 foot = tofloat(j_fuzzy_rsh.getFoot())
                 shoulder = tofloat(j_fuzzy_rsh.getShoulder())
-                self.logger.info(f"measure_name {measure_name} foot {foot} shoulder {shoulder}")
+                # self.logger.info(f"measure_name {measure_name} foot {foot} shoulder {shoulder}")
                 fuzzy_rsh = FuzzyRightShoulder(foot=foot, shoulder=shoulder)
                 return AsManyAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_rsh)
 
@@ -403,7 +404,8 @@ class TacticalRetreatInterface:
 
             fuzzy_children: List[Expression] = [left_fuzzy, right_fuzzy]
             # self.logger.info(f"fuzzy children {left_child} {right_child} {fuzzy_children}")
-
+            if (any(child is None for child in fuzzy_children)):
+                return None
             if isinstance(j_expression, And):
                 return FuzzyAnd(*fuzzy_children)
 
@@ -425,7 +427,12 @@ class TacticalRetreatInterface:
             if isinstance(child, CompoundExpression):  # or negation I suppose?
                 raise NotImplementedError
 
-            return FuzzyNot(self.to_fuzzy([child]))
+            fuzzy_child = self.to_fuzzy([child])
+
+            if (fuzzy_child is not None):
+                return FuzzyNot(self.to_fuzzy([child]))
+            else:
+                return None
             # TODO: the below... is
             # if(isinstance(j_as_as_possible.getTimeFrequency(), ))
 
@@ -486,10 +493,35 @@ class TacticalRetreatInterface:
             j_rule_body = j_atomic_rule.getRuleBody()
             j_tactic_action = j_rule_body.getAction()
             if (isinstance(j_tactic_action, ConditionAction)):
-                return (ConditionAction) @ j_rule_body
+                return (ConditionAction) @ j_tactic_action
+
+    def _eval_feature_condition(self, j_feature_condition, configuration) -> bool:
+        sel_or_not = str(j_feature_condition.getNot()) == "!"
+        feature_name = str(j_feature_condition.getVariant().getFeature().getName())
+
+        res = False
+        j_second_term = j_feature_condition.getSecondTerm()
+        j_log_op = j_feature_condition.getLogicalOp()
+
+        if (sel_or_not):
+            res = feature_name in configuration
+        else:
+            res = not (feature_name in configuration)
+
+        if (j_log_op is not None) and (j_second_term is not None):
+            if (j_log_op == LogicalOperator.AND):
+                self.logger.info("and")
+
+                return (res and self._eval_measurement_condition(j_second_term, configuration))
+            if (j_log_op == LogicalOperator.OR):
+                self.logger.info("OR")
+
+                return (res or self._eval_measurement_condition(j_second_term, configuration))
+
+        return res
 
     def _eval_measurement_condition(self, j_measurement_condition, measures) -> bool:
-        self.logger.info("called")
+        # self.logger.info("called")
 
         context_var_name = str(j_measurement_condition
                                .getMeasurement().getName())
@@ -525,8 +557,8 @@ class TacticalRetreatInterface:
 
         j_log_op = j_measurement_condition.getLogicalOp()
         j_second_term = j_measurement_condition.getSecondTerm()
-        self.logger.info(f"loggg op {str(j_log_op)}")
-        self.logger.info(f"loggg op {str(j_second_term)}")
+        # self.logger.info(f"loggg op {str(j_log_op)}")
+        # self.logger.info(f"loggg op {str(j_second_term)}")
 
         # j_log_op_val = j_log_op.getValue()
         if (j_log_op is not None) and (j_second_term is not None):
@@ -543,18 +575,31 @@ class TacticalRetreatInterface:
 
     def get_satisfied_tactics(
             self,
-            tactic_names: List[str]) -> List[bool]:
+            tactic_names: List[str],
+            action_name) -> List[bool]:
         measures = self.latest_measures
         satisfied = []
+
+        current_configuration = set(self.action_currconf[action_name])
+
         for j_action_rule in self.tacticsModel.getActionRules():
             for j_adaptation_rule in j_action_rule.getAdaptationRules():
                 if (str(j_adaptation_rule.getName()) in tactic_names):
                     j_condition_action = self._get_condition_action(j_adaptation_rule)
-                    if (j_condition_action.getContextGuard() is not None):
-                        j_measurement_condition = j_condition_action.getContextGuard() \
-                            .getContextCondition()
-                        satisfied.append(self._eval_measurement_condition(j_measurement_condition,
-                                                                          measures))
+                    if (j_condition_action is not None):
+                        feature_guard = True
+                        condition_guard = True
+                        if (j_condition_action.getFeatureGuard() is not None):
+                            j_feature_condition = j_condition_action.getFeatureGuard() \
+                                .getFeatureCondition()
+                            feature_guard = self._eval_feature_condition(j_feature_condition,
+                                                                         current_configuration)
+                        if (j_condition_action.getContextGuard() is not None):
+                            j_measurement_cond = j_condition_action.getContextGuard() \
+                                .getContextCondition()
+                            condition_guard = self._eval_measurement_condition(j_measurement_cond,
+                                                                               measures)
+                        satisfied.append(feature_guard and condition_guard)
                     else:
                         satisfied.append(True)
 
@@ -660,41 +705,49 @@ class TacticalRetreatInterface:
         for j_contextVar in self.contextModel.getEnvironmental_variables():
             result_dict = {}
             result_dict['measure_name'] = str(j_contextVar.getName())
-            j_qualified_ref = j_contextVar.getSource().getRef()
+            j_reference = j_contextVar.getSource().getRef()
+            if (isinstance(j_reference, QualifiedRef)):
+                j_qualified_ref = j_reference
+
             # j_node = j_contextVar.getSource().getNode()
+                if (isinstance(j_qualified_ref, QualifiedPublisherRef)):
 
-            if (isinstance(j_qualified_ref, QualifiedPublisherRef)):
-                j_pub_ref = (QualifiedPublisherRef) @ j_qualified_ref
-                result_dict['source'] = "Publisher"
-                # TODO: account for remapping
-                result_dict['interface_type'] = str(j_pub_ref.getPublisher().getMessage()
-                                                    .getFullname())
-                result_dict['interface_name'] = str(j_pub_ref.getPublisher().getName())
+                    j_pub_ref = (QualifiedPublisherRef) @ j_qualified_ref
+                    result_dict['source'] = "Publisher"
+                    # TODO: account for remapping
+                    result_dict['interface_type'] = str(j_pub_ref.getPublisher().getMessage()
+                                                        .getFullname())
+                    result_dict['interface_name'] = str(j_pub_ref.getPublisher().getName())
 
-                for interface in j_pub_ref.getNode().getRosinterfaces():
-                    reference = interface.getReference()
-                    if (isinstance(reference, RosPublisherReference)):
-                        if (reference.getFrom() == j_pub_ref.getPublisher()):
-                            result_dict['interface_name'] = str(interface.getName())
+                    for interface in j_pub_ref.getNode().getRosinterfaces():
+                        reference = interface.getReference()
+                        if (isinstance(reference, RosPublisherReference)):
+                            if (reference.getFrom() == j_pub_ref.getPublisher()):
+                                result_dict['interface_name'] = str(interface.getName())
 
-                # for j_publisher in j_node.getFrom().getPublisher():
-                #     if(str(j_publisher.getMessage().getFullname()) == result_dict['interface_type']):
-                #         self.logger.info(f"Would objects also work? {j_publisher == j_pub_ref.getPublisher()}")
-                #         result_dict['interface_name'] == 
-            if (isinstance(j_qualified_ref, QualifiedActionServerRef)):
-                j_act_ref = (QualifiedActionServerRef) @ j_qualified_ref
-                result_dict['source'] = "ActionServer"
-                result_dict['interface_type'] = str(j_act_ref.getActionServer().getAction()
-                                                    .getFullname())
-                result_dict['interface_name'] = str(j_act_ref.getActionServer().getName())
+                    # for j_publisher in j_node.getFrom().getPublisher():
+                    #     if(str(j_publisher.getMessage().getFullname()) == result_dict['interface_type']):
+                    #         self.logger.info(f"Would objects also work? {j_publisher == j_pub_ref.getPublisher()}")
+                    #         result_dict['interface_name'] == 
+                if (isinstance(j_qualified_ref, QualifiedActionServerRef)):
+                    j_act_ref = (QualifiedActionServerRef) @ j_qualified_ref
+                    result_dict['source'] = "ActionServer"
+                    result_dict['interface_type'] = str(j_act_ref.getActionServer().getAction()
+                                                        .getFullname())
+                    result_dict['interface_name'] = str(j_act_ref.getActionServer().getName())
 
-            if (isinstance(j_qualified_ref, QualifiedServiceServerRef)):
-                j_ser_ref = (QualifiedServiceServerRef) @ j_qualified_ref
-                result_dict['source'] = "ServiceServer"
-                result_dict['interface_type'] = str(j_ser_ref.getServiceServer().getService()
-                                                    .getFullname())
-                result_dict['interface_name'] = str(j_ser_ref.getServiceServer().getName())
-                result_dict["service_request_kwargs"] = str(j_contextVar.getKwargs())
+                if (isinstance(j_qualified_ref, QualifiedServiceServerRef)):
+                    j_ser_ref = (QualifiedServiceServerRef) @ j_qualified_ref
+                    result_dict['source'] = "ServiceServer"
+                    result_dict['interface_type'] = str(j_ser_ref.getServiceServer().getService()
+                                                        .getFullname())
+                    result_dict['interface_name'] = str(j_ser_ref.getServiceServer().getName())
+                    result_dict["service_request_kwargs"] = str(j_contextVar.getKwargs())
+            elif (isinstance(j_reference, CompositeRef)):
+                j_composite_ref = (CompositeRef) @ j_reference
+                result_dict['source'] = "Composite"
+                result_dict['measure_names'] = [str(j_ctxtVar.getName())
+                                                for j_ctxtVar in j_composite_ref.getContextVars()]
 
             result_dict["measurement_function_name"] = str(j_contextVar.getFunctionName())
 
@@ -750,12 +803,12 @@ class TacticalRetreatInterface:
     def get_applicable_tactics(
             self,
             resolution_model: str,
-            interface_name: str) -> None:
+            interface_name: str) -> dict:
         """
         Get all tactics that are applicable given an ROS action name and resolution model.
 
         :param resolution_model: name of the resolution model to check
-        :param interface_name: name of the ROS interface
+        :param interfafa_listce_name: name of the ROS interface
         :return: dict of rules to feature adaptations
         """
 
@@ -764,10 +817,13 @@ class TacticalRetreatInterface:
         for j_action_rule in self.tacticsModel.getActionRules():
             self.logger.info(f"{interface_name} 2 { str(j_action_rule.getAction().getName()) }")
 
-            if(interface_name == str(j_action_rule.getAction().getName())):
+            if (interface_name == str(j_action_rule.getAction().getName())):
                 self.logger.info("3")
 
                 for j_adap_rule in j_action_rule.getAdaptationRules():
+
+                    j_atomic_rule = (AtomicRule) @ j_adap_rule
+                    req_name = j_atomic_rule.getRuleBody().getTrigger().getRequirement().getName()
                     selected_by, deselected_by = self._featuresInvolvedInRule(j_adap_rule)
                     reconfs = []
 
@@ -775,9 +831,11 @@ class TacticalRetreatInterface:
                         reconfs.append("SEL_" + str(feat.getName()))
                     for feat in deselected_by:
                         reconfs.append("DESEL_" + str(feat.getName()))
-                    
-                    res[str(j_adap_rule.getName())] = reconfs
+
+                    res[(str(j_adap_rule.getName()), str(req_name))] = reconfs
+
         return res
+
     def get_in_effect_requirement_fulfillment(self):
         ff = []
         for j_req in self.in_effect_requirements:
@@ -841,7 +899,6 @@ class TacticalRetreatInterface:
         subconf = Configuration(self.fmConfiguration, slicedFormula)
 
         return slicedFormula, subconf
-
 
     def get_fetch_policy(self, action_name: str):
         table = {}
@@ -947,12 +1004,12 @@ class TacticalRetreatInterface:
 
     def _process_selection(self, reconfigurations):
         for reconf in reconfigurations:
-            if("DESEL_" in reconf):
+            if ("DESEL_" in reconf):
                 self.fmConfiguration.setManual(reconf[6:], Selection.UNSELECTED)
-            elif("SEL_" in reconf):
+            elif ("SEL_" in reconf):
                 self.fmConfiguration.setManual(reconf[4:], Selection.SELECTED)
 
-    def reconfiguration(self, reconfigurations : list[str], action_name : str) -> list[str]:
+    def reconfiguration(self, reconfigurations: list[str], action_name: str) -> list[str]:
         initial_conf = [str(f) for f in self.fmConfiguration.getSelectedFeatureNames()]
         self.fmConfiguration.resetAutomaticValues()
         self.logger.info(f"initialConf ? {str(initial_conf)}")
@@ -961,7 +1018,7 @@ class TacticalRetreatInterface:
         self._process_selection(reconfigurations)
         LongRunningWrapper.runMethod(self.configurationPropagator.resolve())
         LongRunningWrapper.runMethod(self.configurationPropagator.update())
-        if(not bool(LongRunningWrapper.runMethod(self.configurationPropagator.isValid()))):
+        if (not bool(LongRunningWrapper.runMethod(self.configurationPropagator.isValid()))):
             raise Exception("Invalid Configuration after reconfiguration!")
 
         configuration = [str(f) for f in self.fmConfiguration.getSelectedFeatureNames()]
