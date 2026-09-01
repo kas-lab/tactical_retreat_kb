@@ -65,6 +65,8 @@ from eu.coresense.requirements.requirementsModel import Negation, CompoundExpres
 from eu.coresense.requirements.requirementsModel import Quantifiable, AsAsPossible
 from eu.coresense.requirements.requirementsModel import FuzzyTriangular as J_FuzzyTriangular
 from eu.coresense.requirements.requirementsModel import FuzzyRightShoulder as J_FuzzyRightShoulder
+from eu.coresense.requirements.requirementsModel import FuzzyLeftShoulder as J_FuzzyLeftShoulder
+
 
 from eu.coresense.resolution.resolutionModel import ResolutionModel, Reconfiguration, SetParam
 from eu.coresense.resolution.resolutionModel import SetLifecycle, LifecycleState
@@ -88,7 +90,7 @@ from de.ovgu.featureide.fm.core.base import FeatureUtils
 from de.ovgu.featureide.fm.core.init import LibraryManager
 from de.ovgu.featureide.fm.core.init import FMCoreLibrary
 from typedb_tactics.fuzzy.fuzzy_expressions import Proposition, Expression, FuzzyAnd, FuzzyOr, FuzzyNot
-from typedb_tactics.fuzzy.fuzzy_sets import FuzzyTriangular, FuzzyRightShoulder
+from typedb_tactics.fuzzy.fuzzy_sets import FuzzyTriangular, FuzzyRightShoulder, FuzzyLeftShoulder
 from typedb_tactics.fuzzy.relaxed_requirements import AsCloseAsPossibleExpression, ShallExpression, AsManyAsPossibleExpression
 from eu.coresense.adaptation.generator import State, TQLGenerator
 
@@ -159,7 +161,7 @@ class TacticalRetreatInterface:
                  tactics_path: str = "",
                  require_nodes_running: bool = False,
                  verify_parameters: bool = False,
-                 generate_state: bool = True,
+                 generate_state: bool = False,
                  consider_features_in_state: bool = False, logger=logger) -> None:
         RosToolingSupport.registerEPackages()
         AdvancedConstraintsFMmetamodelPackage.eINSTANCE.eClass()
@@ -379,7 +381,20 @@ class TacticalRetreatInterface:
                 # self.logger.info(f"measure_name {measure_name} foot {foot} shoulder {shoulder}")
                 fuzzy_rsh = FuzzyRightShoulder(foot=foot, shoulder=shoulder)
                 return AsManyAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_rsh)
+            if (isinstance(j_memb_func, J_FuzzyLeftShoulder)):
+                j_fuzzy_lsh = (J_FuzzyLeftShoulder) @ j_as_as_possible.getMembershipFunction()
 
+                measure_name = str(j_as_as_possible.getQuantity().getContextVariable().getName())
+
+                mes = self.latest_measures.get(measure_name, None)
+                if (mes is None):
+                    return None
+                prop = Proposition(name=measure_name, value=mes)
+                foot = tofloat(j_fuzzy_lsh.getFoot())
+                shoulder = tofloat(j_fuzzy_lsh.getShoulder())
+                # self.logger.info(f"measure_name {measure_name} foot {foot} shoulder {shoulder}")
+                fuzzy_lsh = FuzzyLeftShoulder(foot=foot, shoulder=shoulder)
+                return AsManyAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_lsh)
         if isinstance(j_expression, CompoundExpression):
             # self.logger.info(f"here!! {j_expression} {CompoundExpression} {And}")
             right_index = 2
@@ -503,7 +518,7 @@ class TacticalRetreatInterface:
         j_second_term = j_feature_condition.getSecondTerm()
         j_log_op = j_feature_condition.getLogicalOp()
 
-        if (sel_or_not):
+        if (not sel_or_not):
             res = feature_name in configuration
         else:
             res = not (feature_name in configuration)
@@ -581,6 +596,7 @@ class TacticalRetreatInterface:
         satisfied = []
 
         current_configuration = set(self.action_currconf[action_name])
+        self.logger.info(f"current_configuration {str(current_configuration)}")
 
         for j_action_rule in self.tacticsModel.getActionRules():
             for j_adaptation_rule in j_action_rule.getAdaptationRules():
@@ -599,6 +615,8 @@ class TacticalRetreatInterface:
                                 .getContextCondition()
                             condition_guard = self._eval_measurement_condition(j_measurement_cond,
                                                                                measures)
+                        # self.logger.info(f"feat guard {feature_guard} condition_guard {condition_guard}")
+                                                          
                         satisfied.append(feature_guard and condition_guard)
                     else:
                         satisfied.append(True)
@@ -814,16 +832,35 @@ class TacticalRetreatInterface:
 
         res = {}
         self.logger.info("1")
+
+        slicedFormula, subconf = self._find_subconfiguration(interface_name)
+        undef_subconf = Configuration(slicedFormula)
+
+        # p_available_alts = []
+        configurationAnalyzer = ConfigurationAnalyzer(slicedFormula, undef_subconf)
+        allConfigurations = configurationAnalyzer.getSolutions(100000)
+        all_configurations = []
+        for k, featureList in enumerate(allConfigurations):
+            all_configurations.append(sorted({str(feature) for feature in featureList
+                                      if str(feature) != "__root__"}))
+
+        self.action_allconf[interface_name] = all_configurations
+        self.action_currconf[interface_name] = sorted({str(feat)
+                                                    for feat in subconf.getSelectedFeatureNames()})
+
+
         for j_action_rule in self.tacticsModel.getActionRules():
             self.logger.info(f"{interface_name} 2 { str(j_action_rule.getAction().getName()) }")
 
             if (interface_name == str(j_action_rule.getAction().getName())):
                 self.logger.info("3")
+                j_requirement = j_action_rule.getRequirement()
+                req_name = "None"
+                if (j_requirement is not None):
+                    req_name = j_requirement.getName()
 
                 for j_adap_rule in j_action_rule.getAdaptationRules():
 
-                    j_atomic_rule = (AtomicRule) @ j_adap_rule
-                    req_name = j_atomic_rule.getRuleBody().getTrigger().getRequirement().getName()
                     selected_by, deselected_by = self._featuresInvolvedInRule(j_adap_rule)
                     reconfs = []
 
@@ -1024,7 +1061,7 @@ class TacticalRetreatInterface:
         configuration = [str(f) for f in self.fmConfiguration.getSelectedFeatureNames()]
 
         self.logger.info(f"postConf ? {str(configuration)}")
-
+        self.action_currconf[action_name] = configuration
         return self.configuration_delta(set(initial_conf), set(configuration))
 
     # TODO: use dict?
