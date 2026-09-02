@@ -65,10 +65,11 @@ class TopicMeta:
     message_count: int = 0
     last_msg_wall_time: Optional[float] = None
 
-    def message_received(self):
-        self.any_message_received = True
-        self.message_count += 1
-        self.last_msg_wall_time = time.time()
+    def message_received(self, msg, criteria = lambda a: True):
+        if(criteria(msg)):
+            self.any_message_received = True
+            self.message_count += 1
+            self.last_msg_wall_time = time.time()
 
     def seconds_since_last(self) -> Optional[float]:
         if self.last_msg_wall_time is None:
@@ -830,8 +831,11 @@ class TacticalRetreatKB(Node):
                          _measure_callable=measure_callable,
                          _function_args=callable_args, _metadata=topic_meta):
                 try:
-                    if topic_meta is not None:
-                        topic_meta.message_received()
+                    if self.meta_registry.get(measure_name, None) is not None:
+                        if(function_args == []):
+                            topic_meta.message_received(msg)
+                        else:
+                            topic_meta.message_received(msg, self.monitor[function_args[0]])
                     # self.get_logger().info(f"Measure cb {_measure_name}")
                     res = _measure_callable(self, msg, *_function_args)
                 except Exception as e:

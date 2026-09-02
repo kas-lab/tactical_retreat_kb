@@ -55,7 +55,7 @@ from eu.coresense.adaptation.generator import TacticsNameProvider
 from eu.coresense.common import RosNameProvider, MathOperator, Literal, IntLiteral, DecimalLiteral
 from eu.coresense.common import StringLiteral, BooleanLiteral
 
-from eu.coresense.adaptation.tactics import TacticsModel, AtomicRule, ConditionAction
+from eu.coresense.adaptation.tactics import TacticsModel, ConditionAction, ActionRules, AdaptationRule
 from eu.coresense.adaptation.tactics import MeasurementThresholdCondition, LogicalOperator
 from eu.coresense.adaptation.tactics import AtomicActionDeselectFeature, AtomicActionSelectFeature
 from eu.coresense.adaptation.tactics import TacticsFactory
@@ -305,47 +305,48 @@ class TacticalRetreatInterface:
         self.logger.info("ready")
 
     def to_xtext(self, j_state):
+        #TODO: needs to be updated to new TacticsModel changes.
+        pass
+        # TacticsFactory.eINSTANCE.createMeasurementCondition()
+        # j_context_guard = TacticsFactory.eINSTANCE.createContextGuard()
+        # j_context_guard.setContextCondition(j_state.precondition)
+        # j_condition_action = TacticsFactory.eINSTANCE.createConditionAction()
+        # j_atomic_rule = TacticsFactory.eINSTANCE.createAtomicRule()
+        # j_condition_action.setContextGuard(j_context_guard)
 
-        TacticsFactory.eINSTANCE.createMeasurementCondition()
-        j_context_guard = TacticsFactory.eINSTANCE.createContextGuard()
-        j_context_guard.setContextCondition(j_state.precondition)
-        j_condition_action = TacticsFactory.eINSTANCE.createConditionAction()
-        j_atomic_rule = TacticsFactory.eINSTANCE.createAtomicRule()
-        j_condition_action.setContextGuard(j_context_guard)
+        # res_model = TQLGenerator.getResolutionModel(self.tacticsModel, self.tacticsModelResource).get(Integer @ 0)
 
-        res_model = TQLGenerator.getResolutionModel(self.tacticsModel, self.tacticsModelResource).get(Integer @ 0)
+        # j_f_qref = TacticsFactory.eINSTANCE.createQualifiedFeatureRef()
+        # j_f_qref.setModel(res_model)
+        # j_f_qref.setFeature(res_model.getResolutions().get(Integer @ 0).getFeatureRef().getFeature())
 
-        j_f_qref = TacticsFactory.eINSTANCE.createQualifiedFeatureRef()
-        j_f_qref.setModel(res_model)
-        j_f_qref.setFeature(res_model.getResolutions().get(Integer @ 0).getFeatureRef().getFeature())
+        # j_a = TacticsFactory.eINSTANCE.createAtomicActionSelectFeature()
+        # j_a.setVariant(j_f_qref)
 
-        j_a = TacticsFactory.eINSTANCE.createAtomicActionSelectFeature()
-        j_a.setVariant(j_f_qref)
+        # j_b = TacticsFactory.eINSTANCE.createAtomicAction()
+        # j_b.getActions().add(j_a)
+        # j_condition_action.setAtomicAction(j_b)
 
-        j_b = TacticsFactory.eINSTANCE.createAtomicAction()
-        j_b.getActions().add(j_a)
-        j_condition_action.setAtomicAction(j_b)
+        # j_atomic_rule.setRuleBody(j_condition_action)  # condition action extends rulebody
+        # j_atomic_rule.setName("placeholder")
+        # # j_tactics_model = TacticsFactory.eINSTANCE.createTacticsModel()
+        # j_action_rules = TacticsFactory.eINSTANCE.createActionRules()
+        # j_action_rules.getAdaptationRules().add(j_atomic_rule)
 
-        j_atomic_rule.setRuleBody(j_condition_action)  # condition action extends rulebody
-        j_atomic_rule.setName("placeholder")
-        # j_tactics_model = TacticsFactory.eINSTANCE.createTacticsModel()
-        j_action_rules = TacticsFactory.eINSTANCE.createActionRules()
-        j_action_rules.getAdaptationRules().add(j_atomic_rule)
+        # j_func_map = self.resolutionModel.getFunctionalMapping().get(Integer @ 0)
+        # j_action_rules.setAction(j_func_map.getAction())
 
-        j_func_map = self.resolutionModel.getFunctionalMapping().get(Integer @ 0)
-        j_action_rules.setAction(j_func_map.getAction())
+        # self.tacticsModel.getRules().get(Integer @ 0).getAdaptationRules().add(j_atomic_rule)
 
-        self.tacticsModel.getActionRules().get(Integer @ 0).getAdaptationRules().add(j_atomic_rule)
+        # # injector = TacticsStandaloneSetupGenerated().createInjectorAndDoEMFRegistration()
+        # serializer = self.tacticsInjector.getInstance(ISerializer.class_)
 
-        # injector = TacticsStandaloneSetupGenerated().createInjectorAndDoEMFRegistration()
-        serializer = self.tacticsInjector.getInstance(ISerializer.class_)
+        # # self.tacticsModelResource.getContents().add(j_tactics_model)
+        # dslText = serializer.serialize(self.tacticsModel)
 
-        # self.tacticsModelResource.getContents().add(j_tactics_model)
-        dslText = serializer.serialize(self.tacticsModel)
-
-        self.logger.info(f"dsltext {str(dslText)}")
-        # createActionRules
-        # createAdaptationRule
+        # self.logger.info(f"dsltext {str(dslText)}")
+        # # createActionRules
+        # # createAdaptationRule
 
     def to_fuzzy(self, j_expression_list: list) -> Optional[Expression]:
         j_expression = j_expression_list[0]
@@ -502,13 +503,12 @@ class TacticalRetreatInterface:
         # """
         # return self.insert_database(query)
 
-    def _get_condition_action(self, j_atomic_rule: AtomicRule) -> ConditionAction:
-        if (isinstance(j_atomic_rule, AtomicRule)):
-            j_atomic_rule = (AtomicRule) @ j_atomic_rule
-            j_rule_body = j_atomic_rule.getRuleBody()
-            j_tactic_action = j_rule_body.getAction()
-            if (isinstance(j_tactic_action, ConditionAction)):
-                return (ConditionAction) @ j_tactic_action
+    def _get_condition_action(self, j_atomic_rule: AdaptationRule) -> ConditionAction:
+        j_atomic_rule = (AdaptationRule) @ j_atomic_rule
+        j_rule_body = j_atomic_rule.getRuleBody()
+        j_tactic_action = j_rule_body.getAction()
+        if (isinstance(j_tactic_action, ConditionAction)):
+            return (ConditionAction) @ j_tactic_action
 
     def _eval_feature_condition(self, j_feature_condition, configuration) -> bool:
         sel_or_not = str(j_feature_condition.getNot()) == "!"
@@ -588,38 +588,53 @@ class TacticalRetreatInterface:
 
         return res
 
+    def _adaptation_rule_satisfied(self, j_adaptation_rule: AdaptationRule, tactic_names, current_configuration):
+        measures = self.latest_measures
+        #TODO: invert this, we should grab for the rules requested, not eliminate from all
+        if (str(j_adaptation_rule.getName()) in tactic_names):
+            j_condition_action = self._get_condition_action(j_adaptation_rule)
+            if (j_condition_action is not None):
+                feature_guard = True
+                condition_guard = True
+                if (j_condition_action.getFeatureGuard() is not None):
+                    j_feature_condition = j_condition_action.getFeatureGuard() \
+                        .getFeatureCondition()
+                    feature_guard = self._eval_feature_condition(j_feature_condition,
+                                                                 current_configuration)
+                if (j_condition_action.getContextGuard() is not None):
+                    j_measurement_cond = j_condition_action.getContextGuard() \
+                        .getContextCondition()
+                    condition_guard = self._eval_measurement_condition(j_measurement_cond,
+                                                                       measures)
+                    return feature_guard and condition_guard
+            else:
+                return True
+                # self.logger.info(f"feat guard {feature_guard} condition_guard {condition_guard}")              
+
     def get_satisfied_tactics(
             self,
             tactic_names: List[str],
             action_name) -> List[bool]:
-        measures = self.latest_measures
         satisfied = []
 
         current_configuration = set(self.action_currconf[action_name])
         self.logger.info(f"current_configuration {str(current_configuration)}")
 
-        for j_action_rule in self.tacticsModel.getActionRules():
-            for j_adaptation_rule in j_action_rule.getAdaptationRules():
-                if (str(j_adaptation_rule.getName()) in tactic_names):
-                    j_condition_action = self._get_condition_action(j_adaptation_rule)
-                    if (j_condition_action is not None):
-                        feature_guard = True
-                        condition_guard = True
-                        if (j_condition_action.getFeatureGuard() is not None):
-                            j_feature_condition = j_condition_action.getFeatureGuard() \
-                                .getFeatureCondition()
-                            feature_guard = self._eval_feature_condition(j_feature_condition,
-                                                                         current_configuration)
-                        if (j_condition_action.getContextGuard() is not None):
-                            j_measurement_cond = j_condition_action.getContextGuard() \
-                                .getContextCondition()
-                            condition_guard = self._eval_measurement_condition(j_measurement_cond,
-                                                                               measures)
-                        # self.logger.info(f"feat guard {feature_guard} condition_guard {condition_guard}")
-                                                          
-                        satisfied.append(feature_guard and condition_guard)
-                    else:
-                        satisfied.append(True)
+        for j_rule in self.tacticsModel.getRules():
+            if(isinstance(j_rule, ActionRules)):
+                j_action_rule = j_rule
+                for j_adaptation_rule in j_action_rule.getAdaptationRules():      
+                    sat = self._adaptation_rule_satisfied(j_adaptation_rule, tactic_names, current_configuration)
+                    if sat is not None:       
+                        satisfied.append(sat)
+
+            elif(isinstance(j_rule, AdaptationRule)):
+                j_adaptation_rule = j_rule
+                sat = self._adaptation_rule_satisfied(j_adaptation_rule, tactic_names, current_configuration)
+                if sat is not None:       
+                    satisfied.append(sat)
+
+        self.logger.info(f"satisfied {str(satisfied)}")
 
         return satisfied
 
@@ -818,6 +833,17 @@ class TacticalRetreatInterface:
         """Add new measurements."""
         self.latest_measures = measure_dict
 
+    def _reconfs(self, j_adaptation_rule):
+        selected_by, deselected_by = self._featuresInvolvedInRule(j_adaptation_rule)
+        reconfs = []
+
+        for feat in selected_by:
+            reconfs.append("SEL_" + str(feat.getName()))
+        for feat in deselected_by:
+            reconfs.append("DESEL_" + str(feat.getName()))
+        
+        return reconfs
+
     def get_applicable_tactics(
             self,
             resolution_model: str,
@@ -849,27 +875,24 @@ class TacticalRetreatInterface:
                                                     for feat in subconf.getSelectedFeatureNames()})
 
 
-        for j_action_rule in self.tacticsModel.getActionRules():
-            self.logger.info(f"{interface_name} 2 { str(j_action_rule.getAction().getName()) }")
+        for j_rule in self.tacticsModel.getRules():
+            j_requirement = j_rule.getRequirement()
+            req_name = "None"
+            if (j_requirement is not None):
+                req_name = j_requirement.getName()
 
-            if (interface_name == str(j_action_rule.getAction().getName())):
-                self.logger.info("3")
-                j_requirement = j_action_rule.getRequirement()
-                req_name = "None"
-                if (j_requirement is not None):
-                    req_name = j_requirement.getName()
+            if(isinstance(j_rule, ActionRules)):
+                j_action_rule = j_rule
+                self.logger.info(f"{interface_name} 2 { str(j_action_rule.getAction().getName()) }")
 
-                for j_adap_rule in j_action_rule.getAdaptationRules():
+                if (interface_name == str(j_action_rule.getAction().getName())):
+                    self.logger.info("3")
+                    for j_adap_rule in j_action_rule.getAdaptationRules():
+                        res[(str(j_adap_rule.getName()), str(req_name))] = self._reconfs(j_adap_rule)
 
-                    selected_by, deselected_by = self._featuresInvolvedInRule(j_adap_rule)
-                    reconfs = []
-
-                    for feat in selected_by:
-                        reconfs.append("SEL_" + str(feat.getName()))
-                    for feat in deselected_by:
-                        reconfs.append("DESEL_" + str(feat.getName()))
-
-                    res[(str(j_adap_rule.getName()), str(req_name))] = reconfs
+            elif(isinstance(j_rule, AdaptationRule)):
+                j_adap_rule = j_rule
+                res[(str(j_adap_rule.getName()), req_name)] = self._reconfs(j_adap_rule)
 
         return res
 
@@ -914,7 +937,7 @@ class TacticalRetreatInterface:
     def _featuresInvolvedInRule(self, rule):
         selected_by = []
         deselected_by = []
-        j_atomic_rule = (AtomicRule) @ rule
+        j_atomic_rule = (AdaptationRule) @ rule
         j_rule_body = j_atomic_rule.getRuleBody()
         j_atomic_action = j_rule_body.getAction().getAtomicAction()
         for j_simple_action in j_atomic_action.getActions():
