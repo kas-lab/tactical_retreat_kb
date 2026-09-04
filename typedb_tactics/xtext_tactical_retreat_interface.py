@@ -921,22 +921,22 @@ class TacticalRetreatInterface:
             if (j_feature_qual is not None):
                 all_selected_features = set().union(*self.action_currconf.values())
                 if str(j_feature_qual.getFeature().getName()) in all_selected_features:
-                    ff = self._requirement_fulfilment(j_req)
+                    req_ff = self._requirement_fulfilment(j_req)
                     if ff is not None:
                         ff.append(
                             {
                                 'requirement_name': str(j_req.getName()),
-                                'fulfillment': ff,
+                                'fulfillment': req_ff,
                                 'system': ''
                             }
                         )
             else:
-                ff = self._requirement_fulfilment(j_req)
+                req_ff = self._requirement_fulfilment(j_req)
                 if ff is not None:
                     ff.append(
                         {
                             'requirement_name': str(j_req.getName()),
-                            'fulfillment': ff,
+                            'fulfillment': req_ff,
                             'system': ''
                         }
                     )

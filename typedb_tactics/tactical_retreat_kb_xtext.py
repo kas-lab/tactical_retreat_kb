@@ -969,10 +969,10 @@ class TacticalRetreatKB(Node):
                             self.get_logger().info("missing measurements to process")
 
                 else:
-                    self.get_logger().info("No composite measurements to process", throttle_duration_sec=10)
+                    self.get_logger().info("No composite measurements to process", throttle_duration_sec=30)
 
-                self.get_logger().info(f"measurements to be added {str(filtered_measurements)}",
-                                       throttle_duration_sec=5)
+                # self.get_logger().info(f"measurements to be added {str(filtered_measurements)}",
+                #                        throttle_duration_sec=5)
                 self.interface.add_measurements(filtered_measurements, self.get_logger())
 
         else:
@@ -1004,8 +1004,6 @@ class TacticalRetreatKB(Node):
             reqs_msg = self.fetch_requirements()
             if reqs_msg is not None:
                 self.reqs_publisher.publish(reqs_msg)
-                self.get_logger().info(f"{str(reqs_msg)}", throttle_duration_sec=1)
-
                 return
 
             self.get_logger().info("No fulfillments to published", throttle_duration_sec=10)
