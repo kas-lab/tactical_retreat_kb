@@ -15,7 +15,6 @@
 import importlib
 import inspect
 import json
-import threading
 import time
 import traceback
 
@@ -42,7 +41,6 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.duration import Duration
 from rclpy.lifecycle import State
 from rclpy.lifecycle import TransitionCallbackReturn
-from rclpy.lifecycle import Node
 from rclpy.qos import QoSDurabilityPolicy
 from rclpy.qos import QoSHistoryPolicy
 from rclpy.qos import QoSLivelinessPolicy

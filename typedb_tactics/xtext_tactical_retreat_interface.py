@@ -11,9 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from dataclasses import dataclass
-from datetime import datetime
-import inspect
 import os
 import logging
 from typing import Iterator
@@ -181,7 +178,8 @@ class TacticalRetreatInterface:
         requirementsResources, _ = self.load_model("reqs",
                                                    RequirementsModelStandaloneSetupGenerated(),
                                                    reqs_path)
-        tacticsResources, self.tacticsInjector = self.load_model("tactics", TacticsStandaloneSetupGenerated(),
+        tacticsResources, self.tacticsInjector = self.load_model("tactics",
+                                                                 TacticsStandaloneSetupGenerated(),
                                                                  tactics_path)
 
         self.tacticsModelResource = tacticsResources.get(0)
@@ -227,13 +225,13 @@ class TacticalRetreatInterface:
 
         self.DSLFeatureModel = root_obj
 
-            # for j_action_rule in self.tacticsModel.getActionRules():
-            #     self.j_states_map = TQLGenerator.createStates(self.tacticsModel,
-            #                                                   self.requirementsModel,
-            #                                                   consider_features_in_state)
-            #     for key in self.j_states_map.keySet():
-            #         self.logger.info(f"{str(key)} - \
-            #                           {str(self.j_states_map.get(key).size())} states generated")
+        # for j_action_rule in self.tacticsModel.getActionRules():
+        #     self.j_states_map = TQLGenerator.createStates(self.tacticsModel,
+        #                                                   self.requirementsModel,
+        #                                                   consider_features_in_state)
+        #     for key in self.j_states_map.keySet():
+        #         self.logger.info(f"{str(key)} - \
+        #                           {str(self.j_states_map.get(key).size())} states generated")
         if (generate_state):
             self.j_states = TQLGenerator.createStates(self.contextModel)
 
@@ -285,7 +283,7 @@ class TacticalRetreatInterface:
 
         self.configurationPropagator = ConfigurationPropagator(formula, self.fmConfiguration)
 
-        # p = LongRunningWrapper.runMethod(propagator.coverFeatures(["MPPI_DIFF"], False)) 
+        # p = LongRunningWrapper.runMethod(propagator.coverFeatures(["MPPI_DIFF"], False))
         # self.logger.info(f"assertTrue ? {str(p)}")
 
         # self.logger.info(f"assertTrue ? {str(LongRunningWrapper.runMethod(propagator.isValid()))}")
@@ -305,7 +303,7 @@ class TacticalRetreatInterface:
         self.logger.info("ready")
 
     def to_xtext(self, j_state):
-        #TODO: needs to be updated to new TacticsModel changes.
+        # TODO: needs to be updated to new TacticsModel changes.
         pass
         # TacticsFactory.eINSTANCE.createMeasurementCondition()
         # j_context_guard = TacticsFactory.eINSTANCE.createContextGuard()
@@ -415,7 +413,8 @@ class TacticalRetreatInterface:
             else:
                 right_fuzzy = self.to_fuzzy([right_child])
 
-            if isinstance(left_child, CompoundExpression) or isinstance(right_child, CompoundExpression):
+            if isinstance(left_child, CompoundExpression) or isinstance(right_child,
+                                                                        CompoundExpression):
                 raise NotImplementedError
 
             fuzzy_children: List[Expression] = [left_fuzzy, right_fuzzy]
@@ -588,9 +587,10 @@ class TacticalRetreatInterface:
 
         return res
 
-    def _adaptation_rule_satisfied(self, j_adaptation_rule: AdaptationRule, tactic_names, current_configuration):
+    def _adaptation_rule_satisfied(self, j_adaptation_rule: AdaptationRule,
+                                   tactic_names, current_configuration):
         measures = self.latest_measures
-        #TODO: invert this, we should grab for the rules requested, not eliminate from all
+        # TODO: invert this, we should grab for the rules requested, not eliminate from all
         if (str(j_adaptation_rule.getName()) in tactic_names):
             j_condition_action = self._get_condition_action(j_adaptation_rule)
             if (j_condition_action is not None):
@@ -606,10 +606,10 @@ class TacticalRetreatInterface:
                         .getContextCondition()
                     condition_guard = self._eval_measurement_condition(j_measurement_cond,
                                                                        measures)
-                    return feature_guard and condition_guard
+                return feature_guard and condition_guard
             else:
                 return True
-                # self.logger.info(f"feat guard {feature_guard} condition_guard {condition_guard}")              
+                # self.logger.info(f"feat guard {feature_guard} condition_guard {condition_guard}")
 
     def get_satisfied_tactics(
             self,
@@ -621,18 +621,25 @@ class TacticalRetreatInterface:
         self.logger.info(f"current_configuration {str(current_configuration)}")
 
         for j_rule in self.tacticsModel.getRules():
-            if(isinstance(j_rule, ActionRules)):
+            if (isinstance(j_rule, ActionRules)):
                 j_action_rule = j_rule
-                for j_adaptation_rule in j_action_rule.getAdaptationRules():      
-                    sat = self._adaptation_rule_satisfied(j_adaptation_rule, tactic_names, current_configuration)
-                    if sat is not None:       
+                for j_adaptation_rule in j_action_rule.getAdaptationRules():
+                    sat = self._adaptation_rule_satisfied(j_adaptation_rule,
+                                                          tactic_names, current_configuration)
+                    if sat is not None:
                         satisfied.append(sat)
-
-            elif(isinstance(j_rule, AdaptationRule)):
+                    else:
+                        self.logger.info(f"sat was none for {str(j_adaptation_rule.getName())}")
+            elif (isinstance(j_rule, AdaptationRule)):
                 j_adaptation_rule = j_rule
-                sat = self._adaptation_rule_satisfied(j_adaptation_rule, tactic_names, current_configuration)
-                if sat is not None:       
+                sat = self._adaptation_rule_satisfied(j_adaptation_rule,
+                                                      tactic_names, current_configuration)
+                if sat is not None:
                     satisfied.append(sat)
+                else:
+                    self.logger.info(f"sat was none for {str(j_adaptation_rule.getName())}")
+            else:
+                self.logger.info(f"no instance match for {str(j_rule)}")
 
         self.logger.info(f"satisfied {str(satisfied)}")
 
@@ -761,7 +768,7 @@ class TacticalRetreatInterface:
                     # for j_publisher in j_node.getFrom().getPublisher():
                     #     if(str(j_publisher.getMessage().getFullname()) == result_dict['interface_type']):
                     #         self.logger.info(f"Would objects also work? {j_publisher == j_pub_ref.getPublisher()}")
-                    #         result_dict['interface_name'] == 
+                    #         result_dict['interface_name'] ==
                 if (isinstance(j_qualified_ref, QualifiedActionServerRef)):
                     j_act_ref = (QualifiedActionServerRef) @ j_qualified_ref
                     result_dict['source'] = "ActionServer"
@@ -790,7 +797,7 @@ class TacticalRetreatInterface:
 
             args = j_contextVar.getFunctionArgs()
 
-            if (args is not None): 
+            if (args is not None):
                 result_dict["measurement_function_args"] = str(args)
 
             proxy = bool(j_contextVar.getDoProxy())
@@ -841,7 +848,7 @@ class TacticalRetreatInterface:
             reconfs.append("SEL_" + str(feat.getName()))
         for feat in deselected_by:
             reconfs.append("DESEL_" + str(feat.getName()))
-        
+
         return reconfs
 
     def get_applicable_tactics(
@@ -872,8 +879,8 @@ class TacticalRetreatInterface:
 
         self.action_allconf[interface_name] = all_configurations
         self.action_currconf[interface_name] = sorted({str(feat)
-                                                    for feat in subconf.getSelectedFeatureNames()})
-
+                                                       for feat in
+                                                       subconf.getSelectedFeatureNames()})
 
         for j_rule in self.tacticsModel.getRules():
             j_requirement = j_rule.getRequirement()
@@ -881,35 +888,55 @@ class TacticalRetreatInterface:
             if (j_requirement is not None):
                 req_name = j_requirement.getName()
 
-            if(isinstance(j_rule, ActionRules)):
+            if (isinstance(j_rule, ActionRules)):
                 j_action_rule = j_rule
-                self.logger.info(f"{interface_name} 2 { str(j_action_rule.getAction().getName()) }")
+                self.logger.info(f"{interface_name} 2 {str(j_action_rule.getAction().getName())}")
 
                 if (interface_name == str(j_action_rule.getAction().getName())):
                     self.logger.info("3")
                     for j_adap_rule in j_action_rule.getAdaptationRules():
-                        res[(str(j_adap_rule.getName()), str(req_name))] = self._reconfs(j_adap_rule)
+                        res[(str(j_adap_rule.getName()),
+                             str(req_name))] = self._reconfs(j_adap_rule)
 
-            elif(isinstance(j_rule, AdaptationRule)):
+            elif (isinstance(j_rule, AdaptationRule)):
                 j_adap_rule = j_rule
                 res[(str(j_adap_rule.getName()), req_name)] = self._reconfs(j_adap_rule)
 
         return res
 
+    def _requirement_fulfilment(self, j_req):
+        traversed = self.traversed_requirements[j_req]
+        j_first_expr = traversed[0]
+        if (isinstance(j_first_expr, Shall)):
+            fuzzified = self.to_fuzzy(traversed[1:])
+            # self.logger.info(f"fuzzified? {fuzzified}")
+            if (fuzzified is not None):
+                s = ShallExpression(fuzzified)
+                return s.fulfillment
+
     def get_in_effect_requirement_fulfillment(self):
         ff = []
         for j_req in self.in_effect_requirements:
-            traversed = self.traversed_requirements[j_req]
-            j_first_expr = traversed[0]
-            if (isinstance(j_first_expr, Shall)):
-                fuzzified = self.to_fuzzy(traversed[1:])
-                # self.logger.info(f"fuzzified? {fuzzified}")
-                if (fuzzified is not None):
-                    s = ShallExpression(fuzzified)
+            j_feature_qual = j_req.getFeatureQualifier()
+            if (j_feature_qual is not None):
+                all_selected_features = set().union(*self.action_currconf.values())
+                if str(j_feature_qual.getFeature().getName()) in all_selected_features:
+                    ff = self._requirement_fulfilment(j_req)
+                    if ff is not None:
+                        ff.append(
+                            {
+                                'requirement_name': str(j_req.getName()),
+                                'fulfillment': ff,
+                                'system': ''
+                            }
+                        )
+            else:
+                ff = self._requirement_fulfilment(j_req)
+                if ff is not None:
                     ff.append(
                         {
                             'requirement_name': str(j_req.getName()),
-                            'fulfillment': s.fulfillment,
+                            'fulfillment': ff,
                             'system': ''
                         }
                     )
