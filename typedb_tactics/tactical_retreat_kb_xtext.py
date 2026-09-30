@@ -376,10 +376,9 @@ class TacticalRetreatKB(Node):
                     x = None
                     if (req.full_configuration):
                         x = self.interface.change_configuration(
-                            req.full_configuration_string, req.action_name)
+                            req.full_configuration_string)
                     else:
-                        x = self.interface.reconfiguration(req.reconfiguration_string,
-                                                                  req.action_name)
+                        x = self.interface.reconfiguration(req.reconfiguration_string)
                     elapsed_time = time.perf_counter() - start_time
                     self.get_logger().info(
                         f'Tactic actions {x} fetched in {elapsed_time:.4f} seconds.')

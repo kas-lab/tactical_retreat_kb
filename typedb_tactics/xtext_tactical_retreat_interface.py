@@ -270,7 +270,6 @@ class TacticalRetreatInterface:
         # select_exclusive(configuration, formula, "RPP", Selection.SELECTED, logger)
         # propagator = ConfigurationPropagator(formula, self.fmConfiguration)
 
-        self.action_currconf = {}
         self.action_allconf = {}
         self.latest_measures = {}
         self.in_effect_requirements = []
@@ -587,9 +586,14 @@ class TacticalRetreatInterface:
 
         return res
 
+    def _current_configuration(self):
+        return [str(f) for f in self.fmConfiguration.getSelectedFeatureNames()]
+
     def _adaptation_rule_satisfied(self, j_adaptation_rule: AdaptationRule,
-                                   tactic_names, current_configuration):
+                                   tactic_names):
         measures = self.latest_measures
+        current_configuration = set(self._current_configuration()) #set(self.action_currconf[action_name])
+        self.logger.info(f"current_configuration {str(current_configuration)}")
         # TODO: invert this, we should grab for the rules requested, not eliminate from all
         if (str(j_adaptation_rule.getName()) in tactic_names):
             j_condition_action = self._get_condition_action(j_adaptation_rule)
@@ -611,37 +615,47 @@ class TacticalRetreatInterface:
                 return True
                 # self.logger.info(f"feat guard {feature_guard} condition_guard {condition_guard}")
 
+    def _get_satisfied_action_tactics(self, tactic_names, action_name):
+        satisfied = []
+
+        for j_rule in self.tacticsModel.getRules():
+            if (isinstance(j_rule, ActionRules)):
+                j_action_rule = j_rule
+                for j_adaptation_rule in j_action_rule.getAdaptationRules():
+                    sat = self._adaptation_rule_satisfied(j_adaptation_rule, tactic_names)
+                    if sat is not None:
+                        satisfied.append(sat)
+                    else:
+                        self.logger.info(f"sat was none for {str(j_adaptation_rule.getName())}")
+        
+        return satisfied
+
+    def _get_satisfied_global_tactics(self, tactic_names):
+        satisfied = []
+
+        for j_rule in self.tacticsModel.getRules():
+            if (isinstance(j_rule, AdaptationRule)):
+                j_adaptation_rule = j_rule
+                sat = self._adaptation_rule_satisfied(j_adaptation_rule, tactic_names)
+                if sat is not None:
+                    satisfied.append(sat)
+                else:
+                    self.logger.info(f"sat was none for {str(j_adaptation_rule.getName())}")
+        
+        return satisfied
+
     def get_satisfied_tactics(
             self,
             tactic_names: List[str],
             action_name) -> List[bool]:
         satisfied = []
 
-        current_configuration = set(self.action_currconf[action_name])
-        self.logger.info(f"current_configuration {str(current_configuration)}")
+        if(action_name != ""):
+            satisfied = self._get_satisfied_action_tactics(tactic_names, action_name)
+        else:
+            satisfied = self._get_satisfied_global_tactics(tactic_names)
 
-        for j_rule in self.tacticsModel.getRules():
-            if (isinstance(j_rule, ActionRules)):
-                j_action_rule = j_rule
-                for j_adaptation_rule in j_action_rule.getAdaptationRules():
-                    sat = self._adaptation_rule_satisfied(j_adaptation_rule,
-                                                          tactic_names, current_configuration)
-                    if sat is not None:
-                        satisfied.append(sat)
-                    else:
-                        self.logger.info(f"sat was none for {str(j_adaptation_rule.getName())}")
-            elif (isinstance(j_rule, AdaptationRule)):
-                j_adaptation_rule = j_rule
-                sat = self._adaptation_rule_satisfied(j_adaptation_rule,
-                                                      tactic_names, current_configuration)
-                if sat is not None:
-                    satisfied.append(sat)
-                else:
-                    self.logger.info(f"sat was none for {str(j_adaptation_rule.getName())}")
-            else:
-                self.logger.info(f"no instance match for {str(j_rule)}")
-
-        self.logger.info(f"satisfied {str(satisfied)}")
+        self.logger.info(f"satisfied {tactic_names} {str(satisfied)}")
 
         return satisfied
 
@@ -851,36 +865,23 @@ class TacticalRetreatInterface:
 
         return reconfs
 
-    def get_applicable_tactics(
-            self,
-            resolution_model: str,
-            interface_name: str) -> dict:
-        """
-        Get all tactics that are applicable given an ROS action name and resolution model.
-
-        :param resolution_model: name of the resolution model to check
-        :param interfafa_listce_name: name of the ROS interface
-        :return: dict of rules to feature adaptations
-        """
-
+    def _get_applicable_action_tactics(self, resolution_model, interface_name):
         res = {}
-        self.logger.info("1")
+        # slicedFormula, subconf = self._find_subconfiguration(interface_name)
+        # undef_subconf = Configuration(slicedFormula)
 
-        slicedFormula, subconf = self._find_subconfiguration(interface_name)
-        undef_subconf = Configuration(slicedFormula)
+        # # p_available_alts = []
+        # configurationAnalyzer = ConfigurationAnalyzer(slicedFormula, undef_subconf)
+        # allConfigurations = configurationAnalyzer.getSolutions(100000)
+        # all_configurations = []
+        # for k, featureList in enumerate(allConfigurations):
+        #     all_configurations.append(sorted({str(feature) for feature in featureList
+        #                               if str(feature) != "__root__"}))
 
-        # p_available_alts = []
-        configurationAnalyzer = ConfigurationAnalyzer(slicedFormula, undef_subconf)
-        allConfigurations = configurationAnalyzer.getSolutions(100000)
-        all_configurations = []
-        for k, featureList in enumerate(allConfigurations):
-            all_configurations.append(sorted({str(feature) for feature in featureList
-                                      if str(feature) != "__root__"}))
-
-        self.action_allconf[interface_name] = all_configurations
-        self.action_currconf[interface_name] = sorted({str(feat)
-                                                       for feat in
-                                                       subconf.getSelectedFeatureNames()})
+        # self.action_allconf[interface_name] = all_configurations
+        # self.action_currconf[interface_name] = sorted({str(feat)
+        #                                                for feat in
+        #                                                subconf.getSelectedFeatureNames()})
 
         for j_rule in self.tacticsModel.getRules():
             j_requirement = j_rule.getRequirement()
@@ -898,10 +899,42 @@ class TacticalRetreatInterface:
                         res[(str(j_adap_rule.getName()),
                              str(req_name))] = self._reconfs(j_adap_rule)
 
-            elif (isinstance(j_rule, AdaptationRule)):
+        return res
+
+
+    def _get_applicable_global_tactics(self, resolution_model):
+        res = {}
+
+        for j_rule in self.tacticsModel.getRules():
+            j_requirement = j_rule.getRequirement()
+            req_name = "None"
+            if (j_requirement is not None):
+                req_name = j_requirement.getName()
+
+            if (isinstance(j_rule, AdaptationRule)):
                 j_adap_rule = j_rule
                 res[(str(j_adap_rule.getName()), req_name)] = self._reconfs(j_adap_rule)
 
+        return res
+
+    def get_applicable_tactics(
+            self,
+            resolution_model: str,
+            interface_name: str) -> dict:
+        """
+        Get all tactics that are applicable given an ROS action name and resolution model.
+
+        :param resolution_model: name of the resolution model to check
+        :param interfafa_listce_name: name of the ROS interface
+        :return: dict of rules to feature adaptations
+        """
+        res = {}
+
+        if(interface_name != ""):
+            res = self._get_applicable_action_tactics(resolution_model, interface_name)
+        else:
+            res = self._get_applicable_global_tactics(resolution_model)
+        
         return res
 
     def _requirement_fulfilment(self, j_req):
@@ -919,7 +952,7 @@ class TacticalRetreatInterface:
         for j_req in self.in_effect_requirements:
             j_feature_qual = j_req.getFeatureQualifier()
             if (j_feature_qual is not None):
-                all_selected_features = set().union(*self.action_currconf.values())
+                all_selected_features = set(sorted({str(feat) for feat in self.fmConfiguration.getSelectedFeatureNames()}))
                 if str(j_feature_qual.getFeature().getName()) in all_selected_features:
                     req_ff = self._requirement_fulfilment(j_req)
                     if ff is not None:
@@ -974,42 +1007,42 @@ class TacticalRetreatInterface:
                 selected_by.append(j_simple_action.getVariant().getFeature())
         return selected_by, deselected_by
 
-    def _find_subconfiguration(self, action_name):
-        j_feature = self._functional_mapping(action_name)
-        if (j_feature is None):
-            raise Exception(f"Action name {action_name} not found to belong to a func mapping")
-        self.logger.info(f"acc name {str(j_feature)}")
-        subtreeFeatures = getSubtreeFeatures(self.featureModel.getFeature(j_feature.getName()))
-        slicedModel = LongRunningWrapper.runMethod(SliceFeatureModel(self.featureModel,
-                                                                     subtreeFeatures, True))
-        slicedFormula = FeatureModelFormula(slicedModel)
-        subconf = Configuration(self.fmConfiguration, slicedFormula)
+    # def _find_subconfiguration(self, action_name):
+    #     j_feature = self._functional_mapping(action_name)
+    #     if j_feature is None:
+    #         raise Exception(f"Action name {action_name} not found to belong to a func mapping")
+    #     self.logger.info(f"acc name {str(j_feature)}")
+    #     subtreeFeatures = getSubtreeFeatures(self.featureModel.getFeature(j_feature.getName()))
+    #     slicedModel = LongRunningWrapper.runMethod(SliceFeatureModel(self.featureModel,
+    #                                                                  subtreeFeatures, True))
+    #     slicedFormula = FeatureModelFormula(slicedModel)
+    #     subconf = Configuration(self.fmConfiguration, slicedFormula)
 
-        return slicedFormula, subconf
+    #     return slicedFormula, subconf
 
-    def get_fetch_policy(self, action_name: str):
-        table = {}
-        reconfigurations = []
-        state_dict = {}
+    # def get_fetch_policy(self, action_name: str):
+    #     table = {}
+    #     reconfigurations = []
+    #     state_dict = {}
 
-        slicedFormula, subconf = self._find_subconfiguration(action_name)
-        undef_subconf = Configuration(slicedFormula)
+    #     slicedFormula, subconf = self._find_subconfiguration(action_name)
+    #     undef_subconf = Configuration(slicedFormula)
 
-        # p_available_alts = []
-        configurationAnalyzer = ConfigurationAnalyzer(slicedFormula, undef_subconf)
-        allConfigurations = configurationAnalyzer.getSolutions(100000)
-        all_configurations = []
-        for k, featureList in enumerate(allConfigurations):
-            all_configurations.append(sorted({str(feature) for feature in featureList
-                                      if str(feature) != "__root__"}))
-            reconfigurations.append(str(sorted({str(feature) for feature in featureList
-                                        if str(feature) != "__root__"})))
+    #     # p_available_alts = []
+    #     configurationAnalyzer = ConfigurationAnalyzer(slicedFormula, undef_subconf)
+    #     allConfigurations = configurationAnalyzer.getSolutions(100000)
+    #     all_configurations = []
+    #     for k, featureList in enumerate(allConfigurations):
+    #         all_configurations.append(sorted({str(feature) for feature in featureList
+    #                                   if str(feature) != "__root__"}))
+    #         reconfigurations.append(str(sorted({str(feature) for feature in featureList
+    #                                     if str(feature) != "__root__"})))
 
-        self.action_allconf[action_name] = all_configurations
-        self.action_currconf[action_name] = sorted({str(feat)
-                                                    for feat in subconf.getSelectedFeatureNames()})
+    #     self.action_allconf[action_name] = all_configurations
+    #     self.action_currconf[action_name] = sorted({str(feat)
+    #                                                 for feat in subconf.getSelectedFeatureNames()})
 
-        self.logger.info(f"all configurations {str(all_configurations)}")
+    #     self.logger.info(f"all configurations {str(all_configurations)}")
 
         # TODO: ensure alternative is mandatory.
         # self._subtree_features(j_feature, p_available_alts, partial(instanceis, Alternative))
@@ -1079,25 +1112,25 @@ class TacticalRetreatInterface:
 
         return [str(self.namer.uniqueName(reconf)) for reconf in reconfigurations]
 
-    def change_configuration(self, configuration_string: str, action_name: str) -> list[str]:
+    def change_configuration(self, configuration_string: str) -> list[str]:
         configuration = set(eval(configuration_string))
-        current_configuration = set(self.action_currconf[action_name])
+        current_configuration = self._current_configuration()
 
-        self.action_currconf[action_name] = configuration
+        # self.action_currconf[action_name] = configuration
 
-        reconfigurations = self.configuration_delta(current_configuration, configuration)
+        reconfigurations = self.configuration_delta(set(current_configuration), configuration)
 
         return reconfigurations
 
     def _process_selection(self, reconfigurations):
         for reconf in reconfigurations:
-            if ("DESEL_" in reconf):
+            if "DESEL_" in reconf:
                 self.fmConfiguration.setManual(reconf[6:], Selection.UNSELECTED)
-            elif ("SEL_" in reconf):
+            elif "SEL_" in reconf:
                 self.fmConfiguration.setManual(reconf[4:], Selection.SELECTED)
 
-    def reconfiguration(self, reconfigurations: list[str], action_name: str) -> list[str]:
-        initial_conf = [str(f) for f in self.fmConfiguration.getSelectedFeatureNames()]
+    def reconfiguration(self, reconfigurations: list[str]) -> list[str]:
+        initial_conf = self._current_configuration()
         self.fmConfiguration.resetAutomaticValues()
         self.logger.info(f"initialConf ? {str(initial_conf)}")
         self._process_selection(reconfigurations)
@@ -1108,10 +1141,10 @@ class TacticalRetreatInterface:
         if (not bool(LongRunningWrapper.runMethod(self.configurationPropagator.isValid()))):
             raise Exception("Invalid Configuration after reconfiguration!")
 
-        configuration = [str(f) for f in self.fmConfiguration.getSelectedFeatureNames()]
+        configuration = self._current_configuration()
 
         self.logger.info(f"postConf ? {str(configuration)}")
-        self.action_currconf[action_name] = configuration
+        # self.action_currconf[action_name] = configuration
         return self.configuration_delta(set(initial_conf), set(configuration))
 
     # TODO: use dict?
