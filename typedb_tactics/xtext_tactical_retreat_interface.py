@@ -589,6 +589,9 @@ class TacticalRetreatInterface:
     def _current_configuration(self):
         return [str(f) for f in self.fmConfiguration.getSelectedFeatureNames()]
 
+    def _latest_measurements(self):
+        return self.latest_measures
+
     def _adaptation_rule_satisfied(self, j_adaptation_rule: AdaptationRule,
                                    tactic_names):
         measures = self.latest_measures

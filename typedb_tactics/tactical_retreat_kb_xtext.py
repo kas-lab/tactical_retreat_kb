@@ -51,7 +51,7 @@ from rclpy.qos import QoSReliabilityPolicy
 
 from ros_monitors_functions.factory import MonitorFactory
 # from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
-from std_msgs.msg import Header
+from std_msgs.msg import Header, String
 from std_srvs.srv import Trigger
 
 # from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
@@ -282,6 +282,12 @@ class TacticalRetreatKB(Node):
                              depth=3)
         self.reqs_publisher = self.create_publisher(
             RelaxedRequirements, 'requirements', qos_profile=pub_qos)
+        
+        self.conf_publisher = self.create_publisher(
+            String, 'fm_configuration', qos_profile=pub_qos)
+        
+        self.mes_publisher = self.create_publisher(
+            String, 'context_model', qos_profile=pub_qos)
 
         self.prev_state = None
         # self.create_measures_interfaces()
@@ -331,15 +337,15 @@ class TacticalRetreatKB(Node):
             def _fetch_satisfied_tactic_cb(req, res):
                 try:
                     start_time = time.perf_counter()
-                    self.get_logger().info('Fetching satisfied tactics...')
+                    # self.get_logger().info('Fetching satisfied tactics...')
                     result = self.interface.get_satisfied_tactics(
                         req.tactic_rules,
                         req.action_name)
                     res.satisfied = result
                     res.success = True
                     elapsed_time = time.perf_counter() - start_time
-                    self.get_logger().info(
-                        f'Satisfied tactics fetched in {elapsed_time:.4f} seconds.')
+                    # self.get_logger().info(
+                    #     f'Satisfied tactics fetched in {elapsed_time:.4f} seconds.')
                 except Exception as e:
                     self.get_logger().error(
                         f'Error fetching Satisfied tactics : {e}')
@@ -940,7 +946,7 @@ class TacticalRetreatKB(Node):
                 1.0,
                 self.measurement_processing,
                 callback_group=self.query_cb_group)
-            self.create_timer(2.0, self.publish_fulfillments,
+            self.create_timer(2.0, self.report,
                               callback_group=self.query_cb_group)
 
         except Exception as e:
@@ -953,8 +959,6 @@ class TacticalRetreatKB(Node):
             for (measure_name, func) in self.meta_registry.items():
                 self.measurements[measure_name] = func()
         if self.measurements:
-            self.get_logger().info(f"measurements {str(self.measurements)}",
-                                   throttle_duration_sec=5)
             filtered_measurements = {k: v for (k, v) in self.measurements.items() if v is not None}
             if (filtered_measurements):
                 if self.composite_measurements:
@@ -970,8 +974,6 @@ class TacticalRetreatKB(Node):
                 else:
                     self.get_logger().info("No composite measurements to process", throttle_duration_sec=30)
 
-                # self.get_logger().info(f"measurements to be added {str(filtered_measurements)}",
-                #                        throttle_duration_sec=5)
                 self.interface.add_measurements(filtered_measurements, self.get_logger())
 
         else:
@@ -997,6 +999,22 @@ class TacticalRetreatKB(Node):
                     return reqs_msg
         except Exception as e:
             raise e
+
+
+    def report(self):
+        self.publish_fulfillments()
+        self.publish_configuration()
+        self.publish_context()
+    
+    def publish_configuration(self):
+        conf_string = str(self.interface._current_configuration())
+        conf_msg = String(data=conf_string)
+        self.conf_publisher.publish(conf_msg)
+    
+    def publish_context(self):
+        cntxt_string = str(self.interface._latest_measurements())
+        cntxt_msg = String(data=cntxt_string)
+        self.mes_publisher.publish(cntxt_msg)
 
     def publish_fulfillments(self):
         if (self.reqs_publisher.get_subscription_count() > 0):
