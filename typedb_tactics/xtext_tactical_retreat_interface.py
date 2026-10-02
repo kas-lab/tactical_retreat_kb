@@ -1150,9 +1150,9 @@ class TacticalRetreatInterface:
     # TODO: use dict?
     def lifecycleStateToTransition(self, j_lc_state: LifecycleState):
         if (j_lc_state == LifecycleState.UNCONFIGURED):
-            return Transition(id=Transition.TRANSITION_CLEANUP),
+            return Transition(id=Transition.TRANSITION_CLEANUP)
         if (j_lc_state == LifecycleState.INACTIVE):
-            return Transition(id=Transition.TRANSITION_DEACTIVATE),
+            return Transition(id=Transition.TRANSITION_DEACTIVATE)
         if (j_lc_state == LifecycleState.ACTIVE):
             return Transition(id=Transition.TRANSITION_ACTIVATE)
         if (j_lc_state == LifecycleState.FINALIZED):
