@@ -841,7 +841,8 @@ class TacticalRetreatKB(Node):
                     self.get_logger().error('Error while using measure in subscriber Traceback:\n' + traceback.format_exc())
                     raise e
 
-                self.measurements[_measure_name] = res
+                if res is not None:
+                    self.measurements[_measure_name] = res
 
             self.measures_subscribers[measure_name] = self.create_subscription(
                 topic_type,
