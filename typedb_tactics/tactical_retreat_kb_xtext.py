@@ -251,8 +251,6 @@ class TacticalRetreatKB(Node):
                     self.get_logger()
         )
 
-        # self.interface.get_fetch_policy("FollowPath")
-
         self.query_cb_group = MutuallyExclusiveCallbackGroup()
         self.measurements_cb_group = ReentrantCallbackGroup()
 

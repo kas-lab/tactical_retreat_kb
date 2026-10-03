@@ -345,54 +345,60 @@ class TacticalRetreatInterface:
         # # createActionRules
         # # createAdaptationRule
 
+    def _to_python_fuzzy_set(self, j_membership_function):
+        if isinstance(j_membership_function, J_FuzzyTriangular):
+            j_fuzzy_tri = (J_FuzzyTriangular) @ j_membership_function
+            return FuzzyTriangular(
+                a=tofloat(j_fuzzy_tri.getA()),
+                b=tofloat(j_fuzzy_tri.getB()),
+                c=tofloat(j_fuzzy_tri.getC())
+            )
+
+        if isinstance(j_membership_function, J_FuzzyRightShoulder):
+            j_fuzzy_rsh = (J_FuzzyRightShoulder) @ j_membership_function
+            return FuzzyRightShoulder(
+                foot=tofloat(j_fuzzy_rsh.getFoot()),
+                shoulder=tofloat(j_fuzzy_rsh.getShoulder())
+            )
+
+        if isinstance(j_membership_function, J_FuzzyLeftShoulder):
+            j_fuzzy_lsh = (J_FuzzyLeftShoulder) @ j_membership_function
+            return FuzzyLeftShoulder(
+                foot=tofloat(j_fuzzy_lsh.getFoot()),
+                shoulder=tofloat(j_fuzzy_lsh.getShoulder())
+            )
+
+        raise TypeError(
+            f"Unsupported membership function: {j_membership_function}"
+        )
+
     def to_fuzzy(self, j_expression_list: list) -> Optional[Expression]:
         j_expression = j_expression_list[0]
         if isinstance(j_expression, AsCloseLit):
             j_as_close_lit = (AsCloseLit) @ j_expression
             req_value = _value_from_lit(j_as_close_lit.getQuantity())
-            j_fuzzy_tri = (J_FuzzyTriangular) @ j_as_close_lit.getMembershipFunction()
 
             prop = self.to_fuzzy([j_as_close_lit.getComparator()])
             if (prop is None):
                 return None
-            a = tofloat(j_fuzzy_tri.getA())
-            b = tofloat(j_fuzzy_tri.getB())
-            c = tofloat(j_fuzzy_tri.getC())
-            fuzzy_tri = FuzzyTriangular(a=a, b=b, c=c)
-            return AsCloseAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_tri,
+            fuzzy_set = self._to_python_fuzzy_set(
+                j_as_close_lit.getMembershipFunction()
+            )
+            return AsCloseAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_set,
                                                required_value=float(req_value))
         if isinstance(j_expression, AsAsPossible):
             j_as_as_possible = (AsAsPossible) @ j_expression
 
-            j_memb_func = j_as_as_possible.getMembershipFunction()
-            if (isinstance(j_memb_func, J_FuzzyRightShoulder)):
-                j_fuzzy_rsh = (J_FuzzyRightShoulder) @ j_as_as_possible.getMembershipFunction()
+            measure_name = str(j_as_as_possible.getQuantity().getContextVariable().getName())
 
-                measure_name = str(j_as_as_possible.getQuantity().getContextVariable().getName())
-
-                mes = self.latest_measures.get(measure_name, None)
-                if (mes is None):
-                    return None
-                prop = Proposition(name=measure_name, value=mes)
-                foot = tofloat(j_fuzzy_rsh.getFoot())
-                shoulder = tofloat(j_fuzzy_rsh.getShoulder())
-                # self.logger.info(f"measure_name {measure_name} foot {foot} shoulder {shoulder}")
-                fuzzy_rsh = FuzzyRightShoulder(foot=foot, shoulder=shoulder)
-                return AsManyAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_rsh)
-            if (isinstance(j_memb_func, J_FuzzyLeftShoulder)):
-                j_fuzzy_lsh = (J_FuzzyLeftShoulder) @ j_as_as_possible.getMembershipFunction()
-
-                measure_name = str(j_as_as_possible.getQuantity().getContextVariable().getName())
-
-                mes = self.latest_measures.get(measure_name, None)
-                if (mes is None):
-                    return None
-                prop = Proposition(name=measure_name, value=mes)
-                foot = tofloat(j_fuzzy_lsh.getFoot())
-                shoulder = tofloat(j_fuzzy_lsh.getShoulder())
-                # self.logger.info(f"measure_name {measure_name} foot {foot} shoulder {shoulder}")
-                fuzzy_lsh = FuzzyLeftShoulder(foot=foot, shoulder=shoulder)
-                return AsManyAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_lsh)
+            mes = self.latest_measures.get(measure_name, None)
+            if (mes is None):
+                return None
+            prop = Proposition(name=measure_name, value=mes)
+            fuzzy_set = self._to_python_fuzzy_set(
+                j_as_as_possible.getMembershipFunction()
+            )
+            return AsManyAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_set)
         if isinstance(j_expression, CompoundExpression):
             # self.logger.info(f"here!! {j_expression} {CompoundExpression} {And}")
             right_index = 2
@@ -627,7 +633,7 @@ class TacticalRetreatInterface:
                         satisfied.append(sat)
                     else:
                         self.logger.info(f"sat was none for {str(j_adaptation_rule.getName())}")
-        
+
         return satisfied
 
     def _get_satisfied_global_tactics(self, tactic_names):
@@ -641,7 +647,7 @@ class TacticalRetreatInterface:
                     satisfied.append(sat)
                 else:
                     self.logger.info(f"sat was none for {str(j_adaptation_rule.getName())}")
-        
+
         return satisfied
 
     def get_satisfied_tactics(
@@ -934,7 +940,7 @@ class TacticalRetreatInterface:
             res = self._get_applicable_action_tactics(resolution_model, interface_name)
         else:
             res = self._get_applicable_global_tactics(resolution_model)
-        
+
         return res
 
     def _requirement_fulfilment(self, j_req):
