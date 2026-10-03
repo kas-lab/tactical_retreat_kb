@@ -43,6 +43,7 @@ from rclpy.duration import Duration
 from rclpy.lifecycle import State
 from rclpy.lifecycle import TransitionCallbackReturn
 from rclpy.lifecycle import Node
+from rclpy.node import ReentrantCallbackGroup
 from rclpy.qos import QoSDurabilityPolicy
 from rclpy.qos import QoSHistoryPolicy
 from rclpy.qos import QoSLivelinessPolicy
@@ -253,6 +254,7 @@ class TacticalRetreatKB(Node):
         # self.interface.get_fetch_policy("FollowPath")
 
         self.query_cb_group = MutuallyExclusiveCallbackGroup()
+        self.measurements_cb_group = ReentrantCallbackGroup()
 
         self.measurements = {}
         self.meta_registry = {}
@@ -263,6 +265,13 @@ class TacticalRetreatKB(Node):
         # self.measurement_lock = threading.Lock()
 
         self.declare_parameter("do_states", True)
+
+        self.measurement_processing_timer = self.create_timer(
+            0.1,
+            self.measurement_processing,
+            callback_group=MutuallyExclusiveCallbackGroup()
+        )
+
 
     def create_header(self):
         return Header(stamp=self.get_clock().now().to_msg())
@@ -771,7 +780,7 @@ class TacticalRetreatKB(Node):
 
         super().get_logger().info(
                 f'Making a subscription for interface_name: {interface_name}')
-        ros_msg_type_str = interface.get('interface_type')  
+        ros_msg_type_str = interface.get('interface_type')
 
         measurement_qos = QoSProfile(reliability=QoSReliabilityPolicy.BEST_EFFORT,
                                      history=QoSHistoryPolicy.KEEP_LAST,
@@ -841,14 +850,15 @@ class TacticalRetreatKB(Node):
                     self.get_logger().error('Error while using measure in subscriber Traceback:\n' + traceback.format_exc())
                     raise e
 
-                self.measurements[_measure_name] = res
+                if res is not None:
+                    self.measurements[_measure_name] = res
 
             self.measures_subscribers[measure_name] = self.create_subscription(
                 topic_type,
                 interface_name,
                 topic_cb,
                 measurement_qos,
-                callback_group=self.query_cb_group
+                callback_group=self.measurements_cb_group
             )
         if (interface.get('source') == 'ServiceServer'):
             service_type = get_ros_msg_type_from_string(
@@ -936,10 +946,6 @@ class TacticalRetreatKB(Node):
 
                 self.create_measure_interface(interface)
 
-            self.create_timer(
-                1.0,
-                self.measurement_processing,
-                callback_group=self.query_cb_group)
             self.create_timer(2.0, self.publish_fulfillments,
                               callback_group=self.query_cb_group)
 
@@ -975,7 +981,7 @@ class TacticalRetreatKB(Node):
                 self.interface.add_measurements(filtered_measurements, self.get_logger())
 
         else:
-            self.get_logger().info("No measurements to process", throttle_duration_sec=10)   
+            self.get_logger().info("No measurements to process", throttle_duration_sec=10)
 
     def fetch_requirements(self):
         try:
