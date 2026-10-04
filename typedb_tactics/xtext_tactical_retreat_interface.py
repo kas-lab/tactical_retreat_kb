@@ -593,7 +593,7 @@ class TacticalRetreatInterface:
         return res
 
     def _current_configuration(self):
-        return [str(f) for f in self.fmConfiguration.getSelectedFeatureNames()]
+        return [str(f.getName()) for f in self.fmConfiguration.getSelectedFeatures()]
 
     def _adaptation_rule_satisfied(self, j_adaptation_rule: AdaptationRule,
                                    tactic_names):
@@ -1103,15 +1103,25 @@ class TacticalRetreatInterface:
     #     return AdaptationPlan.from_typedb_results(query_result)
 
     def configuration_delta(self, current_configuration, configuration):
-        deselection_set = current_configuration - configuration
-        selection_set = configuration - current_configuration
+        def ordered_difference(items, excluded):
+            excluded_lookup = set(excluded)
+            seen = set()
+            ordered_items = []
+            for item in items:
+                if item not in excluded_lookup and item not in seen:
+                    ordered_items.append(item)
+                    seen.add(item)
+            return ordered_items
+
+        deselection_list = ordered_difference(current_configuration, configuration)
+        selection_list = ordered_difference(configuration, current_configuration)
         reconfigurations = []
-        for feat in deselection_set:
+        for feat in deselection_list:
             desels = self.resolver.deselectionActions(feat)
             if (not desels.isEmpty()):
                 reconfigurations.extend(list(desels))
 
-        for feat in selection_set:
+        for feat in selection_list:
             sels = self.resolver.selectionActions(feat)
             if (not sels.isEmpty()):
                 reconfigurations.extend(list(sels))
@@ -1119,12 +1129,12 @@ class TacticalRetreatInterface:
         return [str(self.namer.uniqueName(reconf)) for reconf in reconfigurations]
 
     def change_configuration(self, configuration_string: str) -> list[str]:
-        configuration = set(eval(configuration_string))
+        configuration = list(eval(configuration_string))
         current_configuration = self._current_configuration()
 
         # self.action_currconf[action_name] = configuration
 
-        reconfigurations = self.configuration_delta(set(current_configuration), configuration)
+        reconfigurations = self.configuration_delta(current_configuration, configuration)
 
         return reconfigurations
 
@@ -1149,9 +1159,7 @@ class TacticalRetreatInterface:
 
         configuration = self._current_configuration()
 
-        self.logger.info(f"postConf ? {str(configuration)}")
-        # self.action_currconf[action_name] = configuration
-        return self.configuration_delta(set(initial_conf), set(configuration))
+        return self.configuration_delta(initial_conf, configuration)
 
     # TODO: use dict?
     def lifecycleStateToTransition(self, j_lc_state: LifecycleState):
