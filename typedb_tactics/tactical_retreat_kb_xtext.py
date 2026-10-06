@@ -985,7 +985,7 @@ class TacticalRetreatKB(Node):
                 1.0,
                 self.measurement_processing,
                 callback_group=self.query_cb_group)
-            self.create_timer(2.0, self.report,
+            self.create_timer(1.0, self.report,
                               callback_group=self.query_cb_group)
 
         except Exception as e:

@@ -567,11 +567,11 @@ class TacticalRetreatInterface:
             if (j_log_op == LogicalOperator.AND):
                 self.logger.info("and")
 
-                return (res and self._eval_measurement_condition(j_second_term, configuration))
+                return (res and self._eval_feature_condition(j_second_term, configuration))
             if (j_log_op == LogicalOperator.OR):
                 self.logger.info("OR")
 
-                return (res or self._eval_measurement_condition(j_second_term, configuration))
+                return (res or self._eval_feature_condition(j_second_term, configuration))
 
         return res
 
@@ -706,7 +706,7 @@ class TacticalRetreatInterface:
         return satisfied
 
     def traverseExpression(self, j_expression, j_expression_list: list):
-        self.logger.info(f"expr {j_expression}")
+        # self.logger.info(f"expr {j_expression}")
         if isinstance(j_expression, AsCloseLit):
             self.logger.info("asl")
 
@@ -728,7 +728,7 @@ class TacticalRetreatInterface:
             self.traverseExpression(j_right_expr, j_expression_list)
             return
         if isinstance(j_expression, Shall):
-            self.logger.info("s")
+            # self.logger.info("s")
             # j_shall = (Shall) @ j_expression
             j_expression_list.append(j_expression)
             self.traverseExpression(j_expression.getExpression(), j_expression_list)
@@ -1192,7 +1192,6 @@ class TacticalRetreatInterface:
             tactics = []
             for most_similar_req in most_similar_reqs:
                 t_for_r = self._tactics_for_requirement(most_similar_req.getName())
-                self.logger.info(f"AAA {str(t_for_r)}")
                 if len(t_for_r) != 0:
                     if len(t_for_r) == 1:
                         tactics.extend(t_for_r)
