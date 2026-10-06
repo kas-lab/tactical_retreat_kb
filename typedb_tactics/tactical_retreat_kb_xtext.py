@@ -22,6 +22,7 @@ from typing import Optional
 from adapt_x_msgs.srv import FetchResolutions
 from adapt_x_msgs.srv import FetchPlan
 from adapt_x_msgs.srv import FetchRules
+from adapt_x_msgs.srv import FetchSimilar
 from adapt_x_msgs.srv import HypotheticalReqFulfillment
 from adapt_x_msgs.srv import HypotheticalReqsFulfillment
 from adapt_x_msgs.srv import RequirementsFulfillment
@@ -31,6 +32,7 @@ from adapt_x_msgs.srv import UpdateInEffect
 from adapt_x_msgs.srv import UpdateRunning
 from adapt_x_msgs.srv import GetState
 from adapt_x_msgs.msg import RelaxedRequirement
+from adapt_x_msgs.msg import SimilarityPair
 from adapt_x_msgs.msg import RelaxedRequirements
 from adapt_x_msgs.msg import SymbolicState
 from adapt_x_msgs.msg import TableEntry
@@ -250,6 +252,9 @@ class TacticalRetreatKB(Node):
                     self.get_logger()
         )
 
+        # x = self.interface.similar_tactics("CameraMotionAlignment")
+        x = self.interface._test_req_similarity()
+        self.get_logger().info(f"Testing similarity {x}")
         # self.interface.get_fetch_policy("FollowPath")
 
         self.query_cb_group = MutuallyExclusiveCallbackGroup()
@@ -333,6 +338,33 @@ class TacticalRetreatKB(Node):
                     res.success = False
                 return res
             self.get_logger().info("2")
+
+
+            def _fetch_similar_cb(req, res):
+                try:
+                    start_time = time.perf_counter()
+                    self.get_logger().info('Fetching similar tactics...')
+                    result = self.interface.similar_tactics(req.interface_name)
+                    self.get_logger().info(f"uhh {result}")
+
+                    res.similarity_pairs = [SimilarityPair(requirement_name=req_name, rule_names=tac_list)
+                                            for (req_name, tac_list) in result.items()]
+                    elapsed_time = time.perf_counter() - start_time
+                    res.success = True
+
+                    self.get_logger().info(
+                        f'Similar tactics fetched {str(res)}')
+
+                    self.get_logger().info(
+                        f'Similar tactics fetched in {elapsed_time:.4f} seconds.')
+                except Exception as e:
+                    self.get_logger().error(
+                        f'Error fetching similar tactics: {e}')
+                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
+                    res.success = False
+                return res
+            self.get_logger().info("2.5")
+            
 
             def _fetch_satisfied_tactic_cb(req, res):
                 try:
@@ -631,6 +663,13 @@ class TacticalRetreatKB(Node):
                 GetState,
                 self.get_name() + '/determine_state',
                 _fetch_current_state_action_cb,
+                callback_group=self.query_cb_group
+            )
+
+            self.fetch_similar = self.create_service(
+                FetchSimilar,
+                self.get_name() + '/fetch_similar',
+                _fetch_similar_cb,
                 callback_group=self.query_cb_group
             )
             self.get_logger().info("6.5")

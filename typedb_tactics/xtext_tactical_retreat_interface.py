@@ -32,7 +32,7 @@ jars_path = os.path.join(get_package_share_directory("adapt_x"), "jars", "rem")
 jpype.startJVM(
     classpath=[jars_path + "/*"]
 )
-from system import RosPublisherReference
+from system import RosPublisherReference, System, RosNode
 from rosToolingSupport import RosToolingSupport
 from de.fraunhofer.ipa.ros import RosStandaloneSetupGenerated
 from de.fraunhofer.ipa.rossystem import RosSystemStandaloneSetupGenerated
@@ -53,7 +53,7 @@ from eu.coresense.common import RosNameProvider, MathOperator, Literal, IntLiter
 from eu.coresense.common import StringLiteral, BooleanLiteral
 
 from eu.coresense.adaptation.tactics import TacticsModel, ConditionAction, ActionRules, AdaptationRule
-from eu.coresense.adaptation.tactics import MeasurementThresholdCondition, LogicalOperator
+from eu.coresense.adaptation.tactics import MeasurementThresholdCondition, LogicalOperator, MeasurementMeasurementCondition
 from eu.coresense.adaptation.tactics import AtomicActionDeselectFeature, AtomicActionSelectFeature
 from eu.coresense.adaptation.tactics import TacticsFactory
 from eu.coresense.requirements.generator import RequirementsModelGenerator
@@ -63,6 +63,8 @@ from eu.coresense.requirements.requirementsModel import Quantifiable, AsAsPossib
 from eu.coresense.requirements.requirementsModel import FuzzyTriangular as J_FuzzyTriangular
 from eu.coresense.requirements.requirementsModel import FuzzyRightShoulder as J_FuzzyRightShoulder
 from eu.coresense.requirements.requirementsModel import FuzzyLeftShoulder as J_FuzzyLeftShoulder
+from eu.coresense.requirements.requirementsModel import Proposition as J_Proposition
+
 
 
 from eu.coresense.resolution.resolutionModel import ResolutionModel, Reconfiguration, SetParam
@@ -98,6 +100,9 @@ logger = logging.getLogger(__name__)
 def instanceis(clas, obj):
     return isinstance(obj, clas)
 
+def _sublist_instances(some_list, some_type):
+    return [some_element for some_element in some_list if isinstance(some_element,some_type)]
+
 
 def _value_from_lit(lit):
     if (isinstance(lit, DecimalLiteral)):
@@ -123,6 +128,21 @@ def valueOf(param):
     elif (isinstance(param, ParameterSequence)):
         return list(((ParameterSequence) @ param).getValue().stream().map(valueOf).toList())
 
+def j_as_as_possible_equals(as_as_possible_one, as_as_possible_two):
+    if(as_as_possible_one.getTimeFrequency().equals(as_as_possible_two.getTimeFrequency())):
+        c_var_one = as_as_possible_one.getQuantity().getContextVariable()
+        c_var_two = as_as_possible_two.getQuantity().getContextVariable()
+        if(c_var_one.equals(c_var_two)):
+            return True
+    return False
+
+def j_as_close_lit_equals(as_close_lit_one, as_close_lit_two):
+    if _value_from_lit(as_close_lit_one.getQuantity()) == _value_from_lit(as_close_lit_two.getQuantity()):
+        c_var_one = as_close_lit_one.getComparator().getContextVariable()
+        c_var_two = as_close_lit_two.getComparator().getContextVariable()
+        if(c_var_one.equals(c_var_two)):
+            return True
+    return False
 
 YELLOW_BOLD = "\033[33;1m"
 RESET = "\033[0m"
@@ -271,7 +291,7 @@ class TacticalRetreatInterface:
         # propagator = ConfigurationPropagator(formula, self.fmConfiguration)
 
         self.action_allconf = {}
-        self.latest_measures = {}
+        self.latest_measures = {"moving_backward" : False, "lastRearScan" : 10}
         self.in_effect_requirements = []
         self.traversed_requirements = {}
 
@@ -394,7 +414,6 @@ class TacticalRetreatInterface:
                 fuzzy_lsh = FuzzyLeftShoulder(foot=foot, shoulder=shoulder)
                 return AsManyAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_lsh)
         if isinstance(j_expression, CompoundExpression):
-            # self.logger.info(f"here!! {j_expression} {CompoundExpression} {And}")
             right_index = 2
             left_fuzzy = None
             right_fuzzy = None
@@ -439,17 +458,40 @@ class TacticalRetreatInterface:
             child = j_expression_list[1]
 
             if isinstance(child, CompoundExpression):  # or negation I suppose?
-                raise NotImplementedError
+                fuzzy_child = self.to_fuzzy(j_expression_list[1:4])
 
-            fuzzy_child = self.to_fuzzy([child])
+            else:
+                fuzzy_child = self.to_fuzzy([child])
 
             if (fuzzy_child is not None):
-                return FuzzyNot(self.to_fuzzy([child]))
+                return FuzzyNot(fuzzy_child)
             else:
                 return None
             # TODO: the below... is
             # if(isinstance(j_as_as_possible.getTimeFrequency(), ))
 
+        if isinstance(j_expression, J_Proposition):
+            j_condition = j_expression.getCondition()
+            
+            measure_name = str(j_condition.getMeasurement().getName())
+            context_val = self.latest_measures.get(measure_name, None)
+            j_operator = j_condition.getOperator()
+            comparator = _value_from_lit(j_condition.getValue())
+            res = False
+            if (j_operator == MathOperator.LESS):
+                res = context_val < comparator
+            if (j_operator == MathOperator.GREATER):
+                res = context_val > comparator
+            if (j_operator == MathOperator.EQUAL):
+                res = context_val == comparator
+            if (j_operator == MathOperator.DIFFERENT):
+                res = context_val != comparator
+            if (j_operator == MathOperator.GREQ):
+                res = context_val >= comparator
+            if (j_operator == MathOperator.LEQ):
+                res = context_val <= comparator
+
+            return Proposition(value=res)
         # if isinstance(j_expression, Shall):
         #     self.logger.info("s")
         #     j_shall = (Shall) @ j_expression
@@ -551,7 +593,8 @@ class TacticalRetreatInterface:
                            @ j_measurement_condition).getThresholdValue()
             comparator = _value_from_lit(j_threshold)
 
-        # if(isinstance(j_measurmement_condition,MeasurementMeasurementCondition)):
+        if(isinstance(j_measurement_condition,MeasurementMeasurementCondition)):
+            raise NotImplementedError
 
         res = False
 
@@ -686,16 +729,19 @@ class TacticalRetreatInterface:
             return
         if isinstance(j_expression, Shall):
             self.logger.info("s")
-            j_shall = (Shall) @ j_expression
-            j_expression_list.append(j_shall)
-            self.traverseExpression(j_shall.getExpression(), j_expression_list)
+            # j_shall = (Shall) @ j_expression
+            j_expression_list.append(j_expression)
+            self.traverseExpression(j_expression.getExpression(), j_expression_list)
             return
         if isinstance(j_expression, Negation):
-            j_neg = (Negation) @ j_expression
-            j_expression_list.append(j_neg)
-            self.traverseExpression(j_neg.getExpression(), j_expression_list)
+            # j_neg = (Negation) @ j_expression
+            j_expression_list.append(j_expression)
+            self.traverseExpression(j_expression.getExpression(), j_expression_list)
             return
         if isinstance(j_expression, Quantifiable):
+            j_expression_list.append(j_expression)
+            return
+        if isinstance(j_expression, J_Proposition):
             j_expression_list.append(j_expression)
             return
 
@@ -759,10 +805,10 @@ class TacticalRetreatInterface:
         """
         result_dict_list = []
 
-        for j_contextVar in self.contextModel.getEnvironmental_variables():
+        for j_context_var in self.contextModel.getEnvironmental_variables():
             result_dict = {}
-            result_dict['measure_name'] = str(j_contextVar.getName())
-            j_reference = j_contextVar.getSource().getRef()
+            result_dict['measure_name'] = str(j_context_var.getName())
+            j_reference = j_context_var.getSource().getRef()
             if (isinstance(j_reference, QualifiedRef)):
                 j_qualified_ref = j_reference
 
@@ -799,30 +845,30 @@ class TacticalRetreatInterface:
                     result_dict['interface_type'] = str(j_ser_ref.getServiceServer().getService()
                                                         .getFullname())
                     result_dict['interface_name'] = str(j_ser_ref.getServiceServer().getName())
-                    result_dict["service_request_kwargs"] = str(j_contextVar.getKwargs())
+                    result_dict["service_request_kwargs"] = str(j_context_var.getKwargs())
             elif (isinstance(j_reference, CompositeRef)):
                 j_composite_ref = (CompositeRef) @ j_reference
                 result_dict['source'] = "Composite"
                 result_dict['measure_names'] = [str(j_ctxtVar.getName())
                                                 for j_ctxtVar in j_composite_ref.getContextVars()]
 
-            result_dict["measurement_function_name"] = str(j_contextVar.getFunctionName())
+            result_dict["measurement_function_name"] = str(j_context_var.getFunctionName())
 
-            lib = j_contextVar.getFunctionLibrary()
+            lib = j_context_var.getFunctionLibrary()
             if (lib is not None):
                 result_dict["measurement_function_lib"] = str(lib)
 
-            args = j_contextVar.getFunctionArgs()
+            args = j_context_var.getFunctionArgs()
 
             if (args is not None):
                 result_dict["measurement_function_args"] = str(args)
 
-            proxy = bool(j_contextVar.getDoProxy())
+            proxy = bool(j_context_var.getDoProxy())
 
             if (proxy is not False):
                 result_dict["measurement_proxy"] = True
 
-            period = int(j_contextVar.getPeriod())
+            period = int(j_context_var.getPeriod())
             if (period != 0):
                 result_dict["measurement_period"] = period
 
@@ -997,6 +1043,331 @@ class TacticalRetreatInterface:
     def _isOptional(self, feature: Feature):
         return (not feature.isMandatory()) and (not isinstance(feature.getParent(), Alternative))
 
+
+    def _tactics_for_requirement(self, requirement_name) -> List:
+        tactics = []
+        for j_rule in self.tacticsModel.getRules():
+            j_requirement = j_rule.getRequirement()
+            req_name = "None"
+            if (j_requirement is not None):
+                if requirement_name == str(j_requirement.getName()):
+                    if (isinstance(j_rule, ActionRules)):
+                        j_action_rule = j_rule
+                        tactics.extend(j_action_rule.getAdaptationRules())
+                    else:
+                        tactics.append(j_rule)
+        return tactics
+
+    def _distance_between_measure_and_condition(self, j_measurement_condition, measures) -> float:
+        j_context_var = j_measurement_condition.getMeasurement()
+        current_value = measures[str(j_context_var.getName())]
+        distance = 0.0
+        if(isinstance(j_measurement_condition, MeasurementThresholdCondition)):
+            j_threshold = ((MeasurementThresholdCondition)
+                            @ j_measurement_condition).getThresholdValue()
+            comparator = _value_from_lit(j_threshold)
+            j_operator = j_measurement_condition.getOperator()
+            
+            if (j_operator == MathOperator.LESS):
+                if current_value >= comparator:
+                    distance = current_value - comparator
+                #distance is 0.0
+            if (j_operator == MathOperator.GREATER):
+                if current_value <= comparator:
+                    distance = comparator - current_value
+                #distance is 0.0
+            if (j_operator == MathOperator.EQUAL):
+                distance = abs(current_value - comparator)
+            if (j_operator == MathOperator.DIFFERENT):
+                if(current_value == comparator):
+                    distance = 1.0 #actually it would be the smallest possible unit to make them different
+            if (j_operator == MathOperator.GREQ):
+                if current_value < comparator:
+                    distance = comparator - current_value
+            if (j_operator == MathOperator.LEQ):
+                if current_value > comparator:
+                    distance = current_value - comparator
+
+            j_log_op = j_measurement_condition.getLogicalOp()
+            j_second_term = j_measurement_condition.getSecondTerm()
+            # self.logger.info(f"loggg op {str(j_log_op)}")
+            # self.logger.info(f"loggg op {str(j_second_term)}")
+    
+            # j_log_op_val = j_log_op.getValue()
+            if (j_log_op is not None) and (j_second_term is not None):
+                if (j_log_op == LogicalOperator.AND):
+                    self.logger.info("and")
+    
+                    return (distance + self._distance_between_measure_and_condition(j_second_term, measures))
+                if (j_log_op == LogicalOperator.OR):
+                    self.logger.info("OR")
+    
+                    return min(distance, self._distance_between_measure_and_condition(j_second_term, measures))
+        if(isinstance(j_measurement_condition, MeasurementMeasurementCondition)):
+            # You would do something like, checking the distance to each context var and finding the min one to make the condition be met.
+            raise NotImplementedError
+
+        return distance
+        
+    def _distance_to_context_guard(self, j_context_guard):
+        measures = self.latest_measures
+        j_measurement_condition = j_context_guard.getContextCondition()
+        return self._distance_between_measure_and_condition(j_measurement_condition, measures)
+
+    def _distance_between_conf_and_condition(self, j_feature_condition, j_configuration):
+        sel_or_not = str(j_feature_condition.getNot()) == "!"
+        feature_name = str(j_feature_condition.getVariant().getFeature().getName())
+
+        res = False
+        j_second_term = j_feature_condition.getSecondTerm()
+        j_log_op = j_feature_condition.getLogicalOp()
+
+        # While its an and add to the current computation, when it is an or split off.
+        if (j_log_op is not None) and (j_second_term is not None):
+            if (j_log_op == LogicalOperator.AND):
+                self.logger.info("and")
+
+                return (res and self._eval_measurement_condition(j_second_term, configuration))
+            if (j_log_op == LogicalOperator.OR):
+                self.logger.info("OR")
+
+                return (res or self._eval_measurement_condition(j_second_term, configuration))
+
+
+
+        formula = FeatureModelFormula(self.featureModel)
+        j_conf_prop = ConfigurationPropagator(formula, j_configuration)
+        self._process_selection(reconfigurations, j_configuration)
+        LongRunningWrapper.runMethod(j_conf_prop.resolve())
+        self._process_selection(reconfigurations, j_configuration)
+        LongRunningWrapper.runMethod(j_conf_prop.resolve())
+        LongRunningWrapper.runMethod(j_conf_prop.update())
+        if (not bool(LongRunningWrapper.runMethod(j_conf_prop.isValid()))):
+            raise Exception("Invalid Configuration after reconfiguration!")
+
+        configuration = self._current_configuration()
+
+        self.logger.info(f"postConf ? {str(configuration)}")
+        # self.action_currconf[action_name] = configuration
+        return self.configuration_delta(set(initial_conf), set(configuration))
+
+    def tac_compare(self, j_adaptation_rule):
+        j_condition_action = self._get_condition_action(j_adaptation_rule)
+        self.logger.info(f"uuh {j_adaptation_rule.getName()} {str(j_condition_action.getContextGuard())}")
+        distance = 0.0
+        if (j_condition_action.getContextGuard() is not None):
+            j_context_guard = j_condition_action.getContextGuard()
+            distance += self._distance_to_context_guard(j_context_guard)
+        if (j_condition_action.getFeatureGuard() is not None):
+            j_feature_condition = j_condition_action.getFeatureGuard() \
+                        .getFeatureCondition()
+            j_configuration_copy = Configuration(self.fmConfiguration)
+            self._distance_between_conf_and_condition(j_feature_condition, j_configuration_copy)
+        return -1.0
+    
+    def similar_tactics(self, interface_name):
+        # First the invalid tactics, by closest
+        # tacs_for_req = self._tactics_for_requirement(violated_requirement)
+        # if(tacs_for_req is not None):
+        #     return self.tac_compare(tacs_for_req[0])
+            # sorted(tacs_for_req,key=)
+        potentially_violated_reqs = []
+        for j_rule in self.tacticsModel.getRules():
+            j_requirement = j_rule.getRequirement()
+
+            if (j_requirement is not None) and isinstance(j_rule, ActionRules):
+
+                j_action_rule = j_rule
+
+                if interface_name == str(j_action_rule.getAction().getName()):
+                    potentially_violated_reqs.append(j_requirement)
+        req_tac = {}
+        for violated_requirement in potentially_violated_reqs:
+
+            reqs = list(self.requirementsModel.getRequirements())
+            reqs.remove(violated_requirement)
+            most_similar_reqs = sorted(reqs,
+                                       key=partial(self._requirement_similarity,
+                                                   violated_requirement), reverse=True)
+            tactics = []
+            for most_similar_req in most_similar_reqs:
+                t_for_r = self._tactics_for_requirement(most_similar_req.getName())
+                self.logger.info(f"AAA {str(t_for_r)}")
+                if len(t_for_r) != 0:
+                    if len(t_for_r) == 1:
+                        tactics.extend(t_for_r)
+                    else:
+                        raise NotImplementedError
+            req_tac[str(violated_requirement.getName())] = [str(j_adap_rule.getName())
+                                                            for j_adap_rule in tactics]
+        return req_tac
+        # max(_requirement_similarity
+        #Then the tactics of the closest requirements.
+
+    def _find_req_by_name(self, req_name):
+        for req in self.requirementsModel.getRequirements():
+            if(str(req.getName()) == req_name):
+                return req
+
+
+    def _requirement_similarity(self, j_requirement_one, j_requirement_two):
+        self.logger.info(f"1: {j_requirement_one.getName()} 2: {j_requirement_two.getName()} ")
+        qa_similarity = int(j_requirement_one.getQa().equals(j_requirement_two.getQa()))
+
+        i = self.traversed_requirements[j_requirement_one]
+        j = self.traversed_requirements[j_requirement_two]
+
+        i_as_as_list = _sublist_instances(i,AsAsPossible)
+        j_as_as_list = _sublist_instances(j,AsAsPossible)
+
+        expr_scores = []
+        as_as_score = 0
+        if len(i_as_as_list) > 0:
+            for i_as_as in i_as_as_list:
+                for j_as_as in j_as_as_list:
+                    as_as_score += int(j_as_as_possible_equals(i_as_as,j_as_as))
+            as_as_score = as_as_score / len(i_as_as_list)
+            expr_scores.append(as_as_score)
+        i_as_close_list = _sublist_instances(i,AsCloseLit)
+        j_as_close_list = _sublist_instances(j,AsCloseLit)
+
+        as_close_score = 0
+        if len(i_as_close_list) > 0:
+            for i_as_close in i_as_close_list:
+                for j_as_close in j_as_close_list:
+                    as_close_score += int(j_as_close_lit_equals(i_as_close,j_as_close))
+            as_close_score = as_close_score / len(i_as_close_list)
+            expr_scores.append(as_close_score)
+
+        if(len(expr_scores) > 0):
+            expr_similarity = sum(expr_scores)/ len(expr_scores)
+        else:
+            expr_similarity = 0.0
+        # [expr in i]
+        # self.logger.info(f"1: {str(i)} 2: {str(j)} ")
+        # self.logger.info(f"equals: {str(i.equals(j))}")
+        # self.logger.info(f"==: {str(i == j)}")
+
+        # #AsAsPossible, AsCloseLit
+        # expr_similarity = bool(i.equals(j))
+
+        return qa_similarity + expr_similarity
+
+    def _test_req_similarity(self):
+        x = self.similar_tactics("NavigateThroughPoses")
+        return x
+        # self.logger.info(f"Try {list(self.requirementsModel.getRequirements())}")
+        # m_safely = self._requirement_similarity(
+        # self.requirementsModel.getRequirements().get(Integer @ 0),
+        # self.requirementsModel.getRequirements().get(Integer @ 1),
+        # )
+
+        # r_safely = self._requirement_similarity(
+        # self.requirementsModel.getRequirements().get(Integer @ 0),
+        # self.requirementsModel.getRequirements().get(Integer @ 4),
+        # )
+
+        # return [m_safely, r_safely]
+
+
+
+    def nodesWith(self, getList, targetName):
+        nodes = []
+        for ros_node in self.allRossystemNodes(True):
+            node = ros_node.getFrom()
+            for item in getattr(node, getList)():
+                if (item.getName().equals(targetName)):
+                    nodes.append(node)
+        
+        return nodes
+
+    def allRossystemNodes(self, skipSubnodes):
+        rosNodesInRossystems = []
+
+        for resource in self.rosSystemResources:
+            sys = System @ resource.getContents().get(0)
+            for component in sys.getComponents():
+                if not isinstance(component, RosNode):
+                    continue
+                
+                isSubnode = component.getParent() != None
+                
+                if(not skipSubnodes or not isSubnode):
+                    rosNodesInRossystems.append(component)
+
+        return rosNodesInRossystems
+
+    def nodesWithActionClient(self, actionName):
+        return self.nodesWith("getActionclient", actionName)
+
+
+    def nodesWithActionServer(self, actionName):
+        return self.nodesWith("getActionserver", actionName)
+
+
+    def nodesWithServiceClient(self, serviceName):
+        return self.nodesWith("getServiceclient", serviceName)
+
+
+    def nodesWithServiceServer(self, serviceName):
+        return self.nodesWith("getServiceserver", serviceName)
+
+
+    def nodesWithPublisher(self, topicName):
+        return self.nodesWith("getPublisher", topicName)
+
+
+    def nodesWithSubscriber(self, topicName):
+        return self.nodesWith("getSubscriber", topicName)
+
+
+
+    def processExpansion(self):
+        rosNodes = []
+        for resource in self.rosSystemResources:
+            sys = System @ resource.getContents().get(0)
+        for process in sys.getProcesses():
+            for component in process.getComponents():
+                if (not isinstance(component, RosNode)):
+                    continue
+                rosNodes.append(component.getFrom())
+					
+        return rosNodes
+
+    def allConnectedNodes(self, node):
+        connectedNodes = set()
+
+        connectedNodes.union(set(self.processExpansion()))
+
+
+        # All the nodes with clients to my server
+        for actionServer in node.getActionserver():
+            connectedNodes.union(self.nodesWithActionClient(actionServer.getName()))  
+
+        # for actionClient in node.getActionclient():
+        #     connectedNodes.union(self.nodesWithActionServer(actionClient.getName()))
+
+        # Collect all nodes from subscribers
+        # for subscriber in node.getSubscriber():
+            # connectedNodes.union(self.nodesWithPublisher(subscriber.getName()))
+
+        # All the nodes subscribing to my publishers
+        for  publisher in node.getPublisher():
+            connectedNodes.union(self.nodesWithSubscriber(publisher.getName()))
+
+        for serviceServer in node.getServiceserver():
+            connectedNodes.union(self.nodesWithServiceClient(serviceServer.getName()))
+
+        # for serviceClient in node.getServiceclient():
+        #     connectedNodes.union(self.nodesWithServiceServer(serviceClient.getName())) 
+
+        return connectedNodes
+
+
+    def distance_nodes(self, node_a, node_b):
+        pass
+
+
     def _featuresInvolvedInRule(self, rule):
         selected_by = []
         deselected_by = []
@@ -1056,23 +1427,23 @@ class TacticalRetreatInterface:
         # self._subtree_features(j_feature, available_opts_feats, self._isOptional)
 
         # for i, j_state in enumerate(self.j_states_map.get(action_name)):
-        for i, j_state in enumerate(self.j_states):
-            state_name = str(j_state.name())
-            state_dict[state_name] = []
-            if (int(j_state.associatedRules.size()) > 0):
-                state_dict[state_name] = [str(rule.getName()) for rule in j_state.associatedRules]
-            for rule in j_state.associatedRules:
-                selected_by, deselected_by = self._featuresInvolvedInRule(rule)
+        # for i, j_state in enumerate(self.j_states):
+        #     state_name = str(j_state.name())
+        #     state_dict[state_name] = []
+        #     if (int(j_state.associatedRules.size()) > 0):
+        #         state_dict[state_name] = [str(rule.getName()) for rule in j_state.associatedRules]
+        #     for rule in j_state.associatedRules:
+        #         selected_by, deselected_by = self._featuresInvolvedInRule(rule)
 
-                for selected_feature in selected_by:
-                    for conf in all_configurations:
+        #         for selected_feature in selected_by:
+        #             for conf in all_configurations:
 
-                        if str(selected_feature.getName()) in conf:
-                            table[(str(conf), state_name)] = str(rule.getName())
-                for deselected_feature in deselected_by:
-                    for conf in all_configurations:
-                        if not (str(deselected_feature.getName()) in conf):
-                            table[(str(conf), state_name)] = str(rule.getName())
+        #                 if str(selected_feature.getName()) in conf:
+        #                     table[(str(conf), state_name)] = str(rule.getName())
+        #         for deselected_feature in deselected_by:
+        #             for conf in all_configurations:
+        #                 if not (str(deselected_feature.getName()) in conf):
+        #                     table[(str(conf), state_name)] = str(rule.getName())
                 # for alt in available_alts_feats:
                 #     sel_feat = 'select_' + str(alt.getName())
 
@@ -1091,9 +1462,9 @@ class TacticalRetreatInterface:
                 #         reconfigurations.append(desel_feat)
                 #         table[(desel_feat, state_name)] = str(rule.rule.getName())
 
-        self.logger.info(f"table {str(table)}")
+        # self.logger.info(f"table {str(table)}")
 
-        return state_dict, table, reconfigurations
+        # return state_dict, table, reconfigurations
 
     # def get_reconfiguration_plan(self, tactic_rule: str) -> AdaptationPlan:
     #     query_result = self.fetch_reconfiguration_plan(tactic_rule)
@@ -1125,20 +1496,20 @@ class TacticalRetreatInterface:
 
         return reconfigurations
 
-    def _process_selection(self, reconfigurations):
+    def _process_selection(self, reconfigurations, conf):
         for reconf in reconfigurations:
             if "DESEL_" in reconf:
-                self.fmConfiguration.setManual(reconf[6:], Selection.UNSELECTED)
+                conf.setManual(reconf[6:], Selection.UNSELECTED)
             elif "SEL_" in reconf:
-                self.fmConfiguration.setManual(reconf[4:], Selection.SELECTED)
+                conf.setManual(reconf[4:], Selection.SELECTED)
 
     def reconfiguration(self, reconfigurations: list[str]) -> list[str]:
         initial_conf = self._current_configuration()
         self.fmConfiguration.resetAutomaticValues()
         self.logger.info(f"initialConf ? {str(initial_conf)}")
-        self._process_selection(reconfigurations)
+        self._process_selection(reconfigurations, self.fmConfiguration)
         LongRunningWrapper.runMethod(self.configurationPropagator.resolve())
-        self._process_selection(reconfigurations)
+        self._process_selection(reconfigurations, self.fmConfiguration)
         LongRunningWrapper.runMethod(self.configurationPropagator.resolve())
         LongRunningWrapper.runMethod(self.configurationPropagator.update())
         if (not bool(LongRunningWrapper.runMethod(self.configurationPropagator.isValid()))):
