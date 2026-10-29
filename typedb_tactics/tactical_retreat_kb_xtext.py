@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import importlib
 import inspect
 import json
@@ -26,7 +27,8 @@ from adapt_x_msgs.srv import FetchSimilar
 from adapt_x_msgs.srv import HypotheticalReqFulfillment
 from adapt_x_msgs.srv import HypotheticalReqsFulfillment
 from adapt_x_msgs.srv import RequirementsFulfillment
-from adapt_x_msgs.srv import SatisfiedRule
+from adapt_x_msgs.srv import ValidTactics
+from adapt_x_msgs.srv import ValidRankedTactics
 from adapt_x_msgs.srv import UpdateHasParamValue
 from adapt_x_msgs.srv import UpdateInEffect
 from adapt_x_msgs.srv import UpdateRunning
@@ -50,6 +52,8 @@ from rclpy.qos import QoSHistoryPolicy
 from rclpy.qos import QoSLivelinessPolicy
 from rclpy.qos import QoSProfile
 from rclpy.qos import QoSReliabilityPolicy
+from rclpy.parameter import Parameter
+from rcl_interfaces.msg import ParameterEvent
 
 from ros_monitors_functions.factory import MonitorFactory
 # from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
@@ -93,6 +97,33 @@ def publish_event(event_type: str):
             return func(*args, **kwargs)
         return inner
     return _publish_event
+
+
+def kb_service(description: str, verbose: bool = True):
+    """Wrap a service callback with timing, logging and error handling (Decorator)."""
+    def _kb_service(func):
+        @functools.wraps(func)
+        def inner(self, req, res):
+            start_time = time.perf_counter()
+            has_success = hasattr(res, 'success')
+            try:
+                if verbose:
+                    self.get_logger().info(f'{description}...')
+                if has_success:
+                    res.success = True  # callback may override to False
+                func(self, req, res)
+                if verbose:
+                    elapsed_time = time.perf_counter() - start_time
+                    self.get_logger().info(
+                        f'{description} done in {elapsed_time:.4f} seconds.')
+            except Exception as e:
+                self.get_logger().error(f'Error {description.lower()}: {e}')
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
+                if has_success:
+                    res.success = False
+            return res
+        return inner
+    return _kb_service
 
 
 def get_ros_msg_type_from_string(msg_type_string: str, msg_type='msg'):
@@ -209,6 +240,7 @@ class TacticalRetreatKB(Node):
             'power_draw': 'unknown',
             'current_velocity': 'unknown'
         }
+        self.parameter_event_subscriber = None
 
         self.declare_parameter("tactics_path", "")
         self.declare_parameter("resolution_path", "")
@@ -253,8 +285,8 @@ class TacticalRetreatKB(Node):
         )
 
         # x = self.interface.similar_tactics("CameraMotionAlignment")
-        x = self.interface._test_req_similarity()
-        self.get_logger().info(f"Testing similarity {x}")
+        # x = self.interface._test_req_similarity()
+        # self.get_logger().info(f"Testing similarity {x}")
         # self.interface.get_fetch_policy("FollowPath")
 
         self.query_cb_group = MutuallyExclusiveCallbackGroup()
@@ -279,9 +311,9 @@ class TacticalRetreatKB(Node):
         self.get_logger().info(
             self.get_name() + ': on_activate() is not yet completed.')
 
-        self.doing_states = self.get_parameter("do_states").value
+        # self.doing_states = self.get_parameter("do_states").value
 
-        self.get_logger().info(f": are we doing states? {self.doing_states}")
+        # self.get_logger().info(f": are we doing states? {self.doing_states}")
         pub_qos = QoSProfile(reliability=QoSReliabilityPolicy.BEST_EFFORT,
                              history=QoSHistoryPolicy.KEEP_LAST,
                              depth=3)
@@ -294,475 +326,13 @@ class TacticalRetreatKB(Node):
         self.mes_publisher = self.create_publisher(
             String, 'context_model', qos_profile=pub_qos)
 
+        self.parameter_event_subscriber = self.create_subscription(
+            ParameterEvent, 'parameter_events', self.parameter_event_cb, 10)
+
         self.prev_state = None
         # self.create_measures_interfaces()
-        self.get_logger().info("1")
         try:
-            def _create_measures_cb(_, res):
-                try:
-                    self.get_logger().info('Creating measures interfaces...')
-                    self.create_measures_interfaces()
-                    self.get_logger().info('Measures interfaces created.')
-                    res.success = True
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error creating measures interfaces: {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                    res.success = False
-                return res
-
-            self.get_logger().info("1")
-
-            def _fetch_applicable_cb(req, res):
-                try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Fetching applicable tactics...')
-                    result = self.interface.get_applicable_tactics(
-                        req.resolution_model, req.interface_name)
-
-                    res.tactic_rules = [TacticRule(name=rule_name, reconfigurations=fa_list,
-                                                   requirement_name=req_name)
-                                        for (rule_name, req_name), fa_list in result.items()]
-                    elapsed_time = time.perf_counter() - start_time
-                    res.success = True
-
-                    self.get_logger().info(
-                        f'Applicable tactics fetched {str(res)}')
-
-                    self.get_logger().info(
-                        f'Applicable tactics fetched in {elapsed_time:.4f} seconds.')
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error fetching applicable tactics: {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                    res.success = False
-                return res
-            self.get_logger().info("2")
-
-
-            def _fetch_similar_cb(req, res):
-                try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Fetching similar tactics...')
-                    result = self.interface.similar_tactics(req.interface_name)
-                    self.get_logger().info(f"uhh {result}")
-
-                    res.similarity_pairs = [SimilarityPair(requirement_name=req_name, rule_names=tac_list)
-                                            for (req_name, tac_list) in result.items()]
-                    elapsed_time = time.perf_counter() - start_time
-                    res.success = True
-
-                    self.get_logger().info(
-                        f'Similar tactics fetched {str(res)}')
-
-                    self.get_logger().info(
-                        f'Similar tactics fetched in {elapsed_time:.4f} seconds.')
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error fetching similar tactics: {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                    res.success = False
-                return res
-            self.get_logger().info("2.5")
-            
-
-            def _fetch_satisfied_tactic_cb(req, res):
-                try:
-                    start_time = time.perf_counter()
-                    # self.get_logger().info('Fetching satisfied tactics...')
-                    result = self.interface.get_satisfied_tactics(
-                        req.tactic_rules,
-                        req.action_name)
-                    res.satisfied = result
-                    res.success = True
-                    elapsed_time = time.perf_counter() - start_time
-                    # self.get_logger().info(
-                    #     f'Satisfied tactics fetched in {elapsed_time:.4f} seconds.')
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error fetching Satisfied tactics : {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                    res.success = False
-                return res
-
-            def _fetch_actions_cb(req, res):
-                try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Fetching all resolution actions...')
-                    x = self.interface.get_resolution_adaptations(logger=self.get_logger())
-                    res.resolutions = []
-                    for name, adaptations in x.items():
-                        res.resolutions.append(
-                            Resolution(resolution_action_name=name, adaptations=adaptations))
-
-                    elapsed_time = time.perf_counter() - start_time
-                    res.success = True
-                    self.get_logger().info(
-                        f'Tactic actions fetched in {elapsed_time:.4f} seconds.')
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error fetching tactic actions: {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                    res.success = False
-                return res
-
-            def _fetch_reconfiguration_plan_cb(req, res):
-                try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Fetching tactic actions...')
-                    # res.adaptations = self.interface.get_reconfiguration_plan(req.tactic_name).actions
-                    x = None
-                    if (req.full_configuration):
-                        x = self.interface.change_configuration(
-                            req.full_configuration_string)
-                    else:
-                        x = self.interface.reconfiguration(req.reconfiguration_string)
-                    elapsed_time = time.perf_counter() - start_time
-                    self.get_logger().info(
-                        f'Tactic actions {x} fetched in {elapsed_time:.4f} seconds.')
-                    res.resolution_actions = x
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error fetching tactic actions: {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                return res
-
-            # TODO: Implement properly.
-            self.get_logger().info("4")
-
-            def _fetch_all_measurements_cb(_, res):
-                pass
-
-            def _update_running_cb(req, res):
-                try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Updating running nodes...')
-                    self.interface.manual_running_nodes(req.node_names)
-                    elapsed_time = time.perf_counter() - start_time
-                    self.get_logger().info(
-                        f'Running nodes updated in {elapsed_time:.4f} seconds.')
-                    res.success = True
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error updating running nodes: {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                    res.success = False
-                return res
-
-            def _fetch_req_fullfillment_cb(req, res):
-                try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Fetching requirements fulfillment...')
-
-                    fulfillments = self.interface.get_relaxed_requirements_fulfillment(
-                        req.system_name, *req.requirement_names)
-
-                    res.fulfillment_values = fulfillments
-                    elapsed_time = time.perf_counter() - start_time
-                    self.get_logger().info(
-                        f'Requirements fulfillment fetched in {elapsed_time:.4f} seconds.')
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error fetching requirements fulfillment: {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                return res
-
-            def _fetch_req_hyp_req_cb(req, res):
-                try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Fetching hypothetical requirement fulfillment...')
-
-                    interface = self.interface
-                    fulfillment = interface.get_relaxed_requirement_hypothetical_fulfillment(
-                        req.system_name, req.requirement_name, req.rule_name)
-
-                    res.fulfillment_value = float(fulfillment)
-                    res.success = True
-                    elapsed_time = time.perf_counter() - start_time
-                    self.get_logger().info(
-                        'Requirements hypothetical fulfillment fetched in '
-                        f'{elapsed_time:.4f} seconds.')
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error fetching requirements fulfillment: {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                return res
-            self.get_logger().info("5")
-
-            def _fetch_req_hyp_reqs_cb(req, res):
-                try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info(
-                        '\n\nFetching hypothetical requirements fulfillment...'
-                        f'{str(req.rule_names)}')
-
-                    interface = self.interface
-                    fulfillment = interface.get_relaxed_requirements_hypothetical_fulfillment(
-                        req.rule_names, req.system_name)
-
-                    res.fulfillment_dict = json.dumps(fulfillment)
-                    res.success = True
-                    elapsed_time = time.perf_counter() - start_time
-                    self.get_logger().info(
-                        'Requirements hypothetical fulfillment fetched in '
-                        f'{elapsed_time:.4f} seconds.\n\n')
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error fetching requirements fulfillment: {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                return res
-
-            def _fetch_req_fullfillment_ineffect_cb(self, req, res):
-                try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Fetching requirements with in_effect fulfillment...')
-                    reqs = self.fetch_requirements()
-                    if (reqs is not None):
-                        res.requirements = reqs
-                        res.success = True
-                    else:
-                        res.success = False
-                    elapsed_time = time.perf_counter() - start_time
-                    self.get_logger().info(
-                        f'Requirements fulfillment fetched in effect {elapsed_time:.4f} seconds.')
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error fetching requirements fulfillment: {e}')
-                    self.get_logger().error("Traceback:\n" + traceback.format_exc())
-                    raise e
-                return res
-
-            def _update_in_effect_cb(req, res):
-                try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Updating in-effect requirements...')
-                    self.interface.update_requirements_in_effect(
-                        req.requirement_names, req.all_requirements)
-                    elapsed_time = time.perf_counter() - start_time
-                    self.get_logger().info(
-                        f'In-effect requirements updated in {elapsed_time:.4f} seconds.')
-                    res.success = True
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error updating in-effect requirements: {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                    res.success = False
-                return res
-
-            def _update_has_param_value_cb(req, res):
-                try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Updating has_param_value...')
-                    query_res = self.interface.update_feature_selected_by_param_value(
-                        req.feature_name)
-                    self.get_logger().info(
-                        f'update_feature_selected_by_param_value result: {query_res}')
-                    elapsed_time = time.perf_counter() - start_time
-                    self.get_logger().info(
-                        f'has_param_value updated in {elapsed_time:.4f} seconds.')
-                    res.success = True
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error updating has_param_value: {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                    res.success = False
-                return res
-
-            def _fetch_current_state_cb(_, res):
-                try:
-                    start_time = time.perf_counter()
-                    # self.get_logger().info('Getting current state...')
-                    current_state_string = self.interface.get_current_state()
-                    # self.get_logger().info(
-                    #     f'current_state result: {current_state_string}')
-                    elapsed_time = time.perf_counter() - start_time
-                    self.get_logger().info(
-                        f'current_state retrieved in {elapsed_time:.4f} seconds.')
-                    res.success = True
-                    res.message = current_state_string
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error fetching state: {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                    res.success = False
-                return res
-
-            def _fetch_current_state_action_cb(req, res):
-                try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Getting current state...')
-                    current_state_string = self.interface.get_current_state_action(req.action_name, self.get_logger())
-                    res.success = False
-                    if (current_state_string is not None):
-                        res.current_state = SymbolicState(state_name=str(current_state_string),
-                                                          header=self.create_header())
-                        res.success = True
-                    # self.get_logger().info(
-                        # f'current_state result: {current_state_string}')
-                    elapsed_time = time.perf_counter() - start_time
-                    self.get_logger().info(
-                        f'current_state {str(current_state_string)} retrieved in {elapsed_time:.4f} seconds.')
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error fetching state: {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                    res.success = False
-                return res
-
-            def _fetch_policy_cb(req, res):
-                try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Getting rules for action...')
-                    state_dict, table, reconfigurations = self.interface.get_fetch_policy(req.action_name)
-                    entries = []
-
-                    for (fa, s), r in table.items():
-                        t = TableEntry(state=SymbolicState(state_name=s),
-                                       feature_adaptation=fa, rule_name=r)
-                        entries.append(t)
-
-                    states = [SymbolicState(state_name=p[0])
-                              for p in state_dict.items()]
-                    res.table_entries = entries
-                    res.states = states
-                    res.reconfigurations = reconfigurations
-                    res.success = True
-                    elapsed_time = time.perf_counter() - start_time
-                    self.get_logger().info(
-                        f' " retrieved in {elapsed_time:.4f} seconds.')
-                except Exception as e:
-                    self.get_logger().error(
-                        f'Error getting rules fpr action: {e}')
-                    self.get_logger().error('Traceback:\n' + traceback.format_exc())
-                    res.success = False
-                return res
-            self.get_logger().info("6")
-
-            # create service with a lambda calling the create_measures_interfaces
-            # function
-            try:
-                self.measures_service = self.create_service(
-                    Trigger,
-                    self.get_name() + '/create_measures',
-                    _create_measures_cb,
-                    callback_group=self.query_cb_group
-                )
-            except Exception as e:
-                raise e
-            self.get_logger().info("6.3")
-
-            self.applicable_tactics_service = self.create_service(
-                FetchRules,
-                self.get_name() + '/fetch_rules',
-                _fetch_applicable_cb,
-                callback_group=self.query_cb_group
-            )
-            self.get_logger().info("6.4")
-
-            self.get_state = self.create_service(
-                GetState,
-                self.get_name() + '/determine_state',
-                _fetch_current_state_action_cb,
-                callback_group=self.query_cb_group
-            )
-
-            self.fetch_similar = self.create_service(
-                FetchSimilar,
-                self.get_name() + '/fetch_similar',
-                _fetch_similar_cb,
-                callback_group=self.query_cb_group
-            )
-            self.get_logger().info("6.5")
-
-            # self.requirements_fulfillment_service = self.create_service(
-            #     RequirementsFulfillment,
-            #     self.get_name() + '/fetch_requirements_fulfillment',
-            #     _fetch_req_fullfillment_cb
-            # )
-
-            self.requirements_fulfillment_ineffect_service = self.create_service(
-                RequirementsFulfillment,
-                self.get_name() + '/fetch_requirements_fulfillment_ineffect',
-                _fetch_req_fullfillment_ineffect_cb
-            )
-
-            self.hyp_requirements_fulfillment_service = self.create_service(
-                HypotheticalReqFulfillment,
-                self.get_name() + '/fetch_hyp_requirement',
-                _fetch_req_hyp_req_cb,
-                callback_group=self.query_cb_group
-            )
-
-            # self.current_state_service = self.create_service(
-            #     Trigger,
-            #     self.get_name() + '/get_current_state',
-            #     _fetch_current_state_cb,
-            #     callback_group=self.query_cb_group
-            # )
-            self.get_logger().info("7")
-
-            self.hyp_requirements_fulfillment_service = self.create_service(
-                HypotheticalReqsFulfillment,
-                self.get_name() + '/fetch_hyp_requirements',
-                _fetch_req_hyp_reqs_cb,
-                callback_group=self.query_cb_group
-            )
-
-            self.satisfied_tactic_service = self.create_service(
-                SatisfiedRule,
-                self.get_name() + '/satisfied_rule',
-                _fetch_satisfied_tactic_cb,
-                callback_group=self.query_cb_group
-            )
-
-            self.tactic_actions_service = self.create_service(
-                FetchResolutions,
-                self.get_name() + '/fetch_resolutions',
-                _fetch_actions_cb,
-                callback_group=self.query_cb_group
-            )
-
-            self.adaptation_plan_service = self.create_service(
-                FetchPlan,
-                self.get_name() + '/fetch_plan',
-                _fetch_reconfiguration_plan_cb,
-                callback_group=self.query_cb_group
-            )
-
-            self.update_running_service = self.create_service(
-                UpdateRunning,
-                self.get_name() + '/update_running',
-                _update_running_cb,
-                callback_group=self.query_cb_group
-            )
-
-            self.update_in_effect_service = self.create_service(
-                UpdateInEffect,
-                self.get_name() + '/update_in_effect',
-                _update_in_effect_cb,
-                callback_group=self.query_cb_group
-            )
-
-            self.update_has_param_value_service = self.create_service(
-                UpdateHasParamValue,
-                self.get_name() + '/update_has_param_value',
-                _update_has_param_value_cb,
-                callback_group=self.query_cb_group
-            )
-
-            # self.all_measurements_service = self.create_service(
-            #     Trigger,
-            #     self.get_name() + '/fetch_all_measurements',
-            #     _fetch_all_measurements_cb
-            # )
-            self.get_logger().info("8")
-
-            self.fetch_rules_for_action_service = self.create_service(
-                FetchPolicy,
-                self.get_name() + '/fetch_policy',
-                _fetch_policy_cb,
-                callback_group=self.query_cb_group
-            )
+            self._create_kb_services()
         except Exception as e:
             self.get_logger().error('Traceback:\n' + traceback.format_exc())
             raise e
@@ -775,7 +345,8 @@ class TacticalRetreatKB(Node):
     def on_deactivate(self, state: State) -> TransitionCallbackReturn:
         self.get_logger().info('on_deactivate() is called.')
         self.active = False
-        self.destroy_service(self.measures_service)
+        for service in self.kb_services.values():
+            self.destroy_service(service)
         return super().on_deactivate(state)
 
     def on_configure(self, state: State) -> TransitionCallbackReturn:
@@ -796,6 +367,152 @@ class TacticalRetreatKB(Node):
         """
         self.active = False
         return super().on_cleanup(state)
+
+    def _create_kb_services(self):
+        services = [
+            (Trigger, 'create_measures', self._create_measures_cb),
+            (FetchRules, 'fetch_rules', self._fetch_rules_cb),
+            (GetState, 'determine_state', self._determine_state_cb),
+            (FetchSimilar, 'fetch_similar', self._fetch_similar_cb),
+            # (RequirementsFulfillment, 'fetch_requirements_fulfillment',
+            #  self._fetch_req_fulfillment_cb),
+            (RequirementsFulfillment, 'fetch_requirements_fulfillment_ineffect',
+             self._fetch_req_fulfillment_ineffect_cb),
+            (HypotheticalReqFulfillment, 'fetch_hyp_requirement',
+             self._fetch_hyp_requirement_cb),
+            (HypotheticalReqsFulfillment, 'fetch_hyp_requirements',
+             self._fetch_hyp_requirements_cb),
+            # (Trigger, 'get_current_state', self._get_current_state_cb),
+            (ValidTactics, 'satisfied_rule', self._satisfied_rule_cb),
+            (ValidRankedTactics, 'valid_ranked_tactics', self._valid_ranked_tactics_cb),
+            (FetchResolutions, 'fetch_resolutions', self._fetch_resolutions_cb),
+            (FetchPlan, 'fetch_plan', self._fetch_plan_cb),
+            (UpdateRunning, 'update_running', self._update_running_cb),
+            (UpdateInEffect, 'update_in_effect', self._update_in_effect_cb),
+            (UpdateHasParamValue, 'update_has_param_value',
+             self._update_has_param_value_cb),
+            (FetchPolicy, 'fetch_policy', self._fetch_policy_cb),
+        ]
+        self.kb_services = {
+            name: self.create_service(srv_type, f'{self.get_name()}/{name}', cb,
+                                      callback_group=self.query_cb_group)
+            for srv_type, name, cb in services
+        }
+
+    @kb_service('Creating measures interfaces')
+    def _create_measures_cb(self, _, res):
+        self.create_measures_interfaces()
+
+    @kb_service('Fetching applicable tactics')
+    def _fetch_rules_cb(self, req, res):
+        result = self.interface.get_applicable_tactics(
+            req.resolution_model, req.interface_name)
+        res.tactic_rules = [TacticRule(name=rule_name, reconfigurations=fa_list,
+                                       requirement_name=req_name)
+                            for (rule_name, req_name), fa_list in result.items()]
+        self.get_logger().info(f'Applicable tactics fetched {str(res)}')
+
+    @kb_service('Fetching similar tactics')
+    def _fetch_similar_cb(self, req, res):
+        result = self.interface.similar_requirements(req.interface_name)
+        res.similarity_pairs = [SimilarityPair(requirement_name=req_name, similar_items=req_list)
+                                for (req_name, req_list) in result.items()]
+        self.get_logger().info(f'Similar tactics fetched {str(res)}')
+
+    @kb_service('Fetching satisfied tactics', verbose=False)
+    def _satisfied_rule_cb(self, req, res):
+        res.satisfied = self.interface.get_valid_tactics(
+            req.tactic_rules, req.action_name)
+
+    @kb_service('Fetching valid tactics and their current ranking', verbose=False)
+    def _valid_ranked_tactics_cb(self, req, res):
+        sat, ranked = self.interface.get_valid_ranked_tactics(
+            req.tactic_rules, req.action_name)
+        res.satisfied = sat
+        res.ranked_tactics = [SimilarityPair(requirement_name=req_name, similar_items=tac_list)
+                                for (req_name, tac_list) in ranked.items()]
+
+    @kb_service('Fetching all resolution actions')
+    def _fetch_resolutions_cb(self, req, res):
+        resolutions = self.interface.get_resolution_adaptations(logger=self.get_logger())
+        res.resolutions = [Resolution(resolution_action_name=name, adaptations=adaptations)
+                           for name, adaptations in resolutions.items()]
+
+    @kb_service('Fetching reconfiguration plan')
+    def _fetch_plan_cb(self, req, res):
+        if (req.full_configuration):
+            x = self.interface.change_configuration(req.full_configuration_string)
+        else:
+            x = self.interface.reconfiguration(req.reconfiguration_string)
+        self.get_logger().info(f'Tactic actions {x} fetched.')
+        res.resolution_actions = x
+
+    @kb_service('Updating running nodes')
+    def _update_running_cb(self, req, res):
+        self.interface.manual_running_nodes(req.node_names)
+
+    @kb_service('Fetching requirements fulfillment')
+    def _fetch_req_fulfillment_cb(self, req, res):
+        res.fulfillment_values = self.interface.get_relaxed_requirements_fulfillment(
+            req.system_name, *req.requirement_names)
+
+    @kb_service('Fetching hypothetical requirement fulfillment')
+    def _fetch_hyp_requirement_cb(self, req, res):
+        fulfillment = self.interface.get_relaxed_requirement_hypothetical_fulfillment(
+            req.system_name, req.requirement_name, req.rule_name)
+        res.fulfillment_value = float(fulfillment)
+
+    @kb_service('Fetching hypothetical requirements fulfillment')
+    def _fetch_hyp_requirements_cb(self, req, res):
+        self.get_logger().info(f'Rule names: {str(req.rule_names)}')
+        fulfillment = self.interface.get_relaxed_requirements_hypothetical_fulfillment(
+            req.rule_names, req.system_name)
+        res.fulfillment_dict = json.dumps(fulfillment)
+
+    @kb_service('Fetching requirements with in_effect fulfillment')
+    def _fetch_req_fulfillment_ineffect_cb(self, req, res):
+        reqs = self.fetch_requirements()
+        if (reqs is not None):
+            res.requirements = reqs
+        else:
+            res.success = False
+
+    @kb_service('Updating in-effect requirements')
+    def _update_in_effect_cb(self, req, res):
+        self.interface.update_requirements_in_effect(
+            req.requirement_names, req.all_requirements)
+
+    @kb_service('Updating has_param_value')
+    def _update_has_param_value_cb(self, req, res):
+        query_res = self.interface.update_feature_selected_by_param_value(
+            req.feature_name)
+        self.get_logger().info(
+            f'update_feature_selected_by_param_value result: {query_res}')
+
+    @kb_service('Fetching current state', verbose=False)
+    def _get_current_state_cb(self, _, res):
+        res.message = self.interface.get_current_state()
+
+    @kb_service('Determining current state')
+    def _determine_state_cb(self, req, res):
+        current_state_string = self.interface.get_current_state_action(
+            req.action_name, self.get_logger())
+        if (current_state_string is not None):
+            res.current_state = SymbolicState(state_name=str(current_state_string),
+                                              header=self.create_header())
+        else:
+            res.success = False
+        self.get_logger().info(f'current_state: {str(current_state_string)}')
+
+    @kb_service('Fetching policy for action')
+    def _fetch_policy_cb(self, req, res):
+        state_dict, table, reconfigurations = self.interface.get_fetch_policy(
+            req.action_name)
+        res.table_entries = [TableEntry(state=SymbolicState(state_name=s),
+                                        feature_adaptation=fa, rule_name=r)
+                             for (fa, s), r in table.items()]
+        res.states = [SymbolicState(state_name=name) for name in state_dict]
+        res.reconfigurations = reconfigurations
 
 
     def create_measure_interface(self, interface):
@@ -847,8 +564,6 @@ class TacticalRetreatKB(Node):
             if (function_name == "meta_count"):
                 self.meta_registry[measure_name] = topic_meta.count
         else:
-            super().get_logger().info(
-                f'he: {self.monitor}')
             measure_function = self.monitor[function_name]
             # getattr(function_lib, function_name)
 
@@ -992,6 +707,13 @@ class TacticalRetreatKB(Node):
             self.get_logger().error('Traceback:\n' + traceback.format_exc())
 
             raise e
+
+    def parameter_event_cb(self, param_event : ParameterEvent):
+        node_name = param_event.node
+
+        for param in param_event.changed_parameters:
+            self.interface.update_param_value(node_name, param.name, Parameter.from_parameter_msg(param).value)
+
 
     def measurement_processing(self):
         if self.meta_registry:

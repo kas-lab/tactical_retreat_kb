@@ -24,7 +24,7 @@ from adapt_x_msgs.srv import FetchRules
 from adapt_x_msgs.srv import HypotheticalReqFulfillment
 from adapt_x_msgs.srv import HypotheticalReqsFulfillment
 from adapt_x_msgs.srv import RequirementsFulfillment
-from adapt_x_msgs.srv import SatisfiedRule
+from adapt_x_msgs.srv import ValidTactics
 from adapt_x_msgs.srv import UpdateHasParamValue
 from adapt_x_msgs.srv import UpdateInEffect
 from adapt_x_msgs.srv import UpdateRunning
@@ -568,7 +568,7 @@ class TacticalRetreatKB(ROSTypeDBInterface):
             )
 
             self.satisfied_tactic_service = self.create_service(
-                SatisfiedRule,
+                ValidTactics,
                 self.get_name() + '/satisfied_rule',
                 _fetch_satisfied_tactic_cb,
                 callback_group=self.query_cb_group
