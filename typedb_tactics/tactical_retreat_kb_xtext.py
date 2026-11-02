@@ -40,6 +40,7 @@ from adapt_x_msgs.msg import SymbolicState
 from adapt_x_msgs.msg import TableEntry
 from adapt_x_msgs.msg import Resolution
 from adapt_x_msgs.msg import TacticRule
+from adapt_x_msgs.msg import NewTactic
 from adapt_x_msgs.srv import FetchPolicy
 
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
@@ -328,6 +329,9 @@ class TacticalRetreatKB(Node):
 
         self.parameter_event_subscriber = self.create_subscription(
             ParameterEvent, 'parameter_events', self.parameter_event_cb, 10)
+
+        self.cbr_subscriber = self.create_subscription(
+            NewTactic, '/cbr_evaluation', self.cbr_cb, 10)
 
         self.prev_state = None
         # self.create_measures_interfaces()
@@ -713,6 +717,13 @@ class TacticalRetreatKB(Node):
 
         for param in param_event.changed_parameters:
             self.interface.update_param_value(node_name, param.name, Parameter.from_parameter_msg(param).value)
+
+    def cbr_cb(self, msg : NewTactic):
+        tactic = msg.reused_tactic
+        req = msg.solved_requirement_name
+        action = msg.action_name
+        self.interface.new_tactic(tactic, req, action)
+       
 
 
     def measurement_processing(self):

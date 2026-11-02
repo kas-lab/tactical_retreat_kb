@@ -33,6 +33,7 @@ jpype.startJVM(
     classpath=[jars_path + "/*"]
 )
 from system import RosPublisherReference, System, RosNode
+from ros import PackageSet, ActionSpec
 from rosToolingSupport import RosToolingSupport
 from de.fraunhofer.ipa.ros import RosStandaloneSetupGenerated
 from de.fraunhofer.ipa.rossystem import RosSystemStandaloneSetupGenerated
@@ -44,17 +45,18 @@ from eu.coresense.requirements import RequirementsModelStandaloneSetupGenerated
 from eu.coresense.adaptation import TacticsStandaloneSetupGenerated
 
 from org.eclipse.xtext.resource import XtextResourceSet
+from org.eclipse.emf.ecore.util import EcoreUtil
 from org.eclipse.xtext.serializer import ISerializer
 from eu.coresense.common import NameProvider
 from eu.coresense.context.generator import ContextNameProvider
 from eu.coresense.resolution.generator import ResolutionNameProvider
-from eu.coresense.adaptation.generator import TacticsNameProvider
+# from eu.coresense.adaptation.generator import TacticsNameProvider
 from eu.coresense.common import RosNameProvider, MathOperator, Literal, IntLiteral, DecimalLiteral
-from eu.coresense.common import StringLiteral, BooleanLiteral
+from eu.coresense.common import StringLiteral, BooleanLiteral, Utilities
 
-from eu.coresense.adaptation.tactics import TacticsModel, ConditionAction, ActionRules, AdaptationRule
-from eu.coresense.adaptation.tactics import MeasurementThresholdCondition, LogicalOperator, MeasurementMeasurementCondition
-from eu.coresense.adaptation.tactics import AtomicActionDeselectFeature, AtomicActionSelectFeature
+from eu.coresense.adaptation.tactics import TacticsModel, ActionTactics, PureTactic
+from eu.coresense.adaptation.tactics import ContextThresholdCondition, LogicalOperator, ContextContextCondition
+from eu.coresense.adaptation.tactics import SelectVariant, DeselectVariant
 from eu.coresense.adaptation.tactics import TacticsFactory
 from eu.coresense.requirements.generator import RequirementsModelGenerator
 from eu.coresense.requirements.requirementsModel import RequirementsModel, AsCloseLit, Shall
@@ -73,7 +75,7 @@ from eu.coresense.context.contextModel import ContextModel, QualifiedPublisherRe
 from eu.coresense.context.contextModel import QualifiedActionServerRef, QualifiedServiceServerRef
 from uma.caosd.rhea.AdvancedConstraintsFMmetamodel import AdvancedConstraintsFMmetamodelPackage
 from uma.caosd.rhea.BasicFMmetamodel import Feature, Alternative, OrGroup
-from java.lang import String, Integer
+from java.lang import String, Integer, Thread
 from java.util import HashSet, ArrayList
 from java.nio.file import Files
 from java.io import FileWriter
@@ -91,7 +93,7 @@ from de.ovgu.featureide.fm.core.init import FMCoreLibrary
 from typedb_tactics.fuzzy.fuzzy_expressions import Proposition, Expression, FuzzyAnd, FuzzyOr, FuzzyNot
 from typedb_tactics.fuzzy.fuzzy_sets import FuzzyTriangular, FuzzyRightShoulder, FuzzyLeftShoulder
 from typedb_tactics.fuzzy.relaxed_requirements import AsCloseAsPossibleExpression, ShallExpression, AsManyAsPossibleExpression
-from eu.coresense.adaptation.generator import State, TQLGenerator
+# from eu.coresense.adaptation.generator import State, TQLGenerator
 
 
 logger = logging.getLogger(__name__)
@@ -153,7 +155,7 @@ def j_as_close_lit_equals(as_close_lit_one, as_close_lit_two):
     if _value_from_lit(as_close_lit_one.getQuantity()) == _value_from_lit(as_close_lit_two.getQuantity()):
         c_var_one = as_close_lit_one.getComparator().getContextVariable()
         c_var_two = as_close_lit_two.getComparator().getContextVariable()
-        if(c_var_one.equals(c_var_two)):
+        if c_var_one.equals(c_var_two):
             return True
     return False
 
@@ -197,12 +199,16 @@ class TacticalRetreatInterface:
         AdvancedConstraintsFMmetamodelPackage.eINSTANCE.eClass()
 
         self.j_res_set = XtextResourceSet()
+        # Callbacks run on JPype-attached threads whose context class loader is null,
+        # so give the resource set an explicit one for classpath URI resolution.
+        self.j_res_set.setClasspathURIContext(TacticsModel.class_.getClassLoader())
         self.logger = logger
         self.logger.info(f"{ros_path}")
         self.load_model("ros", RosStandaloneSetupGenerated(), ros_path)
         self.j_ros2_resources = self.load_model("ros2", Ros2StandaloneSetupGenerated(), ros2_path)
-        self.j_rossystem_resources, _ = self.load_model("rossystem", RosSystemStandaloneSetupGenerated(),
-                                                  rossystem_path)
+        self.j_rossystem_resources, _ = self.load_model("rossystem",
+                                                        RosSystemStandaloneSetupGenerated(),
+                                                        rossystem_path)
         j_fm_resources, _ = self.load_model("var", FeatureModelStandaloneSetupGenerated(), var_path)
         j_res_sources, _ = self.load_model("resolution", ResolutionModelStandaloneSetupGenerated(),
                                         resolution_path)
@@ -231,7 +237,7 @@ class TacticalRetreatInterface:
             self.j_resolution_model_resource.getContents().get(0)
 
         self.resolver = Resolver(self.j_resolution_model)
-        TQLGenerator.setGlobalResource(self.j_tactics_model_resource)
+        # TQLGenerator.setGlobalResource(self.j_tactics_model_resource)
 
         if hasattr(j_fm_resources, "get"):
             resource0 = j_fm_resources.get(0)
@@ -258,19 +264,19 @@ class TacticalRetreatInterface:
 
         self.j_dsl_feature_model = root_obj
 
-        # for j_action_rule in self.j_tactics_model.getActionRules():
+        # for j_action_rule in self.j_tactics_model.getActionTactics():
         #     self.j_states_map = TQLGenerator.createStates(self.j_tactics_model,
         #                                                   self.j_requirements_model,
         #                                                   consider_features_in_state)
         #     for key in self.j_states_map.keySet():
         #         self.logger.info(f"{str(key)} - \
         #                           {str(self.j_states_map.get(key).size())} states generated")
-        if (generate_state):
-            self.j_states = TQLGenerator.createStates(self.j_context_model)
+        # if (generate_state):
+        #     self.j_states = TQLGenerator.createStates(self.j_context_model)
 
-            self.logger.info(f"{str(self.j_states.size())} states generated")
-            for j_state in self.j_states:
-                self.logger.info(f"{str(State.render(j_state.precondition))} states generated")
+        #     self.logger.info(f"{str(self.j_states.size())} states generated")
+        #     for j_state in self.j_states:
+        #         self.logger.info(f"{str(State.render(j_state.precondition))} states generated")
 
         self.namer = NameProvider()
         self.namer.register(ResolutionNameProvider())
@@ -334,6 +340,63 @@ class TacticalRetreatInterface:
         self.update_requirements_in_effect(requirement_names=[], all_requirements=True)
         self.logger.info("ready")
 
+    def _retrieve_tactic_by_name(self, tactic_name):
+        for j_rule in self.j_tactics_model.getTactics():
+            if isinstance(j_rule, PureTactic):
+                if str(j_rule.getName()) == tactic_name:
+                    return j_rule
+            elif isinstance(j_rule, ActionTactics):
+                for j_pure_tactic in j_rule.getTactics():
+                    if str(j_pure_tactic.getName()) == tactic_name:
+                        return j_pure_tactic
+        return None
+
+    def _retrieve_action_by_name(self, action_name):
+        j_package_set_list = Utilities.deriveFromImports(self.j_tactics_model_resource, ".ros", self.j_tactics_model.getImports(), PackageSet.class_)
+        for j_package_set in j_package_set_list:
+            for j_package in j_package_set.getPackage():
+                for j_spec_base in j_package.getSpec():
+                    if isinstance(j_spec_base, ActionSpec):
+                        if str(j_spec_base.getName()) == action_name:
+                            return j_spec_base
+
+    def new_tactic(self, old_tactic, requirement, action):
+        # Called from ROS callback threads, which JPype attaches with a null context
+        # class loader; Xtext scoping needs one to resolve the imported models.
+        Thread.currentThread().setContextClassLoader(TacticsModel.class_.getClassLoader())
+
+        #Get the pure action from other tactic.
+        j_action = self._retrieve_action_by_name(action)
+        j_reused_rule = self._retrieve_tactic_by_name(old_tactic)
+        self.logger.info(f"acc {str(j_action)} tac {str(j_reused_rule)}")
+
+        j_pure_tactic = TacticsFactory.eINSTANCE.createPureTactic()
+        j_pure_tactic.setName("PLACEHOLDER")
+        self.logger.info(f"2 {str(EcoreUtil.copy(j_reused_rule.getAction()))}")
+
+        # 'action' is a containment: copy it, otherwise it is moved out of the reused rule
+        j_pure_tactic.setAction(EcoreUtil.copy(j_reused_rule.getAction()))
+
+        self.logger.info(f"3 {str(j_pure_tactic)}")
+        j_action_tactics = TacticsFactory.eINSTANCE.createActionTactics()
+        j_action_tactics.setAction(j_action)
+        j_action_tactics.getTactics().add(j_pure_tactic)
+
+        self.j_tactics_model.getTactics().add(j_action_tactics)
+        self.logger.info(f"4 {str(j_action_tactics)}")
+
+
+        # injector = TacticsStandaloneSetupGenerated().createInjectorAndDoEMFRegistration()
+        serializer = self.j_tactics_injector.getInstance(ISerializer.class_)
+
+        # self.j_tactics_model_resource.getContents().add(j_tactics_model)
+        dsl_text = serializer.serialize(j_action_tactics)
+
+        self.logger.info(f"New Tactic Generated \n {str(dsl_text)}")
+        # createActionTactics
+        # createAdaptationRule
+    
+
     def to_xtext(self, j_state):
         # TODO: needs to be updated to new TacticsModel changes.
         pass
@@ -360,13 +423,13 @@ class TacticalRetreatInterface:
         # j_atomic_rule.setRuleBody(j_condition_action)  # condition action extends rulebody
         # j_atomic_rule.setName("placeholder")
         # # j_tactics_model = TacticsFactory.eINSTANCE.createTacticsModel()
-        # j_action_rules = TacticsFactory.eINSTANCE.createActionRules()
+        # j_action_rules = TacticsFactory.eINSTANCE.createActionTactics()
         # j_action_rules.getAdaptationRules().add(j_atomic_rule)
 
         # j_func_map = self.j_resolution_model.getFunctionalMapping().get(Integer @ 0)
         # j_action_rules.setAction(j_func_map.getAction())
 
-        # self.j_tactics_model.getRules().get(Integer @ 0).getAdaptationRules().add(j_atomic_rule)
+        # self.j_tactics_model.getTactics().get(Integer @ 0).getAdaptationRules().add(j_atomic_rule)
 
         # # injector = TacticsStandaloneSetupGenerated().createInjectorAndDoEMFRegistration()
         # serializer = self.j_tactics_injector.getInstance(ISerializer.class_)
@@ -375,7 +438,7 @@ class TacticalRetreatInterface:
         # dslText = serializer.serialize(self.j_tactics_model)
 
         # self.logger.info(f"dsltext {str(dslText)}")
-        # # createActionRules
+        # # createActionTactics
         # # createAdaptationRule
 
     def to_fuzzy(self, j_expression_list: list) -> Optional[Expression]:
@@ -550,13 +613,6 @@ class TacticalRetreatInterface:
         # """
         # return self.insert_database(query)
 
-    def _get_condition_action(self, j_atomic_rule: AdaptationRule) -> ConditionAction:
-        j_atomic_rule = (AdaptationRule) @ j_atomic_rule
-        j_rule_body = j_atomic_rule.getRuleBody()
-        j_tactic_action = j_rule_body.getAction()
-        if (isinstance(j_tactic_action, ConditionAction)):
-            return (ConditionAction) @ j_tactic_action
-
     def _eval_feature_condition(self, j_feature_condition, configuration) -> bool:
         sel_or_not = str(j_feature_condition.getNot()) == "!"
         feature_name = str(j_feature_condition.getVariant().getFeature().getName())
@@ -595,12 +651,12 @@ class TacticalRetreatInterface:
         j_operator = j_measurement_condition.getOperator()
 
         comparator = None
-        if (isinstance(j_measurement_condition, MeasurementThresholdCondition)):
-            j_threshold = ((MeasurementThresholdCondition)
+        if (isinstance(j_measurement_condition, ContextThresholdCondition)):
+            j_threshold = ((ContextThresholdCondition)
                            @ j_measurement_condition).getThresholdValue()
             comparator = _value_from_lit(j_threshold)
 
-        if(isinstance(j_measurement_condition,MeasurementMeasurementCondition)):
+        if(isinstance(j_measurement_condition,ContextContextCondition)):
             raise NotImplementedError
 
         res = False
@@ -642,24 +698,24 @@ class TacticalRetreatInterface:
     def _latest_measurements(self):
         return self.latest_measures
 
-    def _adaptation_rule_satisfied(self, j_adaptation_rule: AdaptationRule,
+    def _adaptation_rule_satisfied(self, j_adaptation_rule: PureTactic,
                                    tactic_names):
         measures = self.latest_measures
-        current_configuration = set(self._current_configuration()) #set(self.action_currconf[action_name])
+        current_configuration = set(self._current_configuration())
         self.logger.info(f"current_configuration {str(current_configuration)}")
         # TODO: invert this, we should grab for the rules requested, not eliminate from all
-        if (str(j_adaptation_rule.getName()) in tactic_names):
-            j_condition_action = self._get_condition_action(j_adaptation_rule)
-            if (j_condition_action is not None):
+        if str(j_adaptation_rule.getName()) in tactic_names:
+            j_guard = j_adaptation_rule.getGuard()
+            if (j_guard is not None):
                 feature_guard = True
                 condition_guard = True
-                if (j_condition_action.getFeatureGuard() is not None):
-                    j_feature_condition = j_condition_action.getFeatureGuard() \
+                if (j_guard.getFeatureGuard() is not None):
+                    j_feature_condition = j_guard.getFeatureGuard() \
                         .getFeatureCondition()
                     feature_guard = self._eval_feature_condition(j_feature_condition,
                                                                  current_configuration)
-                if (j_condition_action.getContextGuard() is not None):
-                    j_measurement_cond = j_condition_action.getContextGuard() \
+                if (j_guard.getContextGuard() is not None):
+                    j_measurement_cond = j_guard.getContextGuard() \
                         .getContextCondition()
                     condition_guard = self._eval_measurement_condition(j_measurement_cond,
                                                                        measures)
@@ -671,8 +727,8 @@ class TacticalRetreatInterface:
     def _get_satisfied_action_tactics(self, tactic_names, action_name):
         satisfied = []
 
-        for j_rule in self.j_tactics_model.getRules():
-            if (isinstance(j_rule, ActionRules)):
+        for j_rule in self.j_tactics_model.getTactics():
+            if (isinstance(j_rule, ActionTactics)):
                 j_action_rule = j_rule
                 for j_adaptation_rule in j_action_rule.getAdaptationRules():
                     sat = self._adaptation_rule_satisfied(j_adaptation_rule, tactic_names)
@@ -680,21 +736,21 @@ class TacticalRetreatInterface:
                         satisfied.append(sat)
                     else:
                         self.logger.info(f"sat was none for {str(j_adaptation_rule.getName())}")
-        
+
         return satisfied
 
     def _get_satisfied_global_tactics(self, tactic_names):
         satisfied = []
 
-        for j_rule in self.j_tactics_model.getRules():
-            if (isinstance(j_rule, AdaptationRule)):
+        for j_rule in self.j_tactics_model.getTactics():
+            if isinstance(j_rule, PureTactic):
                 j_adaptation_rule = j_rule
                 sat = self._adaptation_rule_satisfied(j_adaptation_rule, tactic_names)
                 if sat is not None:
                     satisfied.append(sat)
                 else:
                     self.logger.info(f"sat was none for {str(j_adaptation_rule.getName())}")
-        
+
         return satisfied
 
     def get_valid_tactics(
@@ -716,10 +772,10 @@ class TacticalRetreatInterface:
     def _tactics_without_requirements(self, action_name):
         # Tactics for an action without a requirement associated.
         tactics = []
-        for j_rule in self.j_tactics_model.getRules():
+        for j_rule in self.j_tactics_model.getTactics():
             j_requirement = j_rule.getRequirement()
 
-            if (j_requirement is None) and isinstance(j_rule, ActionRules):
+            if (j_requirement is None) and isinstance(j_rule, ActionTactics):
 
                 j_action_rule = j_rule
 
@@ -1012,13 +1068,13 @@ class TacticalRetreatInterface:
         #                                                for feat in
         #                                                subconf.getSelectedFeatureNames()})
 
-        for j_rule in self.j_tactics_model.getRules():
+        for j_rule in self.j_tactics_model.getTactics():
             j_requirement = j_rule.getRequirement()
             req_name = "None"
             if (j_requirement is not None):
                 req_name = j_requirement.getName()
 
-            if (isinstance(j_rule, ActionRules)):
+            if (isinstance(j_rule, ActionTactics)):
                 j_action_rule = j_rule
                 self.logger.info(f"{interface_name} 2 {str(j_action_rule.getAction().getName())}")
 
@@ -1034,13 +1090,13 @@ class TacticalRetreatInterface:
     def _get_applicable_global_tactics(self, resolution_model):
         res = {}
 
-        for j_rule in self.j_tactics_model.getRules():
+        for j_rule in self.j_tactics_model.getTactics():
             j_requirement = j_rule.getRequirement()
             req_name = "None"
             if (j_requirement is not None):
                 req_name = j_requirement.getName()
 
-            if (isinstance(j_rule, AdaptationRule)):
+            if (isinstance(j_rule, PureTactic)):
                 j_adap_rule = j_rule
                 res[(str(j_adap_rule.getName()), req_name)] = self._reconfs(j_adap_rule)
 
@@ -1126,12 +1182,12 @@ class TacticalRetreatInterface:
 
     def _tactics_for_requirement(self, requirement_name : str) -> List:
         tactics = []
-        for j_rule in self.j_tactics_model.getRules():
+        for j_rule in self.j_tactics_model.getTactics():
             j_requirement = j_rule.getRequirement()
 
             if (j_requirement is not None):
                 if requirement_name == str(j_requirement.getName()):
-                    if (isinstance(j_rule, ActionRules)):
+                    if (isinstance(j_rule, ActionTactics)):
                         j_action_rule = j_rule
                         tactics.extend(j_action_rule.getAdaptationRules())
                     else:
@@ -1142,8 +1198,8 @@ class TacticalRetreatInterface:
         j_context_var = j_measurement_condition.getMeasurement()
         current_value = measures[str(j_context_var.getName())]
         distance = 0.0
-        if(isinstance(j_measurement_condition, MeasurementThresholdCondition)):
-            j_threshold = ((MeasurementThresholdCondition)
+        if(isinstance(j_measurement_condition, ContextThresholdCondition)):
+            j_threshold = ((ContextThresholdCondition)
                             @ j_measurement_condition).getThresholdValue()
             comparator = _value_from_lit(j_threshold)
             j_operator = j_measurement_condition.getOperator()
@@ -1183,7 +1239,7 @@ class TacticalRetreatInterface:
                     self.logger.info("OR")
     
                     return min(distance, self._distance_between_measure_and_condition(j_second_term, measures))
-        if(isinstance(j_measurement_condition, MeasurementMeasurementCondition)):
+        if(isinstance(j_measurement_condition, ContextContextCondition)):
             # You would do something like, checking the distance to each context var and finding the min one to make the condition be met.
             raise NotImplementedError
 
@@ -1256,30 +1312,32 @@ class TacticalRetreatInterface:
 
         return reconfigurations
 
-    def _tactic_distance(self, j_adaptation_rule):
-        j_condition_action = self._get_condition_action(j_adaptation_rule)
-        self.logger.info(f"uuh {j_adaptation_rule.getName()} {str(j_condition_action.getContextGuard())}")
+    def _tactic_distance(self, j_pure_tactic):
+        j_guard = j_pure_tactic.getGuard()
         distance = 0.0
-        if j_condition_action.getContextGuard() is not None:
-            j_context_guard = j_condition_action.getContextGuard()
-            context_dist = self._distance_to_context_guard(j_context_guard)
-            distance += context_dist
-        if j_condition_action.getFeatureGuard() is not None:
-            j_feature_condition = j_condition_action.getFeatureGuard() \
-                        .getFeatureCondition()
-            conf_dist = self._distance_between_conf_and_condition(j_feature_condition)
-            self.logger.info(f"conf dist {str(conf_dist)}")
-            distance += conf_dist
+
+        if j_guard is not None:
+            self.logger.info(f"uuh {j_pure_tactic.getName()} {str(j_guard.getContextGuard())}")
+            if j_guard.getContextGuard() is not None:
+                j_context_guard = j_guard.getContextGuard()
+                context_dist = self._distance_to_context_guard(j_context_guard)
+                distance += context_dist
+            if j_guard.getFeatureGuard() is not None:
+                j_feature_condition = j_guard.getFeatureGuard() \
+                            .getFeatureCondition()
+                conf_dist = self._distance_between_conf_and_condition(j_feature_condition)
+                self.logger.info(f"conf dist {str(conf_dist)}")
+                distance += conf_dist
 
         return distance
 
     def _potentially_violated_requirements(self, action_name):
         # Requirements which are referenced by a tactic
         potentially_violated_reqs = []
-        for j_rule in self.j_tactics_model.getRules():
+        for j_rule in self.j_tactics_model.getTactics():
             j_requirement = j_rule.getRequirement()
 
-            if (j_requirement is not None) and isinstance(j_rule, ActionRules):
+            if (j_requirement is not None) and isinstance(j_rule, ActionTactics):
 
                 j_action_rule = j_rule
 
@@ -1468,13 +1526,12 @@ class TacticalRetreatInterface:
     def _featuresInvolvedInRule(self, rule):
         selected_by = []
         deselected_by = []
-        j_atomic_rule = (AdaptationRule) @ rule
-        j_rule_body = j_atomic_rule.getRuleBody()
-        j_atomic_action = j_rule_body.getAction().getAtomicAction()
-        for j_simple_action in j_atomic_action.getActions():
-            if isinstance(j_simple_action, AtomicActionDeselectFeature):
+        j_pure_tactic = (PureTactic) @ rule
+        j_tactic_action = j_pure_tactic.getAction()
+        for j_simple_action in j_tactic_action.getActions():
+            if isinstance(j_simple_action, DeselectVariant):
                 deselected_by.append(j_simple_action.getVariant().getFeature())
-            if isinstance(j_simple_action, AtomicActionSelectFeature):
+            if isinstance(j_simple_action, SelectVariant):
                 selected_by.append(j_simple_action.getVariant().getFeature())
         return selected_by, deselected_by
 
