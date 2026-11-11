@@ -1,0 +1,28 @@
+test_node:
+  artifacts:
+    test_node:
+      node: test_node
+      publishers:
+        'test_topic':
+          type: "test_msgs/msg/TestMsg"
+          qos:
+          # profile:
+          # history: UNKNOWN
+          # depth:
+            reliability: reliable
+            durability: volatile
+      serviceservers:
+        'controller_server/change_state':
+          type: 'lifecycle_msgs/srv/ChangeState'
+        'controller_server/get_available_states':
+          type: 'lifecycle_msgs/srv/GetAvailableStates'
+        'controller_server/get_available_transitions':
+          type: 'lifecycle_msgs/srv/GetAvailableTransitions'
+        'controller_server/get_state':
+          type: 'lifecycle_msgs/srv/GetState'
+        'controller_server/get_transition_graph':
+          type: 'lifecycle_msgs/srv/GetAvailableTransitions'
+      parameters:
+        'test_parameter':
+          type: Double
+          value: 0.5

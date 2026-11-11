@@ -15,7 +15,11 @@ connected_nodes sub relation,
 ROSNode plays connected_nodes:node;
 ROSNode plays connected_nodes:connected;
 
+valid sub attribute,
+    value boolean;
+
 applicable_tactics sub relation,
+    owns valid,
     relates interface,
     relates resolution_model,
     relates tactic_rule;
@@ -41,6 +45,9 @@ rule neighbours_efferents:
         (node: $afferent_node, neighbour: $efferent_node) isa neighbours;
     };
 
+# This rule could be potentially optimized if we use `has_topic` instead of `has_interface`.
+# However, if we later start considering ServiceClients and ActionClients as neighbours,
+# we would need to re-write the rule
 rule neighbours_afferents:
     when {
         $efferent_node isa ROSNode, has node_name $node_name, has namespace $namespace;
@@ -50,15 +57,16 @@ rule neighbours_afferents:
         $afferent has interface_name $interface_name, has interface_type $interface_type;
         (node: $afferent_node, afferent: $afferent) isa has_interface;
 
+        $afferent isa Subscriber;
         # Do not consider ServiceClients as neighbours
-        not {
-            $afferent isa ServiceClient;
-        };
+        # not {
+        #     $afferent isa ServiceClient;
+        # };
 
-        # Do not consider ActionClients as neighbours
-        not {
-            $afferent isa ActionClient;
-        };
+        # # Do not consider ActionClients as neighbours
+        # not {
+        #     $afferent isa ActionClient;
+        # };
 
         not {
             $afferent_node has node_name $node_name;
@@ -129,3 +137,11 @@ rule applicable_tactics:
         (interface: $ros_interface, resolution_model: $resolution_model, tactic_rule: $tactic_rule) isa applicable_tactics;
     };
 
+rule applicable_tactics_valid:
+    when {
+        $at (tactic_rule: $tactic_rule) isa applicable_tactics;
+        $tactic_rule has rule_valid $rule_valid;
+        ?valid = $rule_valid;
+    } then {
+        $at has valid ?valid;
+    };

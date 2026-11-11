@@ -1,0 +1,403 @@
+insert
+
+# ── Measures ──────────────────────────────────────────────────────────────────
+
+$velocity isa MeasureDouble,
+    has measure_name "sd-velocity";
+$velocity_value isa ValueDouble,
+    has double_value 0.25;
+(measure: $velocity, measurement_value: $velocity_value) isa measurement,
+    has measurement_time 2026-04-01T00:00:00.000,
+    has latest true;
+
+$distance isa MeasureDouble,
+    has measure_name "sd-distance";
+$distance_value isa ValueDouble,
+    has double_value 0.30;
+(measure: $distance, measurement_value: $distance_value) isa measurement,
+    has measurement_time 2026-04-01T00:00:00.000,
+    has latest true;
+
+# temperature is NOT covered by any interval in the test state — its live
+# measurement (20.0) should be used as the fallback double operand.
+$temperature isa MeasureDouble,
+    has measure_name "sd-temperature";
+$temperature_value isa ValueDouble,
+    has double_value 20.0;
+(measure: $temperature, measurement_value: $temperature_value) isa measurement,
+    has measurement_time 2026-04-01T00:00:00.000,
+    has latest true;
+
+# ── Symbolic labels and intervals ─────────────────────────────────────────────
+
+
+$fast (measure: $velocity) isa MedianValuation,
+    has median_bound_value 0.25;
+
+$near (measure: $distance) isa MedianValuation,
+    has median_bound_value 0.30;
+
+# ── System state ──────────────────────────────────────────────────────────────
+
+$fast_near (median_valuation: $fast, median_valuation: $near) isa state,
+    has state_name "sd-fast-near";
+
+# ── Comparison expressions ────────────────────────────────────────────────────
+# Naming convention: <operator>-<expected_fulfillment>-<combo_kind>
+# e.g. "lt-1-iv" = less_than, fulfillment 1.0, interval×double
+
+# ── less_than ─────────────────────────────────────────────────────────────────
+
+# interval × double
+$lt1iv_rhs isa ValueDouble, has double_value 0.30;
+(lhs_value: $velocity, rhs_value: $lt1iv_rhs) isa less_than,
+    has expression_name "lt-1-iv";          # 0.25 < 0.30 → 1.0
+
+$lt0iv_rhs isa ValueDouble, has double_value 0.20;
+(lhs_value: $velocity, rhs_value: $lt0iv_rhs) isa less_than,
+    has expression_name "lt-0-iv";          # 0.25 < 0.20 → 0.0
+
+# double × interval
+$lt1di_lhs isa ValueDouble, has double_value 0.20;
+(lhs_value: $lt1di_lhs, rhs_value: $velocity) isa less_than,
+    has expression_name "lt-1-di";          # 0.20 < 0.25 → 1.0
+
+$lt0di_lhs isa ValueDouble, has double_value 0.30;
+(lhs_value: $lt0di_lhs, rhs_value: $velocity) isa less_than,
+    has expression_name "lt-0-di";          # 0.30 < 0.25 → 0.0
+
+# interval × interval (velocity median=0.25, distance median=0.30)
+(lhs_value: $velocity, rhs_value: $distance) isa less_than,
+    has expression_name "lt-1-ii";          # 0.25 < 0.30 → 1.0
+
+# interval × (measure→double): temperature not in state, falls back to 20.0
+(lhs_value: $velocity, rhs_value: $temperature) isa less_than,
+    has expression_name "lt-1-im";          # 0.25 < 20.0 → 1.0
+
+$lt0im_rhs_t isa ValueDouble, has double_value 0.10;
+(lhs_value: $velocity, rhs_value: $lt0im_rhs_t) isa less_than,
+    has expression_name "lt-0-im-base";     # 0.25 < 0.10 → 0.0 (plain iv, sanity)
+
+
+# ── less_than_equal ───────────────────────────────────────────────────────────
+
+$lte1iv_rhs isa ValueDouble, has double_value 0.25;
+(lhs_value: $velocity, rhs_value: $lte1iv_rhs) isa less_than_equal,
+    has expression_name "lte-1-iv";         # 0.25 <= 0.25 → 1.0
+
+$lte0iv_rhs isa ValueDouble, has double_value 0.20;
+(lhs_value: $velocity, rhs_value: $lte0iv_rhs) isa less_than_equal,
+    has expression_name "lte-0-iv";         # 0.25 <= 0.20 → 0.0
+
+(lhs_value: $velocity, rhs_value: $distance) isa less_than_equal,
+    has expression_name "lte-1-ii";         # 0.25 <= 0.30 → 1.0
+
+
+# ── greater_than ──────────────────────────────────────────────────────────────
+
+$gt1iv_rhs isa ValueDouble, has double_value 0.20;
+(lhs_value: $velocity, rhs_value: $gt1iv_rhs) isa greater_than,
+    has expression_name "gt-1-iv";          # 0.25 > 0.20 → 1.0
+
+$gt0iv_rhs isa ValueDouble, has double_value 0.30;
+(lhs_value: $velocity, rhs_value: $gt0iv_rhs) isa greater_than,
+    has expression_name "gt-0-iv";          # 0.25 > 0.30 → 0.0
+
+(lhs_value: $velocity, rhs_value: $distance) isa greater_than,
+    has expression_name "gt-0-ii";          # 0.25 > 0.30 → 0.0
+
+(lhs_value: $velocity, rhs_value: $temperature) isa greater_than,
+    has expression_name "gt-0-im";          # 0.25 > 20.0 → 0.0
+
+
+# ── greater_than_equal ────────────────────────────────────────────────────────
+
+$gte1iv_rhs isa ValueDouble, has double_value 0.25;
+(lhs_value: $velocity, rhs_value: $gte1iv_rhs) isa greater_than_equal,
+    has expression_name "gte-1-iv";         # 0.25 >= 0.25 → 1.0
+
+$gte0iv_rhs isa ValueDouble, has double_value 0.30;
+(lhs_value: $velocity, rhs_value: $gte0iv_rhs) isa greater_than_equal,
+    has expression_name "gte-0-iv";         # 0.25 >= 0.30 → 0.0
+
+$gte1di_lhs isa ValueDouble, has double_value 0.25;
+(lhs_value: $gte1di_lhs, rhs_value: $velocity) isa greater_than_equal,
+    has expression_name "gte-1-di";         # 0.25 >= 0.25 → 1.0
+
+(lhs_value: $distance, rhs_value: $velocity) isa greater_than_equal,
+    has expression_name "gte-1-ii";         # 0.30 >= 0.25 → 1.0
+
+
+# ── equal ─────────────────────────────────────────────────────────────────────
+
+$eq1iv_rhs isa ValueDouble, has double_value 0.25;
+(lhs_value: $velocity, rhs_value: $eq1iv_rhs) isa equal,
+    has expression_name "eq-1-iv";          # 0.25 == 0.25 → 1.0
+
+$eq0iv_rhs isa ValueDouble, has double_value 0.30;
+(lhs_value: $velocity, rhs_value: $eq0iv_rhs) isa equal,
+    has expression_name "eq-0-iv";          # 0.25 == 0.30 → 0.0
+
+(lhs_value: $velocity, rhs_value: $distance) isa equal,
+    has expression_name "eq-0-ii";          # 0.25 == 0.30 → 0.0
+
+
+# ── not_equal ─────────────────────────────────────────────────────────────────
+
+$neq1iv_rhs isa ValueDouble, has double_value 0.30;
+(lhs_value: $velocity, rhs_value: $neq1iv_rhs) isa not_equal,
+    has expression_name "neq-1-iv";         # 0.25 != 0.30 → 1.0
+
+$neq0iv_rhs isa ValueDouble, has double_value 0.25;
+(lhs_value: $velocity, rhs_value: $neq0iv_rhs) isa not_equal,
+    has expression_name "neq-0-iv";         # 0.25 != 0.25 → 0.0
+
+(lhs_value: $velocity, rhs_value: $distance) isa not_equal,
+    has expression_name "neq-1-ii";         # 0.25 != 0.30 → 1.0
+
+
+# ── Fuzzy expression test data ────────────────────────────────────────────────
+# velocity in sd-fast-near has median_bound_value = 0.25
+# TypeDB uses 2.71828 as e.
+
+# Fuzzy sets
+$gaussian_at_median isa FuzzyGaussian,
+    has center 0.25,
+    has sigma 0.1;
+
+$expsat isa FuzzyExponentialSaturation,
+    has exponent 2.0;
+
+$expdecay isa FuzzyExponentialDecay,
+    has exponent 2.0;
+
+# FuzzyGaussian centered at 0.0 — used with as_close_as_possible offset trick.
+$gaussian_at_zero isa FuzzyGaussian,
+    has center 0.0,
+    has sigma 0.1;
+
+# ── fuzzy_unimodal_expression ─────────────────────────────────────────────────
+# FuzzyGaussian(center=0.25, sigma=0.1) at x=0.25:
+#   μ = 2.71828^(-0.5 * ((0.25 - 0.25) / 0.1)^2) = 2.71828^0 = 1.0
+(term: $velocity, fuzzy_set: $gaussian_at_median) isa fuzzy_unimodal_expression,
+    has expression_name "fuzzy-unimodal-iv";
+
+# ── fuzzy_ascend_expression ───────────────────────────────────────────────────
+# FuzzyExponentialSaturation(exponent=2.0) at x=0.25:
+#   μ = 1 - 2.71828^(-2.0 * 0.25) = 1 - 2.71828^(-0.5) ≈ 0.3935
+(term: $velocity, fuzzy_set: $expsat) isa fuzzy_ascend_expression,
+    has expression_name "fuzzy-ascend-iv";
+
+# ── fuzzy_decay_expression ────────────────────────────────────────────────────
+# FuzzyExponentialDecay(exponent=2.0) at x=0.25:
+#   μ = 2.71828^(-2.0 * 0.25) = 2.71828^(-0.5) ≈ 0.6065
+(term: $velocity, fuzzy_set: $expdecay) isa fuzzy_decay_expression,
+    has expression_name "fuzzy-decay-iv";
+
+# ── as_close_as_possible_expression ──────────────────────────────────────────
+# required_value=0.25 → offset=-0.25 → quantified_value = 0.25 + (-0.25) = 0.0
+# FuzzyGaussian(center=0.0, sigma=0.1) at x=0.0: μ = 1.0
+(term: $velocity, fuzzy_set: $gaussian_at_zero) isa as_close_as_possible_expression,
+    has expression_name "acp-iv",
+    has required_value 0.25;
+
+# ── as_many_as_possible_expression ───────────────────────────────────────────
+# Maps to fuzzy_ascend — same membership as fuzzy-ascend-iv ≈ 0.3935
+(term: $velocity, fuzzy_set: $expsat) isa as_many_as_possible_expression,
+    has expression_name "amap-iv";
+
+# ── as_few_as_possible_expression ────────────────────────────────────────────
+# Maps to fuzzy_decay — same membership as fuzzy-decay-iv ≈ 0.6065
+(term: $velocity, fuzzy_set: $expdecay) isa as_few_as_possible_expression,
+    has expression_name "afap-iv";
+
+
+# ── Compound expression test data ────────────────────────────────────────────
+# Two fresh leaf comparisons with variable bindings so compound expressions can
+# reference them by variable.
+# comp-true:  velocity(median=0.25) < 0.30  → fulfillment 1.0
+# comp-false: velocity(median=0.25) < 0.20  → fulfillment 0.0
+
+$comp_true_rhs isa ValueDouble, has double_value 0.30;
+$comp_true (lhs_value: $velocity, rhs_value: $comp_true_rhs) isa less_than,
+    has expression_name "comp-true";
+
+$comp_false_rhs isa ValueDouble, has double_value 0.20;
+$comp_false (lhs_value: $velocity, rhs_value: $comp_false_rhs) isa less_than,
+    has expression_name "comp-false";
+
+# ── not_expression ────────────────────────────────────────────────────────────
+# NOT(comp_true) → 1.0 - 1.0 = 0.0
+$not_comp_true (expression: $comp_true) isa not_expression,
+    has expression_name "not-comp-true";
+
+# ── fuzzy_not ─────────────────────────────────────────────────────────────────
+# fuzzy_NOT(comp_true) → 1.0 - 1.0 = 0.0
+$fnot_comp_true (expression: $comp_true) isa fuzzy_not,
+    has expression_name "fnot-comp-true";
+
+# ── or_expression ─────────────────────────────────────────────────────────────
+# OR(comp_true, comp_false) → MAX(1.0, 0.0) = 1.0
+$or_true_false (expression: $comp_true, expression: $comp_false) isa or_expression,
+    has expression_name "or-true-false";
+
+# ── fuzzy_or ──────────────────────────────────────────────────────────────────
+# fuzzy_OR(comp_true, comp_false) → MAX(1.0, 0.0) = 1.0
+$for_true_false (expression: $comp_true, expression: $comp_false) isa fuzzy_or,
+    has expression_name "for-true-false";
+
+# ── and_expression ────────────────────────────────────────────────────────────
+# AND(comp_true, comp_false) → MIN(1.0, 0.0) = 0.0
+$and_true_false (expression: $comp_true, expression: $comp_false) isa and_expression,
+    has expression_name "and-true-false";
+
+# ── fuzzy_and ─────────────────────────────────────────────────────────────────
+# fuzzy_AND(comp_true, comp_false) → MIN(1.0, 0.0) = 0.0
+$fand_true_false (expression: $comp_true, expression: $comp_false) isa fuzzy_and,
+    has expression_name "fand-true-false";
+
+# ── shall_expression ──────────────────────────────────────────────────────────
+# shall(comp_true) → MIN(1.0) = 1.0
+$shall_true (expression: $comp_true) isa shall_expression,
+    has expression_name "shall-true";
+
+# shall(comp_false) → MIN(0.0) = 0.0
+$shall_false (expression: $comp_false) isa shall_expression,
+    has expression_name "shall-false";
+
+# shall(comp_true, comp_false) → MIN(1.0, 0.0) = 0.0
+$shall_mixed (expression: $comp_true, expression: $comp_false) isa shall_expression,
+    has expression_name "shall-mixed";
+
+# ── may_expression ────────────────────────────────────────────────────────────
+# may(comp_true) → MAX(1.0) = 1.0
+$may_true (expression: $comp_true) isa may_expression,
+    has expression_name "may-true";
+
+# may(comp_false) → MAX(0.0) = 0.0
+$may_false (expression: $comp_false) isa may_expression,
+    has expression_name "may-false";
+
+# may(comp_true, comp_false) → MAX(1.0, 0.0) = 1.0
+$may_mixed (expression: $comp_true, expression: $comp_false) isa may_expression,
+    has expression_name "may-mixed";
+
+# ── Temperature-only expression (no state_dependency expected) ────────────────
+# temperature is NOT in the sd-fast-near state → no comparison_state_dependency
+# is created, so fetch_state_dependency_count returns 0.
+$temp_only_rhs isa ValueDouble, has double_value 0.10;
+(lhs_value: $temperature, rhs_value: $temp_only_rhs) isa less_than,
+    has expression_name "temp-only";        # no state_dependency → 0 rows
+
+# ── Additional not / fuzzy_not leaves ─────────────────────────────────────────
+# not-comp-false: NOT(comp_false=0.0) → 1.0  (sd_not with fulfillment 1.0)
+$not_comp_false (expression: $comp_false) isa not_expression,
+    has expression_name "not-comp-false";
+
+# fnot-comp-false: fuzzy_NOT(comp_false=0.0) → 1.0  (sd_fuzzy_not with fulfillment 1.0)
+$fnot_comp_false (expression: $comp_false) isa fuzzy_not,
+    has expression_name "fnot-comp-false";
+
+# ── or_expression with not_expression child (exercises sd_not branch) ─────────
+# OR(not_comp_false=1.0, comp_false=0.0) → MAX(1.0, 0.0) = 1.0
+$or_with_not (expression: $not_comp_false, expression: $comp_false) isa or_expression,
+    has expression_name "or-with-not";
+
+# ── and_expression with or_expression child (exercises sd_or branch) ──────────
+# AND(or_true_false=1.0, comp_false=0.0) → MIN(1.0, 0.0) = 0.0
+$and_with_or (expression: $or_true_false, expression: $comp_false) isa and_expression,
+    has expression_name "and-with-or";
+
+# ── fuzzy_or with fuzzy_not child (exercises sd_fuzzy_not branch) ─────────────
+# fuzzy_OR(fnot_comp_false=1.0, comp_false=0.0) → MAX(1.0, 0.0) = 1.0
+$for_with_fnot (expression: $fnot_comp_false, expression: $comp_false) isa fuzzy_or,
+    has expression_name "for-with-fnot";
+
+# ── fuzzy_and with fuzzy_not child (exercises sd_fuzzy_not branch) ────────────
+# fuzzy_AND(fnot_comp_false=1.0, comp_false=0.0) → MIN(1.0, 0.0) = 0.0
+$fand_with_fnot (expression: $fnot_comp_false, expression: $comp_false) isa fuzzy_and,
+    has expression_name "fand-with-fnot";
+
+# ── fuzzy_and with fuzzy_or child (exercises sd_fuzzy_or branch) ──────────────
+# fuzzy_AND(for_true_false=1.0, comp_false=0.0) → MIN(1.0, 0.0) = 0.0
+$fand_with_for (expression: $for_true_false, expression: $comp_false) isa fuzzy_and,
+    has expression_name "fand-with-for";
+
+# ── shall_expression with may_expression child (exercises sd_may branch) ──────
+# shall(may_true=1.0, comp_false=0.0) → MIN(1.0, 0.0) = 0.0
+$shall_with_may (expression: $may_true, expression: $comp_false) isa shall_expression,
+    has expression_name "shall-with-may";
+
+# shall with each logical/fuzzy branch (one child each to isolate the branch)
+$shall_with_not (expression: $not_comp_false) isa shall_expression,
+    has expression_name "shall-with-not";      # sd_not → 1.0
+
+$shall_with_or (expression: $or_true_false) isa shall_expression,
+    has expression_name "shall-with-or";       # sd_or → 1.0
+
+$shall_with_and (expression: $and_true_false) isa shall_expression,
+    has expression_name "shall-with-and";      # sd_and → 0.0
+
+$shall_with_fnot (expression: $fnot_comp_false) isa shall_expression,
+    has expression_name "shall-with-fnot";     # sd_fuzzy_not → 1.0
+
+$shall_with_for (expression: $for_true_false) isa shall_expression,
+    has expression_name "shall-with-for";      # sd_fuzzy_or → 1.0
+
+$shall_with_fand (expression: $fand_true_false) isa shall_expression,
+    has expression_name "shall-with-fand";     # sd_fuzzy_and → 0.0
+
+# ── may_expression with not_expression child (exercises sd_not branch) ────────
+# may(not_comp_false=1.0, comp_false=0.0) → MAX(1.0, 0.0) = 1.0
+$may_with_not (expression: $not_comp_false, expression: $comp_false) isa may_expression,
+    has expression_name "may-with-not";
+
+# may with each remaining logical/fuzzy branch (one child each to isolate the branch)
+$may_with_or (expression: $or_true_false) isa may_expression,
+    has expression_name "may-with-or";         # sd_or → 1.0
+
+$may_with_and (expression: $and_true_false) isa may_expression,
+    has expression_name "may-with-and";        # sd_and → 0.0
+
+$may_with_fnot (expression: $fnot_comp_false) isa may_expression,
+    has expression_name "may-with-fnot";       # sd_fuzzy_not → 1.0
+
+$may_with_for (expression: $for_true_false) isa may_expression,
+    has expression_name "may-with-for";        # sd_fuzzy_or → 1.0
+
+$may_with_fand (expression: $fand_true_false) isa may_expression,
+    has expression_name "may-with-fand";       # sd_fuzzy_and → 0.0
+
+# ── single-child compound expressions ────────────────────────────────────────
+# Exercises MAX/MIN with a single child (no competition between values).
+(expression: $comp_true) isa or_expression,
+    has expression_name "or-single-true";      # MAX(1.0) = 1.0
+
+(expression: $comp_true) isa fuzzy_or,
+    has expression_name "for-single-true";     # MAX(1.0) = 1.0
+
+(expression: $comp_true) isa and_expression,
+    has expression_name "and-single-true";     # MIN(1.0) = 1.0
+
+(expression: $comp_true) isa fuzzy_and,
+    has expression_name "fand-single-true";    # MIN(1.0) = 1.0
+
+# ── relaxed_requirement ───────────────────────────────────────────────────────
+$sd_system isa System, has system_name "sd-test-system";
+
+# req-shall-true: shall(comp_true) → 1.0
+(system: $sd_system, expression: $shall_true) isa relaxed_requirement,
+    has requirement_name "req-shall-true";
+
+# req-shall-false: shall(comp_false) → 0.0
+(system: $sd_system, expression: $shall_false) isa relaxed_requirement,
+    has requirement_name "req-shall-false";
+
+# req-mixed: MIN(shall_true=1.0, shall_false=0.0) → 0.0
+(system: $sd_system, expression: $shall_true, expression: $shall_false) isa relaxed_requirement,
+    has requirement_name "req-mixed";
+
+# req-with-may: relaxed_requirement(may_true=1.0) → MIN(1.0) = 1.0
+# exercises sd_may branch in relaxed_requirement gather rule
+(system: $sd_system, expression: $may_true) isa relaxed_requirement,
+    has requirement_name "req-with-may";

@@ -1,0 +1,13 @@
+test_msgs:
+  msgs:
+    TestMsg
+     message
+       time stamp string id
+  actions:
+    TestAction
+        goal
+            "test_msgs/msg/TestMsg" test_goal
+        result
+            "test_msgs/msg/TestMsg" test_result
+        feedback
+            "test_msgs/msg/TestMsg" test_feedback

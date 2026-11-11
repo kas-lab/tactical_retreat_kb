@@ -1,0 +1,15 @@
+feature_model 
+{
+	name test_var
+	root selected Feature TestRoot id TESTROOT
+	children{
+		selected Feature RootChild id ROOTCHILD,
+		Feature SecondRootChild id SECONDROOTCHILD,
+		Feature ThirdRootChild id THIRDROOTCHILD,
+		Feature FourthRootChild id FOURTHROOTCHILD
+		}
+crossTreeConstraints{
+	THIRDROOTCHILD equiv FOURTHROOTCHILD
+			 }
+			  
+}

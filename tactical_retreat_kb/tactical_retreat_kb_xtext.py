@@ -1,0 +1,794 @@
+# Copyright 2025 KAS lab
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import functools
+import importlib
+import inspect
+import json
+import time
+import traceback
+from dataclasses import dataclass
+from typing import Optional
+from adapt_x_msgs.srv import FetchResolutions
+from adapt_x_msgs.srv import FetchPlan
+from adapt_x_msgs.srv import FetchRules
+from adapt_x_msgs.srv import FetchSimilar
+from adapt_x_msgs.srv import HypotheticalReqFulfillment
+from adapt_x_msgs.srv import HypotheticalReqsFulfillment
+from adapt_x_msgs.srv import RequirementsFulfillment
+from adapt_x_msgs.srv import ValidTactics
+from adapt_x_msgs.srv import ValidRankedTactics
+from adapt_x_msgs.srv import UpdateHasParamValue
+from adapt_x_msgs.srv import UpdateInEffect
+from adapt_x_msgs.srv import UpdateRunning
+from adapt_x_msgs.srv import GetState
+from adapt_x_msgs.msg import RelaxedRequirement
+from adapt_x_msgs.msg import SimilarityPair
+from adapt_x_msgs.msg import RelaxedRequirements
+from adapt_x_msgs.msg import SymbolicState
+from adapt_x_msgs.msg import TableEntry
+from adapt_x_msgs.msg import Resolution
+from adapt_x_msgs.msg import TacticRule
+from adapt_x_msgs.msg import NewTactic
+from adapt_x_msgs.srv import FetchPolicy
+
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.duration import Duration
+from rclpy.lifecycle import State
+from rclpy.lifecycle import TransitionCallbackReturn
+from rclpy.lifecycle import Node
+from rclpy.qos import QoSDurabilityPolicy
+from rclpy.qos import QoSHistoryPolicy
+from rclpy.qos import QoSLivelinessPolicy
+from rclpy.qos import QoSProfile
+from rclpy.qos import QoSReliabilityPolicy
+from rclpy.parameter import Parameter
+from rcl_interfaces.msg import ParameterEvent
+
+from ros_monitors_functions.factory import MonitorFactory
+# from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
+from std_msgs.msg import Header, String
+from std_srvs.srv import Trigger
+
+# from tactical_retreat_kb.typedb_tactical_retreat_interface import TacticalRetreatInterface
+from tactical_retreat_kb.xtext_tactical_retreat_interface import TacticalRetreatInterface as XTextInterface
+
+
+@dataclass
+class TopicMeta:
+    topic: str
+    any_message_received: bool = False
+    message_count: int = 0
+    last_msg_wall_time: Optional[float] = None
+
+    def message_received(self, msg, criteria = lambda a: True):
+        if(criteria(msg)):
+            self.any_message_received = True
+            self.message_count += 1
+            self.last_msg_wall_time = time.time()
+
+    def seconds_since_last(self) -> Optional[float]:
+        if self.last_msg_wall_time is None:
+            return None
+        return time.time() - self.last_msg_wall_time
+
+    def has_published(self) -> bool:
+        return self.any_message_received
+
+    def count(self) -> float:
+        return self.message_count
+
+
+def publish_event(event_type: str):
+    """Publish event (Decorator)."""
+    def _publish_event(func):
+        def inner(*args, **kwargs):
+            args[0].publish_data_event(event_type)
+            return func(*args, **kwargs)
+        return inner
+    return _publish_event
+
+
+def kb_service(description: str, verbose: bool = True):
+    """Wrap a service callback with timing, logging and error handling (Decorator)."""
+    def _kb_service(func):
+        @functools.wraps(func)
+        def inner(self, req, res):
+            start_time = time.perf_counter()
+            has_success = hasattr(res, 'success')
+            try:
+                if verbose:
+                    self.get_logger().info(f'{description}...')
+                if has_success:
+                    res.success = True  # callback may override to False
+                func(self, req, res)
+                if verbose:
+                    elapsed_time = time.perf_counter() - start_time
+                    self.get_logger().info(
+                        f'{description} done in {elapsed_time:.4f} seconds.')
+            except Exception as e:
+                self.get_logger().error(f'Error {description.lower()}: {e}')
+                self.get_logger().error('Traceback:\n' + traceback.format_exc())
+                if has_success:
+                    res.success = False
+            return res
+        return inner
+    return _kb_service
+
+
+def get_ros_msg_type_from_string(msg_type_string: str, msg_type='msg'):
+    msg_type_list = [part for part in msg_type_string.split('/') if part]
+
+    if len(msg_type_list) == 2:
+        package_name, message_name = msg_type_list
+    elif len(msg_type_list) == 3:
+        package_name = msg_type_list[0]
+        msg_type = msg_type_list[1]
+        message_name = msg_type_list[2]
+    else:
+        raise ValueError(
+            f'Unsupported message type format: {msg_type_string}')
+
+    msg_module = importlib.import_module(f'{package_name}.{msg_type}')
+    return getattr(msg_module, message_name)
+
+
+RELIABILITY_MAP = {
+    'RELIABLE': QoSReliabilityPolicy.RELIABLE,
+    'BEST_EFFORT': QoSReliabilityPolicy.BEST_EFFORT,
+    'SYSTEM_DEFAULT': QoSReliabilityPolicy.SYSTEM_DEFAULT,
+}
+
+HISTORY_MAP = {
+    'KEEP_LAST': QoSHistoryPolicy.KEEP_LAST,
+    'KEEP_ALL': QoSHistoryPolicy.KEEP_ALL,
+    'SYSTEM_DEFAULT': QoSHistoryPolicy.SYSTEM_DEFAULT,
+}
+
+DURABILITY_MAP = {
+    'VOLATILE': QoSDurabilityPolicy.VOLATILE,
+    'TRANSIENT_LOCAL': QoSDurabilityPolicy.TRANSIENT_LOCAL,
+    'SYSTEM_DEFAULT': QoSDurabilityPolicy.SYSTEM_DEFAULT,
+}
+
+LIVELINESS_MAP = {
+    'AUTOMATIC': QoSLivelinessPolicy.AUTOMATIC,
+    'MANUAL_BY_TOPIC': QoSLivelinessPolicy.MANUAL_BY_TOPIC,
+    'SYSTEM_DEFAULT': QoSLivelinessPolicy.SYSTEM_DEFAULT,
+}
+
+
+def _to_duration(v):
+    # Accept Duration, seconds as int/float, or a dict {"sec": int, "nanosec":
+    # int}
+    if isinstance(v, Duration):
+        return v
+    if isinstance(v, (int, float)):
+        secs = int(v)
+        nsec = int(round((v - secs) * 1_000_000_000))
+        return Duration(seconds=secs, nanoseconds=nsec)
+    raise TypeError(f'Unsupported duration value: {v!r}')
+
+
+def get_qos_from_qos_dict(qos_dict: dict) -> QoSProfile:
+    # depth must be provided when KEEP_LAST; default to 10
+    if qos_dict is None:
+        return QoSProfile(depth=1)
+
+    # qos = QoSProfile(depth=int(qos_dict.get('depth', 1)))
+    qos = QoSProfile(depth=1)
+
+    # Policies
+    if 'reliability' in qos_dict:
+        qos.reliability = RELIABILITY_MAP[qos_dict['reliability']]
+    if 'history' in qos_dict:
+        qos.history = HISTORY_MAP['KEEP_LAST']  # change back
+    if 'durability' in qos_dict:
+        qos.durability = DURABILITY_MAP[qos_dict['durability']]
+    if 'liveliness' in qos_dict:
+        qos.liveliness = LIVELINESS_MAP[qos_dict['liveliness']]
+
+    # Durations (convert to Duration)
+    if 'lifespan' in qos_dict:
+        qos.lifespan = _to_duration(qos_dict['lifespan'])
+    if 'deadline' in qos_dict:
+        qos.deadline = _to_duration(qos_dict['deadline'])
+
+    # Lease duration (portable across distros)
+    lease_input = None
+    if 'lease_duration' in qos_dict:
+        lease_input = qos_dict['lease_duration']
+    elif 'lease-duration' in qos_dict:
+        lease_input = qos_dict['lease-duration']
+    elif 'liveliness_lease_duration' in qos_dict:
+        lease_input = qos_dict['liveliness_lease_duration']
+
+    if lease_input is not None:
+        d = _to_duration(lease_input)
+        if hasattr(qos, 'lease_duration'):
+            qos.lease_duration = d                # Iron+ or backports
+        else:
+            qos.liveliness_lease_duration = d     # Humble
+
+    return qos
+
+
+class TacticalRetreatKB(Node):
+    """ROS lifecycle node implementing TacticalRetreat's KB."""
+
+    def __init__(self, node_name, **kwargs):
+        """Create RosaKB node, inherits from :class:`ROSTypeDBInterface`."""
+        self.active = False
+        super().__init__(node_name, **kwargs)
+        # self.typedb_interface_class = TacticalRetreatInterface
+        self.measures_subscribers = {}
+        self.measures_clients = {}
+        self.measures_timers = {}
+        self.measures_services = {}  # For proxies
+        self.context_dict = {
+            'nearest_object': 'unknown',
+            'power_draw': 'unknown',
+            'current_velocity': 'unknown'
+        }
+        self.parameter_event_subscriber = None
+
+        self.declare_parameter("tactics_path", "")
+        self.declare_parameter("resolution_path", "")
+        self.declare_parameter("var_path", "")
+        self.declare_parameter("context_path", "")
+        self.declare_parameter("reqs_path", "")
+        self.declare_parameter("ros_path", [""])
+        self.declare_parameter("ros2_path", [""])
+        self.declare_parameter("rossystem_path", [""])
+        self.declare_parameter("require_nodes_running", False)
+        self.declare_parameter("verify_parameters", False)
+
+        tactics_path = self.get_parameter("tactics_path").value
+        resolution_path = self.get_parameter("resolution_path").value
+        var_path = self.get_parameter("var_path").value
+        context_path = self.get_parameter("context_path").value
+        reqs_path = self.get_parameter("reqs_path").value
+        ros_path = self.get_parameter("ros_path").value
+        ros2_path = self.get_parameter("ros2_path").value
+        rossystem_path = self.get_parameter("rossystem_path").value
+        require_nodes_running = self.get_parameter("require_nodes_running").value
+        verify_parameters = self.get_parameter("verify_parameters").value
+
+        self.interface = XTextInterface(
+                    resolution_path,
+                    var_path,
+                    context_path,
+                    reqs_path,
+                    ros_path,
+                    ros2_path,
+                    rossystem_path,
+                    tactics_path,
+                    require_nodes_running,
+                    verify_parameters,
+                    self.get_logger()
+        )
+
+        # x = self.interface.similar_tactics("CameraMotionAlignment")
+        # x = self.interface._test_req_similarity()
+        # self.get_logger().info(f"Testing similarity {x}")
+        # self.interface.get_fetch_policy("FollowPath")
+
+        self.query_cb_group = MutuallyExclusiveCallbackGroup()
+
+        self.measurements = {}
+        self.meta_registry = {}
+        self.composite_measurements = {}
+
+        self.monitor = MonitorFactory()
+        # Lock for synchronizing measurement_processing and state fetching
+        # self.measurement_lock = threading.Lock()
+
+        self.declare_parameter("do_states", True)
+
+    def create_header(self):
+        return Header(stamp=self.get_clock().now().to_msg())
+
+    def on_activate(self, state: State) -> TransitionCallbackReturn:
+        super().get_logger().info(self.get_name() + ': on_activate() is called.')
+
+        self.active = True
+        self.get_logger().info(
+            self.get_name() + ': on_activate() is not yet completed.')
+
+        # self.doing_states = self.get_parameter("do_states").value
+
+        # self.get_logger().info(f": are we doing states? {self.doing_states}")
+        pub_qos = QoSProfile(reliability=QoSReliabilityPolicy.BEST_EFFORT,
+                             history=QoSHistoryPolicy.KEEP_LAST,
+                             depth=3)
+        self.reqs_publisher = self.create_publisher(
+            RelaxedRequirements, 'requirements', qos_profile=pub_qos)
+        
+        self.conf_publisher = self.create_publisher(
+            String, 'fm_configuration', qos_profile=pub_qos)
+        
+        self.mes_publisher = self.create_publisher(
+            String, 'context_model', qos_profile=pub_qos)
+
+        self.parameter_event_subscriber = self.create_subscription(
+            ParameterEvent, 'parameter_events', self.parameter_event_cb, 10)
+
+        self.cbr_subscriber = self.create_subscription(
+            NewTactic, '/cbr_evaluation', self.cbr_cb, 10)
+
+        self.prev_state = None
+        # self.create_measures_interfaces()
+        try:
+            self._create_kb_services()
+        except Exception as e:
+            self.get_logger().error('Traceback:\n' + traceback.format_exc())
+            raise e
+        self.get_logger().info(
+            self.get_name() + ': on_activate() is completing.')
+
+        self.create_measures_interfaces()
+        return super().on_activate(state)
+
+    def on_deactivate(self, state: State) -> TransitionCallbackReturn:
+        self.get_logger().info('on_deactivate() is called.')
+        self.active = False
+        for service in self.kb_services.values():
+            self.destroy_service(service)
+        return super().on_deactivate(state)
+
+    def on_configure(self, state: State) -> TransitionCallbackReturn:
+        """
+        Configure TacticalRetreatKB when the configure transition is called.
+
+        :return: transition result
+        """
+        config_res = super().on_configure(state)
+        super().get_logger().info('I have arisen')
+        return config_res
+
+    def on_cleanup(self, state: State) -> TransitionCallbackReturn:
+        """
+        Cleanup TacticalRetreatKB when the cleanup transition is called.
+
+        :return: transition result
+        """
+        self.active = False
+        return super().on_cleanup(state)
+
+    def _create_kb_services(self):
+        services = [
+            (Trigger, 'create_measures', self._create_measures_cb),
+            (FetchRules, 'fetch_rules', self._fetch_rules_cb),
+            (GetState, 'determine_state', self._determine_state_cb),
+            (FetchSimilar, 'fetch_similar', self._fetch_similar_cb),
+            # (RequirementsFulfillment, 'fetch_requirements_fulfillment',
+            #  self._fetch_req_fulfillment_cb),
+            (RequirementsFulfillment, 'fetch_requirements_fulfillment_ineffect',
+             self._fetch_req_fulfillment_ineffect_cb),
+            (HypotheticalReqFulfillment, 'fetch_hyp_requirement',
+             self._fetch_hyp_requirement_cb),
+            (HypotheticalReqsFulfillment, 'fetch_hyp_requirements',
+             self._fetch_hyp_requirements_cb),
+            # (Trigger, 'get_current_state', self._get_current_state_cb),
+            (ValidTactics, 'satisfied_rule', self._satisfied_rule_cb),
+            (ValidRankedTactics, 'valid_ranked_tactics', self._valid_ranked_tactics_cb),
+            (FetchResolutions, 'fetch_resolutions', self._fetch_resolutions_cb),
+            (FetchPlan, 'fetch_plan', self._fetch_plan_cb),
+            (UpdateRunning, 'update_running', self._update_running_cb),
+            (UpdateInEffect, 'update_in_effect', self._update_in_effect_cb),
+            (UpdateHasParamValue, 'update_has_param_value',
+             self._update_has_param_value_cb),
+            (FetchPolicy, 'fetch_policy', self._fetch_policy_cb),
+        ]
+        self.kb_services = {
+            name: self.create_service(srv_type, f'{self.get_name()}/{name}', cb,
+                                      callback_group=self.query_cb_group)
+            for srv_type, name, cb in services
+        }
+
+    @kb_service('Creating measures interfaces')
+    def _create_measures_cb(self, _, res):
+        self.create_measures_interfaces()
+
+    @kb_service('Fetching applicable tactics')
+    def _fetch_rules_cb(self, req, res):
+        result = self.interface.get_applicable_tactics(
+            req.resolution_model, req.interface_name)
+        res.tactic_rules = [TacticRule(name=rule_name, reconfigurations=fa_list,
+                                       requirement_name=req_name)
+                            for (rule_name, req_name), fa_list in result.items()]
+        self.get_logger().info(f'Applicable tactics fetched {str(res)}')
+
+    @kb_service('Fetching similar tactics')
+    def _fetch_similar_cb(self, req, res):
+        result = self.interface.similar_requirements(req.interface_name)
+        res.similarity_pairs = [SimilarityPair(requirement_name=req_name, similar_items=req_list)
+                                for (req_name, req_list) in result.items()]
+        self.get_logger().info(f'Similar tactics fetched {str(res)}')
+
+    @kb_service('Fetching satisfied tactics', verbose=False)
+    def _satisfied_rule_cb(self, req, res):
+        res.satisfied = self.interface.get_valid_tactics(
+            req.tactic_rules, req.action_name)
+
+    @kb_service('Fetching valid tactics and their current ranking', verbose=False)
+    def _valid_ranked_tactics_cb(self, req, res):
+        sat, ranked = self.interface.get_valid_ranked_tactics(
+            req.tactic_rules, req.action_name)
+        res.satisfied = sat
+        res.ranked_tactics = [SimilarityPair(requirement_name=req_name, similar_items=tac_list)
+                                for (req_name, tac_list) in ranked.items()]
+
+    @kb_service('Fetching all resolution actions')
+    def _fetch_resolutions_cb(self, req, res):
+        resolutions = self.interface.get_resolution_adaptations(logger=self.get_logger())
+        res.resolutions = [Resolution(resolution_action_name=name, adaptations=adaptations)
+                           for name, adaptations in resolutions.items()]
+
+    @kb_service('Fetching reconfiguration plan')
+    def _fetch_plan_cb(self, req, res):
+        if (req.full_configuration):
+            x = self.interface.change_configuration(req.full_configuration_string)
+        else:
+            x = self.interface.reconfiguration(req.reconfiguration_string)
+        self.get_logger().info(f'Tactic actions {x} fetched.')
+        res.resolution_actions = x
+
+    @kb_service('Updating running nodes')
+    def _update_running_cb(self, req, res):
+        self.interface.manual_running_nodes(req.node_names)
+
+    @kb_service('Fetching requirements fulfillment')
+    def _fetch_req_fulfillment_cb(self, req, res):
+        res.fulfillment_values = self.interface.get_relaxed_requirements_fulfillment(
+            req.system_name, *req.requirement_names)
+
+    @kb_service('Fetching hypothetical requirement fulfillment')
+    def _fetch_hyp_requirement_cb(self, req, res):
+        fulfillment = self.interface.get_relaxed_requirement_hypothetical_fulfillment(
+            req.system_name, req.requirement_name, req.rule_name)
+        res.fulfillment_value = float(fulfillment)
+
+    @kb_service('Fetching hypothetical requirements fulfillment')
+    def _fetch_hyp_requirements_cb(self, req, res):
+        self.get_logger().info(f'Rule names: {str(req.rule_names)}')
+        fulfillment = self.interface.get_relaxed_requirements_hypothetical_fulfillment(
+            req.rule_names, req.system_name)
+        res.fulfillment_dict = json.dumps(fulfillment)
+
+    @kb_service('Fetching requirements with in_effect fulfillment')
+    def _fetch_req_fulfillment_ineffect_cb(self, req, res):
+        reqs = self.fetch_requirements()
+        if (reqs is not None):
+            res.requirements = reqs
+        else:
+            res.success = False
+
+    @kb_service('Updating in-effect requirements')
+    def _update_in_effect_cb(self, req, res):
+        self.interface.update_requirements_in_effect(
+            req.requirement_names, req.all_requirements)
+
+    @kb_service('Updating has_param_value')
+    def _update_has_param_value_cb(self, req, res):
+        query_res = self.interface.update_feature_selected_by_param_value(
+            req.feature_name)
+        self.get_logger().info(
+            f'update_feature_selected_by_param_value result: {query_res}')
+
+    @kb_service('Fetching current state', verbose=False)
+    def _get_current_state_cb(self, _, res):
+        res.message = self.interface.get_current_state()
+
+    @kb_service('Determining current state')
+    def _determine_state_cb(self, req, res):
+        current_state_string = self.interface.get_current_state_action(
+            req.action_name, self.get_logger())
+        if (current_state_string is not None):
+            res.current_state = SymbolicState(state_name=str(current_state_string),
+                                              header=self.create_header())
+        else:
+            res.success = False
+        self.get_logger().info(f'current_state: {str(current_state_string)}')
+
+    @kb_service('Fetching policy for action')
+    def _fetch_policy_cb(self, req, res):
+        state_dict, table, reconfigurations = self.interface.get_fetch_policy(
+            req.action_name)
+        res.table_entries = [TableEntry(state=SymbolicState(state_name=s),
+                                        feature_adaptation=fa, rule_name=r)
+                             for (fa, s), r in table.items()]
+        res.states = [SymbolicState(state_name=name) for name in state_dict]
+        res.reconfigurations = reconfigurations
+
+
+    def create_measure_interface(self, interface):
+        """
+        Create a subscription for a measure topic using details in `topic_interface`.
+
+        Expected keys:
+        - 'measure_name' (str)
+        - 'measurement_interface_name' (str)
+        - 'measurement_interface_type' (str ROS msg type)
+        - optional: 'measurement_function_lib' (str, module path)
+        - optional: 'measurement_function_name' (str, callable name)
+        - optional: 'measurement_function_args' (str, comma-separated args)
+        - optional: 'qos' (dict for QoSProfile construction)
+        """
+        measure_name = interface.get('measure_name')
+        interface_name = interface.get('interface_name')
+
+        super().get_logger().info(
+                f'Making a subscription for interface_name: {interface_name}')
+        ros_msg_type_str = interface.get('interface_type')  
+
+        measurement_qos = QoSProfile(reliability=QoSReliabilityPolicy.BEST_EFFORT,
+                                     history=QoSHistoryPolicy.KEEP_LAST,
+                                     depth=3)
+        # get_qos_from_qos_dict(interface.get('qos', {}))
+
+        # function_lib_name = (interface.get('measurement_function_lib')
+        #                      or 'ros_monitors_functions.monitor_functions')
+        function_name = (interface.get('measurement_function_name')
+                         or 'get_data_field')
+
+        function_name = function_name.strip('\"')
+
+        function_args_str = interface.get('measurement_function_args')
+        function_args = [arg.strip() for arg in function_args_str.split(
+            ',')] if function_args_str else []
+
+        # function_lib = self.monitor[function_lib_name]
+        # importlib.import_module(function_lib_name)
+        def measure_callable(node, msg): return None
+        callable_args = []
+        topic_meta = TopicMeta(interface_name)
+        if function_name in ["meta_has_published", "meta_last_published", "meta_count"]:
+            if (function_name == "meta_has_published"):
+                self.meta_registry[measure_name] = topic_meta.has_published
+            if (function_name == "meta_last_published"):
+                self.meta_registry[measure_name] = topic_meta.seconds_since_last
+            if (function_name == "meta_count"):
+                self.meta_registry[measure_name] = topic_meta.count
+        else:
+            measure_function = self.monitor[function_name]
+            # getattr(function_lib, function_name)
+
+            # Support both stateless functions and stateful callables (classes with
+            # __call__).
+            if inspect.isclass(measure_function):
+                # Instantiate once so state is preserved across callbacks.
+                measure_callable = measure_function(*function_args)
+            else:
+                measure_callable = measure_function
+                callable_args = function_args
+
+        if (interface.get('source') == 'Composite'):
+            self.composite_measurements[measure_name] = (interface.get("measure_names"),
+                                                         measure_callable)
+        if (interface.get('source') == 'Publisher'):
+            topic_type = get_ros_msg_type_from_string(ros_msg_type_str, 'msg')
+            super().get_logger().info(
+                f'Making a subscription for measure: {measure_name}')
+
+            meta_entry = self.meta_registry.get(measure_name, None)
+
+            def topic_cb(msg, _node=super(), _measure_name=measure_name,
+                         _measure_callable=measure_callable,
+                         _function_args=callable_args, _metadata=topic_meta):
+                try:
+                    if self.meta_registry.get(measure_name, None) is not None:
+                        if(function_args == []):
+                            topic_meta.message_received(msg)
+                        else:
+                            topic_meta.message_received(msg, self.monitor[function_args[0]])
+                    # self.get_logger().info(f"Measure cb {_measure_name}")
+                    res = _measure_callable(self, msg, *_function_args)
+                except Exception as e:
+                    self.get_logger().error('Error while using measure in subscriber Traceback:\n' + traceback.format_exc())
+                    raise e
+
+                self.measurements[_measure_name] = res
+
+            self.measures_subscribers[measure_name] = self.create_subscription(
+                topic_type,
+                interface_name,
+                topic_cb,
+                measurement_qos,
+                callback_group=self.query_cb_group
+            )
+        if (interface.get('source') == 'ServiceServer'):
+            service_type = get_ros_msg_type_from_string(
+                ros_msg_type_str, 'srv')
+            if (interface.get('measurement_proxy') is not True):
+                super().get_logger().info(
+                    f'Creating service client for: {interface_name}')
+                service_request_kwargs_str = interface.get(
+                    'service_request_kwargs')
+                service_request_kwargs = {}
+                if service_request_kwargs_str:
+                    for kwarg in service_request_kwargs_str.split(','):
+                        key, value = kwarg.split('=')
+                        service_request_kwargs[key.strip()] = value.strip()
+                if (interface.get('measurement_period')):
+                    self.measures_clients[measure_name] = self.create_client(
+                        service_type,
+                        interface_name,
+                        callback_group=MutuallyExclusiveCallbackGroup()
+                    )
+
+                    def srv_cb(_measure_name=measure_name,
+                               _measure_callable=measure_callable,
+                               _function_args=callable_args):
+                        if (self.measures_clients[_measure_name].wait_for_service(
+                           timeout_sec=10.0)):
+                            request = service_type.Request(
+                                **service_request_kwargs)
+
+                            def _on_done(
+                                    future,
+                                    _measure_name=_measure_name,
+                                    _measure_callable=_measure_callable,
+                                    _function_args=_function_args,
+                                    _measurements=self.measurements):
+                                _measurements[_measure_name] = _measure_callable(
+                                    self,
+                                    future.result(),
+                                    *_function_args
+                                )
+
+                            self.measures_clients[_measure_name].call_async(
+                                request).add_done_callback(_on_done)
+                    self.measures_timers[measure_name] = self.create_timer(
+                        interface['measurement_period'],
+                        srv_cb)
+            else:
+                super().get_logger().info(
+                    f'Creating proxy service for: {interface_name}')
+                self.measures_clients[measure_name] = self.create_client(
+                    service_type,
+                    interface_name,
+                    callback_group=self.query_cb_group
+                    # callback_group=MutuallyExclusiveCallbackGroup()
+                )
+
+                async def _cb(request, response, _measure_name=measure_name,
+                              _measure_callable=measure_callable,
+                              _function_args=callable_args):
+                    if (self.measures_clients[measure_name].wait_for_service(
+                            timeout_sec=10.0)):
+                        proxied_response = await self.measures_clients[
+                            measure_name].call_async(request)
+                        self.measurements[_measure_name] = _measure_callable(
+                            self,
+                            proxied_response,
+                            *_function_args)
+                        return proxied_response
+                    return response
+
+                self.measures_services[measure_name] = self.create_service(
+                    service_type,
+                    'proxy_' + interface_name,
+                    _cb)  # The proxy service
+
+    def create_measures_interfaces(self):
+        try:
+            measures_interfaces = self.interface.get_measures_interfaces()
+            if (len(measures_interfaces) == 0):
+                raise Exception('No measures interfaces to create.')
+
+            for interface in measures_interfaces:
+                super().get_logger().info(
+                    f'Creating measure interface: {interface["measure_name"]} from {interface["source"]}')
+
+                self.create_measure_interface(interface)
+
+            self.create_timer(
+                1.0,
+                self.measurement_processing,
+                callback_group=self.query_cb_group)
+            self.create_timer(1.0, self.report,
+                              callback_group=self.query_cb_group)
+
+        except Exception as e:
+            self.get_logger().error('Traceback:\n' + traceback.format_exc())
+
+            raise e
+
+    def parameter_event_cb(self, param_event : ParameterEvent):
+        node_name = param_event.node
+
+        for param in param_event.changed_parameters:
+            self.interface.update_param_value(node_name, param.name, Parameter.from_parameter_msg(param).value)
+
+    def cbr_cb(self, msg : NewTactic):
+        tactic = msg.reused_tactic
+        req = msg.solved_requirement_name
+        action = msg.action_name
+        self.interface.new_tactic(tactic, req, action)
+       
+
+
+    def measurement_processing(self):
+        if self.meta_registry:
+            for (measure_name, func) in self.meta_registry.items():
+                self.measurements[measure_name] = func()
+        if self.measurements:
+            filtered_measurements = {k: v for (k, v) in self.measurements.items() if v is not None}
+            if (filtered_measurements):
+                if self.composite_measurements:
+                    self.get_logger().info("composite measurements to process")
+
+                    for (key, (var_list, func)) in self.composite_measurements.items():
+                        measures = [filtered_measurements.get(var, None) for var in var_list]
+                        if all(measure is not None for measure in measures):
+                            filtered_measurements[key] = func(self, *measures)
+                        else:
+                            self.get_logger().info("missing measurements to process")
+
+                else:
+                    self.get_logger().info("No composite measurements to process", throttle_duration_sec=30)
+
+                self.interface.add_measurements(filtered_measurements)
+
+        else:
+            self.get_logger().info("No measurements to process", throttle_duration_sec=10)   
+
+    def fetch_requirements(self):
+        try:
+            reqs = self.interface.get_in_effect_requirement_fulfillment()
+            if (reqs):
+                reqs_msgs = []
+                for req in reqs:
+                    if (req["fulfillment"] is not None):
+
+                        req_msg = RelaxedRequirement(name=req['requirement_name'],
+                                                     fulfillment=req["fulfillment"],
+                                                     system_name=req["system"])
+                        reqs_msgs.append(req_msg)
+
+                if (len(reqs_msgs) > 0):
+                    reqs_msg = RelaxedRequirements(header=self.create_header(),
+                                                   requirements=reqs_msgs)
+
+                    return reqs_msg
+        except Exception as e:
+            raise e
+
+
+    def report(self):
+        self.publish_fulfillments()
+        self.publish_configuration()
+        self.publish_context()
+    
+    def publish_configuration(self):
+        conf_string = str(self.interface._current_configuration())
+        conf_msg = String(data=conf_string)
+        self.conf_publisher.publish(conf_msg)
+    
+    def publish_context(self):
+        cntxt_string = str(self.interface._latest_measurements())
+        cntxt_msg = String(data=cntxt_string)
+        self.mes_publisher.publish(cntxt_msg)
+
+    def publish_fulfillments(self):
+        if (self.reqs_publisher.get_subscription_count() > 0):
+            reqs_msg = self.fetch_requirements()
+            if reqs_msg is not None:
+                self.reqs_publisher.publish(reqs_msg)
+                return
+
+            self.get_logger().info("No fulfillments to published", throttle_duration_sec=10)
+        else:
+            self.get_logger().info("No subscribers to publish fflment to", throttle_duration_sec=4)

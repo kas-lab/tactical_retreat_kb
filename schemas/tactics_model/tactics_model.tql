@@ -11,6 +11,7 @@ resolution_model_name sub name;
 tactic_name sub name;
 rule_name sub name;
 variant_name sub name;
+feature_adaptation_name sub name;
 
 tactic_resolution_model sub attribute,
     value string;
@@ -18,59 +19,81 @@ tactic_resolution_model sub attribute,
 tactic_select_variant sub attribute,
     value string;
 
-expression_valid sub attribute,
-    value boolean;
 rule_valid sub attribute,
     value boolean;
-
-operator sub attribute,
-    value string,
-    regex "^(<|<=|>|>=|==|!=)";
 
 feasible sub attribute,
     value boolean;
 
-### Relations
+### Tactic
+Tactic sub entity,
+    owns tactic_name @key,
+    plays tactic_rule:tactic,
+    plays resolution_model:tactic;
+
 tactic_rule sub relation,
     owns rule_name @key,
     owns rule_valid,
     relates tactic,
     relates antecedent,
-    relates consequent;
+    relates consequent,
+    relates involved_measure,
+    relates effect;
 
-#### expressions
-expression sub relation,
+tactic_to_action sub relation,
+    relates ros_action,
+    relates tactic;
+
+ActionInterface plays tactic_to_action:ros_action;
+Tactic plays tactic_to_action:tactic;
+
+
+### effect
+
+resulting_effect_value sub attribute,
+    value double;
+effect sub relation,
     abstract,
-    owns expression_valid,
-    plays tactic_rule:antecedent;
+    owns resulting_effect_value,
+    relates measure,
+    plays tactic_rule:effect;
 
-and_expression sub expression,
-    relates expression;
+absolute_effect sub effect,
+    relates effect_value;
 
-or_expression sub expression,
-    relates expression;
+relative_effect sub effect,
+    relates effect_value;
 
-inequality_expression sub expression,
-    owns operator,
-    relates rhs_value,
-    relates lhs_value,
-    plays and_expression:expression,
-    plays or_expression:expression;
+Measure plays effect:measure;
+Value plays absolute_effect:effect_value;
+ValueDouble plays relative_effect:effect_value;
+ValueInteger plays relative_effect:effect_value;
 
-#### connection with the context model
-Measure plays inequality_expression:lhs_value;
-Value plays inequality_expression:rhs_value;
+#### relevant for state math
+Measure plays tactic_rule:involved_measure;
 
+#### connection with logical_expression model
+logical_expression plays tactic_rule:antecedent;
+
+# feature adaptation
 feature_adaptation sub relation,
+    owns feature_adaptation_name,
     relates deactivation,
     relates activation,
     plays tactic_rule:consequent;
+
+functional_mapping sub relation,
+    relates feature,
+    relates ros_action;
+
+ActionInterface plays functional_mapping:ros_action;
+Feature plays functional_mapping:feature;
+
 
 # Connection with feature model
 Feature plays variant_resolution:variant;
 Feature plays feature_adaptation:activation;
 Feature plays feature_adaptation:deactivation;
-Feature plays and_expression:expression;
 
 #### resolution model
 resolution_model sub relation,
@@ -89,8 +112,11 @@ variant_resolution sub relation,
 variant_activation sub variant_resolution;
 variant_deactivation sub variant_resolution;
 
+action_name sub attribute,
+    value string;
 resolution_action sub relation,
     abstract,
+    owns action_name,
     owns feasible,
     relates node,
     plays variant_resolution:resolution_action;
@@ -108,12 +134,6 @@ Value plays set_nodes_parameters:parameter_value;
 set_lifecycle_state sub resolution_action,
     owns lifecycle_state;
 
-### Entities
-Tactic sub entity,
-    owns tactic_name @key,
-    plays tactic_rule:tactic,
-    plays resolution_model:tactic;
-
 ## Rules to infer whether a tactic rule is valid
 rule tactic_rule_valid:
     when {
@@ -126,17 +146,7 @@ rule tactic_rule_valid:
 rule tactic_rule_antecedent_invalid:
     when {
         $tr (antecedent: $a) isa tactic_rule;
-        $a isa expression, has expression_valid false;
-    } then {
-        $tr has rule_valid false;
-    };
-
-rule tactic_rule_consequent_unfeasible:
-    when {
-        $tr (consequent: $fa) isa tactic_rule;
-        $fa ($feature) isa feature_adaptation;
-        $feature isa Feature;
-        $feature has selectable false;
+        $a isa logical_expression, has expression_satisfied false;
     } then {
         $tr has rule_valid false;
     };
@@ -154,103 +164,6 @@ rule tactic_rule_consequent_variant_resolution_unfeasible:
         $tr has rule_valid false;
     };
 
-## Rules to infer whether an expression is valid
-rule and_expression_valid:
-    when {
-        $and_exp (expression: $e) isa and_expression;
-        $e has expression_valid true;
-        not {
-            $and_exp (expression: $invalid_e) isa and_expression;
-            $invalid_e has expression_valid false;
-        };
-    } then {
-        $and_exp has expression_valid true;
-    };
-
-rule and_expression_invalid:
-    when {
-        $and_exp isa and_expression;
-        not {$and_exp has expression_valid true;};
-    } then {
-        $and_exp has expression_valid false;
-    };
-
-rule or_expression_valid:
-    when {
-        $or_exp (expression: $e) isa or_expression;
-        $e has expression_valid true;
-    } then {
-        $or_exp has expression_valid true;
-    };
-
-rule or_expression_invalid:
-    when {
-        $or_exp isa or_expression;
-        not {$or_exp has expression_valid true;};
-    } then {
-        $or_exp has expression_valid false;
-    };
-
-rule inequality_expression_valid:
-    when {
-        $ineq_exp (lhs_value: $measure, rhs_value: $rhs) isa inequality_expression;
-        (measure: $measure, measurement_value: $mv) isa measurement,
-            has latest true;
-        {
-            {
-                $mv isa ValueDouble, has double_value $lhs_v;
-                $rhs isa ValueDouble, has double_value $rhs_v;
-            } or {
-                $mv isa ValueInteger, has integer_value $lhs_v;
-                $rhs isa ValueInteger, has integer_value $rhs_v;
-            };
-            {
-                $ineq_exp has operator ">";
-                $lhs_v > $rhs_v;
-            } or {
-                $ineq_exp has operator ">=";
-                $lhs_v >= $rhs_v;
-            } or {
-                $ineq_exp has operator "<";
-                $lhs_v < $rhs_v;
-            } or {
-                $ineq_exp has operator "<=";
-                $lhs_v <= $rhs_v;
-            } or {
-                $ineq_exp has operator "==";
-                $lhs_v == $rhs_v;
-            } or {
-                $ineq_exp has operator "!=";
-                $lhs_v != $rhs_v;
-            };
-        } or {
-            {
-                $mv isa ValueBool, has bool_value $lhs_v;
-                $rhs isa ValueBool, has bool_value $rhs_v;
-            } or {
-                $mv isa ValueString, has string_value $lhs_v;
-                $rhs isa ValueString, has string_value $rhs_v;
-            };
-            {
-                $ineq_exp has operator "==";
-                $lhs_v == $rhs_v;
-            } or {
-                $ineq_exp has operator "!=";
-                $lhs_v != $rhs_v;
-            };
-        };
-
-    } then {
-        $ineq_exp has expression_valid true;
-    };
-
-rule inequality_expression_invalid:
-    when {
-        $ineq_exp isa inequality_expression;
-        not {$ineq_exp has expression_valid true;};
-    } then {
-        $ineq_exp has expression_valid false;
-    };
 
 ## Rules for infering whether a resolution action is feasible
 rule resolution_action_unfeasible_node_running:
@@ -351,3 +264,76 @@ rule variant_resolution_feasible:
         $vr has feasible true;
     };
 
+rule feature_selected_by_parameter_match:
+    when {
+        $fa ($f) isa feature_adaptation;
+        $f isa Feature;
+        # find a variant_resolution that targets this feature and has a set_nodes_parameters action
+        $vr (variant: $f, resolution_action: $ra) isa variant_resolution;
+        $ra (node: $n, parameter: $p, parameter_value: $pv) isa set_nodes_parameters;
+        # find a node with the same current parameter value
+        $hpv (node: $n, parameter: $p, parameter_value: $pv) isa has_parameter_value;
+    } then {
+        $f has selected true;
+    };
+
+rule feature_not_selected_by_parameter_match:
+    when {
+        $f isa Feature;
+        # no matching parameter-value path that would select this feature
+        not {
+            $fa ($f) isa feature_adaptation;
+            $vr (variant: $f, resolution_action: $ra) isa variant_resolution;
+            $ra (node: $n, parameter: $p, parameter_value: $pv) isa set_nodes_parameters;
+            $hpv (node: $n, parameter: $p, parameter_value: $pv) isa has_parameter_value;
+        };
+        not { $f has selected true; };  # don't overwrite an explicit/derived true
+    } then {
+        $f has selected false;
+    };
+# Rules for inferring the resulting value of an effect
+rule relative_effect_eval:
+    when {
+        $tr (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure, effect_value: $effect_value) isa relative_effect;
+        {
+            $effect_value isa ValueDouble, has double_value $effect_double_value;
+            ?effect_value_ = $effect_double_value;
+        } or {
+            $effect_value isa ValueInteger, has integer_value $effect_integer_value;
+            ?effect_value_ = $effect_integer_value;
+        };
+
+        $measurement (measure: $measure, measurement_value: $value) isa! measurement, has latest true;
+        {
+            $value isa ValueDouble, has double_value $measured_double_value;
+            ?measured_value_ = $measured_double_value;
+        } or {
+            $value isa ValueInteger, has integer_value $measured_integer_value;
+            ?measured_value_ = $measured_integer_value;
+        };
+
+        ?hypothetical_value = ?measured_value_ + ?effect_value_ ;
+    } then {
+        $effect has resulting_effect_value ?hypothetical_value;
+    };
+
+rule absolute_effect_double_result_value:
+    when {
+        $tr (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure, effect_value: $effect_value) isa absolute_effect;
+        $effect_value isa ValueDouble, has double_value $effect_double_value;
+        ?hypothetical_value = $effect_double_value;
+    } then {
+        $effect has resulting_effect_value ?hypothetical_value;
+    };
+
+rule absolute_effect_integer_result_value:
+    when {
+        $tr (effect: $effect) isa tactic_rule;
+        $effect (measure: $measure, effect_value: $effect_value) isa absolute_effect;
+        $effect_value isa ValueInteger, has integer_value $effect_integer_value;
+        ?hypothetical_value = $effect_integer_value;
+    } then {
+        $effect has resulting_effect_value ?hypothetical_value;
+    };

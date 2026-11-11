@@ -1,0 +1,15 @@
+import "test.rossystem";
+
+Environmental
+{
+ContextVariable test_context_var
+{     
+source: origin: publisher: _slash_test_node.test_topic
+type: float32
+cache? false
+function_name "some_function"
+}
+}
+
+Mission-Related
+{}

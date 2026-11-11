@@ -18,7 +18,7 @@ $mvalue3 isa  ValueDouble,
     has measurement_time 2025-09-06T10:57:56.666;
 
 (measure: $m, measurement_value: $mvalue3) isa measurement,
-    has measurement_time 2025-09-06T11:57:56.666;
+    has measurement_time 2025-09-06T11:57:56.666, has latest true;
 
 (measure: $m) isa measurement,
     has measurement_time 2025-09-06T12:57:56.666;
@@ -35,54 +35,25 @@ $m_no_valid_measurement isa Measure,
     has measurement_time 2025-09-06T12:57:56.666;
 
 
-$litdouble isa ValueDouble,
+$double_1_3 isa ValueDouble,
     has double_value 1.3;
 
-$litdoubletwo isa ValueDouble,
+$double_1_2 isa ValueDouble,
     has double_value 1.2;
 
-$litdoublethree isa ValueDouble,
+$double_1_0 isa ValueDouble,
     has double_value 1.0;
 
 ### expressions
 
 #### inequality expressions
-$exp1 (lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operator "<"; # True
-$exp2 (lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator "<"; # False
-$exp3 (lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator "<"; # False
+# measurement is 1.2
+$exp1 (lhs_value:$m, rhs_value:$double_1_3) isa less_than, has expression_name 'exp1'; # True
+$exp2 (lhs_value:$m, rhs_value:$double_1_2) isa less_than, has expression_name 'exp2'; # False
 
-$exp4 (lhs_value:$m_no_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "<";
-$exp5 (lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "<";
-
-$exp6 (lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operator "<=";
-$exp7 (lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator "<=";
-$exp8 (lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator "<=";
-$exp9 (lhs_value:$m_no_measurement,  rhs_value:$litdoublethree) isa inequality_expression, has operator "<=";
-$exp10 (lhs_value:$m_no_valid_measurement,  rhs_value:$litdoublethree) isa inequality_expression, has operator "<=";
-
-$exp11 (lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operator ">";
-$exp12 (lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator ">";
-$exp13 (lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator ">"; # true
-$exp14 (lhs_value:$m_no_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator ">";
-$exp15 (lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator ">";
-
-(lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operator ">=";
-(lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator ">=";
-(lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator ">=";
-(lhs_value:$m_no_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator ">=";
-(lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator ">=";
-
-(lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operator "==";
-(lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator "==";
-(lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator "==";
-(lhs_value:$m_no_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "==";
-(lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "==";
-
-(lhs_value:$m, rhs_value:$litdouble) isa inequality_expression, has operator "!=";
-(lhs_value:$m, rhs_value:$litdoubletwo) isa inequality_expression, has operator "!=";
-(lhs_value:$m, rhs_value:$litdoublethree) isa inequality_expression, has operator "!=";
-(lhs_value:$m_no_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "!=";
-(lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequality_expression, has operator "!=";
+# 1.2 < 1.0
+$exp3 (lhs_value:$m, rhs_value:$double_1_0) isa less_than, has expression_name 'exp3'; # False
+$exp4 (lhs_value:$m, rhs_value:$double_1_0) isa greater_than; # True
 
 ### tactic rules
 
@@ -92,26 +63,25 @@ $exp15 (lhs_value:$m_no_valid_measurement, rhs_value:$litdoublethree) isa inequa
 $and_exp1 (expression: $exp1, expression:$exp2) isa and_expression; # true && false -> false
 (antecedent:$and_exp1) isa tactic_rule, has rule_name "tr3";
 
-$and_exp2 (expression: $exp1, expression:$exp13) isa and_expression; # true && true -> true
+$and_exp2 (expression: $exp1, expression:$exp4) isa and_expression; # true && true -> true
 (antecedent:$and_exp2) isa tactic_rule, has rule_name "tr4";
 
 $or_exp1 (expression: $exp1, expression:$exp2) isa or_expression; # true || false -> true
 (antecedent:$or_exp1) isa tactic_rule, has rule_name "tr5";
 
-$or_exp2 (expression: $exp1, expression:$exp13) isa or_expression; # true || true -> true
+$or_exp2 (expression: $exp1, expression:$exp4) isa or_expression; # true || true -> true
 (antecedent:$or_exp2) isa tactic_rule, has rule_name "tr6";
 
-$or_exp3 (expression: $exp2, expression:$exp3) isa or_expression; # false || false -> false
+$or_exp3 (expression: $exp2, expression:$exp3) isa or_expression, has expression_name 'or_tr7'; # false || false -> false
 (antecedent:$or_exp3) isa tactic_rule, has rule_name "tr7";
 
 ### resolution actions
 $node_running isa ROSNode,
 	has node_name "node_running",
-	has start_time 2025-09-06T11:57:56.666;
+	has running true;
 $node_not_running isa ROSNode,
 	has node_name "node_not_running",
-	has start_time 2025-09-06T11:57:56.666,
-	has end_time 2025-09-07T11:57:56.666;
+	has running false;
 
 $parameter isa ParameterDouble, has parameter_name "parameter";
 $parameter_value isa ValueDouble, has double_value 0.10;
@@ -120,22 +90,22 @@ $res_action_unfeasible (node: $node_not_running, parameter: $parameter, paramete
 
 $lifecycle_node_active isa LifeCycleNode,
 	has node_name "lifecycle_node_active",
-	has start_time 2025-09-06T11:57:56.666,
+	has running true,
     has lifecycle_state "active";
 
 $lifecycle_node_inactive isa LifeCycleNode,
 	has node_name "lifecycle_node_inactive",
-	has start_time 2025-09-06T11:57:56.666,
+	has running true,
     has lifecycle_state "inactive";
 
 $lifecycle_node_unconfigured isa LifeCycleNode,
 	has node_name "lifecycle_node_unconfigured",
-	has start_time 2025-09-06T11:57:56.666,
+	has running true,
     has lifecycle_state "unconfigured";
 
 $lifecycle_node_finalized isa LifeCycleNode,
 	has node_name "lifecycle_node_finalized",
-	has start_time 2025-09-06T11:57:56.666,
+	has running true,
     has lifecycle_state "finalized";
 
 (node: $lifecycle_node_active) isa set_lifecycle_state, has lifecycle_state "active";       # feasible is true
@@ -157,16 +127,6 @@ $lifecycle_node_finalized isa LifeCycleNode,
 (node: $lifecycle_node_finalized) isa set_lifecycle_state, has lifecycle_state "inactive";     # feasible is false
 (node: $lifecycle_node_finalized) isa set_lifecycle_state, has lifecycle_state "unconfigured"; # feasible is false
 (node: $lifecycle_node_finalized) isa set_lifecycle_state, has lifecycle_state "finalized";    # feasible is true
-
-## test tactic_rule_consequent_unfeasible
-$f_selectable isa Feature, has feature_name "f_selectable", has selectable true;
-$f_not_selectable isa Feature, has feature_name "f_not_selectable", has selectable false;
-
-$fa1 (activation: $f_selectable) isa feature_adaptation;
-$fa2 (activation: $f_not_selectable) isa feature_adaptation;
-
-(consequent: $fa1) isa tactic_rule, has rule_name "tr_consequent_feasible";   # rule_valid true
-(consequent: $fa2) isa tactic_rule, has rule_name "tr_consequent_unfeasible"; # rule_valid false
 
 ## tactic_rule_consequent_variant_resolution_unfeasible
 $f_vr_1 isa Feature, has feature_name "f_vr_1";
@@ -193,3 +153,4 @@ $t isa Tactic, has tactic_name "tactic";
 	variant_resolution:$vr2,
 	variant_resolution:$vr3) isa resolution_model,
     has resolution_model_name "res_model", has ros_system "system";
+

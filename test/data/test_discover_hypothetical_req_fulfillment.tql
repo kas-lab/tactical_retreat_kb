@@ -1,0 +1,544 @@
+insert
+
+# Values
+$double_minus_0_05 isa ValueDouble,
+    has double_value -0.05;
+$double_minus_0_22 isa ValueDouble,
+    has double_value -0.22;
+
+$double_0_01 isa ValueDouble,
+    has double_value 0.01;
+$double_0_03 isa ValueDouble,
+    has double_value 0.03;
+$double_0_05 isa ValueDouble,
+    has double_value 0.05;
+$double_0_10 isa ValueDouble,
+    has double_value 0.10;
+$double_0_15 isa ValueDouble,
+    has double_value 0.15;
+$double_0_20 isa ValueDouble,
+    has double_value 0.20;
+$double_0_22221 isa ValueDouble,
+	has double_value 0.22221;
+$double_0_30 isa ValueDouble,
+    has double_value 0.30;
+$double_1 isa ValueDouble,
+    has double_value 1.0;
+$double_7 isa ValueDouble,
+    has double_value 7.0;
+$double_9 isa ValueDouble,
+    has double_value 9.0;
+$double_50 isa ValueDouble,
+    has double_value 50.0;
+
+$int_minus_3 isa ValueInteger,
+    has integer_value -3;
+$int_2 isa ValueInteger,
+    has integer_value 2;
+$int_4 isa ValueInteger,
+    has integer_value 4;
+$int_5 isa ValueInteger,
+    has integer_value 5;
+$int_7 isa ValueInteger,
+    has integer_value 7;
+$int_8 isa ValueInteger,
+    has integer_value 8;
+
+## measures
+
+$measure_bool_false isa Measure, has measure_name 'measure_bool_false';
+
+# proposition expressions
+$propositional_expression (atom: $measure_bool_false) isa propositional_expression, has expression_name 'propositional_expression';
+
+# comparison expressions
+$measure_lhs_comparison isa Measure, has measure_name 'measure_lhs_comparison';
+(measure: $measure_lhs_comparison, measurement_value:$double_0_15) isa measurement,
+        has measurement_time 2025-09-06T12:57:56.666, has latest true;
+
+$measure_rhs_comparison isa Measure, has measure_name 'measure_rhs_comparison';
+(measure: $measure_rhs_comparison, measurement_value:$double_0_10) isa measurement,
+        has measurement_time 2025-09-06T12:57:56.666, has latest true;
+#  0.15 <= 0.10
+$less_than_equal (lhs_value:$measure_lhs_comparison, rhs_value:$measure_rhs_comparison) isa less_than_equal, has expression_name 'less_than_equal';
+$less_than_equal_2 (lhs_value:$measure_lhs_comparison, rhs_value:$double_0_10) isa less_than_equal, has expression_name 'less_than_equal_2';
+$less_than (lhs_value:$measure_lhs_comparison, rhs_value:$measure_rhs_comparison) isa less_than, has expression_name 'less_than';
+$greater_than (lhs_value:$measure_lhs_comparison, rhs_value:$measure_rhs_comparison) isa greater_than, has expression_name 'greater_than';
+$greater_than_equal (lhs_value:$measure_lhs_comparison, rhs_value:$measure_rhs_comparison) isa greater_than_equal, has expression_name 'greater_than_equal';
+$equal (lhs_value:$measure_lhs_comparison, rhs_value:$measure_rhs_comparison) isa equal, has expression_name 'equal';
+$not_equal (lhs_value:$measure_lhs_comparison, rhs_value:$measure_rhs_comparison) isa not_equal, has expression_name 'not_equal';
+
+$measure_lhs_integer_comparison isa Measure, has measure_name 'measure_lhs_integer_comparison';
+(measure: $measure_lhs_integer_comparison, measurement_value:$int_5) isa measurement,
+        has measurement_time 2025-09-06T12:57:56.666, has latest true;
+
+$measure_rhs_integer_comparison isa Measure, has measure_name 'measure_rhs_integer_comparison';
+(measure: $measure_rhs_integer_comparison, measurement_value:$int_7) isa measurement,
+        has measurement_time 2025-09-06T12:57:56.666, has latest true;
+
+$integer_less_than_equal_measure_literal
+    (lhs_value:$measure_lhs_integer_comparison, rhs_value:$int_7)
+    isa less_than_equal,
+    has expression_name 'integer_less_than_equal_measure_literal';
+$integer_less_than_equal_literal_measure
+    (lhs_value:$int_5, rhs_value:$measure_rhs_integer_comparison)
+    isa less_than_equal,
+    has expression_name 'integer_less_than_equal_literal_measure';
+$integer_less_than_measure_literal
+    (lhs_value:$measure_lhs_integer_comparison, rhs_value:$int_8)
+    isa less_than,
+    has expression_name 'integer_less_than_measure_literal';
+$integer_less_than_literal_measure
+    (lhs_value:$int_5, rhs_value:$measure_rhs_integer_comparison)
+    isa less_than,
+    has expression_name 'integer_less_than_literal_measure';
+$integer_greater_than_measure_literal
+    (lhs_value:$measure_lhs_integer_comparison, rhs_value:$int_7)
+    isa greater_than,
+    has expression_name 'integer_greater_than_measure_literal';
+$integer_greater_than_literal_measure
+    (lhs_value:$int_5, rhs_value:$measure_rhs_integer_comparison)
+    isa greater_than,
+    has expression_name 'integer_greater_than_literal_measure';
+$integer_greater_than_equal_measure_literal
+    (lhs_value:$measure_lhs_integer_comparison, rhs_value:$int_8)
+    isa greater_than_equal,
+    has expression_name 'integer_greater_than_equal_measure_literal';
+$integer_greater_than_equal_literal_measure
+    (lhs_value:$int_4, rhs_value:$measure_rhs_integer_comparison)
+    isa greater_than_equal,
+    has expression_name 'integer_greater_than_equal_literal_measure';
+$integer_equal_measure_literal
+    (lhs_value:$measure_lhs_integer_comparison, rhs_value:$int_7)
+    isa equal,
+    has expression_name 'integer_equal_measure_literal';
+$integer_equal_literal_measure
+    (lhs_value:$int_4, rhs_value:$measure_rhs_integer_comparison)
+    isa equal,
+    has expression_name 'integer_equal_literal_measure';
+$integer_not_equal_measure_literal
+    (lhs_value:$measure_lhs_integer_comparison, rhs_value:$int_7)
+    isa not_equal,
+    has expression_name 'integer_not_equal_measure_literal';
+$integer_not_equal_literal_measure
+    (lhs_value:$int_4, rhs_value:$measure_rhs_integer_comparison)
+    isa not_equal,
+    has expression_name 'integer_not_equal_literal_measure';
+
+# fuzzy_comparison_expression
+$fuzzy_ascend_sigmoid_set isa FuzzySigmoid,
+	has inflection_point 5.0,
+	has exponent 0.5889;
+
+$fuzzy_ascend_measure isa Measure,
+	has measure_name 'fuzzy_ascend_measure';
+
+# expected membership 0.913378192
+$fuzzy_ascend_expression_1 (fuzzy_set: $fuzzy_ascend_sigmoid_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
+    has expression_name 'fuzzy_ascend_sigmoid_expression';
+
+## Tactics
+
+### Tactic rule that impacts 'less_than_equal' expr
+$rel_effect_measure_lhs (measure: $measure_lhs_comparison, effect_value: $double_minus_0_05) isa relative_effect;
+$abs_effect_measure_lhs (measure: $measure_lhs_comparison, effect_value: $double_minus_0_05) isa absolute_effect;
+$abs_effect_measure_lhs_0_20 (measure: $measure_lhs_comparison, effect_value: $double_0_20) isa absolute_effect;
+
+$rel_effect_measure_rhs (measure: $measure_rhs_comparison, effect_value: $double_0_05) isa relative_effect;
+$abs_effect_measure_rhs_0_15 (measure: $measure_rhs_comparison, effect_value: $double_0_15) isa absolute_effect;
+$abs_effect_measure_rhs_0_05 (measure: $measure_rhs_comparison, effect_value: $double_0_05) isa absolute_effect;
+
+$tactic_1 isa Tactic, has tactic_name "tactic_1";
+
+# 0.10 <= 0.10
+(tactic:$tactic_1, effect: $rel_effect_measure_lhs)
+	isa tactic_rule, has rule_name "tactic_rule_rel_effect_measure_lhs";
+
+# 0.05 <= 0.10
+(tactic:$tactic_1, effect: $abs_effect_measure_lhs)
+	isa tactic_rule, has rule_name "tactic_rule_abs_effect_measure_lhs";
+
+# 0.15 <= 0.15
+(tactic:$tactic_1, effect: $rel_effect_measure_rhs)
+	isa tactic_rule, has rule_name "tactic_rule_rel_effect_measure_rhs";
+
+# 0.15 <= 0.15
+(tactic:$tactic_1, effect: $abs_effect_measure_rhs_0_15)
+	isa tactic_rule, has rule_name "tactic_rule_abs_effect_measure_rhs";
+
+# -0.05 <= 0.05
+(tactic:$tactic_1, effect: $abs_effect_measure_lhs, effect: $abs_effect_measure_rhs_0_05)
+	isa tactic_rule, has rule_name "tactic_rule_abs_effect_measure_lhs_rhs";
+
+# 0.20 <= 0.10
+(tactic:$tactic_1, effect: $abs_effect_measure_lhs_0_20)
+	isa tactic_rule, has rule_name "tactic_rule_lhs_0_20_rhs_0_10";
+
+# 0.15 <= 0.05
+(tactic:$tactic_1, effect: $abs_effect_measure_rhs_0_05)
+	isa tactic_rule, has rule_name "tactic_rule_lhs_0_15_rhs_0_05";
+
+# 0.10 <= 0.05
+(tactic:$tactic_1, effect: $rel_effect_measure_lhs, effect: $abs_effect_measure_rhs_0_05)
+	isa tactic_rule, has rule_name "tactic_rule_lhs_0_10_rhs_0_05";
+
+$rel_effect_measure_lhs_integer_plus_2
+    (measure: $measure_lhs_integer_comparison, effect_value: $int_2) isa relative_effect;
+$abs_effect_measure_lhs_integer_8
+    (measure: $measure_lhs_integer_comparison, effect_value: $int_8) isa absolute_effect;
+$rel_effect_measure_rhs_integer_minus_3
+    (measure: $measure_rhs_integer_comparison, effect_value: $int_minus_3) isa relative_effect;
+$rel_effect_measure_rhs_integer_plus_2
+    (measure: $measure_rhs_integer_comparison, effect_value: $int_2) isa relative_effect;
+$abs_effect_measure_rhs_integer_4
+    (measure: $measure_rhs_integer_comparison, effect_value: $int_4) isa absolute_effect;
+
+# 7 <= 7
+(tactic:$tactic_1, effect: $rel_effect_measure_lhs_integer_plus_2)
+	isa tactic_rule, has rule_name "tactic_rule_integer_rel_effect_measure_lhs_plus_2";
+
+# 8 <= 7
+(tactic:$tactic_1, effect: $abs_effect_measure_lhs_integer_8)
+	isa tactic_rule, has rule_name "tactic_rule_integer_abs_effect_measure_lhs_8";
+
+# 5 <= 4
+(tactic:$tactic_1, effect: $rel_effect_measure_rhs_integer_minus_3)
+	isa tactic_rule, has rule_name "tactic_rule_integer_rel_effect_measure_rhs_minus_3";
+
+# 5 <= 9
+(tactic:$tactic_1, effect: $rel_effect_measure_rhs_integer_plus_2)
+	isa tactic_rule, has rule_name "tactic_rule_integer_rel_effect_measure_rhs_plus_2";
+
+# 5 <= 4
+(tactic:$tactic_1, effect: $abs_effect_measure_rhs_integer_4)
+	isa tactic_rule, has rule_name "tactic_rule_integer_abs_effect_measure_rhs_4";
+
+
+# test fuzzy_expressions
+
+$fuzzy_unimodal_measure isa Measure,
+	has measure_name "fuzzy_unimodal_measure";
+
+# just an example, the measurement should be inserted at runtime
+$current_fuzzy_unimodal_measure isa ValueDouble, has double_value 0.03779;
+(measure:$fuzzy_unimodal_measure, measurement_value: $current_fuzzy_unimodal_measure) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+$fuzzy_unimodal_triangular_set isa FuzzyTriangular,
+	has a -0.5,
+	has b 0.0,
+	has c 0.5;
+
+$fuzzy_unimodal_gaussian_set isa FuzzyGaussian,
+	has center 0.0,
+    has sigma 0.1;
+
+# expected membership 0.92442
+$fuzzy_unimodal_expr_1 (fuzzy_set: $fuzzy_unimodal_triangular_set, term: $fuzzy_unimodal_measure) isa fuzzy_unimodal_expression,
+    has expression_name 'fuzzy_unimodal_triangular_expression';
+
+# expected membership 0.931085511
+$fuzzy_unimodal_expr_2 (fuzzy_set: $fuzzy_unimodal_gaussian_set, term: $fuzzy_unimodal_measure) isa fuzzy_unimodal_expression,
+    has expression_name 'fuzzy_unimodal_gaussian_expression';
+
+$rel_effect_unimodal_measure (measure: $fuzzy_unimodal_measure, effect_value: $double_0_01) isa relative_effect;
+
+# expected fulfillment
+# fuzzy_unimodal_triangular_expression 0.90442
+# fuzzy_unimodal_gaussian_expression 0.89208476
+(tactic:$tactic_1, effect: $rel_effect_unimodal_measure)
+	isa tactic_rule, has rule_name "tactic_rule_unimodal_meas_0_04779";
+
+
+$fuzzy_decay_measure isa Measure,
+	has measure_name "fuzzy_decay_measure";
+$current_fuzzy_decay_measure isa ValueDouble, has double_value 500;
+(measure:$fuzzy_decay_measure, measurement_value: $current_fuzzy_decay_measure) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+$fuzzy_decay_exp_set isa FuzzyExponentialDecay,
+	has exponent 0.0002107;
+
+$fuzzy_decay_rational_set isa FuzzyRationalDecay,
+	has curvature 2000;
+
+# expected membership 0.9
+$fuzzy_decay_expr_1 (fuzzy_set: $fuzzy_decay_exp_set, term: $fuzzy_decay_measure) isa fuzzy_decay_expression,
+    has expression_name 'fuzzy_decay_exp_expression';
+
+# expected membership 0.8
+$fuzzy_decay_expr_2 (fuzzy_set: $fuzzy_decay_rational_set, term: $fuzzy_decay_measure) isa fuzzy_decay_expression,
+    has expression_name 'fuzzy_decay_rational_expression';
+
+$rel_effect_decay_measure (measure: $fuzzy_decay_measure, effect_value: $double_50) isa relative_effect;
+
+# expected fulfillment
+# fuzzy_decay_exp_expression 0.890577703
+# fuzzy_decay_rational_expression 0.784313725
+(tactic:$tactic_1, effect: $rel_effect_decay_measure)
+	isa tactic_rule, has rule_name "tactic_rule_decay_meas_550";
+
+# $fuzzy_ascend_measure isa Measure,
+# 	has measure_name "fuzzy_ascend_measure",
+# 	has description "amount of foodpackages";
+
+# just an example, the measurement should be inserted at runtime
+$current_fuzzy_ascend_measure isa ValueDouble, has double_value 9.0;
+(measure:$fuzzy_ascend_measure, measurement_value: $current_fuzzy_ascend_measure) isa measurement,
+    has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+# $fuzzy_ascend_sigmoid_set isa FuzzySigmoid,
+# 	has inflection_point 5.0,
+# 	has exponent 0.5889;
+
+$fuzzy_ascend_exponential_saturation_set isa FuzzyExponentialSaturation,
+	has exponent 0.2;
+
+$fuzzy_ascend_blf_set isa FuzzyBoundedLinearFraction,
+	has curvature 0.5;
+
+# expected membership 0.913378192
+# $fuzzy_ascend_expression_1 (fuzzy_set: $fuzzy_ascend_sigmoid_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
+#     has expression_name 'fuzzy_ascend_sigmoid_expression';
+
+# expected membership 0.834700912
+$fuzzy_ascend_expression_2 (fuzzy_set: $fuzzy_ascend_exponential_saturation_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
+    has expression_name 'fuzzy_ascend_exp_saturation_expression';
+
+# expected membership 0.947368421
+$fuzzy_ascend_expression_3 (fuzzy_set: $fuzzy_ascend_blf_set, term: $fuzzy_ascend_measure) isa fuzzy_ascend_expression,
+    has expression_name 'fuzzy_ascend_blf_expression';
+
+$rel_effect_ascend_measure (measure: $fuzzy_ascend_measure, effect_value: $double_1) isa relative_effect;
+
+# expected fulfillment
+# fuzzy_ascend_sigmoid_expression 0.950002804
+# fuzzy_ascend_exp_saturation_expression 0.864664535
+# fuzzy_ascend_blf_expression 0.952380952
+(tactic:$tactic_1, effect: $rel_effect_ascend_measure)
+	isa tactic_rule, has rule_name "tactic_rule_ascend_meas_10";
+
+## relaxed_fuzzy_expressions
+
+# $velocity_set isa FuzzyTriangular,
+# 	has a -0.5,
+# 	has b 0.0,
+# 	has c 0.5;
+
+# $velocity_as_close_expression (fuzzy_set: $velocity_set, term: $velocity_measure) isa as_close_as_possible_expression,
+# 	has required_value 0.26;
+
+# as close expression
+$as_close_as_measure isa Measure,
+	has measure_name 'as_close_as_measure';
+
+(measure:$as_close_as_measure, measurement_value: $double_0_22221) isa measurement,
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+# expected fulfillment 0.92442
+$fake_as_close_expression (fuzzy_set: $fuzzy_unimodal_triangular_set, term: $as_close_as_measure) isa as_close_as_possible_expression,
+	has expression_name 'fake_as_close_expression',
+	has required_value 0.26;
+
+$rel_effect_as_close_as_measure (measure: $as_close_as_measure, effect_value: $double_0_05) isa relative_effect;
+$abs_effect_as_close_as_measure (measure: $as_close_as_measure, effect_value: $double_0_20) isa absolute_effect;
+
+# expected fulfillment 0.97558
+(tactic:$tactic_1, effect: $rel_effect_as_close_as_measure)
+	isa tactic_rule, has rule_name "tactic_rule_as_close_as_meas_0_27221";
+
+# expected fulfillment 0.88
+(tactic:$tactic_1, effect: $abs_effect_as_close_as_measure)
+	isa tactic_rule, has rule_name "tactic_rule_as_close_as_meas_0_20";
+
+# as many as possible
+$as_many_as_measure isa Measure,
+	has measure_name 'as_many_as_measure';
+
+(measure:$as_many_as_measure, measurement_value: $double_9) isa measurement,
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+# expected fulfillment 0.913378192
+$fake_as_many_as_possible (fuzzy_set: $fuzzy_ascend_sigmoid_set, term: $as_many_as_measure) isa as_many_as_possible_expression,
+	has expression_name 'fake_as_many_as_possible';
+
+$rel_effect_as_many_as_measure (measure: $as_many_as_measure, effect_value: $double_1) isa relative_effect;
+$abs_effect_as_many_as_measure (measure: $as_many_as_measure, effect_value: $double_7) isa absolute_effect;
+
+# expected fulfillment 0.950002804
+(tactic:$tactic_1, effect: $rel_effect_as_many_as_measure)
+	isa tactic_rule, has rule_name "tactic_rule_as_many_as_meas_10";
+
+# expected fulfillment 0.764551865
+(tactic:$tactic_1, effect: $abs_effect_as_many_as_measure)
+	isa tactic_rule, has rule_name "tactic_rule_as_many_as_meas_7";
+
+# as few as possible
+
+$as_few_as_measure isa Measure,
+	has measure_name 'as_few_as_measure';
+
+(measure:$as_few_as_measure, measurement_value: $double_0_30) isa measurement,
+	has measurement_time 2025-08-06T10:57:56.666, has latest true;
+
+$fuzzy_exp_decay_set isa FuzzyExponentialDecay,
+	has exponent 0.2;
+
+# expected fulfillment 0.941764572
+$fake_as_few_as_possible (fuzzy_set: $fuzzy_exp_decay_set, term: $as_few_as_measure) isa as_few_as_possible_expression,
+	has expression_name 'fake_as_few_as_possible';
+
+$fake_freq_as_close_expression
+    (fuzzy_set: $fuzzy_unimodal_triangular_set, term: $as_close_as_measure)
+    isa freq_as_close_as_possible_expression,
+    has expression_name 'fake_freq_as_close_expression',
+    has required_period 0.26;
+
+$fake_as_early_expression
+    (fuzzy_set: $fuzzy_exp_decay_set, term: $as_few_as_measure)
+    isa as_early_as_possible_expression,
+    has expression_name 'fake_as_early_expression';
+
+$fake_as_late_expression
+    (fuzzy_set: $fuzzy_ascend_sigmoid_set, term: $as_many_as_measure)
+    isa as_late_as_possible_expression,
+    has expression_name 'fake_as_late_expression';
+
+$rel_effect_as_few_as_measure (measure: $as_few_as_measure, effect_value: $double_minus_0_22) isa relative_effect;
+$abs_effect_as_few_as_measure (measure: $as_few_as_measure, effect_value: $double_0_15) isa absolute_effect;
+
+# expected fulfillment 0.984127331
+(tactic:$tactic_1, effect: $rel_effect_as_few_as_measure)
+	isa tactic_rule, has rule_name "tactic_rule_as_few_as_meas_0_08";
+
+# expected fulfillment 0.970445553
+(tactic:$tactic_1, effect: $abs_effect_as_few_as_measure)
+	isa tactic_rule, has rule_name "tactic_rule_as_few_as_meas_0_15";
+
+
+## not expressions hypothetical fulfillment
+#  0.15 >= 0.10
+# $greater_than_equal (lhs_value:$measure_lhs_comparison, rhs_value:$measure_rhs_comparison) isa greater_than_equal,
+# 	has expression_name 'greater_than_equal';
+
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.10 <= 0.10 -> 1.0 -> not_expr = 0.0
+# tactic_rule: tactic_rule_lhs_0_10_rhs_0_05 -> 0.10 <= 0.05 -> 0.0 -> not_expr = 1.0
+# tactic_rule: tactic_rule_decay_meas_550 (non-related rule) -> 0.15 <= 0.10 -> 0.0 -> not_expr = 1.0
+$not_expr (expression: $less_than_equal) isa not_expression,
+	has expression_name 'not_expr';
+$fuzzy_not (expression: $less_than_equal) isa fuzzy_not,
+	has expression_name 'fuzzy_not';
+
+# or expressions
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.10 <= 0.10 -> 1.0 | 0.0 | 0.0 | 0.0 -> 1.0
+# tactic_rule: tactic_rule_lhs_0_10_rhs_0_05 -> 0.10 <= 0.05 -> 0.0 | 0.0 | 1.0 | 1.0 -> 1.0
+# tactic_rule: tactic_rule_decay_meas_550 (non-related rule) -> 0.15 <= 0.10 -> 0.0 | 0.0 | 1.0 | 1.0 -> 1.0
+$fuzzy_or_1 (expression:$less_than_equal, expression:$propositional_expression, expression: $not_expr, expression: $fuzzy_not)
+    isa fuzzy_or, has expression_name 'fuzzy_or_1';
+
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> 0.97558 | 0.913378192 | 0.941764572 -> 0.97558
+# tactic_rule: tactic_rule_as_many_as_meas_10 -> 0.92442 | 0.950002804 | 0.941764572 -> 0.950002804
+# tactic_rule: tactic_rule_as_few_as_meas_0_08 -> 0.92442 | 0.913378192 | 0.984127331 -> 0.984127331
+# tactic_rule: tactic_rule_rel_effect_measure_lhs (non-related) -> 0.92442 | 0.913378192 | 0.941764572 -> 0.941764572
+$fuzzy_or_2 (expression:$fake_as_close_expression, expression:$fake_as_many_as_possible, expression: $fake_as_few_as_possible)
+    isa fuzzy_or, has expression_name 'fuzzy_or_2';
+
+# or expressions
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.10 <= 0.10 -> 1.0 && 1.0 -> 1.0
+# tactic_rule: tactic_rule_lhs_0_10_rhs_0_05 -> 0.10 <= 0.05 -> 0.0 && 1.0 -> 0.0
+# tactic_rule: tactic_rule_decay_meas_550 (non-related rule) -> 0.15 <= 0.10 -> 0.0 && 1.0 -> 0.0
+$fuzzy_and_1 (expression:$less_than_equal, expression: $fuzzy_or_1)
+    isa fuzzy_and, has expression_name 'fuzzy_and_1';
+
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> 0.97558 && 0.913378192 && 0.941764572 -> 0.913378192
+# tactic_rule: tactic_rule_as_many_as_meas_10 -> 0.92442 && 0.950002804 && 0.941764572 -> 0.92442
+# tactic_rule: tactic_rule_as_few_as_meas_0_08 -> 0.92442 && 0.913378192 && 0.984127331 -> 0.913378192
+# tactic_rule: tactic_rule_rel_effect_measure_lhs (non-related) -> 0.92442 && 0.913378192 && 0.941764572 -> 0.913378192
+$fuzzy_and_2 (expression:$fake_as_close_expression, expression:$fake_as_many_as_possible, expression: $fake_as_few_as_possible)
+    isa fuzzy_and, has expression_name 'fuzzy_and_2';
+
+# shall expression
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.92442 && 1.0 && 0.941764572 && 1.0 && 0.913378192 -> 0.913378192
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> 0.97558 && 1.0 && 0.97558 && 0.0 && 0.913378192 -> 0.0
+$fake_shall_expression (
+    expression: $fake_as_close_expression,
+    expression: $fuzzy_or_1,
+	expression: $fuzzy_or_2,
+	expression: $fuzzy_and_1,
+	expression: $fuzzy_and_2) isa shall_expression,
+    has expression_name 'fake_shall_expression';
+
+# shall expression
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.941764572
+$fake_shall_expression_2 (
+    expression: $fake_as_few_as_possible) isa shall_expression,
+    has expression_name 'fake_shall_expression_2';
+
+# may expressions
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> max(0.97558, 0.913378192, 0.941764572) = 0.97558
+# tactic_rule: tactic_rule_as_many_as_meas_10 -> max(0.92442, 0.950002804, 0.941764572) = 0.950002804
+$fake_may_expression_direct (
+    expression: $fake_as_close_expression,
+    expression: $fake_as_many_as_possible,
+    expression: $fake_as_few_as_possible) isa may_expression,
+    has expression_name 'fake_may_expression_direct';
+
+$fake_may_expression_nested (
+    expression: $fake_as_close_expression,
+    expression: $fake_as_many_as_possible,
+    expression: $fake_as_few_as_possible) isa may_expression,
+    has expression_name 'fake_may_expression_nested';
+
+# tactic_rule: tactic_rule_as_many_as_meas_10 -> min(0.950002804, 1.0) = 0.950002804
+$fake_shall_with_may (
+    expression: $fake_may_expression_nested,
+    expression: $fuzzy_or_1) isa shall_expression,
+    has expression_name 'fake_shall_with_may';
+
+### Requirements
+$fake_system isa System, has system_name 'system';
+
+# tactic_rule: tactic_rule_rel_effect_measure_lhs -> 0.913378192 && 0.941764572 -> 0.913378192
+# tactic_rule: tactic_rule_as_close_as_meas_0_27221 -> 0.0 && 0.941764572 -> 0.0
+$req_1 (system: $fake_system, expression: $fake_shall_expression, expression: $fake_shall_expression_2) isa relaxed_requirement,
+    has requirement_name 'req_1';
+
+$req_direct_may (
+    system: $fake_system,
+    expression: $fake_may_expression_direct) isa relaxed_requirement,
+    has requirement_name 'req_direct_may',
+    has in_effect true;
+
+$req_with_may (
+    system: $fake_system,
+    expression: $fake_shall_with_may) isa relaxed_requirement,
+    has requirement_name 'req_with_may',
+    has in_effect true;
+
+# ── CNF missing-case test expressions ────────────────────────────────────────
+# These and_expression instances are intentionally standalone (not inside any
+# requirement) so they can only receive tactic_rule_impacts_and via the three
+# new seed rules, NOT via the requirement → shall_expression transitivity path.
+#
+# $not_expr and $less_than_equal are reused from above — their
+# tactic_rule_dependency relations already exist.
+
+# Case 1: and_expression(not_expression(comparison_expression))
+# Only child is $not_expr; no direct comparison_expression child.
+# Requires dependency_into_impacts_and_via_not to seed tactic_rule_impacts_and.
+$and_only_not (expression: $not_expr) isa and_expression,
+    has expression_name 'and_only_not';
+
+# Case 2: and_expression(or_expression(comparison_expression))
+# Requires dependency_into_impacts_and_via_or.
+$or_only_comp (expression: $less_than_equal) isa or_expression,
+    has expression_name 'or_only_comp';
+$and_only_or (expression: $or_only_comp) isa and_expression,
+    has expression_name 'and_only_or';
+
+# Case 3: and_expression(or_expression(not_expression(comparison_expression)))
+# Requires dependency_into_impacts_and_via_or_not.
+$or_only_not (expression: $not_expr) isa or_expression,
+    has expression_name 'or_only_not';
+$and_only_or_not (expression: $or_only_not) isa and_expression,
+    has expression_name 'and_only_or_not';
