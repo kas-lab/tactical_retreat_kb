@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Generate diagrams for TypeDB schema files in typedb_tactics."""
+"""Generate diagrams for TypeDB schema files in tactical_retreat_kb."""
 
 from __future__ import annotations
 
@@ -152,7 +152,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     """Build CLI argument parser for bulk schema diagram generation."""
     parser = argparse.ArgumentParser(
         prog='generate_schema_diagrams.py',
-        description='Generate diagrams for typedb_tactics schema files.',
+        description='Generate diagrams for tactical_retreat_kb schema files.',
     )
     script_path = Path(__file__).resolve()
     default_schemas_root = script_path.parents[1] / 'schemas'

@@ -27,7 +27,7 @@ from functools import partial
 import jpype
 import jpype.imports
 
-jars_path = os.path.join(get_package_share_directory("adapt_x"), "jars", "rem")
+jars_path = os.path.join(get_package_share_directory("tactical_retreat_kb"), "jars")
 
 jpype.startJVM(
     classpath=[jars_path + "/*"]
@@ -65,6 +65,7 @@ from eu.coresense.requirements.requirementsModel import Quantifiable, AsAsPossib
 from eu.coresense.requirements.requirementsModel import FuzzyTriangular as J_FuzzyTriangular
 from eu.coresense.requirements.requirementsModel import FuzzyRightShoulder as J_FuzzyRightShoulder
 from eu.coresense.requirements.requirementsModel import FuzzyLeftShoulder as J_FuzzyLeftShoulder
+# from eu.coresense.requirements.requirementsModel import FuzzyExponentialDecay as J_FuzzyExponentialDecay
 from eu.coresense.requirements.requirementsModel import Proposition as J_Proposition
 
 
@@ -90,9 +91,9 @@ from de.ovgu.featureide.fm.core.job import LongRunningWrapper, SliceFeatureModel
 from de.ovgu.featureide.fm.core.base import FeatureUtils
 from de.ovgu.featureide.fm.core.init import LibraryManager
 from de.ovgu.featureide.fm.core.init import FMCoreLibrary
-from typedb_tactics.fuzzy.fuzzy_expressions import Proposition, Expression, FuzzyAnd, FuzzyOr, FuzzyNot
-from typedb_tactics.fuzzy.fuzzy_sets import FuzzyTriangular, FuzzyRightShoulder, FuzzyLeftShoulder
-from typedb_tactics.fuzzy.relaxed_requirements import AsCloseAsPossibleExpression, ShallExpression, AsManyAsPossibleExpression
+from tactical_retreat_kb.fuzzy.fuzzy_expressions import Proposition, Expression, FuzzyAnd, FuzzyOr, FuzzyNot
+from tactical_retreat_kb.fuzzy.fuzzy_sets import FuzzyTriangular, FuzzyRightShoulder, FuzzyLeftShoulder
+from tactical_retreat_kb.fuzzy.relaxed_requirements import AsCloseAsPossibleExpression, ShallExpression, AsManyAsPossibleExpression
 # from eu.coresense.adaptation.generator import State, TQLGenerator
 
 
@@ -193,8 +194,7 @@ class TacticalRetreatInterface:
                  tactics_path: str = "",
                  require_nodes_running: bool = False,
                  verify_parameters: bool = False,
-                 generate_state: bool = False,
-                 consider_features_in_state: bool = False, logger=logger) -> None:
+                 logger=logger) -> None:
         RosToolingSupport.registerEPackages()
         AdvancedConstraintsFMmetamodelPackage.eINSTANCE.eClass()
 
@@ -393,6 +393,8 @@ class TacticalRetreatInterface:
         dsl_text = serializer.serialize(j_action_tactics)
 
         self.logger.info(f"New Tactic Generated \n {str(dsl_text)}")
+
+        return j_action_tactics, dsl_text
         # createActionTactics
         # createAdaptationRule
     
@@ -441,71 +443,70 @@ class TacticalRetreatInterface:
         # # createActionTactics
         # # createAdaptationRule
 
-    def to_fuzzy(self, j_expression_list: list) -> Optional[Expression]:
+
+    def _membership_function(self, j_membership_function):
+        if (isinstance(j_membership_function, J_FuzzyRightShoulder)):
+            j_fuzzy_rsh = (J_FuzzyRightShoulder) @ j_membership_function
+
+            foot = tofloat(j_fuzzy_rsh.getFoot())
+            shoulder = tofloat(j_fuzzy_rsh.getShoulder())
+            return FuzzyRightShoulder(foot=foot, shoulder=shoulder)
+        if (isinstance(j_membership_function, J_FuzzyLeftShoulder)):
+            j_fuzzy_lsh = (J_FuzzyLeftShoulder) @ j_membership_function
+
+            foot = tofloat(j_fuzzy_lsh.getFoot())
+            shoulder = tofloat(j_fuzzy_lsh.getShoulder())
+            # self.logger.info(f"measure_name {measure_name} foot {foot} shoulder {shoulder}")
+            return FuzzyLeftShoulder(foot=foot, shoulder=shoulder)
+        if (isinstance(j_membership_function, J_FuzzyTriangular)):
+            j_fuzzy_tri = (J_FuzzyTriangular) @ j_membership_function
+
+            a = tofloat(j_fuzzy_tri.getA())
+            b = tofloat(j_fuzzy_tri.getB())
+            c = tofloat(j_fuzzy_tri.getC())
+            return FuzzyTriangular(a=a, b=b, c=c)
+        
+        
+    def _to_fuzzy(self, j_expression_list: list) -> Optional[Expression]:
         j_expression = j_expression_list[0]
         if isinstance(j_expression, AsCloseLit):
             j_as_close_lit = (AsCloseLit) @ j_expression
             req_value = _value_from_lit(j_as_close_lit.getQuantity())
-            j_fuzzy_tri = (J_FuzzyTriangular) @ j_as_close_lit.getMembershipFunction()
-
-            prop = self.to_fuzzy([j_as_close_lit.getComparator()])
+            prop = self._to_fuzzy([j_as_close_lit.getComparator()])
             if (prop is None):
                 return None
-            a = tofloat(j_fuzzy_tri.getA())
-            b = tofloat(j_fuzzy_tri.getB())
-            c = tofloat(j_fuzzy_tri.getC())
-            fuzzy_tri = FuzzyTriangular(a=a, b=b, c=c)
-            return AsCloseAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_tri,
+            fuzzy_set = self._membership_function(j_as_close_lit.getMembershipFunction())
+            return AsCloseAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_set,
                                                required_value=float(req_value))
         if isinstance(j_expression, AsAsPossible):
             j_as_as_possible = (AsAsPossible) @ j_expression
+            measure_name = str(j_as_as_possible.getQuantity().getContextVariable().getName())
 
-            j_memb_func = j_as_as_possible.getMembershipFunction()
-            if (isinstance(j_memb_func, J_FuzzyRightShoulder)):
-                j_fuzzy_rsh = (J_FuzzyRightShoulder) @ j_as_as_possible.getMembershipFunction()
+            mes = self.latest_measures.get(measure_name, None)
+            if (mes is None):
+                return None
+            prop = Proposition(name=measure_name, value=mes)
 
-                measure_name = str(j_as_as_possible.getQuantity().getContextVariable().getName())
+            fuzzy_set = self._membership_function(j_as_as_possible.getMembershipFunction())
 
-                mes = self.latest_measures.get(measure_name, None)
-                if (mes is None):
-                    return None
-                prop = Proposition(name=measure_name, value=mes)
-                foot = tofloat(j_fuzzy_rsh.getFoot())
-                shoulder = tofloat(j_fuzzy_rsh.getShoulder())
-                # self.logger.info(f"measure_name {measure_name} foot {foot} shoulder {shoulder}")
-                fuzzy_rsh = FuzzyRightShoulder(foot=foot, shoulder=shoulder)
-                return AsManyAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_rsh)
-            if (isinstance(j_memb_func, J_FuzzyLeftShoulder)):
-                j_fuzzy_lsh = (J_FuzzyLeftShoulder) @ j_as_as_possible.getMembershipFunction()
-
-                measure_name = str(j_as_as_possible.getQuantity().getContextVariable().getName())
-
-                mes = self.latest_measures.get(measure_name, None)
-                if (mes is None):
-                    return None
-                prop = Proposition(name=measure_name, value=mes)
-                foot = tofloat(j_fuzzy_lsh.getFoot())
-                shoulder = tofloat(j_fuzzy_lsh.getShoulder())
-                # self.logger.info(f"measure_name {measure_name} foot {foot} shoulder {shoulder}")
-                fuzzy_lsh = FuzzyLeftShoulder(foot=foot, shoulder=shoulder)
-                return AsManyAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_lsh)
+            return AsManyAsPossibleExpression(proposition=prop, fuzzy_set=fuzzy_set)
         if isinstance(j_expression, CompoundExpression):
             right_index = 2
             left_fuzzy = None
             right_fuzzy = None
             left_child = j_expression_list[1]
             if (isinstance(left_child, Negation)):
-                left_fuzzy = self.to_fuzzy(j_expression_list[1:3])
+                left_fuzzy = self._to_fuzzy(j_expression_list[1:3])
                 right_index += 1
             else:
-                left_fuzzy = self.to_fuzzy([left_child])
+                left_fuzzy = self._to_fuzzy([left_child])
 
             right_child = j_expression_list[right_index]
 
             if (isinstance(right_child, Negation)):
-                right_fuzzy = self.to_fuzzy(j_expression_list[right_index:right_index+2])
+                right_fuzzy = self._to_fuzzy(j_expression_list[right_index:right_index+2])
             else:
-                right_fuzzy = self.to_fuzzy([right_child])
+                right_fuzzy = self._to_fuzzy([right_child])
 
             if isinstance(left_child, CompoundExpression) or isinstance(right_child,
                                                                         CompoundExpression):
@@ -534,10 +535,10 @@ class TacticalRetreatInterface:
             child = j_expression_list[1]
 
             if isinstance(child, CompoundExpression):  # or negation I suppose?
-                fuzzy_child = self.to_fuzzy(j_expression_list[1:4])
+                fuzzy_child = self._to_fuzzy(j_expression_list[1:4])
 
             else:
-                fuzzy_child = self.to_fuzzy([child])
+                fuzzy_child = self._to_fuzzy([child])
 
             if (fuzzy_child is not None):
                 return FuzzyNot(fuzzy_child)
@@ -642,7 +643,7 @@ class TacticalRetreatInterface:
         # self.logger.info("called")
 
         context_var_name = str(j_measurement_condition
-                               .getMeasurement().getName())
+                               .getContextVar().getName())
         context_val = measures.get(context_var_name, None)
 
         if context_val is None:
@@ -730,7 +731,7 @@ class TacticalRetreatInterface:
         for j_rule in self.j_tactics_model.getTactics():
             if (isinstance(j_rule, ActionTactics)):
                 j_action_rule = j_rule
-                for j_adaptation_rule in j_action_rule.getAdaptationRules():
+                for j_adaptation_rule in j_action_rule.getTactics():
                     sat = self._adaptation_rule_satisfied(j_adaptation_rule, tactic_names)
                     if sat is not None:
                         satisfied.append(sat)
@@ -780,7 +781,7 @@ class TacticalRetreatInterface:
                 j_action_rule = j_rule
 
                 if action_name == str(j_action_rule.getAction().getName()):
-                    tactics.append(j_action_rule)
+                    tactics.extend(j_action_rule.getTactics())
         return tactics
 
 
@@ -792,13 +793,13 @@ class TacticalRetreatInterface:
             tactics = self._tactics_for_requirement(req_name)
             most_similar_tacs = sorted(tactics,
                                 key=self._tactic_distance)
-            ranked_tactics[req_name] = most_similar_tacs
+            ranked_tactics[req_name] = [str(tac.getName()) for tac in most_similar_tacs]
 
         without_req = self._tactics_without_requirements(action_name)
 
         most_similar_reqless = sorted(without_req,
                                 key=self._tactic_distance)
-        ranked_tactics["none"] = most_similar_reqless
+        ranked_tactics["none"] = [str(tac.getName()) for tac in most_similar_reqless]
 
         return ranked_tactics
 
@@ -1035,7 +1036,7 @@ class TacticalRetreatInterface:
 
     def add_measurements(
             self,
-            measure_dict, logger):
+            measure_dict):
         """Add new measurements."""
         self.latest_measures = measure_dict
 
@@ -1079,8 +1080,7 @@ class TacticalRetreatInterface:
                 self.logger.info(f"{interface_name} 2 {str(j_action_rule.getAction().getName())}")
 
                 if (interface_name == str(j_action_rule.getAction().getName())):
-                    self.logger.info("3")
-                    for j_adap_rule in j_action_rule.getAdaptationRules():
+                    for j_adap_rule in j_action_rule.getTactics():
                         res[(str(j_adap_rule.getName()),
                              str(req_name))] = self._reconfs(j_adap_rule)
 
@@ -1126,7 +1126,7 @@ class TacticalRetreatInterface:
         traversed = self.traversed_requirements[j_req]
         j_first_expr = traversed[0]
         if (isinstance(j_first_expr, Shall)):
-            fuzzified = self.to_fuzzy(traversed[1:])
+            fuzzified = self._to_fuzzy(traversed[1:])
             # self.logger.info(f"fuzzified? {fuzzified}")
             if (fuzzified is not None):
                 s = ShallExpression(fuzzified)
@@ -1189,13 +1189,13 @@ class TacticalRetreatInterface:
                 if requirement_name == str(j_requirement.getName()):
                     if (isinstance(j_rule, ActionTactics)):
                         j_action_rule = j_rule
-                        tactics.extend(j_action_rule.getAdaptationRules())
+                        tactics.extend(j_action_rule.getTactics())
                     else:
                         tactics.append(j_rule)
         return tactics
 
     def _distance_between_measure_and_condition(self, j_measurement_condition, measures) -> float:
-        j_context_var = j_measurement_condition.getMeasurement()
+        j_context_var = j_measurement_condition.getContextVar()
         current_value = measures[str(j_context_var.getName())]
         distance = 0.0
         if(isinstance(j_measurement_condition, ContextThresholdCondition)):
@@ -1280,7 +1280,7 @@ class TacticalRetreatInterface:
 
             self.logger.info(f"postConffff ? {str(configuration)}")
             # self.action_currconf[action_name] = configuration
-            delta =  self.configuration_delta(set(initial_conf), set(configuration))
+            delta =  self._configuration_delta(set(initial_conf), set(configuration))
             deselection_set = set(configuration) - set(initial_conf)
             selection_set = set(initial_conf) - set(configuration)
             delta = deselection_set.union(selection_set)
@@ -1624,7 +1624,7 @@ class TacticalRetreatInterface:
     #     query_result = self.fetch_reconfiguration_plan(tactic_rule)
     #     return AdaptationPlan.from_typedb_results(query_result)
 
-    def configuration_delta(self, current_configuration, configuration):
+    def _configuration_delta(self, current_configuration, configuration):
         deselection_set = current_configuration - configuration
         selection_set = configuration - current_configuration
         reconfigurations = []
@@ -1646,7 +1646,7 @@ class TacticalRetreatInterface:
 
         # self.action_currconf[action_name] = configuration
 
-        reconfigurations = self.configuration_delta(set(current_configuration), configuration)
+        reconfigurations = self._configuration_delta(set(current_configuration), configuration)
 
         return reconfigurations
 
@@ -1673,7 +1673,7 @@ class TacticalRetreatInterface:
 
         self.logger.info(f"postConf ? {str(configuration)}")
         # self.action_currconf[action_name] = configuration
-        return self.configuration_delta(set(initial_conf), set(configuration))
+        return self._configuration_delta(set(initial_conf), set(configuration))
 
     # TODO: use dict?
     def lifecycleStateToTransition(self, j_lc_state: LifecycleState):

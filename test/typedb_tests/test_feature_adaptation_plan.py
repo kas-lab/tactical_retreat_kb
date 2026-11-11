@@ -14,9 +14,9 @@
 
 import pytest
 
-from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
-from typedb_tactics.utils import AdaptationPlan
-from typedb_tactics.utils import names_to_transitions
+from tactical_retreat_kb.typedb_tactical_retreat_interface import TacticalRetreatInterface
+from tactical_retreat_kb.utils import AdaptationPlan
+from tactical_retreat_kb.utils import names_to_transitions
 from aal_msgs.msg import Adaptation
 from rclpy.parameter import Parameter
 

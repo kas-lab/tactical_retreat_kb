@@ -53,7 +53,7 @@ from ros_typedb.ros_typedb_interface import ROSTypeDBInterface
 from std_msgs.msg import Header
 from std_srvs.srv import Trigger
 
-from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+from tactical_retreat_kb.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
 def publish_event(event_type: str):

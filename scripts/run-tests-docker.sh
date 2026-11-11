@@ -18,4 +18,4 @@ fi
 docker exec tactical_retreat bash -lc \
   "source /opt/ros/humble/setup.bash && \
    source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && \
-   colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics ${pytest_args[*]}"
+   colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb ${pytest_args[*]}"

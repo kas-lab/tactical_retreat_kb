@@ -61,8 +61,8 @@ from ros_monitors_functions.factory import MonitorFactory
 from std_msgs.msg import Header, String
 from std_srvs.srv import Trigger
 
-# from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
-from typedb_tactics.xtext_tactical_retreat_interface import TacticalRetreatInterface as XTextInterface
+# from tactical_retreat_kb.typedb_tactical_retreat_interface import TacticalRetreatInterface
+from tactical_retreat_kb.xtext_tactical_retreat_interface import TacticalRetreatInterface as XTextInterface
 
 
 @dataclass
@@ -253,8 +253,6 @@ class TacticalRetreatKB(Node):
         self.declare_parameter("rossystem_path", [""])
         self.declare_parameter("require_nodes_running", False)
         self.declare_parameter("verify_parameters", False)
-        self.declare_parameter("generate_state", False)
-        self.declare_parameter("consider_features_in_state", False)
 
         tactics_path = self.get_parameter("tactics_path").value
         resolution_path = self.get_parameter("resolution_path").value
@@ -266,8 +264,6 @@ class TacticalRetreatKB(Node):
         rossystem_path = self.get_parameter("rossystem_path").value
         require_nodes_running = self.get_parameter("require_nodes_running").value
         verify_parameters = self.get_parameter("verify_parameters").value
-        generate_state = self.get_parameter("generate_state").value
-        consider_features_in_state = self.get_parameter("consider_features_in_state").value
 
         self.interface = XTextInterface(
                     resolution_path,
@@ -280,8 +276,6 @@ class TacticalRetreatKB(Node):
                     tactics_path,
                     require_nodes_running,
                     verify_parameters,
-                    generate_state,
-                    consider_features_in_state,
                     self.get_logger()
         )
 
@@ -746,7 +740,7 @@ class TacticalRetreatKB(Node):
                 else:
                     self.get_logger().info("No composite measurements to process", throttle_duration_sec=30)
 
-                self.interface.add_measurements(filtered_measurements, self.get_logger())
+                self.interface.add_measurements(filtered_measurements)
 
         else:
             self.get_logger().info("No measurements to process", throttle_duration_sec=10)   

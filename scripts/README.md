@@ -1,4 +1,4 @@
-# typedb_tactics Scripts
+# tactical_retreat_kb Scripts
 
 This directory contains helper scripts for benchmarking, profiling, testing, and generating schema diagrams.
 
@@ -15,13 +15,13 @@ This folder currently contains scripts for four main purposes:
 - Profiling:
   - `profile_schema_load.py` measures how long each schema file takes to load.
 - Test execution:
-  - `run-tests-docker.sh` runs the `typedb_tactics` test suite inside the `tactical_retreat` Docker container.
+  - `run-tests-docker.sh` runs the `tactical_retreat_kb` test suite inside the `tactical_retreat` Docker container.
 
 The sections below explain how to run each script and what to expect from it.
 
 ## Prerequisites
 
-For scripts that import `typedb_tactics` or talk to TypeDB, use the workspace environment first:
+For scripts that import `tactical_retreat_kb` or talk to TypeDB, use the workspace environment first:
 
 ```bash
 source /opt/ros/humble/setup.bash
@@ -43,13 +43,13 @@ For scripts in this folder, prefer one of these patterns:
 From the workspace root:
 
 ```bash
-python3 src/typedb_tactics/scripts/<script_name>.py ...
+python3 src/tactical_retreat_kb/scripts/<script_name>.py ...
 ```
 
 Or from this directory:
 
 ```bash
-cd src/typedb_tactics/scripts
+cd src/tactical_retreat_kb/scripts
 python3 <script_name>.py ...
 ```
 
@@ -57,7 +57,7 @@ python3 <script_name>.py ...
 
 ### `generate_schema_diagrams.py`
 
-Generates one diagram per schema file into `src/typedb_tactics/schemas_diagrams`.
+Generates one diagram per schema file into `src/tactical_retreat_kb/schemas_diagrams`.
 
 Default behavior:
 - includes real schema `.tql` files
@@ -69,10 +69,10 @@ Default behavior:
 Examples:
 
 ```bash
-python3 src/typedb_tactics/scripts/generate_schema_diagrams.py
-python3 src/typedb_tactics/scripts/generate_schema_diagrams.py --format dot
-python3 src/typedb_tactics/scripts/generate_schema_diagrams.py --include-examples --include-queries
-python3 src/typedb_tactics/scripts/generate_schema_diagrams.py --orientation horizontal
+python3 src/tactical_retreat_kb/scripts/generate_schema_diagrams.py
+python3 src/tactical_retreat_kb/scripts/generate_schema_diagrams.py --format dot
+python3 src/tactical_retreat_kb/scripts/generate_schema_diagrams.py --include-examples --include-queries
+python3 src/tactical_retreat_kb/scripts/generate_schema_diagrams.py --orientation horizontal
 ```
 
 ### `generate_merged_schema_diagram.py`
@@ -80,23 +80,23 @@ python3 src/typedb_tactics/scripts/generate_schema_diagrams.py --orientation hor
 Generates a single merged diagram from multiple schema files.
 
 Default behavior:
-- scans `src/typedb_tactics/schemas`
+- scans `src/tactical_retreat_kb/schemas`
 - merges schema-definition `.tql` files
 - excludes `queries/`
 - excludes `*_example.tql`
 - excludes `discover_hypothetical_req_fulfillment.tql`
 - excludes `discover_tactics_model.tql`
 - output format is `.svg`
-- output path defaults to `src/typedb_tactics/schemas_diagrams/merged_schema.svg`
+- output path defaults to `src/tactical_retreat_kb/schemas_diagrams/merged_schema.svg`
 
 Examples:
 
 ```bash
-python3 src/typedb_tactics/scripts/generate_merged_schema_diagram.py
-python3 src/typedb_tactics/scripts/generate_merged_schema_diagram.py --format dot
-python3 src/typedb_tactics/scripts/generate_merged_schema_diagram.py --ignore-schema relaxed_model.tql
-python3 src/typedb_tactics/scripts/generate_merged_schema_diagram.py --include-default-ignored
-python3 src/typedb_tactics/scripts/generate_merged_schema_diagram.py --orientation horizontal
+python3 src/tactical_retreat_kb/scripts/generate_merged_schema_diagram.py
+python3 src/tactical_retreat_kb/scripts/generate_merged_schema_diagram.py --format dot
+python3 src/tactical_retreat_kb/scripts/generate_merged_schema_diagram.py --ignore-schema relaxed_model.tql
+python3 src/tactical_retreat_kb/scripts/generate_merged_schema_diagram.py --include-default-ignored
+python3 src/tactical_retreat_kb/scripts/generate_merged_schema_diagram.py --orientation horizontal
 ```
 
 ### `benchmark.py`
@@ -120,7 +120,7 @@ Output includes:
 Examples:
 
 ```bash
-cd src/typedb_tactics/scripts
+cd src/tactical_retreat_kb/scripts
 python3 benchmark.py
 python3 benchmark.py --runs 10
 python3 benchmark.py --methods get_potential_requirements_fulfillment,get_applicable_tactics
@@ -150,7 +150,7 @@ Output includes:
 Examples:
 
 ```bash
-cd src/typedb_tactics/scripts
+cd src/tactical_retreat_kb/scripts
 python3 benchmark_queries.py
 python3 benchmark_queries.py --profiles hyp --runs 10
 python3 benchmark_queries.py --profiles generated --runs 10
@@ -169,7 +169,7 @@ Profiles schema loading time per schema file.
 Examples:
 
 ```bash
-cd src/typedb_tactics/scripts
+cd src/tactical_retreat_kb/scripts
 python3 profile_schema_load.py
 python3 profile_schema_load.py --runs 5
 python3 profile_schema_load.py --no-infer
@@ -178,15 +178,15 @@ python3 profile_schema_load.py --schemas ../schemas/data_structure/data_structur
 
 ### `run-tests-docker.sh`
 
-Runs `typedb_tactics` tests inside the `tactical_retreat` Docker container.
+Runs `tactical_retreat_kb` tests inside the `tactical_retreat` Docker container.
 
 The container must already be running.
 
 Examples:
 
 ```bash
-bash src/typedb_tactics/scripts/run-tests-docker.sh
-bash src/typedb_tactics/scripts/run-tests-docker.sh -k test_relaxed_model
+bash src/tactical_retreat_kb/scripts/run-tests-docker.sh
+bash src/tactical_retreat_kb/scripts/run-tests-docker.sh -k test_relaxed_model
 ```
 
 ### `generated.tql`
@@ -198,13 +198,13 @@ This is not an executable script. It is a data file used by the benchmark toolin
 Show help for the diagram scripts:
 
 ```bash
-python3 src/typedb_tactics/scripts/generate_schema_diagrams.py --help
-python3 src/typedb_tactics/scripts/generate_merged_schema_diagram.py --help
+python3 src/tactical_retreat_kb/scripts/generate_schema_diagrams.py --help
+python3 src/tactical_retreat_kb/scripts/generate_merged_schema_diagram.py --help
 ```
 
 Run the script-specific tests:
 
 ```bash
-python3 -m pytest -q src/typedb_tactics/test/test_generate_schema_diagrams_script.py
-python3 -m pytest -q src/typedb_tactics/test/test_generate_merged_schema_diagram_script.py
+python3 -m pytest -q src/tactical_retreat_kb/test/test_generate_schema_diagrams_script.py
+python3 -m pytest -q src/tactical_retreat_kb/test/test_generate_merged_schema_diagram_script.py
 ```

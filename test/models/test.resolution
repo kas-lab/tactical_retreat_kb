@@ -1,0 +1,21 @@
+name test_resolution;
+import "test.var";
+import "test.rossystem";
+variability_model test_var;
+ros_system test;
+
+FunctionalMapping
+
+Reconfigurations 
+TestRoot.RootChild:
+select: SetParameter(_slash_test_node,test_parameter,0.3)
+deselect: 
+TestRoot.SecondRootChild:
+select: SetLifecycleState(_slash_test_node,ACTIVE)
+deselect:
+TestRoot.ThirdRootChild:
+select:
+deselect: 
+TestRoot.FourthRootChild:
+select: SetParameter(_slash_test_node,test_parameter,0.7)
+deselect: 

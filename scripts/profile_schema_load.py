@@ -18,7 +18,7 @@ import time
 from typing import Iterable
 from typing import List
 
-from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+from tactical_retreat_kb.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
 DEFAULT_SCHEMAS = [

@@ -1,9 +1,9 @@
 # Codebase structure
 
-- `typedb_tactics/`: Python package.
-- `typedb_tactics/typedb_tactical_retreat_interface.py`: main TypeDB query wrapper and helper data structures.
-- `typedb_tactics/tactical_retreat_kb.py`: lifecycle ROS node exposing the interface as ROS interactions.
-- `typedb_tactics/tactical_retreat_node.py`: minimal console entrypoint that starts the KB node in a multithreaded executor.
+- `tactical_retreat_kb/`: Python package.
+- `tactical_retreat_kb/typedb_tactical_retreat_interface.py`: main TypeDB query wrapper and helper data structures.
+- `tactical_retreat_kb/tactical_retreat_kb.py`: lifecycle ROS node exposing the interface as ROS interactions.
+- `tactical_retreat_kb/tactical_retreat_node.py`: minimal console entrypoint that starts the KB node in a multithreaded executor.
 - `schemas/`: TypeDB schema modules. Top-level areas include `data_structure`, `context_model`, `feature_model`, `logical_expressions`, `relaxed`, `ros_model`, `tactics_model`, `discover_tactics_model`, `discover_hypothetical_req_fulfillment`, and `states`.
 - `schemas_diagrams/`: generated schema figures such as per-schema diagrams and merged schema outputs.
 - `launch/`: ROS launch files, currently `tactical_retreat_kb.launch.py`.

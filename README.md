@@ -1,6 +1,6 @@
-# typedb_tactics
+# tactical_retreat_kb
 
-`typedb_tactics` is a ROS 2 package for representing adaptation knowledge in TypeDB and using that knowledge to support runtime decision-making for self-adaptive systems. It combines TypeDB schemas, Python query interfaces, ROS 2 integration, tests, and helper scripts in one package.
+`tactical_retreat_kb` is a ROS 2 package for representing adaptation knowledge in TypeDB and using that knowledge to support runtime decision-making for self-adaptive systems. It combines TypeDB schemas, Python query interfaces, ROS 2 integration, tests, and helper scripts in one package.
 
 In practice, this package defines the domain models used by the managing system, loads them into TypeDB, and exposes the resulting capabilities through ROS-facing interfaces.
 
@@ -17,13 +17,13 @@ In practice, this package defines the domain models used by the managing system,
 This package is organized around TypeDB schemas, Python interfaces that wrap the database logic, ROS 2 integration, tests, and helper scripts.
 
 ```text
-typedb_tactics/
+tactical_retreat_kb/
 ├── launch/                  # ROS 2 launch files
 ├── schemas/                 # TypeDB schema definitions, examples, and queries
 ├── schemas_diagrams/        # Generated schema figures
 ├── scripts/                 # Helper scripts for diagrams, benchmarks, profiling, and test execution
 ├── test/                    # Python test suite and test data
-├── typedb_tactics/          # Main Python package
+├── tactical_retreat_kb/          # Main Python package
 │   ├── tactical_retreat_kb.py
 │   ├── tactical_retreat_node.py
 │   └── typedb_tactical_retreat_interface.py
@@ -138,7 +138,7 @@ source install/setup.bash
 Make sure a TypeDB server is running on `localhost:1729`, then launch the KB node:
 
 ```Bash
-ros2 launch typedb_tactics tactical_retreat_kb.launch.py \
+ros2 launch tactical_retreat_kb tactical_retreat_kb.launch.py \
   schema_path:="['schemas/data_structure/data_structure.tql','schemas/context_model/context_model.tql','schemas/ros_model/ros_model.tql']" \
   data_path:="['test/data/test_ros_model.tql']" \
   database_name:=tactical_kb \
@@ -157,7 +157,7 @@ Adjust `schema_path` and `data_path` for your use case. They can be absolute pat
 You can get the latest docker image with:
 
 ```Bash
-docker pull ghcr.io/kas-lab/typedb_tactics:latest
+docker pull ghcr.io/kas-lab/tactical_retreat_kb:latest
 ```
 
 ### Build
@@ -187,35 +187,35 @@ cd <workspace_root>
 ```
 
 Choose the smallest command that matches your use case:
-- plain container if you only need `typedb_tactics`
+- plain container if you only need `tactical_retreat_kb`
 - NVIDIA variant if you need GPU support
 - extra mounts if you are editing `ros_monitors` or `ros_typedb` together with this package
 
 Start container in the background with typedb server running:
 
 ```Bash
-docker run -d --rm --name tactical_retreat -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics" tactical_retreat typedb server
+docker run -d --rm --name tactical_retreat -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/tactical_retreat_kb:/home/ubuntu-user/tactical_retreat_ws/src/tactical_retreat_kb" tactical_retreat typedb server
 ```
 
 With nvidia
 
 ```Bash
-docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics" tactical_retreat typedb server
+docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/tactical_retreat_kb:/home/ubuntu-user/tactical_retreat_ws/src/tactical_retreat_kb" tactical_retreat typedb server
 ```
 
 Mount ros_typedb as well:
 
 ```Bash
-docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics" -v "$PWD/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors" -v "$PWD/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb" tactical_retreat typedb server
+docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/tactical_retreat_kb:/home/ubuntu-user/tactical_retreat_ws/src/tactical_retreat_kb" -v "$PWD/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors" -v "$PWD/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb" tactical_retreat typedb server
 ```
 
 Mount ros_monitors as well:
 
 ```Bash
-docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics" -v "$PWD/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors" tactical_retreat typedb server
+docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/tactical_retreat_kb:/home/ubuntu-user/tactical_retreat_ws/src/tactical_retreat_kb" -v "$PWD/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors" tactical_retreat typedb server
 ```
 
-**Note:** Use the correct image name, if you got the img from the github registry use `ghcr.io/kas-lab/typedb_tactics:latest` instead of `tactical_retreat`
+**Note:** Use the correct image name, if you got the img from the github registry use `ghcr.io/kas-lab/tactical_retreat_kb:latest` instead of `tactical_retreat`
 
 Start new terminal in the container:
 
@@ -226,5 +226,5 @@ docker exec -it tactical_retreat bash
 ### Test
 
 ```Bash
-colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics
+colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb
 ```

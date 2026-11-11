@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>typedb_tactics</name>
+  <name>tactical_retreat_kb</name>
   <version>0.0.0</version>
-  <description>typedb_tactics</description>
+  <description>tactical_retreat_kb</description>
   <maintainer email="g.rezendesilva@tudelft.nl">Gustavo Rezende</maintainer>
   <license>Apache-2.0</license>
 

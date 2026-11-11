@@ -25,7 +25,7 @@ from ros_typedb.typedb_interface import convert_py_type_to_query_type
 from ros_typedb.typedb_interface import convert_query_type_to_py_type
 from ros_typedb.typedb_interface import MatchResultDict
 from ros_typedb.typedb_interface import TypeDBInterface
-from typedb_tactics.utils import AdaptationPlan, _parse_lifecycle_action, _parse_parameter_action
+from tactical_retreat_kb.utils import AdaptationPlan, _parse_lifecycle_action, _parse_parameter_action
 import traceback
 from typedb.driver import ConceptMap
 

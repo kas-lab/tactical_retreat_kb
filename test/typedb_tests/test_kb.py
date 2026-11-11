@@ -33,9 +33,9 @@ from std_msgs.msg import Float64
 
 from std_srvs.srv import Empty
 
-from typedb_tactics.tactical_retreat_kb import _to_duration
-from typedb_tactics.tactical_retreat_kb import get_ros_msg_type_from_string
-from typedb_tactics.tactical_retreat_kb import TacticalRetreatKB
+from tactical_retreat_kb.tactical_retreat_kb import _to_duration
+from tactical_retreat_kb.tactical_retreat_kb import get_ros_msg_type_from_string
+from tactical_retreat_kb.tactical_retreat_kb import TacticalRetreatKB
 
 
 def test_get_ros_msg_type_from_string():

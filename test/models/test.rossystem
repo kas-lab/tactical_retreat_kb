@@ -1,0 +1,4 @@
+test:
+  nodes:
+    "/test_node":
+      from: "test_node.test_node"

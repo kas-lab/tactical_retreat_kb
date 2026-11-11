@@ -80,16 +80,16 @@ RUN --mount=type=secret,id=gh_token,uid=1000,gid=1000,mode=0400 bash -lc '\
   vcs import --input $HOME/tactical_retreat_ws/dependencies.repos src ; \
 '
 
-COPY fuzzy $HOME/tactical_retreat_ws/src/typedb_tactics/fuzzy
-COPY launch $HOME/tactical_retreat_ws/src/typedb_tactics/launch
-COPY resource $HOME/tactical_retreat_ws/src/typedb_tactics/resource
-COPY schemas $HOME/tactical_retreat_ws/src/typedb_tactics/schemas
-COPY test $HOME/tactical_retreat_ws/src/typedb_tactics/test
-COPY typedb_tactics $HOME/tactical_retreat_ws/src/typedb_tactics/typedb_tactics
-COPY LICENSE $HOME/tactical_retreat_ws/src/typedb_tactics/LICENSE
-COPY package.xml $HOME/tactical_retreat_ws/src/typedb_tactics/package.xml
-COPY setup.cfg $HOME/tactical_retreat_ws/src/typedb_tactics/setup.cfg
-COPY setup.py $HOME/tactical_retreat_ws/src/typedb_tactics/setup.py
+COPY fuzzy $HOME/tactical_retreat_ws/src/tactical_retreat_kb/fuzzy
+COPY launch $HOME/tactical_retreat_ws/src/tactical_retreat_kb/launch
+COPY resource $HOME/tactical_retreat_ws/src/tactical_retreat_kb/resource
+COPY schemas $HOME/tactical_retreat_ws/src/tactical_retreat_kb/schemas
+COPY test $HOME/tactical_retreat_ws/src/tactical_retreat_kb/test
+COPY tactical_retreat_kb $HOME/tactical_retreat_ws/src/tactical_retreat_kb/tactical_retreat_kb
+COPY LICENSE $HOME/tactical_retreat_ws/src/tactical_retreat_kb/LICENSE
+COPY package.xml $HOME/tactical_retreat_ws/src/tactical_retreat_kb/package.xml
+COPY setup.cfg $HOME/tactical_retreat_ws/src/tactical_retreat_kb/setup.cfg
+COPY setup.py $HOME/tactical_retreat_ws/src/tactical_retreat_kb/setup.py
 
 
 WORKDIR $HOME/tactical_retreat_ws/

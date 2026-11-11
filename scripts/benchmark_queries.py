@@ -23,7 +23,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 
-from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+from tactical_retreat_kb.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
 @dataclass(frozen=True)

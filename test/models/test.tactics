@@ -1,0 +1,45 @@
+name test_tactics;
+import "test.resolution";
+import "test.context";
+import "test.reqs";
+import "test.ros";
+
+rule TEST_RULE {
+	guard {
+		context(test_context_var > 0.5)
+	}
+	action {
+		select_variant(test_resolution.RootChild)
+	}
+};
+
+rule TEST_RULE_TWO {
+	guard {
+		context(test_context_var > 0.5)
+	}
+	action {
+		select_variant(test_resolution.SecondRootChild)
+	}
+};
+
+TestRequirement TestAction { 
+	rule TEST_REQ_RULE {
+	guard {
+		context(test_context_var > 0.5)
+	}
+	action {
+		select_variant(test_resolution.RootChild)
+	}
+};
+}
+
+TestAction {
+rule TEST_ACTION_RULE {
+	guard {
+		context(test_context_var > 0.5)
+	}
+	action {
+		select_variant(test_resolution.RootChild)
+	}
+};
+}

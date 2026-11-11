@@ -4,7 +4,7 @@ This file provides guidance for Agents to work with this repository
 
 ## Project overview
 
-This project is about implementing a managing system, in the context of self-adaptive systems, to manage ROS 2-based systems at runtime. The main idea is to capture all the knowledge required by the managing system with TypeDB and then query TypeDB at runtime to decide when and how the managed system should be adapted. The schema folder contains all TypeDB meta-models, and `typedb_tactics` contain the python scripts used to interact with TypeDB. The code is packaged as a ROS 2 package.
+This project is about implementing a managing system, in the context of self-adaptive systems, to manage ROS 2-based systems at runtime. The main idea is to capture all the knowledge required by the managing system with TypeDB and then query TypeDB at runtime to decide when and how the managed system should be adapted. The schema folder contains all TypeDB meta-models, and `tactical_retreat_kb` contain the python scripts used to interact with TypeDB. The code is packaged as a ROS 2 package.
 
 In summary the main meta-models needed for adaptation are:
 
@@ -42,7 +42,7 @@ From the workspace root:
 source install/setup.bash
 ```
 
-If you are working from `src/typedb_tactics` instead of the workspace root, the equivalent command is:
+If you are working from `src/tactical_retreat_kb` instead of the workspace root, the equivalent command is:
 
 ```Bash
 source ../../install/setup.bash
@@ -57,17 +57,17 @@ colcon build --symlink-install
 Test the whole repo:
 
 ```Bash
-colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics
+colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb
 ```
 
 Run specific tests:
 
 ```Bash
-colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_relaxed_model
+colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb --pytest-args -k test_relaxed_model
 ```
 
 ```Bash
-colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_ros_model
+colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb --pytest-args -k test_ros_model
 ```
 
 And so on.
@@ -79,15 +79,15 @@ And so on.
 Local:
 
 ```Bash
-colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_flake8
-colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_pep257
+colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb --pytest-args -k test_flake8
+colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb --pytest-args -k test_pep257
 ```
 
 Docker (`tactical_retreat`):
 
 ```Bash
-docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_flake8'
-docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_pep257'
+docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb --pytest-args -k test_flake8'
+docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb --pytest-args -k test_pep257'
 ```
 
 **TypeDB note:** Tests and the KB node expect a running TypeDB server (default `localhost:1729`). Start TypeDB before running tests.
@@ -99,9 +99,9 @@ docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && sour
 - Prefer `fetch_database_unordered(...)` in hot-path query methods.
 - Use ordered fetches only when deterministic ordering is required for assertions/debugging.
 
-## Cross-repo compatibility (typedb_tactics + ros_typedb)
+## Cross-repo compatibility (tactical_retreat_kb + ros_typedb)
 
-- Changes in `typedb_tactics` may depend on API changes in `ros_typedb` (`TypeDBInterface`).
+- Changes in `tactical_retreat_kb` may depend on API changes in `ros_typedb` (`TypeDBInterface`).
 - If constructor or fetch API changes are introduced (e.g., `sort_fetch_results`, `sort_result`), verify compatibility with the installed/overlay version used in Docker.
 - Typical mismatch symptom: `TypeError` in `TacticalRetreatInterface.__init__` due to argument count/signature drift.
 
@@ -142,7 +142,7 @@ docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && sour
 Ensure a TypeDB server is running, then launch the lifecycle KB node:
 
 ```Bash
-ros2 launch typedb_tactics tactical_retreat_kb.launch.py \
+ros2 launch tactical_retreat_kb tactical_retreat_kb.launch.py \
   schema_path:="['schemas/data_structure/data_structure.tql','schemas/context_model/context_model.tql','schemas/ros_model/ros_model.tql']" \
   data_path:="['test/data/test_ros_model.tql']" \
   database_name:=tactical_kb \
@@ -259,11 +259,11 @@ Build:
 docker build --secret id=gh_token,src=<(gh auth token) --build-arg DEPS_CACHE_BUSTER=${date} -t tactical_retreat .
 ```
 
-Start container in the background with TypeDB server running and mounting the packages `typedb_tactics` and `ros_monitors`:
+Start container in the background with TypeDB server running and mounting the packages `tactical_retreat_kb` and `ros_monitors`:
 
 ```Bash
 cd <workspace_root>
-docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/typedb_tactics:/home/ubuntu-user/tactical_retreat_ws/src/typedb_tactics" -v "$PWD/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors" tactical_retreat typedb server
+docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/tactical_retreat_kb:/home/ubuntu-user/tactical_retreat_ws/src/tactical_retreat_kb" -v "$PWD/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors" tactical_retreat typedb server
 ```
 
 Start new terminal in the container:
@@ -275,19 +275,19 @@ docker exec -it tactical_retreat bash
 Run tests in the container:
 
 ```Bash
-docker exec -it tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics'
+docker exec -it tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb'
 ```
 
 If running from a non-interactive environment, drop `-it`:
 
 ```Bash
-docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics'
+docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb'
 ```
 
 Run a focused test selection:
 
 ```Bash
-docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_hyp'
+docker exec tactical_retreat bash -lc 'source /opt/ros/humble/setup.bash && source /home/ubuntu-user/tactical_retreat_ws/install/setup.bash && colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb --pytest-args -k test_hyp'
 ```
 
 ## Information on TypeDB 2

@@ -36,7 +36,7 @@ scripts/run-tests-docker.sh -k test_hyp
 - Is TypeDB running on `localhost:1729`?
 - Is the ROS + workspace environment sourced?
 - Is the `tactical_retreat` container running (if using Docker)?
-- If using `sort_fetch_results`, is `typedb_tactics` compatible with the currently installed/overlay `ros_typedb` version?
+- If using `sort_fetch_results`, is `tactical_retreat_kb` compatible with the currently installed/overlay `ros_typedb` version?
 
 ## Rule authoring reminders
 
@@ -54,5 +54,5 @@ scripts/run-tests-docker.sh -k test_hyp
 ## Mandatory completion checks
 
 - Always run and pass both lint/style tests before marking work as done:
-  - `colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_flake8`
-  - `colcon test --event-handlers console_cohesion+ --packages-select typedb_tactics --pytest-args -k test_pep257`
+  - `colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb --pytest-args -k test_flake8`
+  - `colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb --pytest-args -k test_pep257`

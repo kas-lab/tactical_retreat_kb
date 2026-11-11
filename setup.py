@@ -3,7 +3,7 @@ import os
 
 from setuptools import setup
 
-package_name = 'typedb_tactics'
+package_name = 'tactical_retreat_kb'
 
 data_files = [
     ('share/ament_index/resource_index/packages',
@@ -43,12 +43,12 @@ setup(
     name=package_name,
     version='0.0.0',
     packages=[package_name],
-    data_files=package_files(data_files, ['schemas/']),
+    data_files=package_files(data_files, ['schemas/', 'jars/']),
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Gustavo Rezende',
-    maintainer_email='g.rezendesilva@tudelft.nl',
-    description='typedb tactics',
+    maintainer='Elvin Alberts',
+    maintainer_email='e.g.alberts@tudelft.nl',
+    description='tactical_retreat_kb',
     license='Apache-2.0',
     extras_require={
         'test': [
@@ -57,7 +57,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'tactical_retreat = typedb_tactics.tactical_retreat_node:main'
+            'tactical_retreat = tactical_retreat_kb.tactical_retreat_node:main'
         ],
     },
 )

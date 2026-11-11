@@ -15,7 +15,7 @@
 import pytest
 
 from ros_typedb.typedb_interface import convert_py_type_to_query_type
-from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+from tactical_retreat_kb.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
 def fetch_siblings(self, feature_name):

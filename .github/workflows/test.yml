@@ -32,7 +32,7 @@ jobs:
           required-ros-distributions: humble
       - uses: ros-tooling/action-ros-ci@0.4.5
         with:
-          package-name: typedb_tactics
+          package-name: tactical_retreat_kb
           target-ros2-distro: humble
           skip-tests: false
           vcs-repo-file-url: dependencies.repos

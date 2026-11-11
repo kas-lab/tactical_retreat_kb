@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import pytest
-from typedb_tactics.typedb_tactical_retreat_interface import TacticalRetreatInterface
+from tactical_retreat_kb.typedb_tactical_retreat_interface import TacticalRetreatInterface
 
 
 def fetch_tactic_rule_dependency_fulfillment(
