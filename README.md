@@ -1,230 +1,167 @@
 # tactical_retreat_kb
 
-`tactical_retreat_kb` is a ROS 2 package for representing adaptation knowledge in TypeDB and using that knowledge to support runtime decision-making for self-adaptive systems. It combines TypeDB schemas, Python query interfaces, ROS 2 integration, tests, and helper scripts in one package.
+`tactical_retreat_kb` is a ROS 2 package that provides the knowledge base (KB) of a managing system for self-adaptive ROS 2 systems. The KB holds the adaptation knowledge (variability, requirements, context, runtime ROS graph and tactics) and answers runtime questions such as "which tactics are valid right now?", "how well are the requirements fulfilled?". These answers are exposed to the rest of the system as ROS services and topics.
 
-In practice, this package defines the domain models used by the managing system, loads them into TypeDB, and exposes the resulting capabilities through ROS-facing interfaces.
+The KB is designed to be backend-agnostic: the ROS node only talks to a KB *interface* object, so any knowledge representation can be plugged in as long as it implements the methods the node calls. Currently:
+
+| Backend | Status | Implementation |
+|---|---|---|
+| **Xtext / EMF models** | **Active, default** | Queries the Java objects of the Xtext DSL models directly via JPype |
+| TypeDB | Legacy, currently **not working** | TypeQL schemas + `typedb_tactical_retreat_interface.py` |
 
 ## Navigation
 
+- [Architecture](#architecture)
 - [Repository Structure](#repository-structure)
-- [Scripts](#scripts)
-- [Models](#models)
+- [Xtext Models](#xtext-models)
 - [Quick Start](#quick-start)
+- [Testing](#testing)
 - [Docker](#docker)
+- [Legacy TypeDB Backend](#legacy-typedb-backend)
+- [Scripts](#scripts)
+
+## Architecture
+
+```text
+ other ROS nodes  ──services/topics──▶  TacticalRetreatKB (lifecycle node)
+                                             │  self.interface.<method>(...)
+                                             ▼
+                                  KB interface (pluggable backend)
+                                   ├── XText TacticalRetreatInterface   ← in use
+                                   └── TypeDB TacticalRetreatInterface  ← legacy
+```
+
+- **ROS node**: [`tactical_retreat_kb_xtext.py`](./tactical_retreat_kb/tactical_retreat_kb_xtext.py) defines the `TacticalRetreatKB` lifecycle node. It loads the models when it is created, sets up measurement subscribers and services, and exposes KB queries under `<node_name>/...` (for example `fetch_rules`, `satisfied_rule`, `valid_ranked_tactics`, `fetch_resolutions`, `fetch_plan`,, `fetch_requirements_fulfillment_ineffect`, `update_running`, `update_in_effect`, `update_has_param_value`, `fetch_policy`). It also publishes `requirements`, `fm_configuration` and `context_model`.
+- **Xtext interface**: [`xtext_tactical_retreat_interface.py`](./tactical_retreat_kb/xtext_tactical_retreat_interface.py) starts a JVM through [JPype](https://jpype.readthedocs.io/), loads the Xtext models into an EMF `XtextResourceSet`, and evaluates queries directly on the resulting Java objects. Feature model configurations are handled through FeatureIDE. Fuzzy/RELAX requirement fulfillment is computed in Python by [`tactical_retreat_kb/fuzzy/`](./tactical_retreat_kb/fuzzy/).
+- **Entry point**: [`tactical_retreat_node.py`](./tactical_retreat_kb/tactical_retreat_node.py) (the `tactical_retreat` executable) runs the Xtext-backed node.
+
+### Adding another KB backend
+
+To use a different knowledge representation, implement a class that provides the same public methods as the Xtext `TacticalRetreatInterface` and instantiate it in `TacticalRetreatKB.__init__` instead of `XTextInterface`.
 
 ## Repository Structure
 
-This package is organized around TypeDB schemas, Python interfaces that wrap the database logic, ROS 2 integration, tests, and helper scripts.
-
 ```text
 tactical_retreat_kb/
-├── launch/                  # ROS 2 launch files
-├── schemas/                 # TypeDB schema definitions, examples, and queries
-├── schemas_diagrams/        # Generated schema figures
-├── scripts/                 # Helper scripts for diagrams, benchmarks, profiling, and test execution
-├── test/                    # Python test suite and test data
-├── tactical_retreat_kb/          # Main Python package
-│   ├── tactical_retreat_kb.py
-│   ├── tactical_retreat_node.py
-│   └── typedb_tactical_retreat_interface.py
+├── tactical_retreat_kb/                     # Main Python package
+│   ├── tactical_retreat_node.py             # Executable entry point (Xtext node)
+│   ├── tactical_retreat_kb_xtext.py         # ROS lifecycle node (backend-agnostic, uses Xtext interface)
+│   ├── xtext_tactical_retreat_interface.py  # Xtext/EMF KB interface (active)
+│   ├── fuzzy/                               # Fuzzy sets, fuzzy expressions, RELAX requirement evaluation
+│   ├── utils.py
+│   ├── tactical_retreat_kb.py               # Legacy TypeDB-based node
+│   └── typedb_tactical_retreat_interface.py # Legacy TypeDB interface
+├── jars/                    # Java dependencies (Xtext, EMF, FeatureIDE, CoreSense DSLs, ROS tooling) loaded by JPype
+├── launch/                  # ROS 2 launch files (currently TypeDB parameters only, see Quick Start)
+├── test/
+│   ├── models/              # Example Xtext models used by test_xtext_interface.py
+│   ├── test_xtext_interface.py
+│   ├── typedb_tests/        # Legacy TypeDB tests
+│   └── data/                # Legacy TypeDB test data (.tql)
+├── schemas/                 # Legacy TypeDB schemas
+├── schemas_diagrams/        # Generated diagrams of the TypeDB schemas
+├── scripts/                 # Helper scripts (mostly TypeDB-oriented)
+├── fuzzy/                   # Plotting scripts for fuzzy membership functions
 ├── package.xml
 ├── setup.py
 └── README.md
 ```
 
-## Scripts
+The `jars/` folder is installed to the package share directory, and the interface adds `share/tactical_retreat_kb/jars/*` to the JVM classpath at import time.
 
-This repository includes helper scripts for:
+## Xtext Models
 
-- generating schema diagrams
-- generating a merged schema diagram
-- benchmarking query and interface performance
-- profiling schema load times
-- running tests inside Docker
+The Xtext backend is configured with one model file per DSL. Each file is passed in as a node parameter:
 
-Check the dedicated scripts guide:
+| Parameter | Extension | Content |
+|---|---|---|
+| `ros_path` | `.ros` (list) | ROS package/interface specs (messages, services, actions) |
+| `ros2_path` | `.ros2` (list) | ROS 2 node models |
+| `rossystem_path` | `.rossystem` (list) | The ROS system: which nodes and interfaces make up the managed system |
+| `var_path` | `.var` | Variability (feature) model |
+| `resolution_path` | `.resolution` | Resolution model: maps features to reconfigurations (parameter changes, lifecycle transitions) |
+| `context_path` | `.context` | Context model: measures and where to obtain them |
+| `reqs_path` | `.reqs` | RELAX requirements, with fuzzy membership functions |
+| `tactics_path` | `.tactics` | Tactics: global and per-action rules, each with a guard and actions |
 
-- [`scripts/README.md`](./scripts/README.md)
+The node also takes two flags:
 
-## Models
+| Parameter | Default | Meaning |
+|---|---|---|
+| `require_nodes_running` | `False` | Whether tactics require their target nodes to be running |
+| `verify_parameters` | `False` | Whether parameter values are verified against the model |
 
-Schema files are organized under `schemas/` by model:
+[`test/models/`](./test/models/) has a small but complete set of example models.
 
-```text
-schemas/
-├── context_model/
-├── data_structure/
-├── discover_hypothetical_req_fulfillment/
-├── discover_tactics_model/
-├── feature_model/
-├── logical_expressions/
-├── relaxed/
-├── ros_model/
-├── states/
-└── tactics_model/
-```
-
-This section briefly describes the main models included in the repository and where to find them.
-
-- `data_structure/`: core typed values and array/value abstractions used by the rest of the schemas
-- `context_model/`: measurements, measurement sources, and runtime context information
-- `ros_model/`: runtime ROS graph entities such as nodes, topics, services, actions, QoS, and parameters
-- `feature_model/`: feature-model structures, feature hierarchies, and cross-tree constraints
-- `logical_expressions/`: logical and fuzzy expression models used to represent conditions and evaluations
-- `relaxed/`: RELAX requirement models and requirement fulfillment concepts
-- `tactics_model/`: adaptation tactics, their metadata, and tactic-rule structures
-- `discover_tactics_model/`: discovery queries/model fragments for identifying applicable tactics
-- `discover_hypothetical_req_fulfillment/`: discovery queries/model fragments for hypothetical requirement fulfillment
-- `states/`: state-related schema definitions used by the managing system
-
-### Dependencies
-
-```mermaid
-graph TB
-    data_structure["data_structure.tql"]
-    context["context_model.tql"]
-    ros["ros_model.tql"]
-    logical["logical_expression.tql"]
-    fuzzy["fuzzy_expression.tql"]
-    feature["feature_model.tql"]
-    feature_logic["feature_model_logical_expression.tql"]
-    relaxed["relaxed_model.tql"]
-    tactics["tactics_model.tql"]
-    discover["discover_tactics_model.tql"]
-    discover_hypo["discover_hypothetical_req_fulfillment.tql"]
-
-    data_structure --> context
-    data_structure --> ros
-    data_structure --> logical
-    data_structure --> fuzzy
-    data_structure --> relaxed
-    data_structure --> tactics
-
-    logical --> fuzzy
-    logical --> relaxed
-    logical --> tactics
-    logical --> feature_logic
-
-    feature --> feature_logic
-    feature --> tactics
-
-    context --> fuzzy
-    context --> relaxed
-    context --> tactics
-    context --> discover_hypo
-
-    ros --> tactics
-    ros --> discover
-
-    fuzzy --> relaxed
-    relaxed --> discover_hypo
-
-    tactics --> discover
-    tactics --> discover_hypo
-    fuzzy --> discover_hypo
-```
-
-Arrows point from each prerequisite model to the model that depends on it.
+> **Note:** Use absolute paths. Imports between models (`import "test.var";`) are resolved against each resource's URI, and that resolution fails for relative URIs.
 
 ## Quick Start
 
-For local development:
+Requirements:
 
-```Bash
-source /opt/ros/humble/setup.bash
-source install/setup.bash
-```
-
-Make sure a TypeDB server is running on `localhost:1729`, then launch the KB node:
-
-```Bash
-ros2 launch tactical_retreat_kb tactical_retreat_kb.launch.py \
-  schema_path:="['schemas/data_structure/data_structure.tql','schemas/context_model/context_model.tql','schemas/ros_model/ros_model.tql']" \
-  data_path:="['test/data/test_ros_model.tql']" \
-  database_name:=tactical_kb \
-  address:=localhost:1729 \
-  force_database:=True \
-  force_data:=True \
-  infer:=True
-```
-
-Adjust `schema_path` and `data_path` for your use case. They can be absolute paths or paths relative to the package root.
-
-## Docker
-
-### Pull
-
-You can get the latest docker image with:
-
-```Bash
-docker pull ghcr.io/kas-lab/tactical_retreat_kb:latest
-```
-
-### Build
-
-To build the img you need to create a github personal access token to read access to private repos, then log in to gh with gh cli
-
-```Bash
-gh auth login         # if not logged in
-```
+- ROS 2 Humble/Jazzy
+- Java 21 runtime (`openjdk-21-jre`)
+- Python: `JPype1`, plus `numpy`, `scipy` and `pandas`
+- ROS dependencies: see [`package.xml`](./package.xml) and [`dependencies.repos`](./dependencies.repos)
 
 Build:
 
 ```Bash
-docker build --secret id=gh_token,src=<(gh auth token) --build-arg DEPS_CACHE_BUSTER=${date} -t tactical_retreat .
+source /opt/ros/{distro}/setup.bash
+colcon build --symlink-install --packages-up-to tactical_retreat_kb
+source install/setup.bash
 ```
 
-### Run
+The models are loaded in the node constructor, so pass the parameters when you start the node. For example, create a parameters file `kb_params.yaml`:
+
+```yaml
+tactical_retreat_kb:
+  ros__parameters:
+    ros_path: ["/abs/path/models/my.ros", "/abs/path/models/lifecycle_msgs.ros"]
+    ros2_path: ["/abs/path/models/my.ros2"]
+    rossystem_path: ["/abs/path/models/my.rossystem"]
+    var_path: "/abs/path/models/my.var"
+    resolution_path: "/abs/path/models/my.resolution"
+    context_path: "/abs/path/models/my.context"
+    reqs_path: "/abs/path/models/my.reqs"
+    tactics_path: "/abs/path/models/my.tactics"
+    require_nodes_running: false
+    verify_parameters: false
+```
+
+Then run the node and bring it through its lifecycle:
 
 ```Bash
-xhost +
+ros2 run tactical_retreat_kb tactical_retreat --ros-args --params-file kb_params.yaml
+ros2 lifecycle set /tactical_retreat_kb configure
+ros2 lifecycle set /tactical_retreat_kb activate
 ```
 
-The commands below assume you are running them from the workspace root, so `"$PWD/src/..."` points to the local packages:
-
-```Bash
-cd <workspace_root>
-```
-
-Choose the smallest command that matches your use case:
-- plain container if you only need `tactical_retreat_kb`
-- NVIDIA variant if you need GPU support
-- extra mounts if you are editing `ros_monitors` or `ros_typedb` together with this package
-
-Start container in the background with typedb server running:
-
-```Bash
-docker run -d --rm --name tactical_retreat -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/tactical_retreat_kb:/home/ubuntu-user/tactical_retreat_ws/src/tactical_retreat_kb" tactical_retreat typedb server
-```
-
-With nvidia
-
-```Bash
-docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/tactical_retreat_kb:/home/ubuntu-user/tactical_retreat_ws/src/tactical_retreat_kb" tactical_retreat typedb server
-```
-
-Mount ros_typedb as well:
-
-```Bash
-docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/tactical_retreat_kb:/home/ubuntu-user/tactical_retreat_ws/src/tactical_retreat_kb" -v "$PWD/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors" -v "$PWD/src/ros_typedb:/home/ubuntu-user/tactical_retreat_ws/src/ros_typedb" tactical_retreat typedb server
-```
-
-Mount ros_monitors as well:
-
-```Bash
-docker run -d --rm --name tactical_retreat --runtime=nvidia --gpus all -e DISPLAY=$DISPLAY -e QT_X11_NO_MITSHM=1 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/localtime:/etc/localtime:ro -v "$PWD/src/tactical_retreat_kb:/home/ubuntu-user/tactical_retreat_ws/src/tactical_retreat_kb" -v "$PWD/src/ros_monitors:/home/ubuntu-user/tactical_retreat_ws/src/ros_monitors" tactical_retreat typedb server
-```
-
-**Note:** Use the correct image name, if you got the img from the github registry use `ghcr.io/kas-lab/tactical_retreat_kb:latest` instead of `tactical_retreat`
-
-Start new terminal in the container:
-
-```Bash
-docker exec -it tactical_retreat bash
-```
-
-### Test
+## Testing
 
 ```Bash
 colcon test --event-handlers console_cohesion+ --packages-select tactical_retreat_kb
 ```
+
+Run only the Xtext interface tests, without needing a TypeDB server:
+
+```Bash
+colcon test --packages-select tactical_retreat_kb  --pytest-args test/test_xtext_interface.py
+```
+
+The lint/style tests (`test_flake8`, `test_pep257`, `test_copyright`) can be selected the same way. The tests under `test/typedb_tests/` belong to the legacy TypeDB backend and are expected to fail at the moment.
+
+## Legacy TypeDB Backend
+
+The package started as a TypeDB-based KB, with the knowledge stored as TypeQL schemas and queried through TypeQL rules. That code is still in the repository but is **out of date and currently not working** with the rest of the system:
+
+- [`tactical_retreat_kb.py`](./tactical_retreat_kb/tactical_retreat_kb.py): node based on `ROSTypeDBInterface` from `ros_typedb`
+- [`typedb_tactical_retreat_interface.py`](./tactical_retreat_kb/typedb_tactical_retreat_interface.py): TypeQL query wrappers
+- [`schemas/`](./schemas/): TypeDB schemas (`data_structure`, `context_model`, `ros_model`, `feature_model`, `logical_expressions`, `tactics_model`, `feature_adaptation_plan`)
+- [`schemas_diagrams/`](./schemas_diagrams/): generated schema diagrams
+- [`test/typedb_tests/`](./test/typedb_tests/) and [`test/data/`](./test/data/): tests and data
+
+It targeted TypeDB 2.28.3 with the 2.28.0 Python driver, on a server at `localhost:1729`.
+## Scripts
+
+[`scripts/`](./scripts/) holds the helper scripts for schema diagrams, benchmarking, schema-load profiling and running tests in Docker. All except `run-tests-docker.sh` target the legacy TypeDB backend. See [`scripts/README.md`](./scripts/README.md).
