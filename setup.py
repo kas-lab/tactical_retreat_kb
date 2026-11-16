@@ -1,7 +1,7 @@
 from glob import glob
 import os
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 package_name = 'tactical_retreat_kb'
 
@@ -42,7 +42,7 @@ def package_files(data_files, directory_list):
 setup(
     name=package_name,
     version='0.0.0',
-    packages=[package_name],
+    packages=find_packages(),
     data_files=package_files(data_files, ['schemas/', 'jars/']),
     install_requires=['setuptools'],
     zip_safe=True,
