@@ -529,12 +529,8 @@ class TacticalRetreatInterface:
 
         if (j_log_op is not None) and (j_second_term is not None):
             if (j_log_op == LogicalOperator.AND):
-                self.logger.info("and")
-
                 return (res and self._eval_measurement_condition(j_second_term, configuration))
             if (j_log_op == LogicalOperator.OR):
-                self.logger.info("OR")
-
                 return (res or self._eval_measurement_condition(j_second_term, configuration))
 
         return res
@@ -576,18 +572,11 @@ class TacticalRetreatInterface:
 
         j_log_op = j_measurement_condition.getLogicalOp()
         j_second_term = j_measurement_condition.getSecondTerm()
-        # self.logger.info(f"loggg op {str(j_log_op)}")
-        # self.logger.info(f"loggg op {str(j_second_term)}")
 
-        # j_log_op_val = j_log_op.getValue()
         if (j_log_op is not None) and (j_second_term is not None):
             if (j_log_op == LogicalOperator.AND):
-                self.logger.info("and")
-
                 return (res and self._eval_measurement_condition(j_second_term, measures))
             if (j_log_op == LogicalOperator.OR):
-                self.logger.info("OR")
-
                 return (res or self._eval_measurement_condition(j_second_term, measures))
 
         return res
@@ -598,9 +587,7 @@ class TacticalRetreatInterface:
     def _adaptation_rule_satisfied(self, j_adaptation_rule: AdaptationRule,
                                    tactic_names):
         measures = self.latest_measures
-        current_configuration = set(self._current_configuration()) #set(self.action_currconf[action_name])
-        self.logger.info(f"current_configuration {str(current_configuration)}")
-        # TODO: invert this, we should grab for the rules requested, not eliminate from all
+        current_configuration = set(self._current_configuration())
         if (str(j_adaptation_rule.getName()) in tactic_names):
             j_condition_action = self._get_condition_action(j_adaptation_rule)
             if (j_condition_action is not None):
@@ -619,7 +606,6 @@ class TacticalRetreatInterface:
                 return feature_guard and condition_guard
             else:
                 return True
-                # self.logger.info(f"feat guard {feature_guard} condition_guard {condition_guard}")
 
     def _get_satisfied_action_tactics(self, tactic_names, action_name):
         satisfied = []
@@ -631,8 +617,6 @@ class TacticalRetreatInterface:
                     sat = self._adaptation_rule_satisfied(j_adaptation_rule, tactic_names)
                     if sat is not None:
                         satisfied.append(sat)
-                    else:
-                        self.logger.info(f"sat was none for {str(j_adaptation_rule.getName())}")
 
         return satisfied
 
@@ -645,8 +629,6 @@ class TacticalRetreatInterface:
                 sat = self._adaptation_rule_satisfied(j_adaptation_rule, tactic_names)
                 if sat is not None:
                     satisfied.append(sat)
-                else:
-                    self.logger.info(f"sat was none for {str(j_adaptation_rule.getName())}")
 
         return satisfied
 
@@ -661,7 +643,6 @@ class TacticalRetreatInterface:
         else:
             satisfied = self._get_satisfied_global_tactics(tactic_names)
 
-        self.logger.info(f"satisfied {tactic_names} {str(satisfied)}")
 
         return satisfied
 
@@ -1148,7 +1129,6 @@ class TacticalRetreatInterface:
     def reconfiguration(self, reconfigurations: list[str]) -> list[str]:
         initial_conf = self._current_configuration()
         self.fmConfiguration.resetAutomaticValues()
-        self.logger.info(f"initialConf ? {str(initial_conf)}")
         self._process_selection(reconfigurations)
         LongRunningWrapper.runMethod(self.configurationPropagator.resolve())
         self._process_selection(reconfigurations)
@@ -1164,9 +1144,9 @@ class TacticalRetreatInterface:
     # TODO: use dict?
     def lifecycleStateToTransition(self, j_lc_state: LifecycleState):
         if (j_lc_state == LifecycleState.UNCONFIGURED):
-            return Transition(id=Transition.TRANSITION_CLEANUP),
+            return Transition(id=Transition.TRANSITION_CLEANUP)
         if (j_lc_state == LifecycleState.INACTIVE):
-            return Transition(id=Transition.TRANSITION_DEACTIVATE),
+            return Transition(id=Transition.TRANSITION_DEACTIVATE)
         if (j_lc_state == LifecycleState.ACTIVE):
             return Transition(id=Transition.TRANSITION_ACTIVATE)
         if (j_lc_state == LifecycleState.FINALIZED):
