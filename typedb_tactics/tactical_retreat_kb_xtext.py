@@ -337,16 +337,11 @@ class TacticalRetreatKB(Node):
 
             def _fetch_satisfied_tactic_cb(req, res):
                 try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Fetching satisfied tactics...')
                     result = self.interface.get_satisfied_tactics(
                         req.tactic_rules,
                         req.action_name)
                     res.satisfied = result
                     res.success = True
-                    elapsed_time = time.perf_counter() - start_time
-                    self.get_logger().info(
-                        f'Satisfied tactics fetched in {elapsed_time:.4f} seconds.')
                 except Exception as e:
                     self.get_logger().error(
                         f'Error fetching Satisfied tactics : {e}')
@@ -356,18 +351,13 @@ class TacticalRetreatKB(Node):
 
             def _fetch_actions_cb(req, res):
                 try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Fetching all resolution actions...')
                     x = self.interface.get_resolution_adaptations(logger=self.get_logger())
                     res.resolutions = []
                     for name, adaptations in x.items():
                         res.resolutions.append(
                             Resolution(resolution_action_name=name, adaptations=adaptations))
 
-                    elapsed_time = time.perf_counter() - start_time
                     res.success = True
-                    self.get_logger().info(
-                        f'Tactic actions fetched in {elapsed_time:.4f} seconds.')
                 except Exception as e:
                     self.get_logger().error(
                         f'Error fetching tactic actions: {e}')
@@ -377,27 +367,18 @@ class TacticalRetreatKB(Node):
 
             def _fetch_reconfiguration_plan_cb(req, res):
                 try:
-                    start_time = time.perf_counter()
-                    self.get_logger().info('Fetching tactic actions...')
-                    # res.adaptations = self.interface.get_reconfiguration_plan(req.tactic_name).actions
                     x = None
                     if (req.full_configuration):
                         x = self.interface.change_configuration(
                             req.full_configuration_string)
                     else:
                         x = self.interface.reconfiguration(req.reconfiguration_string)
-                    elapsed_time = time.perf_counter() - start_time
-                    self.get_logger().info(
-                        f'Tactic actions {x} fetched in {elapsed_time:.4f} seconds.')
                     res.resolution_actions = x
                 except Exception as e:
                     self.get_logger().error(
                         f'Error fetching tactic actions: {e}')
                     self.get_logger().error('Traceback:\n' + traceback.format_exc())
                 return res
-
-            # TODO: Implement properly.
-            self.get_logger().info("4")
 
             def _fetch_all_measurements_cb(_, res):
                 pass
@@ -971,11 +952,6 @@ class TacticalRetreatKB(Node):
                         else:
                             self.get_logger().info("missing measurements to process")
 
-                else:
-                    self.get_logger().info("No composite measurements to process", throttle_duration_sec=30)
-
-                # self.get_logger().info(f"measurements to be added {str(filtered_measurements)}",
-                #                        throttle_duration_sec=5)
                 self.interface.add_measurements(filtered_measurements, self.get_logger())
 
         else:
